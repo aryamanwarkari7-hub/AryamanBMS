@@ -1,0 +1,80 @@
+﻿/* ==========================================
+   BASE CARD
+========================================== */
+
+.app-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    margin-bottom: var(--space-xl);
+    margin:0 var(--space-xl);
+}
+
+/* ==========================================
+   CARD HEADER
+========================================== */
+
+.card-header {
+    padding: var(--space-lg) var(--space-xl);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--primary-color);
+    
+    
+}
+
+.card-title {
+    margin: 0;
+    font-size: var(--font-lg);
+    font-weight: var(--fw-semibold);
+    color: var(--text-light);
+}
+
+.card-subtitle {
+    font-size: var(--font-sm);
+    color: var(--text-muted);
+}
+
+/* ==========================================
+   CARD BODY
+========================================== */
+
+.card-body {
+    padding: var(--space-xl);
+}
+
+/* ==========================================
+   SUMMARY CARD
+========================================== */
+
+.summary-card {
+    padding: var(--space-xl);
+}
+
+/* ==========================================
+   FORM CARD
+========================================== */
+
+.form-card {
+    padding: var(--space-xl);
+}
+
+/* ==========================================
+   TABLE CARD
+========================================== */
+
+.table-card {
+    padding: 0;
+}
+
+/* ==========================================
+   ACCORDION CARD
+========================================== */
+
+.accordion-card {
+    margin-bottom: var(--space-lg);
+}

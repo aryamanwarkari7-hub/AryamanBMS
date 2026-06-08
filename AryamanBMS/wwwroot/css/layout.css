@@ -1,0 +1,47 @@
+﻿/* ==========================================
+   APP LAYOUT
+========================================== */
+
+.app-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ==========================================
+   MAIN CONTENT AREA
+========================================== */
+
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--page-bg);
+    min-width: 0;
+}
+
+/* ==========================================
+   PAGE CONTENT
+========================================== */
+
+.page-content {
+    flex: 1;
+    padding: var(--content-padding);
+    background-color: var(--page-bg);
+    overflow-y: auto;
+}
+
+/* ==========================================
+   CONTENT CONTAINER
+========================================== */
+
+.content-container {
+    width: 100%;
+}
+
+/* ==========================================
+   PAGE SECTION SPACING
+========================================== */
+
+.page-section {
+    margin-bottom: var(--space-2xl);
+}

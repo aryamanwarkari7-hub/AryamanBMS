@@ -1,0 +1,113 @@
+@import url('components/page-header.css');
+
+/* ==========================================
+   GLOBAL RESET
+========================================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ==========================================
+   HTML & BODY
+========================================== */
+
+html,
+body {
+    height: 100%;
+    font-family: var(--font-family);
+    background-color: var(--page-bg);
+    color: var(--text-primary);
+    font-size: var(--font-md);
+}
+
+/* ==========================================
+   LINKS
+========================================== */
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+    a:hover {
+        text-decoration: none;
+    }
+
+/* ==========================================
+   LISTS
+========================================== */
+
+ul,
+ol {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* ==========================================
+   HEADINGS
+========================================== */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    margin-bottom: 0;
+    font-weight: var(--font-semibold);
+}
+
+/* ==========================================
+   IMAGES
+========================================== */
+
+img {
+    max-width: 100%;
+    display: block;
+}
+
+/* ==========================================
+   BUTTONS
+========================================== */
+
+button {
+    border: none;
+    outline: none;
+    cursor: pointer;
+}
+
+/* ==========================================
+   INPUTS
+========================================== */
+
+input,
+select,
+textarea {
+    outline: none;
+}
+
+/* ==========================================
+   SCROLLBAR
+========================================== */
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #e2e8f0;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: var(--radius-pill);
+}
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #64748b;
+    }

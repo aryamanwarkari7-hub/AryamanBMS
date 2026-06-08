@@ -1,0 +1,75 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - AryamanBMS</title>
+    @*Bootsrap*@
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    @*Bootsrap Icons*@
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    @*Css Links*@
+    <link rel="stylesheet" href="~/css/variables.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/layout.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/sidebar.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/navbar.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
+
+    <link rel="stylesheet" href="~/css/components/cards.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/components/buttons.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/components/forms.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/components/tables.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/components/badges.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/components/alerts.css" asp-append-version="true" />
+
+    <link rel="stylesheet" href="~/AryamanBMS.styles.css" asp-append-version="true" />
+</head>
+<body>
+
+    <div class="app-layout">
+
+        <partial name="_Sidebar" />
+
+        <div class="main-content">
+
+            <partial name="_Navbar" />
+
+            @if (TempData["Success"] != null)
+            {
+                <div id="successAlert" class="alert-success-app">
+                    <i class="bi bi-check-circle-fill"></i>
+                    @TempData["Success"]
+                </div>
+            }
+            @RenderBody()
+
+        </div>
+
+    </div>    
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        setTimeout(function () {
+
+        const alert =
+        document.getElementById("successAlert");
+
+        if (alert) {
+
+        alert.classList.add("alert-hide");
+
+        setTimeout(() => {
+        alert.remove();
+        }, 500);
+        }
+
+        }, 3000);
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

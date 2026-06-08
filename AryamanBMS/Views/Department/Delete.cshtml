@@ -1,0 +1,43 @@
+﻿@model AryamanBMS.Models.DepartmentModel
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Delete Department</h1>
+        <p class="module-subtitle">
+            Confirm department deletion
+        </p>
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-body">
+
+        <p>
+            Are you sure you want to delete
+            <strong>@Model.DepartmentName</strong> ?
+        </p>
+
+        <br />
+
+        <form asp-action="DeleteConfirmed" method="post">
+
+            <input asp-for="Id" type="hidden" />
+
+            <button type="submit"
+                    class="btn-app btn-danger-app">
+                Delete
+            </button>
+
+            <a asp-action="Index"
+               class="btn-app btn-secondary-app">
+                Cancel
+            </a>
+
+        </form>
+
+    </div>
+
+</div>

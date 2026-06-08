@@ -1,0 +1,356 @@
+﻿@using AryamanBMS.Models
+@using Microsoft.AspNetCore.Identity
+
+@inject UserManager<ApplicationUserModel> UserManager
+
+@{
+    var currentController =
+        ViewContext.RouteData.Values["controller"]?.ToString();
+
+    var currentUser =
+        await UserManager.GetUserAsync(User);
+
+    var userName =
+        currentUser?.FullName ?? currentUser?.UserName ?? "User";
+
+    var role =
+        (currentUser != null)
+            ? (await UserManager.GetRolesAsync(currentUser)).FirstOrDefault()
+            : "";
+
+    var initials = string.Empty;
+
+    if (!string.IsNullOrWhiteSpace(userName))
+    {
+        initials = string.Join("",
+            userName.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                    .Take(2)
+                    .Select(x => x[0]))
+                    .ToUpper();
+    }
+}
+
+<div class="sidebar">
+
+    <!-- Logo -->
+    <div class="sidebar-header">
+
+        <div class="brand">
+
+            <div class="brand-icon">
+                <img src="~/images/logo.png"
+                     alt="Aryaman BMS Logo"
+                     class="brand-logo" />
+            </div>
+
+            <div class="brand-text">
+
+                <div class="brand-name">
+                    Aryaman BMS
+                </div>
+
+                <div class="brand-subtitle">
+                    MANAGEMENT SYSTEM
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- FY -->
+    <div class="sidebar-fy">
+        FY 2025-26 | PUNE,MH
+    </div>
+
+    <!-- Menu -->
+    <div class="sidebar-menu" id="sidebarAccordion">
+
+        <!-- Dashboard -->
+        <div class="menu-group">
+
+            <a asp-controller="Dashboard"
+               asp-action="Index"
+               class="menu-group-header dashboard-link @(currentController == "Dashboard" ? "active-menu" : "")">
+
+                <div class="menu-group-left">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Dashboard</span>
+                </div>
+
+            </a>
+
+        </div>
+
+        <!-- Master Setup -->
+        <div class="menu-group">
+
+            <button class="menu-group-header"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#masterSetupMenu"
+                    aria-expanded="true">
+
+                <div class="menu-group-left">
+                    <i class="bi bi-gear"></i>
+                    <span>Master Setup</span>
+                </div>
+
+                <i class="bi bi-chevron-down"></i>
+
+            </button>
+
+            <div class="collapse show" id="masterSetupMenu" data-bs-parent="#sidebarAccordion">
+
+                <div class="submenu">
+
+                    <a asp-controller="User"
+                       asp-action="Index"
+                       class="submenu-item @(currentController == "User" ? "active-menu" : "")">
+
+                        <i class="bi bi-people-fill"></i>
+                        <span>Users</span>
+
+                    </a>
+
+                    <a href="#" class="submenu-item">
+                        <i class="bi bi-person-x"></i>
+                        <span>User Roles</span>
+                    </a>
+
+                    <a asp-controller="Department"
+                       asp-action="Index"
+                       class="submenu-item @(currentController == "Department" ? "active-menu" : "")">
+
+                        <i class="bi bi-building"></i>
+                        <span>Departments</span>
+
+                    </a>
+
+                    <a asp-controller="Designation"
+                       asp-action="Index"
+                       class="submenu-item @(currentController == "Designation" ? "active-menu" : "")">
+
+                        <i class="bi bi-award"></i>
+                        <span>Designations</span>
+
+                    </a>
+
+                    @* <a href="#" class="submenu-item">
+                        <i class="bi bi-award"></i>
+                        <span>Designations</span>
+                    </a> *@
+
+                    
+
+                    <a href="#" class="submenu-item">
+                        <i class="bi bi-gear"></i>
+                        <span>Services</span>
+                    </a>
+
+                    <a href="#" class="submenu-item">
+                        <i class="bi bi-activity"></i>
+                        <span>Activity Master</span>
+                    </a>
+                    <a href="#" class="submenu-item">
+                        <i class="bi bi-car-front"></i>
+                        <span>Vehicle master</span>
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- HR -->
+
+        <div class="menu-group">
+
+            <button class="menu-group-header"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#hrMenu"
+                    aria-expanded="false">
+
+                <div class="menu-group-left">
+                    <i class="bi bi-person-workspace"></i>
+                    <span>HR & Administration</span>
+                </div>
+
+                <i class="bi bi-chevron-down"></i>
+
+            </button>
+
+            <div class="collapse" id="hrMenu" data-bs-parent="#sidebarAccordion">
+
+                <div class="submenu">
+
+                    <a asp-controller="Employee"
+                       asp-action="Index"
+                       class="submenu-item @(currentController == "Employee" ? "active-menu" : "")">
+
+                        <i class="bi bi-people-fill"></i>
+                        <span>Employee</span>
+
+                    </a>
+                    @* <a href="#" class="submenu-item">Employee</a> *@
+                    <a href="#" class="submenu-item">Attendance</a>
+                    <a href="#" class="submenu-item">Leave Tracker</a>
+                    <a href="#" class="submenu-item">Salary Register</a>
+                    <a href="#" class="submenu-item">Letters Log</a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Sales -->
+        <div class="menu-group">
+
+            <button class="menu-group-header"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#salesMenu"
+                    aria-expanded="false">
+
+                <div class="menu-group-left">
+                    <i class="bi bi-person-workspace"></i>
+                    <span>Sales</span>
+                </div>
+
+                <i class="bi bi-chevron-down"></i>
+
+            </button>
+
+            <div class="collapse" id="salesMenu" data-bs-parent="#sidebarAccordion">
+
+                <div class="submenu">
+
+                    <a href="#" class="submenu-item">Customers</a>
+                    <a href="#" class="submenu-item">Sales Eqnuiry</a>
+                    <a href="#" class="submenu-item">Quotation</a>
+                    <a href="#" class="submenu-item">Sales Order</a>
+                    <a href="#" class="submenu-item">Sales Invoice</a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        
+
+        <!-- Projects -->
+        <div class="menu-group">
+
+            <button class="menu-group-header"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#projectMenu"
+                    aria-expanded="false">
+
+                <div class="menu-group-left">
+                    <i class="bi bi-kanban"></i>
+                    <span>Project Management</span>
+                </div>
+
+                <i class="bi bi-chevron-down"></i>
+
+            </button>
+
+            <div class="collapse" id="projectMenu" data-bs-parent="#sidebarAccordion">
+
+                <div class="submenu">
+
+                    <a href="#" class="submenu-item">Projects</a>
+                    <a href="#" class="submenu-item">Project Flow</a>
+                    <a href="#" class="submenu-item">Task Tracker</a>
+                    <a href="#" class="submenu-item">MOM Tracker</a>
+                    <a href="#" class="submenu-item">Risk Register</a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Finance -->
+        <div class="menu-group">
+
+            <button class="menu-group-header"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#financeMenu"
+                    aria-expanded="false">
+
+                <div class="menu-group-left">
+                    <i class="bi bi-cash-stack"></i>
+                    <span>Accounts & Finance</span>
+                </div>
+
+                <i class="bi bi-chevron-down"></i>
+
+            </button>
+
+            <div class="collapse" id="financeMenu" data-bs-parent="#sidebarAccordion">
+
+                <div class="submenu">
+
+                    <a href="#" class="submenu-item">Sales Register</a>
+                    <a href="#" class="submenu-item">Expenses</a>
+                    <a href="#" class="submenu-item">GST Summary</a>
+                    <a href="#" class="submenu-item">Vendor Register</a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="sidebar-footer">
+
+        <div class="user-profile d-flex flex-row justify-content-between">
+
+            <div class="user-avatar">
+                @initials
+            </div>
+
+            <div class="user-details">
+
+                <div class="user-name text-wrap">
+                    @userName
+                </div>
+
+                <div class="user-role">
+                    @role
+                </div>
+
+            </div>
+
+            <form asp-controller="Account"
+                  asp-action="Logout"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <button type="submit"
+                        class="logout-btn"
+                        title="Logout">
+                        Logout
+                    @* <i class="bi bi-box-arrow-right logout"></i> *@
+
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>

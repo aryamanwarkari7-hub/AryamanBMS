@@ -1,0 +1,142 @@
+﻿@model AryamanBMS.Models.DesignationModel
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Edit Designation</h1>
+        <p class="module-subtitle">Update designation details</p>
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-body">
+
+        <form asp-action="Edit" method="post">
+
+            <input asp-for="Id" type="hidden" />
+
+            <div class="form-grid-2">
+
+                <select id="designationName"
+                        asp-for="DesignationName"
+                        class="app-select">
+
+                    <option value="">Select Designation</option>
+
+                    <option value="Software Developer">Software Developer</option>
+                    <option value="Senior Software Engineer">Senior Software Engineer</option>
+                    <option value="Team Lead">Team Lead</option>
+                    <option value="Project Manager">Project Manager</option>
+                    <option value="Business Analyst">Business Analyst</option>
+                    <option value="QA Engineer">QA Engineer</option>
+                    <option value="HR Executive">HR Executive</option>
+                    <option value="HR Manager">HR Manager</option>
+                    <option value="Accountant">Accountant</option>
+                    <option value="Administrator">Administrator</option>
+                    <option value="System Administrator">System Administrator</option>
+
+                </select>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        Display Code
+                    </label>
+
+                    <select asp-for="DisplayCode" class="app-select">
+                    <option value="">Select Code</option>
+                    <option value="SD">SD</option>
+                    <option value="SSE">SSE</option>
+                    <option value="TL">TL</option>
+                    <option value="PM">PM</option>
+                    <option value="BA">BA</option>
+                    <option value="QA">QA</option>
+                    <option value="HR">HR</option>
+                    <option value="HRM">HRM</option>
+                    <option value="ACC">ACC</option>
+                    <option value="ADM">ADM</option>
+                    <option value="SA">SA</option>
+                </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        Department
+                    </label>
+
+                    <select asp-for="DepartmentId"
+                            class="app-select">
+
+                        <option value="">
+                            Select Department
+                        </option>
+
+                        @foreach (var department in ViewBag.Departments)
+                        {
+                            <option value="@department.Id">
+                                @department.DepartmentName
+                            </option>
+                        }
+
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        Status
+                    </label>
+
+                    <select asp-for="IsActive"
+                            class="app-select">
+
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+
+                    </select>
+                </div>
+
+            </div>
+
+            <div class="mt-4">
+
+                <button type="submit"
+                        class="btn-app btn-primary-app">
+                    Update
+                </button>
+
+                <a asp-action="Index"
+                   class="btn-app btn-secondary-app">
+                    Cancel
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<script>
+    document.getElementById("designationName")
+        .addEventListener("change", function () {
+
+            const codes = {
+                "Software Developer": "SD",
+                "Senior Software Engineer": "SSE",
+                "Team Lead": "TL",
+                "Project Manager": "PM",
+                "Business Analyst": "BA",
+                "QA Engineer": "QA",
+                "HR Executive": "HRE",
+                "HR Manager": "HRM",
+                "Accountant": "ACC",
+                "Administrator": "ADM",
+                "System Administrator": "SA"
+            };
+
+            document.getElementById("designationCode").value =
+                codes[this.value] || "";
+        });
+</script>

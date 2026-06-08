@@ -1,0 +1,177 @@
+﻿@model List<AryamanBMS.Models.DesignationModel>
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Designation Master</h1>
+        <p class="module-subtitle">Manage designation records</p>
+    </div>
+
+    <a asp-action="Create"
+       class="btn-app btn-primary-app">
+        <i class="bi bi-plus-lg"></i>
+        Add Designation
+    </a>
+
+</div>
+
+<div class="app-card table-card">
+    @if (TempData["Error"] != null)
+    {
+        <div class="app-alert app-alert-danger">
+            @TempData["Error"]
+        </div>
+    }
+    <div class="card-header">
+        <h5 class="card-title">Designation List</h5>
+    </div>
+
+    <div class="app-card mb-3">
+
+        <div class="card-body">
+
+            <form method="get">
+
+                <div class="d-flex gap-2">
+
+                    <input type="text"
+                           name="searchText"
+                           value="@ViewBag.SearchText"
+                           class="app-input"
+                           placeholder="Search designation name or code" />
+
+                    <button type="submit"
+                            class="btn-app btn-primary-app">
+                        <i class="bi bi-search"></i>
+                        Search
+                    </button>
+
+                    <a asp-action="Index"
+                       class="btn-app btn-secondary-app">
+                        Reset
+                    </a>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <div class="card-body">
+
+        <div class="table-responsive">
+            @if (!Model.Any())
+            {
+                <div class="empty-state">
+                    No records found.
+                </div>
+            } 
+            else{
+
+        <table class="app-table">
+
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Designation Name</th>
+                    <th>Designation Code</th>
+                    <th>Department</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                @foreach (var designation in Model)
+                {
+                    <tr>
+
+                        <td>@designation.Id</td>
+
+                        <td>
+                            <strong>@designation.DesignationName</strong>
+                        </td>
+
+                        <td>
+                            <strong>@designation.DisplayCode</strong>
+                        </td>
+                        <td>
+                            <strong>@designation.Department?.DepartmentName</strong>
+                        </td>
+
+                        <td>
+                            @if (designation.IsActive)
+                            {
+                                <span class="badge-success">Active</span>
+                            }
+                            else
+                            {
+                                <span class="badge-danger">Inactive</span>
+                            }
+                        </td>
+
+                        <td>
+
+                            <div class="table-actions">
+
+                                <a asp-action="Edit"
+                                   asp-route-id="@designation.Id"
+                                   class="btn-app btn-secondary-app btn-icon">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+
+                                <a asp-action="Delete"
+                                   asp-route-id="@designation.Id"
+                                   class="btn-app btn-danger-app btn-icon">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+                }
+
+            </tbody>
+
+        </table>
+        }
+        </div>
+
+        @if (ViewBag.TotalPages > 1)
+        {
+            <div class="pagination-container">
+
+                @if (ViewBag.CurrentPage > 1)
+                {
+                    <a asp-action="Index"
+                       asp-route-page="@(ViewBag.CurrentPage - 1)"
+                       asp-route-searchText="@ViewBag.SearchText"
+                       class="btn-app btn-secondary-app">
+                        Previous
+                    </a>
+                }
+
+                <span class="pagination-info">
+                    Page @ViewBag.CurrentPage of @ViewBag.TotalPages
+                </span>
+
+                @if (ViewBag.CurrentPage < ViewBag.TotalPages)
+                {
+                    <a asp-action="Index"
+                       asp-route-page="@(ViewBag.CurrentPage + 1)"
+                       asp-route-searchText="@ViewBag.SearchText"
+                       class="btn-app btn-secondary-app">
+                        Next
+                    </a>
+                }
+
+            </div>
+        }
+    </div>
+
+</div>

@@ -1,0 +1,42 @@
+﻿using AryamanBMS.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+
+namespace AryamanBMS.Data
+{
+    public class ApplicationDbContext
+    : IdentityDbContext<ApplicationUserModel>
+    {
+        public ApplicationDbContext(
+            DbContextOptions<ApplicationDbContext> options)
+            : base(options)
+        {
+        }
+
+        public DbSet<DepartmentModel> Departments { get; set; }
+
+        public DbSet<DesignationModel> Designations { get; set; }
+
+        public DbSet<EmployeeModel> Employees { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<DepartmentModel>()
+                .ToTable("TableDepartment");
+
+            modelBuilder.Entity<DesignationModel>()
+                .ToTable("TableDesignation");
+
+            modelBuilder.Entity<EmployeeModel>()
+                .ToTable("TableEmployee");
+
+            modelBuilder.Entity<EmployeeModel>()
+                .HasOne(e => e.ApplicationUser)
+                .WithMany()
+                .HasForeignKey(e => e.ApplicationUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+        }
+    }
+}

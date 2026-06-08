@@ -1,0 +1,46 @@
+﻿@model AryamanBMS.Models.ApplicationUserModel
+
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+<div class="module-header">
+
+    <div>
+        <h2>My Profile</h2>
+        <p>View account information</p>
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <table class="app-table">
+
+        <tbody>
+
+            <tr>
+                <th width="250">Full Name</th>
+                <td>@Model.FullName</td>
+            </tr>
+
+            <tr>
+                <th>Username</th>
+                <td>@Model.UserName</td>
+            </tr>
+
+            <tr>
+                <th>Email</th>
+                <td>@Model.Email</td>
+            </tr>
+
+            <tr>
+                <th>Phone</th>
+                <td>@Model.PhoneNumber</td>
+            </tr>
+
+        </tbody>
+
+    </table>
+
+</div>

@@ -1,0 +1,177 @@
+﻿@model AryamanBMS.ViewModels.UserEditViewModel
+
+@{
+    ViewData["Title"] = "Edit User";
+}
+
+<div class="module-header">
+
+    <div>
+        <h2>Edit User</h2>
+        <p>Update user information.</p>
+    </div>
+
+</div>
+
+<div class="app-card p-2">
+
+    <form asp-action="Edit" method="post">
+        <input asp-for="Id" type="hidden" />
+        <div asp-validation-summary="ModelOnly"
+             class="text-danger mb-3">
+        </div>
+
+
+        <div class="row">
+
+            <div class="col-md-6 mb-3">
+
+                <label asp-for="FullName" class="form-label">
+                    Full Name
+                </label>
+
+                <input asp-for="FullName"
+                       class="app-input" />
+
+                <span asp-validation-for="FullName"
+                      class="text-danger">
+                </span>
+
+            </div>
+
+            <div class="col-md-6 mb-3">
+
+                <label asp-for="UserName" class="form-label">
+                    Username
+                </label>
+
+                
+
+                <input asp-for="UserName"
+                       class="app-input" readonly />
+                <small class="text-muted">
+                    Username cannot be changed.
+                </small>
+
+                <span asp-validation-for="UserName"
+                      class="text-danger">
+                </span>
+
+            </div>
+
+        </div>
+
+        <div class="row">
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+
+                    <label asp-for="Email" class="form-label">
+                        Email
+                    </label>
+
+                    <input asp-for="Email"
+                           class="app-input" />
+
+                    <span asp-validation-for="Email"
+                          class="text-danger">
+                    </span>
+
+                </div>
+
+            </div>
+
+            @* <div class="col-md-6 mb-3">
+
+                <label asp-for="Password" class="form-label">
+                    Password
+                </label>
+
+                <input asp-for="Password"
+                       class="app-input" />
+
+                <span asp-validation-for="Password"
+                      class="text-danger">
+                </span>
+
+            </div> *@
+
+        </div>
+
+        <div class="row">
+
+            <div class="col-md-6 mb-3">
+
+                <label class="form-label">
+                    Role
+                </label>
+
+                <select asp-for="Role"
+                        class="app-select">
+
+                    <option value="">
+                        Select Role
+                    </option>
+
+                    @foreach (var role in ViewBag.Roles)
+                    {
+                        <option value="@role.Name">
+                            @role.Name
+                        </option>
+                    }
+
+                </select>
+
+                <span asp-validation-for="Role"
+                      class="text-danger">
+                </span>
+
+            </div>
+
+            <div class="col-md-6 mb-3 d-flex align-items-end">
+
+                <div class="form-check">
+
+                    <input asp-for="IsActive"
+                           class="form-check-input" />
+
+                    <label asp-for="IsActive"
+                           class="form-check-label">
+                        Active
+                    </label>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+
+            <button type="submit"
+                    class="btn-app btn-primary-app">
+
+                <i class="bi bi-check-circle"></i>
+                Update
+
+            </button>
+
+            <a asp-action="Index"
+               class="btn-app btn-secondary-app">
+
+                <i class="bi bi-arrow-left"></i>
+                Back
+
+            </a>
+
+        </div>
+
+    </form>
+
+</div>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

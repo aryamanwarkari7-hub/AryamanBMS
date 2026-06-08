@@ -1,0 +1,120 @@
+﻿@using AryamanBMS.Models
+
+@{
+    ViewData["Title"] = "Dashboard";
+
+    var recentEmployees =
+        ViewBag.RecentEmployees as List<EmployeeModel>;
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">
+            Dashboard
+        </h1>
+
+        <p class="module-subtitle">
+            Business Management Overview
+        </p>
+    </div>
+
+</div>
+
+<div class="dashboard-grid">
+
+    <div class="stats-card">
+        <div class="stats-label">Departments</div>
+        <div class="stats-number">
+            @ViewBag.DepartmentCount
+        </div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Designations</div>
+        <div class="stats-number">
+            @ViewBag.DesignationCount
+        </div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Employees</div>
+        <div class="stats-number">
+            @ViewBag.EmployeeCount
+        </div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Active Employees</div>
+        <div class="stats-number">
+            @ViewBag.ActiveEmployeeCount
+        </div>
+    </div>
+
+</div>
+
+<br />
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+        <h5 class="card-title">
+            Recent Employees
+        </h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="table-responsive">
+
+            <table class="app-table">
+
+                <thead>
+
+                    <tr>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>Department</th>
+                        <th>Designation</th>
+                        <th>Joining Date</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    @foreach (var employee in recentEmployees)
+                    {
+                        <tr>
+
+                            <td>@employee.EmployeeCode</td>
+
+                            <td>
+                                @employee.FirstName
+                                @employee.LastName
+                            </td>
+
+                            <td>
+                                @employee.Department?.DepartmentName
+                            </td>
+
+                            <td>
+                                @employee.Designation?.DesignationName
+                            </td>
+
+                            <td>
+                                @employee.JoiningDate.ToString("dd-MMM-yyyy")
+                            </td>
+
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>

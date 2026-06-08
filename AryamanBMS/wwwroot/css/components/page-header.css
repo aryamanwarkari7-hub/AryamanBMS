@@ -1,0 +1,25 @@
+﻿.module-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding: 24px 28px;
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 2px 8px rgba(0,0,0,.04);
+    margin:var(--space-xl);
+}
+
+.module-title {
+    margin: 0;
+    font-size: var(--font-3xl);
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.module-subtitle {
+    margin-top: 6px;
+    color: var(--text-secondary);
+    font-size: var(--font-md);
+}

@@ -1,0 +1,122 @@
+﻿@model AryamanBMS.Models.EmployeeModel
+
+@{
+    ViewData["Title"] = "Employee Details";
+}
+
+<div class="module-header">
+
+    <div>
+        <h2>Employee Details</h2>
+        <p>View employee information</p>
+    </div>
+
+    <a asp-action="Edit"
+       asp-route-id="@Model.Id"
+       class="btn-app btn-primary-app">
+
+        <i class="bi bi-pencil"></i>
+        Edit
+
+    </a>
+
+</div>
+
+<div class="app-card">
+
+    <div class="table-responsive">
+
+        <table class="app-table">
+
+            <tbody>
+
+                <tr>
+                    <th width="250">Employee Code</th>
+                    <td>@Model.EmployeeCode</td>
+                </tr>
+
+                <tr>
+                    <th>Employee Name</th>
+                    <td>@Model.FirstName @Model.LastName</td>
+                </tr>
+
+                <tr>
+                    <th>Department</th>
+                    <td>@Model.Department?.DepartmentName</td>
+                </tr>
+
+                <tr>
+                    <th>Designation</th>
+                    <td>@Model.Designation?.DesignationName</td>
+                </tr>
+
+                <tr>
+                    <th>Email</th>
+                    <td>@Model.Email</td>
+                </tr>
+
+                <tr>
+                    <th>Mobile Number</th>
+                    <td>@Model.MobileNumber</td>
+                </tr>
+
+                <tr>
+                    <th>Joining Date</th>
+                    <td>@Model.JoiningDate.ToString("dd-MMM-yyyy")</td>
+                </tr>
+
+                <tr>
+                    <th>System User</th>
+                    <td>
+                        @(Model.ApplicationUser?.UserName ?? "-")
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Status</th>
+                    <td>
+
+                        @if (Model.IsActive)
+                        {
+                            <span class="badge-success">
+                                Active
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge-danger">
+                                Inactive
+                            </span>
+                        }
+
+                    </td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    <div class="d-flex gap-2 mt-3 p-3">
+
+        <a asp-action="Edit"
+           asp-route-id="@Model.Id"
+           class="btn-app btn-primary-app">
+
+            <i class="bi bi-pencil"></i>
+            Edit
+
+        </a>
+
+        <a asp-action="Index"
+           class="btn-app btn-secondary-app">
+
+            <i class="bi bi-arrow-left"></i>
+            Back
+
+        </a>
+
+    </div>
+
+</div>

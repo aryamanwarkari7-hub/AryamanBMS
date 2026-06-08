@@ -1,0 +1,135 @@
+﻿@using AryamanBMS.Models
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<ApplicationUserModel> UserManager
+@{
+    var currentController =
+        ViewContext.RouteData.Values["controller"]?.ToString();
+
+    var currentUser =
+        await UserManager.GetUserAsync(User);
+
+    var userName =
+        currentUser?.FullName ?? currentUser?.UserName ?? "User";
+
+    var role =
+        (currentUser != null)
+            ? (await UserManager.GetRolesAsync(currentUser)).FirstOrDefault()
+            : "";
+
+    var initials = string.Empty;
+
+    if (!string.IsNullOrWhiteSpace(userName))
+    {
+        initials = string.Join("",
+            userName.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                    .Take(2)
+                    .Select(x => x[0]))
+                    .ToUpper();
+    }
+}
+
+<div class= "top-navbar" >
+
+    <div class="navbar-left">
+
+        @* <div class="breadcrumb">
+            Home / Dashboard
+        </div> *@
+
+        <h4 class="page-title">
+            @ViewData["Title"]
+        </h4>
+
+        <div class="page-subtitle">
+            Welcome, @userName
+        </div>
+
+    </div>
+
+    <div class="navbar-right">
+
+        <div class="navbar-date">
+            @DateTime.Now.ToString("dd MMM yyyy")
+        </div>
+
+        <div class="dropdown">
+
+            <div class="user-avatar"
+                 data-bs-toggle="dropdown"
+                 role="button">
+
+                @initials
+
+            </div>
+
+            <ul class="dropdown-menu dropdown-menu-end">
+
+                <li class="dropdown-header">
+
+                    <strong>@userName</strong>
+
+                    <br />
+
+                    <small>@role</small>
+
+                </li>
+
+                <li>
+                    <hr class="dropdown-divider">
+                </li>
+
+                <li>
+
+                    <a class="dropdown-item"
+                       asp-controller="Account"
+                       asp-action="Profile">
+
+                        <i class="bi bi-person"></i>
+                        My Profile
+
+                    </a>
+
+                </li>
+
+                <li>
+
+                    <a class="dropdown-item"
+                       asp-controller="Account"
+                       asp-action="ChangePassword">
+
+                        <i class="bi bi-key"></i>
+                        Change Password
+
+                    </a>
+
+                </li>
+
+                <li>
+                    <hr class="dropdown-divider">
+                </li>
+
+                <li>
+
+                    <form asp-controller="Account"
+                          asp-action="Logout"
+                          method="post">
+
+                        <button type="submit"
+                                class="dropdown-item text-danger">
+
+                            <i class="bi bi-box-arrow-right"></i>
+                            Logout
+
+                        </button>
+
+                    </form>
+
+                </li>
+
+            </ul>
+
+        </div>
+
+    </div>
+
+</div>

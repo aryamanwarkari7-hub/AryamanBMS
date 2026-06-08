@@ -1,0 +1,137 @@
+﻿/* ==========================================
+   TABLE CONTAINER
+========================================== */
+
+.table-responsive-app {
+    width: 100%;
+    overflow-x: auto;
+}
+
+/* ==========================================
+   TABLE
+========================================== */
+
+.app-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+    /* ==========================================
+   TABLE HEADER
+========================================== */
+
+    .app-table thead {
+        background-color: var(--table-th-bg);
+    }
+
+    .app-table th {
+        padding: 14px 16px;
+        text-align: center;
+        text-transform: uppercase;
+        font-size: var(--font-md);
+        font-weight: var(--fw-semibold);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+
+    }
+
+    /* ==========================================
+   TABLE BODY
+========================================== */
+
+    .app-table td {
+        padding: 14px 16px;
+        font-size: var(--font-md);
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+        vertical-align: middle;
+    }
+
+    /* ==========================================
+   ROW HOVER
+========================================== */
+    .app-table tbody tr {
+        transition: all .2s ease;
+    }
+    .app-table tbody tr:hover {
+        background-color: rgba(37, 99, 235, 0.03);
+    }
+
+/* ==========================================
+   ACTIONS
+========================================== */
+
+.table-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+/* ==========================================
+   STATUS BADGES
+========================================== */
+
+.badge-success,
+.badge-danger,
+.badge-warning,
+.badge-info {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: var(--font-xs);
+    font-weight: var(--fw-medium);
+}
+
+.badge-success {
+    background-color: #DCFCE7;
+    color: #166534;
+}
+
+.badge-danger {
+    background-color: #FEE2E2;
+    color: #991B1B;
+}
+
+.badge-warning {
+    background-color: #FEF3C7;
+    color: #92400E;
+}
+
+.badge-info {
+    background-color: #DBEAFE;
+    color: #1D4ED8;
+}
+
+/* ==========================================
+   TABLES RESPONSIVENESS
+========================================== */
+.table-responsive {
+    overflow-x: auto;
+    width: 100%;
+}
+
+/* ==========================================
+   EMPTY TABLES
+========================================== */
+
+.empty-state {
+    padding: 40px;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+
+/* ==========================================
+   PAGINATION
+========================================== */
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.pagination-info {
+    font-weight: 600;
+}

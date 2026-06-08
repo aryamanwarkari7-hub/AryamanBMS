@@ -1,0 +1,78 @@
+﻿:root {
+    /* ==========================================
+       COLORS
+    ========================================== */
+
+    --sidebar-bg: #1E293B;
+    --navbar-bg: #F8FAFC;
+    --page-bg: #F1F5F9;
+    --card-bg: #FFFFFF;
+    --table-th-bg:#94A3B8;
+    --primary-color: #2563EB;
+    --logout-btn:#ff0000;
+
+    --text-primary: #0F172A;
+    --text-secondary: #475569;
+    --text-muted: #94A3B8;
+    --text-light:#FFF;
+
+    --border-color: #E2E8F0;
+    /* ==========================================
+       SPACING
+    ========================================== */
+
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 12px;
+    --space-lg: 16px;
+    --space-xl: 24px;
+    --space-2xl: 32px;
+    --space-3xl: 40px;
+    /* ==========================================
+       BORDER RADIUS
+    ========================================== */
+
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 18px;
+    --radius-pill:99px;
+    /* ==========================================
+       SHADOWS
+    ========================================== */
+
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.08);
+    --shadow-lg: 0 10px 20px rgba(0,0,0,0.12);
+    /* ==========================================
+       FONT SIZES
+    ========================================== */
+    --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --font-xs: 12px;
+    --font-sm: 14px;
+    --font-md: 16px;
+    --font-lg: 18px;
+    --font-xl: 24px;
+    --font-2xl: 32px;
+    --font-3xl:36px;
+    /* ==========================================
+       FONT WEIGHTS
+    ========================================== */
+
+    --fw-normal: 400;
+    --fw-medium: 500;
+    --fw-semibold: 600;
+    --fw-bold: 700;
+    /* ==========================================
+       TRANSITIONS
+    ========================================== */
+
+    --transition-fast: 0.2s ease;
+    --transition-normal: 0.3s ease;
+    /* ==========================================
+       LAYOUT
+    ========================================== */
+
+    --sidebar-width: 280px;
+    --navbar-height: 72px;
+}

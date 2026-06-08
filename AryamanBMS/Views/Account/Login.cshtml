@@ -1,0 +1,104 @@
+﻿@model AryamanBMS.ViewModels.LoginViewModel
+
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Login";
+}
+
+<div class="container-fluid auth-page">
+
+    <div class="row min-vh-100">
+
+        <div class="col-lg-4 d-none d-lg-flex auth-brand-section">
+
+            <div class="text-center">
+
+                <h1 class="auth-logo">
+                    Aryaman BMS
+                </h1>
+
+                <p class="auth-tagline">
+                    Business Management System
+                </p>
+
+            </div>
+
+        </div>
+
+        <div class="col-lg-8 d-flex align-items-center justify-content-center">
+
+            <div class="app-card auth-card">
+
+                <div class="auth-card-header">
+
+                    <h2 class="auth-title">
+                        Welcome Back
+                    </h2>
+
+                    <p class="auth-subtitle">
+                        Sign in to continue
+                    </p>
+
+                </div>
+
+                <form asp-action="Login" method="post">
+
+                    <div asp-validation-summary="ModelOnly"
+                         class="app-alert-danger">
+                    </div>
+
+                    <div class="form-group mb-3">
+
+                        <label asp-for="UserName"
+                               class="form-label">
+                        </label>
+
+                        <input asp-for="UserName"
+                               class="app-input"
+                               placeholder="Enter username" />
+
+                    </div>
+
+                    <div class="form-group mb-4">
+
+                        <label asp-for="Password"
+                               class="form-label">
+                        </label>
+
+                        <input asp-for="Password"
+                               class="app-input"
+                               placeholder="Enter password" />
+
+                    </div>
+
+                    <div class="form-check mb-4">
+
+                        <input asp-for="RememberMe"
+                               class="form-check-input" />
+
+                        <label asp-for="RememberMe"
+                               class="form-check-label">
+                            Remember Me
+                        </label>
+
+                    </div>
+
+                    <button type="submit"
+                            class="btn-app btn-primary-app w-100">
+                        Sign In
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

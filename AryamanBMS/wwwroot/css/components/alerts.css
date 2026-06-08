@@ -1,0 +1,16 @@
+﻿.alert-success-app {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    border-radius: 12px;
+    background: #16a34a;
+    color: white;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(22,163,74,.25);
+}
+
+.alert-hide {
+    opacity: 0;
+}

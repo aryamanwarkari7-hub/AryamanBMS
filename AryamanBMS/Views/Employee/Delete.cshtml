@@ -1,0 +1,106 @@
+﻿@model AryamanBMS.Models.EmployeeModel
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Delete Employee</h1>
+        <p class="module-subtitle">
+            Confirm employee deletion
+        </p>
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-body">
+
+        <div class="form-grid-2">
+
+            <div class="form-group">
+                <label class="form-label">
+                    Employee Code
+                </label>
+
+                <input value="@Model.EmployeeCode"
+                       class="app-input"
+                       readonly />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    Employee Name
+                </label>
+
+                <input value="@Model.FirstName @Model.LastName"
+                       class="app-input"
+                       readonly />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    Department
+                </label>
+
+                <input value="@Model.Department?.DepartmentName"
+                       class="app-input"
+                       readonly />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    Designation
+                </label>
+
+                <input value="@Model.Designation?.DesignationName"
+                       class="app-input"
+                       readonly />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    Email
+                </label>
+
+                <input value="@Model.Email"
+                       class="app-input"
+                       readonly />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    Mobile Number
+                </label>
+
+                <input value="@Model.MobileNumber"
+                       class="app-input"
+                       readonly />
+            </div>
+
+        </div>
+
+        <div class="mt-4">
+
+            <form asp-action="DeleteConfirmed"
+                  method="post">
+
+                <input type="hidden"
+                       asp-for="Id" />
+
+                <button type="submit"
+                        class="btn-app btn-danger-app">
+                    Delete
+                </button>
+
+                <a asp-action="Index"
+                   class="btn-app btn-secondary-app">
+                    Cancel
+                </a>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>

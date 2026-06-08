@@ -1,0 +1,95 @@
+﻿/* ==========================================
+   BASE BUTTON
+========================================== */
+
+.btn-app {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    padding: 10px 18px;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: var(--font-md);
+    font-weight: var(--fw-medium);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    text-decoration: none;
+}
+
+.btn-app:hover {
+    transform: translateY(-1px);
+}
+/* ==========================================
+   PRIMARY BUTTON
+========================================== */
+
+.btn-primary-app {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-primary-app:hover {
+    opacity: 0.9;
+}
+
+/* ==========================================
+   SECONDARY BUTTON
+========================================== */
+
+.btn-secondary-app {
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+    .btn-secondary-app:hover {
+        background-color: var(--page-bg);
+    }
+
+/* ==========================================
+   SUCCESS BUTTON
+========================================== */
+
+.btn-success-app {
+    background-color: #16A34A;
+    color: white;
+}
+
+/* ==========================================
+   DANGER BUTTON
+========================================== */
+
+.btn-danger-app {
+    background-color: #DC2626;
+    color: white;
+}
+
+/* ==========================================
+   OUTLINE BUTTON
+========================================== */
+
+.btn-outline-app {
+    background: transparent;
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+}
+
+/* ==========================================
+   ICON BUTTON
+========================================== */
+
+.btn-icon {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: var(--radius-md);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-app-primary{
+    color:red;
+    padding:var(--space-md);
+}

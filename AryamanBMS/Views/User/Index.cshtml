@@ -1,0 +1,111 @@
+﻿@model IEnumerable<AryamanBMS.ViewModels.UserListViewModel>
+
+<div class="module-header">
+
+    <div>
+        <h2>Users</h2>
+        <p>Manage system users and roles.</p>
+    </div>
+
+    <div class="module-header-actions">
+
+        <a asp-action="Create"
+           class="btn-app btn-primary-app">
+
+            <i class="bi bi-plus-lg"></i>
+            Create User
+
+        </a>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="table-responsive">
+
+        <table class="app-table">
+
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>User Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th width="120">Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="6"
+                            class="text-center py-4">
+                            No users found.
+                        </td>
+                    </tr>
+                }
+
+                @foreach (var user in Model)
+                {
+                    <tr>
+
+                        <td>@user.FullName</td>
+
+                        <td>@user.UserName</td>
+
+                        <td>@user.Email</td>
+
+                        <td >@user.Role</td>
+
+                        <td>
+
+                            @if (user.IsActive)
+                            {
+                                <span class="badge bg-success d-flex justify-content-center align-items-center">
+                                    Active
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger d-flex justify-content-center align-items-center">
+                                    Inactive
+                                </span>
+                            }
+
+                        </td>
+
+                        <td>
+
+                            <a asp-action="Edit"
+                               asp-route-id="@user.Id"
+                               class="btn btn-sm btn-outline-primary fw-bold">
+
+                                <i class="bi bi-pencil"></i>
+
+                            </a>
+
+                            <a asp-action="ResetPassword"
+                               asp-route-id="@user.Id"
+                               class="btn btn-sm btn-outline-success fw-bold">
+
+                                <i class="bi bi-key"></i>
+
+                            </a>
+
+                        </td>
+
+                    </tr>
+                }
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
