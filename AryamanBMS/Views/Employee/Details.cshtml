@@ -1,44 +1,69 @@
-﻿@model AryamanBMS.Models.EmployeeModel
+﻿Here is the corrected **Employee Details** markup. The HTML code structure, alignment, block breaks, and indentation have been formatted to mirror the clean presentation of the previous files:
+
+```html
+@model AryamanBMS.Models.EmployeeModel
 
 @{
     ViewData["Title"] = "Employee Details";
 }
 
 <div class="module-header">
-
     <div>
-        <h2>Employee Details</h2>
-        <p>View employee information</p>
+        <h1 class="module-title">Employee Details</h1>
+        <p class="module-subtitle">View employee information</p>
     </div>
 
-    <a asp-action="Edit"
-       asp-route-id="@Model.Id"
-       class="btn-app btn-primary-app">
-
-        <i class="bi bi-pencil"></i>
-        Edit
-
+    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-app btn-primary-app">
+        Edit Employee
     </a>
-
 </div>
 
+<!-- Basic Information Card -->
 <div class="app-card">
+    <div class="card-header">
+        <h5 class="card-title">Basic Information</h5>
+    </div>
 
-    <div class="table-responsive">
-
+    <div class="card-body">
         <table class="app-table">
-
             <tbody>
 
                 <tr>
-                    <th width="250">Employee Code</th>
+                    <th>Employee Code</th>
                     <td>@Model.EmployeeCode</td>
                 </tr>
 
                 <tr>
                     <th>Employee Name</th>
-                    <td>@Model.FirstName @Model.LastName</td>
+                    <td>@Model.FullName</td>
                 </tr>
+
+                <tr>
+                    <th>Gender</th>
+                    <td>@(Model.Gender ?? "-")</td>
+                </tr>
+
+                <tr>
+                    <th>Date Of Birth</th>
+                    <td>
+                        @(Model.DateOfBirth?.ToString("dd-MMM-yyyy") ?? "-")
+                    </td>
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Employment Information Card -->
+<div class="app-card">
+    <div class="card-header">
+        <h5 class="card-title">Employment Information</h5>
+    </div>
+
+    <div class="card-body">
+        <table class="app-table">
+            <tbody>
 
                 <tr>
                     <th>Department</th>
@@ -51,72 +76,170 @@
                 </tr>
 
                 <tr>
-                    <th>Email</th>
-                    <td>@Model.Email</td>
-                </tr>
-
-                <tr>
-                    <th>Mobile Number</th>
-                    <td>@Model.MobileNumber</td>
-                </tr>
-
-                <tr>
                     <th>Joining Date</th>
                     <td>@Model.JoiningDate.ToString("dd-MMM-yyyy")</td>
                 </tr>
 
                 <tr>
+                    <th>Employment Type</th>
+                    <td>@(Model.EmploymentType ?? "-")</td>
+                </tr>
+
+                <tr>
                     <th>System User</th>
-                    <td>
-                        @(Model.ApplicationUser?.UserName ?? "-")
-                    </td>
+                    <td>@(Model.ApplicationUser?.UserName ?? "-")</td>
                 </tr>
 
                 <tr>
                     <th>Status</th>
                     <td>
-
                         @if (Model.IsActive)
                         {
-                            <span class="badge-success">
-                                Active
-                            </span>
+                            <span class="badge-success">Active</span>
                         }
                         else
                         {
-                            <span class="badge-danger">
-                                Inactive
-                            </span>
+                            <span class="badge-danger">Inactive</span>
                         }
-
                     </td>
                 </tr>
 
             </tbody>
-
         </table>
-
     </div>
-
-    <div class="d-flex gap-2 mt-3 p-3">
-
-        <a asp-action="Edit"
-           asp-route-id="@Model.Id"
-           class="btn-app btn-primary-app">
-
-            <i class="bi bi-pencil"></i>
-            Edit
-
-        </a>
-
-        <a asp-action="Index"
-           class="btn-app btn-secondary-app">
-
-            <i class="bi bi-arrow-left"></i>
-            Back
-
-        </a>
-
-    </div>
-
 </div>
+
+<!-- Contact Information Card -->
+<div class="app-card">
+    <div class="card-header">
+        <h5 class="card-title">Contact Information</h5>
+    </div>
+
+    <div class="card-body">
+        <table class="app-table">
+            <tbody>
+
+                <tr>
+                    <th>Mobile Number</th>
+                    <td>@(Model.MobileNumber ?? "-")</td>
+                </tr>
+
+                <tr>
+                    <th>Personal Email</th>
+                    <td>@(Model.PersonalEmail ?? "-")</td>
+                </tr>
+
+                <tr>
+                    <th>Official Email</th>
+                    <td>@(Model.OfficialEmail ?? "-")</td>
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Address Information Card -->
+<div class="app-card">
+    <div class="card-header">
+        <h5 class="card-title">Address Information</h5>
+    </div>
+
+    <div class="card-body">
+        <table class="app-table">
+            <tbody>
+
+                <tr>
+                    <th>Permanent Address</th>
+                    <td>@(Model.PermanentAddress ?? "-")</td>
+                </tr>
+
+                <tr>
+                    <th>City</th>
+                    <td>@(Model.City ?? "-")</td>
+                </tr>
+
+                <tr>
+                    <th>State</th>
+                    <td>@(Model.State ?? "-")</td>
+                </tr>
+
+                <tr>
+                    <th>Pin Code</th>
+                    <td>@(Model.PinCode ?? "-")</td>
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Emergency Contact Card -->
+<div class="app-card">
+    <div class="card-header">
+        <h5 class="card-title">Emergency Contact</h5>
+    </div>
+
+    <div class="card-body">
+        <table class="app-table">
+            <tbody>
+
+                <tr>
+                    <th>Emergency Contact</th>
+                    <td>@(Model.EmergencyContact ?? "-")</td>
+                </tr>
+
+                <tr>
+                    <th>Emergency Phone</th>
+                    <td>@(Model.EmergencyPhone ?? "-")</td>
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Statutory Information Card -->
+<div class="app-card">
+    <div class="card-header">
+        <h5 class="card-title">Statutory Information</h5>
+    </div>
+
+    <div class="card-body">
+        <table class="app-table">
+            <tbody>
+
+                <tr>
+                    <th>Aadhaar Number</th>
+                    <td>@(Model.AadhaarNo ?? "-")</td>
+                </tr>
+
+                <tr>
+                    <th>PAN Number</th>
+                    <td>@(Model.PanNo ?? "-")</td>
+                </tr>
+
+                <tr>
+                    <th>UAN Number</th>
+                    <td>@(Model.UanNo ?? "-")</td>
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Actions Card -->
+<div class="app-card">
+    <div class="card-body">
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-app btn-primary-app">
+            Edit Employee
+        </a>
+
+        <a asp-action="Index" class="btn-app btn-secondary-app">
+            Back
+        </a>
+    </div>
+</div>
+
+```

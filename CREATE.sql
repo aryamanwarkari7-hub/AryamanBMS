@@ -75,3 +75,69 @@
 
 -- CREATE INDEX IX_TableEmployee_ApplicationUserId
 -- ON TableEmployee(ApplicationUserId);
+
+-- CREATE TABLE TableAttendance
+-- (
+--     Id INT PRIMARY KEY AUTO_INCREMENT,
+
+--     EmployeeId INT NOT NULL,
+
+--     AttendanceDate DATE NOT NULL,
+
+--     CheckInTime DATETIME NULL,
+
+--     CheckOutTime DATETIME NULL,
+
+--     Remarks VARCHAR(500) NULL,
+
+--     CreatedOn DATETIME NOT NULL,
+
+--     CONSTRAINT FK_Attendance_Employee
+--         FOREIGN KEY (EmployeeId)
+--         REFERENCES TableEmployee(Id)
+-- );
+
+-- ALTER TABLE TableAttendance
+-- ADD COLUMN LocationType VARCHAR(50) NULL;
+
+-- ALTER TABLE TableEmployee
+
+-- ADD COLUMN DateOfBirth DATE NULL,
+
+-- ADD COLUMN Gender VARCHAR(20) NULL,
+
+-- ADD COLUMN PersonalEmail VARCHAR(150) NULL,
+
+-- ADD COLUMN OfficialEmail VARCHAR(150) NULL,
+
+-- ADD COLUMN PermanentAddress TEXT NULL,
+
+-- ADD COLUMN City VARCHAR(100) NULL,
+
+-- ADD COLUMN State VARCHAR(100) NULL,
+
+-- ADD COLUMN PinCode VARCHAR(20) NULL,
+
+-- ADD COLUMN EmergencyContact VARCHAR(150) NULL,
+
+-- ADD COLUMN EmergencyPhone VARCHAR(20) NULL,
+
+-- ADD COLUMN AadhaarNo VARCHAR(20) NULL,
+
+-- ADD COLUMN PanNo VARCHAR(20) NULL,
+
+-- ADD COLUMN UanNo VARCHAR(30) NULL,
+
+-- ADD COLUMN EmploymentType VARCHAR(50) NULL;
+
+-- CREATE INDEX IX_TableEmployee_AadhaarNo
+-- ON TableEmployee(AadhaarNo);
+
+-- CREATE INDEX IX_TableEmployee_PanNo
+-- ON TableEmployee(PanNo);
+
+-- CREATE INDEX IX_TableEmployee_UanNo
+-- ON TableEmployee(UanNo);
+
+ALTER TABLE TableAttendance
+ADD COLUMN Status VARCHAR(10) NOT NULL DEFAULT 'P';

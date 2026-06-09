@@ -38,7 +38,7 @@
                            name="searchText"
                            value="@ViewBag.SearchText"
                            class="app-input"
-                           placeholder="Search by code, name or email" />
+                           placeholder="Search by code, name, mobile or email" />
 
                     <button type="submit"
                             class="btn-app btn-primary-app">
@@ -67,110 +67,116 @@
                     No records found.
                 </div>
             }
-            else{
-        <table class="app-table">
+            else
+            {
+                <table class="app-table">
 
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Employee Code</th>
-                    <th>Employee Name</th>
-                    <th>Department</th>
-                    <th>Designation</th>
-                    <th>Email</th>
-                    <th>Mobile</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                    <th>UserName</th>
-                </tr>
-            </thead>
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Employee</th>
+                            <th>Department</th>
+                            <th>Designation</th>
+                            <th>Official Email</th>
+                            <th>Mobile</th>
+                            <th>Employment Type</th>
+                            <th>Status</th>
+                            <th>User</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
 
-            <tbody>
+                    <tbody>
 
-                @foreach (var employee in Model)
-                {
-                    <tr>
-
-                        <td>@employee.Id</td>
-
-                        <td>
-                            <strong>@employee.EmployeeCode</strong>
-                        </td>
-
-                        <td>
-                            <strong>@employee.FirstName @employee.LastName</strong>
-                        </td>
-
-                        <td>
-                                    <strong>@employee.Department?.DepartmentName</strong>
-                        </td>
-
-                        <td>
-                                    <strong>@employee.Designation?.DesignationName</strong>
-                        </td>
+                        @foreach (var employee in Model)
+                        {
+                            <tr>
 
                                 <td>
-                                    <strong>@employee.Email</strong>
-                        </td>
+                                    <strong>@employee.EmployeeCode</strong>
+                                </td>
 
                                 <td>
-                                    <strong>@employee.MobileNumber</strong>
-                        </td>
+                                    <div>
+                                        <strong>@employee.FullName</strong>
+                                        <br />
+                                        <small>
+                                            DOJ:
+                                            @employee.JoiningDate.ToString("dd-MMM-yyyy")
+                                        </small>
+                                    </div>
+                                </td>
 
-                        <td>
-                            @if (employee.IsActive)
-                            {
-                                <span class="badge-success">
-                                    Active
-                                </span>
-                            }
-                            else
-                            {
-                                <span class="badge-danger">
-                                    Inactive
-                                </span>
-                            }
-                        </td>
+                                <td>
+                                    @(employee.Department?.DepartmentName ?? "-")
+                                </td>
 
-                        <td>
+                                <td>
+                                    @(employee.Designation?.DesignationName ?? "-")
+                                </td>
 
-                            <div class="table-actions">
+                                <td>
+                                    @(employee.OfficialEmail ?? "-")
+                                </td>
 
-                                        <a asp-action="Details"
-                                           asp-route-id="@employee.Id"
-                                           class="btn-app btn-primary-app btn-icon">
+                                <td>
+                                    @(employee.MobileNumber ?? "-")
+                                </td>
 
-                                            <i class="bi bi-eye"></i>
+                                <td>
+                                    @(employee.EmploymentType ?? "-")
+                                </td>
 
-                                        </a>
-
-                                <a asp-action="Edit"
-                                   asp-route-id="@employee.Id"
-                                   class="btn-app btn-secondary-app btn-icon">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-
-                                <a asp-action="Delete"
-                                   asp-route-id="@employee.Id"
-                                   class="btn-app btn-danger-app btn-icon">
-                                    <i class="bi bi-trash"></i>
-                                </a>
-
-                            </div>
-
-                        </td>
+                                <td>
+                                    @if (employee.IsActive)
+                                    {
+                                        <span class="badge-success">
+                                            Active
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-danger">
+                                            Inactive
+                                        </span>
+                                    }
+                                </td>
 
                                 <td>
                                     @(employee.ApplicationUser?.UserName ?? "-")
                                 </td>
 
-                    </tr>
-                }
+                                <td>
+                                    <div class="table-actions">
 
-            </tbody>
+                                        <a asp-action="Details"
+                                           asp-route-id="@employee.Id"
+                                           class="btn-app btn-primary-app btn-icon">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
 
-        </table>
-        }
+                                        <a asp-action="Edit"
+                                           asp-route-id="@employee.Id"
+                                           class="btn-app btn-secondary-app btn-icon">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+
+                                        <a asp-action="Delete"
+                                           asp-route-id="@employee.Id"
+                                           class="btn-app btn-danger-app btn-icon">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+
+                                    </div>
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+            }
         </div>
 
         @if (ViewBag.TotalPages > 1)

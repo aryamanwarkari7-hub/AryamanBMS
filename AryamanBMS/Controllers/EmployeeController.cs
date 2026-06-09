@@ -1,21 +1,29 @@
-﻿using AryamanBMS.Data;
-using AryamanBMS.Models;
+﻿using AryamanBMS.Models;
+using AryamanBMS.Repositories.Interfaces;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
 
 namespace AryamanBMS.Controllers
 {
+    [Authorize(Roles = "Admin,HR")]
     public class EmployeeController : Controller
     {
-        private readonly ApplicationDbContext _context;
-
+        private readonly IEmployeeRepository _employeeRepository;
+        private readonly IDepartmentRepository _departmentRepository;
+        private readonly IDesignationRepository _designationRepository;
         private readonly UserManager<ApplicationUserModel> _userManager;
 
-        public EmployeeController(ApplicationDbContext context,
+        public EmployeeController(
+            IEmployeeRepository employeeRepository,
+            IDepartmentRepository departmentRepository,
+            IDesignationRepository designationRepository,
             UserManager<ApplicationUserModel> userManager)
         {
-            _context = context;
+            _employeeRepository = employeeRepository;
+            _departmentRepository = departmentRepository;
+            _designationRepository = designationRepository;
             _userManager = userManager;
         }
 
@@ -23,19 +31,16 @@ namespace AryamanBMS.Controllers
         {
             int pageSize = 5;
 
-            var employees = _context.Employees
-                .Include(e => e.Department)
-                .Include(e => e.Designation)
-                .Include(e => e.ApplicationUser)
-                .AsQueryable();
+            var employees = _employeeRepository.Employees;
 
             if (!string.IsNullOrWhiteSpace(searchText))
             {
                 employees = employees.Where(e =>
-                    e.EmployeeCode.Contains(searchText) ||
-                    e.FirstName.Contains(searchText) ||
-                    e.LastName.Contains(searchText) ||
-                    e.Email.Contains(searchText));
+                    (e.EmployeeCode ?? "").Contains(searchText) ||
+                    (e.FirstName ?? "").Contains(searchText) ||
+                    (e.LastName ?? "").Contains(searchText) ||
+                    (e.PersonalEmail ?? "").Contains(searchText) ||
+                    (e.OfficialEmail ?? "").Contains(searchText));
             }
 
             int totalRecords = employees.Count();
@@ -47,7 +52,6 @@ namespace AryamanBMS.Controllers
                 .ToList();
 
             ViewBag.CurrentPage = page;
-
             ViewBag.TotalPages =
                 (int)Math.Ceiling((double)totalRecords / pageSize);
 
@@ -59,22 +63,15 @@ namespace AryamanBMS.Controllers
         [HttpGet]
         public IActionResult Create()
         {
-            ViewBag.Departments = _context.Departments.ToList();
-
-            ViewBag.Designations = _context.Designations.ToList();
-
-            ViewBag.Users = _userManager.Users
-                             .Where(x => x.IsActive)
-                             .OrderBy(x => x.FullName)
-                             .ToList();
+            LoadDropdowns();
 
             return View();
         }
 
         [HttpPost]
-        public IActionResult Create(EmployeeModel employee)
+        public async Task<IActionResult> Create(EmployeeModel employee)
         {
-            bool codeExists = _context.Employees
+            bool codeExists = _employeeRepository.Employees
                 .Any(e => e.EmployeeCode == employee.EmployeeCode);
 
             if (codeExists)
@@ -84,10 +81,42 @@ namespace AryamanBMS.Controllers
                     "Employee Code already exists.");
             }
 
+            if (employee.DateOfBirth > DateTime.Today)
+            {
+                ModelState.AddModelError(
+                    "DateOfBirth",
+                    "Date of Birth cannot be in future.");
+            }
+
+            if (employee.JoiningDate > DateTime.Today)
+            {
+                ModelState.AddModelError(
+                    "JoiningDate",
+                    "Joining Date cannot be in future.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(employee.AadhaarNo) &&
+                employee.AadhaarNo.Length != 12)
+            {
+                ModelState.AddModelError(
+                    "AadhaarNo",
+                    "Aadhaar number must be 12 digits.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(employee.PanNo) &&
+                employee.PanNo.Length != 10)
+            {
+                ModelState.AddModelError(
+                    "PanNo",
+                    "PAN number must be 10 characters.");
+            }
+
             if (!string.IsNullOrEmpty(employee.ApplicationUserId))
             {
-                bool alreadyMapped = _context.Employees
-                    .Any(e => e.ApplicationUserId == employee.ApplicationUserId);
+                bool alreadyMapped = await _employeeRepository.Employees
+                    .AnyAsync(e =>
+                        e.ApplicationUserId ==
+                        employee.ApplicationUserId);
 
                 if (alreadyMapped)
                 {
@@ -99,53 +128,76 @@ namespace AryamanBMS.Controllers
 
             if (ModelState.IsValid)
             {
-                _context.Employees.Add(employee);
+                await _employeeRepository.AddAsync(employee);
+                await _employeeRepository.SaveAsync();
 
-                _context.SaveChanges();
-                TempData["Success"] = "Department created successfully.";
+                TempData["Success"] =
+                    "Employee created successfully.";
+
                 return RedirectToAction(nameof(Index));
             }
 
-            ViewBag.Departments = _context.Departments.ToList();
-            ViewBag.Designations = _context.Designations.ToList();
-            ViewBag.Users = _userManager.Users
-                                      .Where(u => u.IsActive)
-                                      .OrderBy(u => u.FullName)
-                                      .ToList();
+            LoadDropdowns();
+
             return View(employee);
         }
 
         [HttpGet]
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id)
         {
-            var employee = _context.Employees.Find(id);
+            var employee =
+                await _employeeRepository.GetByIdAsync(id);
 
             if (employee == null)
             {
                 return NotFound();
             }
 
-            ViewBag.Departments = _context.Departments.ToList();
-
-            ViewBag.Designations = _context.Designations.ToList();
-
-            ViewBag.Users = _userManager.Users
-                           .Where(x => x.IsActive)
-                           .OrderBy(x => x.FullName)
-                           .ToList();
+            LoadDropdowns();
 
             return View(employee);
         }
 
         [HttpPost]
-        public IActionResult Edit(EmployeeModel employee)
+        public async Task<IActionResult> Edit(EmployeeModel employee)
         {
+            if (employee.DateOfBirth > DateTime.Today)
+            {
+                ModelState.AddModelError(
+                    "DateOfBirth",
+                    "Date of Birth cannot be in future.");
+            }
+
+            if (employee.JoiningDate > DateTime.Today)
+            {
+                ModelState.AddModelError(
+                    "JoiningDate",
+                    "Joining Date cannot be in future.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(employee.AadhaarNo) &&
+                employee.AadhaarNo.Length != 12)
+            {
+                ModelState.AddModelError(
+                    "AadhaarNo",
+                    "Aadhaar number must be 12 digits.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(employee.PanNo) &&
+                employee.PanNo.Length != 10)
+            {
+                ModelState.AddModelError(
+                    "PanNo",
+                    "PAN number must be 10 characters.");
+            }
+
             if (!string.IsNullOrEmpty(employee.ApplicationUserId))
             {
-                bool alreadyMapped = _context.Employees
-                    .Any(e =>
-                        e.ApplicationUserId == employee.ApplicationUserId
-                        && e.Id != employee.Id);
+                bool alreadyMapped =
+                    _employeeRepository.Employees.Any(e =>
+                        e.ApplicationUserId ==
+                        employee.ApplicationUserId &&
+                        e.Id != employee.Id);
 
                 if (alreadyMapped)
                 {
@@ -157,21 +209,16 @@ namespace AryamanBMS.Controllers
 
             if (ModelState.IsValid)
             {
-                _context.Employees.Update(employee);
+                await _employeeRepository.UpdateAsync(employee);
+                await _employeeRepository.SaveAsync();
 
-                _context.SaveChanges();
-                TempData["Success"] = "Department updated successfully.";
+                TempData["Success"] =
+                    "Employee updated successfully.";
+
                 return RedirectToAction(nameof(Index));
             }
 
-            ViewBag.Departments = _context.Departments.ToList();
-
-            ViewBag.Designations = _context.Designations.ToList();
-
-            ViewBag.Users = _userManager.Users
-                                   .Where(u => u.IsActive)
-                                   .OrderBy(u => u.FullName)
-                                   .ToList();
+            LoadDropdowns();
 
             return View(employee);
         }
@@ -179,9 +226,7 @@ namespace AryamanBMS.Controllers
         [HttpGet]
         public IActionResult Delete(int id)
         {
-            var employee = _context.Employees
-                .Include(e => e.Department)
-                .Include(e => e.Designation)
+            var employee = _employeeRepository.Employees
                 .FirstOrDefault(e => e.Id == id);
 
             if (employee == null)
@@ -193,24 +238,28 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpPost]
-        public IActionResult DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var employee = _context.Employees.Find(id);
+            var employee =
+                await _employeeRepository.GetByIdAsync(id);
 
             if (employee != null)
             {
-                _context.Employees.Remove(employee);
-
-                _context.SaveChanges();
+                await _employeeRepository.DeleteAsync(employee);
+                await _employeeRepository.SaveAsync();
             }
-            TempData["Success"] = "Department deleted successfully.";
+
+            TempData["Success"] =
+                "Employee deleted successfully.";
+
             return RedirectToAction(nameof(Index));
         }
 
         [HttpGet]
         public JsonResult GetDesignations(int departmentId)
         {
-            var designations = _context.Designations
+            var designations =
+                _designationRepository.Designations
                 .Where(d => d.DepartmentId == departmentId)
                 .Select(d => new
                 {
@@ -222,13 +271,11 @@ namespace AryamanBMS.Controllers
             return Json(designations);
         }
 
+        [HttpGet]
         public async Task<IActionResult> Details(int id)
         {
-            var employee = await _context.Employees
-                .Include(e => e.Department)
-                .Include(e => e.Designation)
-                .Include(e => e.ApplicationUser)
-                .FirstOrDefaultAsync(e => e.Id == id);
+            var employee =
+                await _employeeRepository.GetDetailsAsync(id);
 
             if (employee == null)
             {
@@ -236,6 +283,24 @@ namespace AryamanBMS.Controllers
             }
 
             return View(employee);
+        }
+
+        private void LoadDropdowns()
+        {
+            ViewBag.Departments =
+                _departmentRepository.Departments
+                .OrderBy(d => d.DepartmentName)
+                .ToList();
+
+            ViewBag.Designations =
+                _designationRepository.Designations
+                .OrderBy(d => d.DesignationName)
+                .ToList();
+
+            ViewBag.Users = _userManager.Users
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.FullName)
+                .ToList();
         }
     }
 }

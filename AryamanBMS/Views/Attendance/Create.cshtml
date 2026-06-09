@@ -1,0 +1,132 @@
+﻿@model AryamanBMS.Models.AttendanceModel
+
+@{
+    ViewData["Title"] = "Create Attendance";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">
+            Create Attendance
+        </h1>
+
+        <p class="module-subtitle">
+            Add attendance manually
+        </p>
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-body">
+
+        <form asp-action="Create"
+              method="post">
+
+            <div asp-validation-summary="ModelOnly"
+                 class="validation-message mb-3">
+            </div>
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Employee
+                    </label>
+
+                    <select asp-for="EmployeeId"
+                            class="app-select">
+
+                        <option value="">
+                            Select Employee
+                        </option>
+
+                        @foreach (var employee in ViewBag.Employees)
+                        {
+                            <option value="@employee.Id">
+                                @employee.EmployeeCode -
+                                @employee.FirstName
+                                @employee.LastName
+                            </option>
+                        }
+
+                    </select>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Attendance Date
+                    </label>
+
+                    <input asp-for="AttendanceDate"
+                           type="date"
+                           class="app-input" />
+
+                </div>
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Status
+                    </label>
+
+                    <select asp-for="Status"
+                            class="app-select">
+
+                        <option value="P">Present</option>
+                        <option value="A">Absent</option>
+                        <option value="L">Leave</option>
+                        <option value="H">Holiday</option>
+                        <option value="WO">Week Off</option>
+                        <option value="OD">On Duty</option>
+
+                    </select>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Remarks
+                    </label>
+
+                    <input asp-for="Remarks"
+                           class="app-input" />
+
+                </div>
+
+            </div>
+
+            <div class="mt-4">
+
+                <button type="submit"
+                        class="btn-app btn-primary-app">
+
+                    Save Attendance
+
+                </button>
+
+                <a asp-action="Register"
+                   class="btn-app btn-secondary-app">
+
+                    Cancel
+
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

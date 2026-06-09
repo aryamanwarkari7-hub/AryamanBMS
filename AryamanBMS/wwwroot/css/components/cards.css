@@ -6,7 +6,7 @@
     background-color: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-md);
     overflow: hidden;
     margin-bottom: var(--space-xl);
     margin:0 var(--space-xl);
@@ -23,8 +23,7 @@
     justify-content: space-between;
     align-items: center;
     background: var(--primary-color);
-    
-    
+    margin-top:var(--space-md);
 }
 
 .card-title {
@@ -45,6 +44,8 @@
 
 .card-body {
     padding: var(--space-xl);
+    
+/*    border:1px solid black;*/
 }
 
 /* ==========================================

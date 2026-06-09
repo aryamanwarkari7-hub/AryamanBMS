@@ -12,6 +12,7 @@
     flex-direction: column;
 }
 
+
 /* ==========================================
    HEADER
 ========================================== */
@@ -215,7 +216,7 @@
     padding: var(--space-lg);
     border-top: 1px solid var(--border-color);
     flex-shrink: 0;
-    position: sticky;
+    position: relative;
     bottom: 0;
     background: var(--sidebar-bg);
     z-index: 10;

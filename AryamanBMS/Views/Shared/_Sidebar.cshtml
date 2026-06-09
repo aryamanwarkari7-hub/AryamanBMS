@@ -18,6 +18,18 @@
             ? (await UserManager.GetRolesAsync(currentUser)).FirstOrDefault()
             : "";
 
+    var isAdmin =
+        currentUser != null &&
+        await UserManager.IsInRoleAsync(currentUser, "Admin");
+
+    var isHR =
+        currentUser != null &&
+        await UserManager.IsInRoleAsync(currentUser, "HR");
+
+    var isEmployee =
+        currentUser != null &&
+        await UserManager.IsInRoleAsync(currentUser, "Employee");
+
     var initials = string.Empty;
 
     if (!string.IsNullOrWhiteSpace(userName))
@@ -28,6 +40,10 @@
                     .Select(x => x[0]))
                     .ToUpper();
     }
+}
+
+@{
+    
 }
 
 <div class="sidebar">
@@ -83,129 +99,170 @@
 
         </div>
 
-        <!-- Master Setup -->
-        <div class="menu-group">
 
-            <button class="menu-group-header"
-                    type="button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#masterSetupMenu"
-                    aria-expanded="true">
+        @if (isAdmin || isHR)
+        {
+            <!-- Master Setup -->
+            <div class="menu-group">
 
-                <div class="menu-group-left">
-                    <i class="bi bi-gear"></i>
-                    <span>Master Setup</span>
-                </div>
+                <button class="menu-group-header"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#masterSetupMenu"
+                aria-expanded="true">
 
-                <i class="bi bi-chevron-down"></i>
+                    <div class="menu-group-left">
+                        <i class="bi bi-gear"></i>
+                        <span>Master Setup</span>
+                    </div>
 
-            </button>
+                    <i class="bi bi-chevron-down"></i>
 
-            <div class="collapse show" id="masterSetupMenu" data-bs-parent="#sidebarAccordion">
+                </button>
 
-                <div class="submenu">
+                <div class="collapse show" id="masterSetupMenu" data-bs-parent="#sidebarAccordion">
 
-                    <a asp-controller="User"
-                       asp-action="Index"
-                       class="submenu-item @(currentController == "User" ? "active-menu" : "")">
+                    <div class="submenu">
+                        @if (isAdmin)
+                        {
+                            <a asp-controller="User"
+                            asp-action="Index"
+                            class="submenu-item @(currentController == "User" ? "active-menu" : "")">
 
-                        <i class="bi bi-people-fill"></i>
-                        <span>Users</span>
+                                <i class="bi bi-people-fill"></i>
+                                <span>Users</span>
 
-                    </a>
+                            </a>
+                        }
 
-                    <a href="#" class="submenu-item">
-                        <i class="bi bi-person-x"></i>
-                        <span>User Roles</span>
-                    </a>
+                        <a href="#" class="submenu-item">
+                            <i class="bi bi-person-x"></i>
+                            <span>User Roles</span>
+                        </a>
 
-                    <a asp-controller="Department"
-                       asp-action="Index"
-                       class="submenu-item @(currentController == "Department" ? "active-menu" : "")">
+                        @if (isAdmin || isHR)
+                        {
+                            <a asp-controller="Department"
+                            asp-action="Index"
+                            class="submenu-item @(currentController == "Department" ? "active-menu" : "")">
 
-                        <i class="bi bi-building"></i>
-                        <span>Departments</span>
+                                <i class="bi bi-building"></i>
+                                <span>Departments</span>
 
-                    </a>
+                            </a>
+                           
 
-                    <a asp-controller="Designation"
-                       asp-action="Index"
-                       class="submenu-item @(currentController == "Designation" ? "active-menu" : "")">
+                        <a asp-controller="Designation"
+                        asp-action="Index"
+                        class="submenu-item @(currentController == "Designation" ? "active-menu" : "")">
 
-                        <i class="bi bi-award"></i>
-                        <span>Designations</span>
+                            <i class="bi bi-award"></i>
+                            <span>Designations</span>
 
-                    </a>
+                        </a>
+                        }
 
-                    @* <a href="#" class="submenu-item">
+                        @* <a href="#" class="submenu-item">
                         <i class="bi bi-award"></i>
                         <span>Designations</span>
                     </a> *@
 
-                    
 
-                    <a href="#" class="submenu-item">
-                        <i class="bi bi-gear"></i>
-                        <span>Services</span>
-                    </a>
 
-                    <a href="#" class="submenu-item">
-                        <i class="bi bi-activity"></i>
-                        <span>Activity Master</span>
-                    </a>
-                    <a href="#" class="submenu-item">
-                        <i class="bi bi-car-front"></i>
-                        <span>Vehicle master</span>
-                    </a>
+                        <a href="#" class="submenu-item">
+                            <i class="bi bi-gear"></i>
+                            <span>Services</span>
+                        </a>
+
+                        <a href="#" class="submenu-item">
+                            <i class="bi bi-activity"></i>
+                            <span>Activity Master</span>
+                        </a>
+                        <a href="#" class="submenu-item">
+                            <i class="bi bi-car-front"></i>
+                            <span>Vehicle master</span>
+                        </a>
+
+                    </div>
 
                 </div>
 
             </div>
-
-        </div>
+        }
 
         <!-- HR -->
+        
+            <div class="menu-group">
 
-        <div class="menu-group">
+                <button class="menu-group-header"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#hrMenu"
+                aria-expanded="false">
 
-            <button class="menu-group-header"
-                    type="button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#hrMenu"
-                    aria-expanded="false">
+                    <div class="menu-group-left">
+                        <i class="bi bi-person-workspace"></i>
+                        <span>HR & Administration</span>
+                    </div>
 
-                <div class="menu-group-left">
-                    <i class="bi bi-person-workspace"></i>
-                    <span>HR & Administration</span>
-                </div>
+                    <i class="bi bi-chevron-down"></i>
 
-                <i class="bi bi-chevron-down"></i>
+                </button>
 
-            </button>
+                <div class="collapse" id="hrMenu" data-bs-parent="#sidebarAccordion">
 
-            <div class="collapse" id="hrMenu" data-bs-parent="#sidebarAccordion">
+                    <div class="submenu">
+                        @if (isAdmin || isHR)
+                        {
+                           <a asp-controller="Employee"
+                           asp-action="Index"
+                           class="submenu-item @(currentController == "Employee" ? "active-menu" : "")">
+                           
+                               <i class="bi bi-people-fill"></i>
+                               <span>Employee</span>
+                           
+                           </a>
+                        }
 
-                <div class="submenu">
+                        @* <a href="#" class="submenu-item">Employee</a> *@
+                        <a asp-controller="Attendance"
+                        asp-action="Index"
+                           class="submenu-item @(currentController == "Attendance" ? "active-menu" : "")">
 
-                    <a asp-controller="Employee"
-                       asp-action="Index"
-                       class="submenu-item @(currentController == "Employee" ? "active-menu" : "")">
+                            <i class="bi bi-calendar-check"></i>
+                            <span>Attendance</span>
 
-                        <i class="bi bi-people-fill"></i>
-                        <span>Employee</span>
+                        </a>
 
-                    </a>
-                    @* <a href="#" class="submenu-item">Employee</a> *@
-                    <a href="#" class="submenu-item">Attendance</a>
-                    <a href="#" class="submenu-item">Leave Tracker</a>
-                    <a href="#" class="submenu-item">Salary Register</a>
-                    <a href="#" class="submenu-item">Letters Log</a>
+                        <a asp-controller="Attendance"
+                           asp-action="Dashboard"
+                           class="submenu-item @(currentController == "Attendance" ? "active-menu" : "")">
+                            <i class="bi bi-speedometer2"></i>
+                            Attendance Dashboard
+                        </a>
+
+                    @if (isAdmin || isHR)
+                    {
+                        <a asp-controller="Attendance"
+                           asp-action="Register"
+                           class="submenu-item @(currentController == "Attendance" ? "active-menu" : "")">
+
+                            <i class="bi bi-people-fill"></i>
+                            <span>Attendance register</span>
+
+                        </a>
+                    }
+
+                        <a href="#" class="submenu-item">Leave Tracker</a>
+                        <a href="#" class="submenu-item">Salary Register</a>
+                        <a href="#" class="submenu-item">Letters Log</a>
+
+                    </div>
 
                 </div>
 
             </div>
 
-        </div>
 
         <!-- Sales -->
         <div class="menu-group">

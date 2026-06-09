@@ -1,0 +1,352 @@
+﻿@model AryamanBMS.ViewModels.AttendanceDashboardViewModel
+
+@{
+    ViewData["Title"] = "Attendance Dashboard";
+}
+
+<div class="module-header">
+
+    <div>
+
+        <h1 class="module-title">
+            Attendance Dashboard
+        </h1>
+
+        <p class="module-subtitle">
+            Monthly Attendance Register
+        </p>
+
+    </div>
+
+</div>
+
+<!-- Summary Cards -->
+
+<div class="dashboard-grid">
+
+    <div class="stats-card">
+
+        <div class="stats-label">
+            Total Employees
+        </div>
+
+        <div class="stats-number">
+            @Model.Employees.Count
+        </div>
+
+    </div>
+
+    <div class="stats-card">
+
+        <div class="stats-label">
+            Present
+        </div>
+
+        <div class="stats-number">
+            @Model.Employees.Sum(x => x.PresentCount)
+        </div>
+
+    </div>
+
+    <div class="stats-card">
+
+        <div class="stats-label">
+            Absent
+        </div>
+
+        <div class="stats-number">
+            @Model.Employees.Sum(x => x.AbsentCount)
+        </div>
+
+    </div>
+
+    <div class="stats-card">
+
+        <div class="stats-label">
+            Leave
+        </div>
+
+        <div class="stats-number">
+            @Model.Employees.Sum(x => x.LeaveCount)
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Filter Card -->
+
+<div class="app-card mb-3">
+
+    <div class="card-header">
+
+        <h5 class="card-title">
+            Attendance Filter
+        </h5>
+
+    </div>
+
+    <div class="card-body">
+
+        <form asp-action="Dashboard"
+              method="get">
+
+            <div class="d-flex gap-3 align-items-end flex-wrap">
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Month
+                    </label>
+
+                    <select name="month"
+                            class="app-select">
+
+                        @for (int month = 1; month <= 12; month++)
+                        {
+                            var monthName =
+                                new DateTime(2000, month, 1)
+                                .ToString("MMMM");
+
+                            if (month == Model.Month)
+                            {
+                                <option value="@month" selected>
+                                    @monthName
+                                </option>
+                            }
+                            else
+                            {
+                                <option value="@month">
+                                    @monthName
+                                </option>
+                            }
+                        }
+
+                    </select>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Year
+                    </label>
+
+                    <select name="year"
+                            class="app-select">
+
+                        @for (int year = DateTime.Today.Year - 2;
+                             year <= DateTime.Today.Year + 2;
+                             year++)
+                        {
+                            if (year == Model.Year)
+                            {
+                                <option value="@year" selected>
+                                    @year
+                                </option>
+                            }
+                            else
+                            {
+                                <option value="@year">
+                                    @year
+                                </option>
+                            }
+                        }
+
+                    </select>
+
+                </div>
+
+                <button type="submit"
+                        class="btn-app btn-primary-app">
+
+                    <i class="bi bi-search"></i>
+                    Load
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!-- Legend -->
+
+<div class="app-card mb-3">
+
+    <div class="card-header">
+
+        <h5 class="card-title">
+            Attendance Legend
+        </h5>
+
+    </div>
+
+    <div class="card-body">
+
+        <div class="d-flex flex-wrap gap-2">
+
+            <span class="badge-success">P - Present</span>
+
+            <span class="badge-danger">A - Absent</span>
+
+            <span class="badge-warning">L - Leave</span>
+
+            <span class="badge-primary">H - Holiday</span>
+
+            <span class="badge-secondary">WO - Week Off</span>
+
+            <span class="badge-info">OD - On Duty</span>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Register -->
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+
+        <h5 class="card-title">
+
+            Attendance Register
+            -
+            @Model.Month/@Model.Year
+
+        </h5>
+
+    </div>
+
+    <div class="card-body">
+
+        @if (!Model.Employees.Any())
+        {
+            <div class="empty-state">
+                No attendance records found.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+
+                <table class="app-table attendance-register">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Employee
+                            </th>
+
+                            @for (int day = 1;
+                                day <= Model.TotalDays;
+                                day++)
+                            {
+                                <th>
+                                    @day
+                                </th>
+                            }
+
+                            <th>P</th>
+                            <th>A</th>
+                            <th>L</th>
+                            <th>H</th>
+                            <th>WO</th>
+                            <th>OD</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var employee in Model.Employees)
+                        {
+                            <tr>
+
+                                <td style="min-width:240px;">
+
+                                    <strong>
+                                        @employee.EmployeeName
+                                    </strong>
+
+                                    <br />
+
+                                    <small>
+                                        @employee.EmployeeCode
+                                    </small>
+
+                                </td>
+
+                                @for (int day = 1;
+                                    day <= Model.TotalDays;
+                                    day++)
+                                {
+                                    var status =
+                                        employee.DailyStatus.ContainsKey(day)
+                                        ? employee.DailyStatus[day]
+                                        : "";
+
+                                    <td>
+
+                                        @switch (status)
+                                        {
+                                            case "P":
+                                                <span class="badge-success">P</span>
+                                                break;
+
+                                            case "A":
+                                                <span class="badge-danger">A</span>
+                                                break;
+
+                                            case "L":
+                                                <span class="badge-warning">L</span>
+                                                break;
+
+                                            case "H":
+                                                <span class="badge-primary">H</span>
+                                                break;
+
+                                            case "WO":
+                                                <span class="badge-secondary">WO</span>
+                                                break;
+
+                                            case "OD":
+                                                <span class="badge-info">OD</span>
+                                                break;
+
+                                            default:
+                                                <span>-</span>
+                                                break;
+                                        }
+
+                                    </td>
+                                }
+
+                                <td><strong>@employee.PresentCount</strong></td>
+                                <td><strong>@employee.AbsentCount</strong></td>
+                                <td><strong>@employee.LeaveCount</strong></td>
+                                <td><strong>@employee.HolidayCount</strong></td>
+                                <td><strong>@employee.WeekOffCount</strong></td>
+                                <td><strong>@employee.OnDutyCount</strong></td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+    </div>
+
+</div>

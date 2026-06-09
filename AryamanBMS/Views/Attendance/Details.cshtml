@@ -1,0 +1,96 @@
+﻿@model AryamanBMS.Models.AttendanceModel
+
+@{
+    ViewData["Title"] = "Attendance Details";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Attendance Details</h1>
+        <p class="module-subtitle">
+            View attendance information
+        </p>
+    </div>
+
+    <a asp-action="Edit"
+       asp-route-id="@Model.Id"
+       class="btn-app btn-primary-app">
+
+        <i class="bi bi-pencil"></i>
+        Edit
+
+    </a>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-body">
+
+        <div class="table-responsive">
+
+            <table class="app-table">
+
+                <tbody>
+
+                    <tr>
+                        <th width="250">Employee Code</th>
+                        <td>@Model.Employee?.EmployeeCode</td>
+                    </tr>
+
+                    <tr>
+                        <th>Employee Name</th>
+                        <td>@Model.Employee?.FullName</td>
+                    </tr>
+
+                    <tr>
+                        <th>Attendance Date</th>
+                        <td>@Model.AttendanceDate.ToString("dd-MMM-yyyy")</td>
+                    </tr>
+
+                    <tr>
+                        <th>Status</th>
+                        <td>@Model.Status</td>
+                    </tr>
+
+                    <tr>
+                        <th>Remarks</th>
+                        <td>@(Model.Remarks ?? "-")</td>
+                    </tr>
+
+                    <tr>
+                        <th>Created On</th>
+                        <td>@Model.CreatedOn.ToString("dd-MMM-yyyy hh:mm tt")</td>
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        <div class="mt-4">
+
+            <a asp-action="Edit"
+               asp-route-id="@Model.Id"
+               class="btn-app btn-primary-app">
+
+                <i class="bi bi-pencil"></i>
+                Edit
+
+            </a>
+
+            <a asp-action="Register"
+               class="btn-app btn-secondary-app">
+
+                <i class="bi bi-arrow-left"></i>
+                Back
+
+            </a>
+
+        </div>
+
+    </div>
+
+</div>

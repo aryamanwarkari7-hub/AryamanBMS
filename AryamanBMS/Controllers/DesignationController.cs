@@ -1,25 +1,29 @@
-﻿using AryamanBMS.Data;
-using AryamanBMS.Models;
+﻿using AryamanBMS.Models;
+using AryamanBMS.Repositories.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
+    [Authorize(Roles = "Admin,HR")]
     public class DesignationController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IDesignationRepository _designationRepository;
+        private readonly IDepartmentRepository _departmentRepository;
 
-        public DesignationController(ApplicationDbContext context)
+        public DesignationController(
+            IDesignationRepository designationRepository,
+            IDepartmentRepository departmentRepository)
         {
-            _context = context;
+            _designationRepository = designationRepository;
+            _departmentRepository = departmentRepository;
         }
 
         public IActionResult Index(string searchText, int page = 1)
         {
             int pageSize = 5;
 
-            var designations = _context.Designations
-                .Include(d => d.Department)
+            var designations = _designationRepository.Designations
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(searchText))
@@ -46,64 +50,75 @@ namespace AryamanBMS.Controllers
             return View(pagedDesignations);
         }
 
+        [HttpGet]
         public IActionResult Create()
         {
-            ViewBag.Departments = _context.Departments.ToList();
+            LoadDepartments();
 
             return View();
         }
 
         [HttpPost]
-        public IActionResult Create(DesignationModel designation)
+        public async Task<IActionResult> Create(
+            DesignationModel designation)
         {
             if (ModelState.IsValid)
             {
-                _context.Designations.Add(designation);
-                _context.SaveChanges();
-                TempData["Success"] = "Department created successfully.";
-                return RedirectToAction("Index");
+                await _designationRepository.AddAsync(designation);
+                await _designationRepository.SaveAsync();
+
+                TempData["Success"] =
+                    "Designation created successfully.";
+
+                return RedirectToAction(nameof(Index));
             }
 
-            ViewBag.Departments = _context.Departments.ToList();
+            LoadDepartments();
 
             return View(designation);
         }
 
         [HttpGet]
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id)
         {
-            var designation = _context.Designations.Find(id);
+            var designation =
+                await _designationRepository.GetByIdAsync(id);
 
             if (designation == null)
             {
                 return NotFound();
             }
 
-            ViewBag.Departments = _context.Departments.ToList();
+            LoadDepartments();
 
             return View(designation);
         }
 
         [HttpPost]
-        public IActionResult Edit(DesignationModel designation)
+        public async Task<IActionResult> Edit(
+            DesignationModel designation)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                _context.Designations.Update(designation);
-                _context.SaveChanges();
-                TempData["Success"] = "Department updated successfully.";
-                return RedirectToAction("Index");
+                LoadDepartments();
+
+                return View(designation);
             }
 
-            ViewBag.Departments = _context.Departments.ToList();
+            await _designationRepository.UpdateAsync(designation);
+            await _designationRepository.SaveAsync();
 
-            return View(designation);
+            TempData["Success"] =
+                "Designation updated successfully.";
+
+            return RedirectToAction(nameof(Index));
         }
 
         [HttpGet]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var designation = _context.Designations.Find(id);
+            var designation =
+                await _designationRepository.GetByIdAsync(id);
 
             if (designation == null)
             {
@@ -114,19 +129,31 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpPost]
-        public IActionResult Delete(DesignationModel designation)
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var existingDesignation = _context.Designations.Find(designation.Id);
+            var designation =
+                await _designationRepository.GetByIdAsync(id);
 
-            if (existingDesignation == null)
+            if (designation == null)
             {
                 return NotFound();
             }
 
-            _context.Designations.Remove(existingDesignation);
-            _context.SaveChanges();
-            TempData["Success"] = "Department deleted successfully.";
-            return RedirectToAction("Index");
+            await _designationRepository.DeleteAsync(designation);
+            await _designationRepository.SaveAsync();
+
+            TempData["Success"] =
+                "Designation deleted successfully.";
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        private void LoadDepartments()
+        {
+            ViewBag.Departments =
+                _departmentRepository.Departments
+                .OrderBy(d => d.DepartmentName)
+                .ToList();
         }
     }
 }

@@ -1,0 +1,190 @@
+﻿@model AryamanBMS.Models.AttendanceModel
+
+@{
+    ViewData["Title"] = "Attendance";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Attendance</h1>
+        <p class="module-subtitle">
+            Employee attendance management
+        </p>
+    </div>
+
+</div>
+
+
+<div class="app-card mb-3">
+
+    <div class="card-header">
+        <h5 class="card-title">
+            Attendance Actions
+        </h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="d-flex gap-2 flex-wrap">
+
+            @if (Model == null)
+            {
+                <a asp-action="CheckIn"
+                   class="btn-app btn-primary-app">
+
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    Check In
+
+                </a>
+            }
+            else if (Model.CheckOutTime == null)
+            {
+                <a asp-action="CheckOut"
+                   class="btn-app btn-danger-app">
+
+                    <i class="bi bi-box-arrow-right"></i>
+                    Check Out
+
+                </a>
+            }
+            else
+            {
+                <button class="btn-app btn-secondary-app"
+                        disabled>
+
+                    Attendance Completed
+
+                </button>
+            }
+
+            @if (User.IsInRole("Admin") || User.IsInRole("HR"))
+            {
+                <a asp-action="Register"
+                   class="btn-app btn-secondary-app">
+
+                    <i class="bi bi-pencil-square"></i>
+                    Manage Attendance
+
+                </a>
+            }
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+        <h5 class="card-title">
+            Today's Attendance
+        </h5>
+    </div>
+
+    <div class="card-body">
+
+        @if (Model == null)
+        {
+            <div class="empty-state">
+                No attendance marked today.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+
+                <table class="app-table">
+
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Check In</th>
+                            <th>Check Out</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        <tr>
+
+                            <td>
+                                @Model.AttendanceDate.ToString("dd-MMM-yyyy")
+                            </td>
+
+                            <td>
+
+                                @switch (Model.Status)
+                                {
+                                    case "P":
+                                        <span class="badge-success">
+                                            Present
+                                        </span>
+                                        break;
+
+                                    case "A":
+                                        <span class="badge-danger">
+                                            Absent
+                                        </span>
+                                        break;
+
+                                    case "L":
+                                        <span class="badge-warning">
+                                            Leave
+                                        </span>
+                                        break;
+
+                                    case "H":
+                                        <span class="badge-primary">
+                                            Holiday
+                                        </span>
+                                        break;
+
+                                    case "WO":
+                                        <span class="badge-secondary">
+                                            Week Off
+                                        </span>
+                                        break;
+
+                                    case "OD":
+                                        <span class="badge-info">
+                                            On Duty
+                                        </span>
+                                        break;
+
+                                    default:
+                                        <span>-</span>
+                                        break;
+                                }
+
+                            </td>
+
+                            <td>
+                                @(Model.CheckInTime?.ToString("hh:mm tt") ?? "-")
+                            </td>
+
+                            <td>
+                                @(Model.CheckOutTime?.ToString("hh:mm tt") ?? "-")
+                            </td>
+
+                            <td>
+                                @(string.IsNullOrWhiteSpace(Model.Remarks)
+                                    ? "-"
+                                    : Model.Remarks)
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+    </div>
+
+</div>

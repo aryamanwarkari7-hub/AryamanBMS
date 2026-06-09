@@ -19,6 +19,8 @@ namespace AryamanBMS.Data
 
         public DbSet<EmployeeModel> Employees { get; set; }
 
+        public DbSet<AttendanceModel> Attendances { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -37,6 +39,17 @@ namespace AryamanBMS.Data
                 .WithMany()
                 .HasForeignKey(e => e.ApplicationUserId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<AttendanceModel>()
+                .ToTable("TableAttendance");
+
+            modelBuilder.Entity<AttendanceModel>()
+                .HasOne(a => a.Employee)
+                .WithMany()
+                .HasForeignKey(a => a.EmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            base.OnModelCreating(modelBuilder);
         }
     }
 }

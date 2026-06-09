@@ -1,0 +1,145 @@
+﻿@model AryamanBMS.Models.AttendanceModel
+
+@{
+    ViewData["Title"] = "Edit Attendance";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Edit Attendance</h1>
+        <p class="module-subtitle">
+            Update attendance details
+        </p>
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-body">
+
+        <form asp-action="Edit" method="post">
+
+            <input asp-for="Id" type="hidden" />
+            <input asp-for="EmployeeId" type="hidden" />
+
+            <div asp-validation-summary="ModelOnly"
+                 class="validation-message mb-3">
+            </div>
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Employee Code
+                    </label>
+
+                    <input class="app-input"
+                           value="@Model.Employee?.EmployeeCode"
+                           readonly />
+
+                </div>
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Employee Name
+                    </label>
+
+                    <input class="app-input"
+                           value="@Model.Employee?.FullName"
+                           readonly />
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="AttendanceDate"
+                           class="form-label">
+                        Attendance Date
+                    </label>
+
+                    <input asp-for="AttendanceDate"
+                           type="date"
+                           class="app-input" />
+
+                    <span asp-validation-for="AttendanceDate"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="Status"
+                           class="form-label">
+                        Attendance Status
+                    </label>
+
+                    <select asp-for="Status"
+                            class="app-select">
+
+                        <option value="">Select Status</option>
+                        <option value="P">Present</option>
+                        <option value="A">Absent</option>
+                        <option value="L">Leave</option>
+                        <option value="H">Holiday</option>
+                        <option value="WO">Week Off</option>
+                        <option value="OD">On Duty</option>
+
+                    </select>
+
+                    <span asp-validation-for="Status"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+            </div>
+
+            <div class="form-group mt-3">
+
+                <label asp-for="Remarks"
+                       class="form-label">
+                    Remarks
+                </label>
+
+                <textarea asp-for="Remarks"
+                          class="app-textarea"
+                          rows="4">
+                </textarea>
+
+            </div>
+
+            <div class="mt-4">
+
+                <button type="submit"
+                        class="btn-app btn-primary-app">
+
+                    <i class="bi bi-check-circle"></i>
+                    Update Attendance
+
+                </button>
+
+                <a asp-action="Register"
+                   class="btn-app btn-secondary-app">
+
+                    <i class="bi bi-arrow-left"></i>
+                    Back
+
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

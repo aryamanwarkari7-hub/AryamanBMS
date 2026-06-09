@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
-    
+    [Authorize]
     public class DashboardController : Controller
     {
         private readonly ApplicationDbContext _context;
