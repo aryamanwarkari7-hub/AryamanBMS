@@ -100,5 +100,12 @@ namespace AryamanBMS.Models
         public string? ApplicationUserId { get; set; }
 
         public ApplicationUserModel? ApplicationUser { get; set; }
+
+        // Leave 
+        public ICollection<LeaveApplicationModel> 
+        LeaveApplications { get; set; } = new List<LeaveApplicationModel>();
+
+        public ICollection<LeaveBalanceModel>
+        LeaveBalances{ get; set; } = new List<LeaveBalanceModel>();
     }
 }

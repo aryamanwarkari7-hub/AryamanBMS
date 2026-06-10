@@ -1,11 +1,10 @@
 ﻿using AryamanBMS.Models;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Data
 {
-    public class ApplicationDbContext
-    : IdentityDbContext<ApplicationUserModel>
+    public class ApplicationDbContext: IdentityDbContext<ApplicationUserModel>
     {
         public ApplicationDbContext(
             DbContextOptions<ApplicationDbContext> options)
@@ -20,6 +19,14 @@ namespace AryamanBMS.Data
         public DbSet<EmployeeModel> Employees { get; set; }
 
         public DbSet<AttendanceModel> Attendances { get; set; }
+
+
+        // Leave
+        public DbSet<LeaveTypeModel> LeaveTypes { get; set; }
+
+        public DbSet<LeaveApplicationModel> LeaveApplications { get; set; }
+
+        public DbSet<LeaveBalanceModel> LeaveBalances { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -49,7 +56,15 @@ namespace AryamanBMS.Data
                 .HasForeignKey(a => a.EmployeeId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<LeaveTypeModel>()
+               .ToTable("tableleavetypes");
+
+            modelBuilder.Entity<LeaveApplicationModel>()
+               .ToTable("tableleaveapplications");
+
+            modelBuilder.Entity<LeaveBalanceModel>()
+               .ToTable("tableleavebalances");
+
         }
     }
 }

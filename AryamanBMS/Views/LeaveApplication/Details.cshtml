@@ -1,0 +1,156 @@
+﻿@model AryamanBMS.Models.LeaveApplicationModel
+
+@{
+    ViewData["Title"] = "Leave Application Details";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Leave Application Details</h1>
+        <p class="module-subtitle">View leave request information</p>
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Application Information</h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="table-responsive">
+
+            <table class="app-table">
+
+                <tbody>
+
+                    <tr>
+                        <th width="250">Application No</th>
+                        <td>@Model.ApplicationNumber</td>
+                    </tr>
+
+                    <tr>
+                        <th>Employee</th>
+                        <td>
+                            @Model.Employee?.FullName
+                            (@Model.Employee?.EmployeeCode)
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Leave Type</th>
+                        <td>
+                            @Model.LeaveType?.LeaveName
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>From Date</th>
+                        <td>@Model.FromDate.ToString("dd-MMM-yyyy")</td>
+                    </tr>
+
+                    <tr>
+                        <th>To Date</th>
+                        <td>@Model.ToDate.ToString("dd-MMM-yyyy")</td>
+                    </tr>
+
+                    <tr>
+                        <th>Number Of Days</th>
+                        <td>@Model.NumberOfDays</td>
+                    </tr>
+
+                    <tr>
+                        <th>Reason</th>
+                        <td>@Model.Reason</td>
+                    </tr>
+
+                    <tr>
+                        <th>Status</th>
+                        <td>
+                            @if (Model.Status == "Pending")
+                            {
+                                <span class="badge-warning">Pending</span>
+                            }
+                            else if (Model.Status == "Approved")
+                            {
+                                <span class="badge-success">Approved</span>
+                            }
+                            else if (Model.Status == "Rejected")
+                            {
+                                <span class="badge-danger">Rejected</span>
+                            }
+                            else if (Model.Status == "Cancelled")
+                            {
+                                <span class="badge-secondary">Cancelled</span>
+                            }
+                            else
+                            {
+                                <span>@Model.Status</span>
+                            }
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Applied On</th>
+                        <td>@Model.AppliedOn.ToString("dd-MMM-yyyy hh:mm tt")</td>
+                    </tr>
+
+                    <tr>
+                        <th>Approved By</th>
+                        <td>@(Model.ApprovedBy ?? "-")</td>
+                    </tr>
+
+                    <tr>
+                        <th>Approved On</th>
+                        <td>
+                            @(Model.ApprovedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Approval Remarks</th>
+                        <td>@(Model.ApprovalRemarks ?? "-")</td>
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        <div class="mt-4">
+
+            @if ((User.IsInRole("Admin") || User.IsInRole("HR"))
+                && Model.Status == "Pending")
+            {
+                <a asp-action="Approve"
+                   asp-route-id="@Model.Id"
+                   class="btn-app btn-success-app"
+                   onclick="return confirm('Approve this leave application?');">
+                    <i class="bi bi-check-lg"></i>
+                    Approve
+                </a>
+
+                <a asp-action="Reject"
+                   asp-route-id="@Model.Id"
+                   class="btn-app btn-danger-app"
+                   onclick="return confirm('Reject this leave application?');">
+                    <i class="bi bi-x-lg"></i>
+                    Reject
+                </a>
+            }
+
+            <a asp-action="Index"
+               class="btn-app btn-secondary-app">
+                <i class="bi bi-arrow-left"></i>
+                Back
+            </a>
+
+        </div>
+
+    </div>
+
+</div>

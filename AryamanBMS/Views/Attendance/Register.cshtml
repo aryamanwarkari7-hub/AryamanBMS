@@ -25,6 +25,21 @@
             Add Attendance
 
         </a>
+        <a asp-action="Dashboard"
+           class="btn-app btn-secondary-app">
+
+            <i class="bi bi-grid"></i>
+            Dashboard
+
+        </a>
+
+        <a asp-action="Summary"
+           class="btn-app btn-secondary-app">
+
+            <i class="bi bi-bar-chart"></i>
+            Attendance Summary
+
+        </a>
 
         <a asp-action="ExportExcel"
            asp-route-searchText="@ViewBag.SearchText"

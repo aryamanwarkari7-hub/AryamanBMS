@@ -1,0 +1,59 @@
+﻿@model AryamanBMS.ViewModels.LeaveDashboardViewModel
+
+@{
+    ViewData["Title"] = "Leave Dashboard";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Leave Dashboard</h1>
+        <p class="module-subtitle">Leave application overview</p>
+    </div>
+
+    <div class="d-flex gap-2">
+
+        <a asp-action="Index"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-list"></i>
+            Applications
+        </a>
+
+        <a asp-action="ExportApplications"
+           class="btn-app btn-success-app">
+            <i class="bi bi-file-earmark-excel"></i>
+            Export Leave
+        </a>
+
+    </div>
+
+</div>
+
+<div class="dashboard-grid">
+
+    <div class="stats-card">
+        <div class="stats-label">Total Applications</div>
+        <div class="stats-number">@Model.TotalApplications</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Pending</div>
+        <div class="stats-number">@Model.PendingApplications</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Approved</div>
+        <div class="stats-number">@Model.ApprovedApplications</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Rejected</div>
+        <div class="stats-number">@Model.RejectedApplications</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Cancelled</div>
+        <div class="stats-number">@Model.CancelledApplications</div>
+    </div>
+
+</div>

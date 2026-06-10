@@ -5,7 +5,9 @@
 .sidebar {
     width: var(--sidebar-width);
     min-width: var(--sidebar-width);
-/*    height: 100vh;*/
+    height: 100vh;
+    position: sticky;
+    top: 0;
     background-color: var(--sidebar-bg);
     border-right: 1px solid var(--border-color);
     display: flex;
@@ -73,6 +75,7 @@
 .sidebar-menu {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 0 var(--space-lg);
 }
 

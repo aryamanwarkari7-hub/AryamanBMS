@@ -1,0 +1,346 @@
+﻿@model List<AryamanBMS.ViewModels.AttendanceSummaryViewModel>
+
+@{
+    ViewData["Title"] = "Attendance Summary";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">
+            Attendance Summary
+        </h1>
+
+        <p class="module-subtitle">
+            Monthly Attendance Analysis
+        </p>
+    </div>
+
+    <div class="d-flex gap-2">
+
+        <a asp-action="Dashboard"
+           class="btn-app btn-secondary-app">
+
+            <i class="bi bi-grid"></i>
+            Dashboard
+
+        </a>
+
+        <a asp-action="Register"
+           class="btn-app btn-secondary-app">
+
+            <i class="bi bi-table"></i>
+            Register
+
+        </a>
+
+        <a asp-action="SummaryExport"
+           asp-route-month="@ViewBag.Month"
+           asp-route-year="@ViewBag.Year"
+           class="btn-app btn-success-app">
+
+            <i class="bi bi-file-earmark-excel"></i>
+            Export Excel
+
+        </a>
+
+    </div>
+
+</div>
+
+<div class="dashboard-grid">
+
+    <div class="stats-card">
+
+        <div class="stats-label">
+            Employees
+        </div>
+
+        <div class="stats-number">
+            @Model.Count
+        </div>
+
+    </div>
+
+    <div class="stats-card">
+
+        <div class="stats-label">
+            Present
+        </div>
+
+        <div class="stats-number">
+            @Model.Sum(x => x.PresentCount)
+        </div>
+
+    </div>
+
+    <div class="stats-card">
+
+        <div class="stats-label">
+            Absent
+        </div>
+
+        <div class="stats-number">
+            @Model.Sum(x => x.AbsentCount)
+        </div>
+
+    </div>
+
+    <div class="stats-card">
+
+        <div class="stats-label">
+            Leave
+        </div>
+
+        <div class="stats-number">
+            @Model.Sum(x => x.LeaveCount)
+        </div>
+
+    </div>
+
+    <div class="stats-card">
+
+        <div class="stats-label">
+            Week Off
+        </div>
+
+        <div class="stats-number">
+            @Model.Sum(x => x.WeekOffCount)
+        </div>
+
+    </div>
+
+    <div class="stats-card">
+
+        <div class="stats-label">
+            On Duty
+        </div>
+
+        <div class="stats-number">
+            @Model.Sum(x => x.OnDutyCount)
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card mb-3">
+
+    <div class="card-header">
+
+        <h5 class="card-title">
+            Summary Filter
+        </h5>
+
+    </div>
+
+    <div class="card-body">
+
+        <form method="get">
+
+            <div class="d-flex gap-3 align-items-end flex-wrap">
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Month
+                    </label>
+
+                    <select name="month"
+                            class="app-select">
+
+                        @for (int month = 1; month <= 12; month++)
+                        {
+                            var monthName =
+                                new DateTime(2000, month, 1)
+                                .ToString("MMMM");
+
+                            if (month == ViewBag.Month)
+                            {
+                                <option value="@month" selected>
+                                    @monthName
+                                </option>
+                            }
+                            else
+                            {
+                                <option value="@month">
+                                    @monthName
+                                </option>
+                            }
+                        }
+
+                    </select>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Year
+                    </label>
+
+                    <select name="year"
+                            class="app-select">
+
+                        @for (int year = DateTime.Today.Year - 2;
+                             year <= DateTime.Today.Year + 2;
+                             year++)
+                        {
+                            if (year == ViewBag.Year)
+                            {
+                                <option value="@year" selected>
+                                    @year
+                                </option>
+                            }
+                            else
+                            {
+                                <option value="@year">
+                                    @year
+                                </option>
+                            }
+                        }
+
+                    </select>
+
+                </div>
+
+                <button type="submit"
+                        class="btn-app btn-primary-app">
+
+                    <i class="bi bi-search"></i>
+                    Load
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+
+        <h5 class="card-title">
+
+            Attendance Summary
+            -
+            @ViewBag.Month/@ViewBag.Year
+
+        </h5>
+
+    </div>
+
+    <div class="card-body">
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                No attendance records found.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+
+                <table class="app-table">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Code</th>
+                            <th>Employee</th>
+                            <th>P</th>
+                            <th>A</th>
+                            <th>L</th>
+                            <th>H</th>
+                            <th>WO</th>
+                            <th>OD</th>
+                            <th>Total</th>
+                            <th>Attendance %</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var employee in Model)
+                        {
+                            <tr>
+
+                                <td>
+                                    @employee.EmployeeCode
+                                </td>
+
+                                <td>
+                                    @employee.EmployeeName
+                                </td>
+
+                                <td>
+                                    <span class="badge-success">
+                                        @employee.PresentCount
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="badge-danger">
+                                        @employee.AbsentCount
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="badge-warning">
+                                        @employee.LeaveCount
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="badge-primary">
+                                        @employee.HolidayCount
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="badge-secondary">
+                                        @employee.WeekOffCount
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="badge-info">
+                                        @employee.OnDutyCount
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <strong>
+                                        @employee.TotalDays
+                                    </strong>
+                                </td>
+
+                                <td>
+
+                                    <strong>
+                                        @employee.AttendancePercentage%
+                                    </strong>
+
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+    </div>
+
+</div>

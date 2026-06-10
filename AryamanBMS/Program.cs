@@ -1,11 +1,11 @@
 using AryamanBMS.Data;
-using AryamanBMS.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 using AryamanBMS.Repositories;
 using AryamanBMS.Repositories.Interfaces;
+using AryamanBMS.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,6 +37,13 @@ builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
 builder.Services.AddScoped<IDepartmentRepository, DepartmentRepository>();
 
 builder.Services.AddScoped<IDesignationRepository, DesignationRepository>();
+
+// Leave Repo
+builder.Services.AddScoped<ILeaveTypeRepository, LeaveTypeRepository>();
+
+builder.Services.AddScoped<ILeaveApplicationRepository,LeaveApplicationRepository>();
+
+builder.Services.AddScoped<ILeaveBalanceRepository,LeaveBalanceRepository>();
 
 
 var app = builder.Build();

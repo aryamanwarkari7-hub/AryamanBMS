@@ -1,0 +1,183 @@
+﻿@model List<AryamanBMS.Models.LeaveBalanceModel>
+
+@{
+    ViewData["Title"] = "Leave Balance";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Leave Balance</h1>
+        <p class="module-subtitle">
+            Employee-wise yearly leave balance
+        </p>
+    </div>
+
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="app-alert app-alert-success">
+        @TempData["Success"]
+    </div>
+}
+
+<div class="app-card mb-3">
+
+    <div class="card-header">
+        <h5 class="card-title">Leave Balance Filter</h5>
+    </div>
+
+    <div class="card-body">
+
+        <form method="get">
+
+            <div class="d-flex gap-3 align-items-end flex-wrap">
+
+                <div class="form-group">
+                    <label class="form-label">Year</label>
+
+                    <select name="year"
+                            class="app-select">
+
+                        @for (int y = DateTime.Today.Year - 2;
+                             y <= DateTime.Today.Year + 2;
+                             y++)
+                        {
+                            if (y == ViewBag.Year)
+                            {
+                                <option value="@y" selected>@y</option>
+                            }
+                            else
+                            {
+                                <option value="@y">@y</option>
+                            }
+                        }
+
+                    </select>
+                </div>
+
+                <button type="submit"
+                        class="btn-app btn-primary-app">
+                    Load
+                </button>
+
+            </div>
+
+        </form>
+
+        <form asp-action="Generate"
+              method="post"
+              class="mt-3">
+
+            @Html.AntiForgeryToken()
+
+            <input type="hidden"
+                   name="year"
+                   value="@ViewBag.Year" />
+
+            <button type="submit"
+                    class="btn-app btn-success-app"
+                    onclick="return confirm('Generate leave balance for selected year?');">
+                Generate Balance
+            </button>
+
+            <a asp-action="Export"
+               asp-route-year="@ViewBag.Year"
+               class="btn-app btn-success-app">
+
+                <i class="bi bi-file-earmark-excel"></i>
+                Export Excel
+
+            </a>
+
+        </form>
+
+    </div>
+
+</div>
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+        <h5 class="card-title">
+            Leave Balance Register - @ViewBag.Year
+        </h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="table-responsive">
+
+            @if (!Model.Any())
+            {
+                <div class="empty-state">
+                    No leave balance records found.
+                </div>
+            }
+            else
+            {
+                <table class="app-table">
+
+                    <thead>
+                        <tr>
+                            <th>Employee Code</th>
+                            <th>Employee</th>
+                            <th>Leave Type</th>
+                            <th>Allocated</th>
+                            <th>Used</th>
+                            <th>Balance</th>
+                            <th>Year</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+
+                                <td>
+                                    @item.Employee?.EmployeeCode
+                                </td>
+
+                                <td>
+                                    @item.Employee?.FullName
+                                </td>
+
+                                <td>
+                                    @item.LeaveType?.LeaveCode -
+                                    @item.LeaveType?.LeaveName
+                                </td>
+
+                                <td>
+                                    @item.AllocatedDays
+                                </td>
+
+                                <td>
+                                    @item.UsedDays
+                                </td>
+
+                                <td>
+                                    <strong>
+                                        @item.BalanceDays
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    @item.LeaveYear
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+            }
+
+        </div>
+
+    </div>
+
+</div>

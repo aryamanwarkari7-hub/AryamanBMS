@@ -1,9 +1,10 @@
-﻿using AryamanBMS.Models;
-using AryamanBMS.Repositories.Interfaces;
+﻿using AryamanBMS.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ClosedXML.Excel;
+using AryamanBMS.Models;
 
 namespace AryamanBMS.Controllers
 {
@@ -301,6 +302,87 @@ namespace AryamanBMS.Controllers
                 .Where(x => x.IsActive)
                 .OrderBy(x => x.FullName)
                 .ToList();
+        }
+
+        // Exel Export
+        [HttpGet]
+        public IActionResult Export()
+        {
+            var employees = _employeeRepository.Employees
+                .Include(e => e.Department)
+                .Include(e => e.Designation)
+                .OrderBy(e => e.EmployeeCode)
+                .ToList();
+
+            using var workbook = new XLWorkbook();
+
+            var worksheet = workbook.Worksheets.Add("Employees");
+
+            worksheet.Cell("A1").Value = "Employee Code";
+            worksheet.Cell("B1").Value = "Employee Name";
+            worksheet.Cell("C1").Value = "Department";
+            worksheet.Cell("D1").Value = "Designation";
+            worksheet.Cell("E1").Value = "Mobile Number";
+            worksheet.Cell("F1").Value = "Official Email";
+            worksheet.Cell("G1").Value = "Joining Date";
+            worksheet.Cell("H1").Value = "Status";
+
+            var headerRange = worksheet.Range("A1:H1");
+
+            headerRange.Style.Font.Bold = true;
+            headerRange.Style.Fill.BackgroundColor =
+                XLColor.LightBlue;
+
+            worksheet.Cell(1, 1).Value = "Employee Code";
+            worksheet.Cell(1, 2).Value = "Employee Name";
+            worksheet.Cell(1, 3).Value = "Department";
+            worksheet.Cell(1, 4).Value = "Designation";
+            worksheet.Cell(1, 5).Value = "Mobile Number";
+            worksheet.Cell(1, 6).Value = "Official Email";
+            worksheet.Cell(1, 7).Value = "Joining Date";
+            worksheet.Cell(1, 8).Value = "Status";
+
+            int row = 2;
+
+            foreach (var employee in employees)
+            {
+                worksheet.Cell(row, 1).Value =
+                    employee.EmployeeCode;
+
+                worksheet.Cell(row, 2).Value =
+                    $"{employee.FirstName} {employee.LastName}";
+
+                worksheet.Cell(row, 3).Value =
+                    employee.Department?.DepartmentName;
+
+                worksheet.Cell(row, 4).Value =
+                    employee.Designation?.DesignationName;
+
+                worksheet.Cell(row, 5).Value =
+                    employee.MobileNumber;
+
+                worksheet.Cell(row, 6).Value =
+                    employee.OfficialEmail;
+
+                worksheet.Cell(row, 7).Value =
+                    employee.JoiningDate;
+
+                worksheet.Cell(row, 8).Value =
+                    employee.IsActive ? "Active" : "Inactive";
+
+                row++;
+            }
+
+            worksheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+
+            workbook.SaveAs(stream);
+
+            return File(
+                stream.ToArray(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"Employees_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
         }
     }
 }

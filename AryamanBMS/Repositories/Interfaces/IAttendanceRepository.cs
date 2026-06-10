@@ -1,6 +1,6 @@
-﻿    using AryamanBMS.Models;
+﻿using AryamanBMS.Models;
 
-    namespace AryamanBMS.Repositories.Interfaces;
+namespace AryamanBMS.Repositories.Interfaces;
 
     public interface IAttendanceRepository
     {

@@ -1,5 +1,4 @@
-﻿using AryamanBMS.Models;
-using AryamanBMS.ViewModels;
+﻿using AryamanBMS.ViewModels;
 using AryamanBMS.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -7,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 using ClosedXML.Excel;
+using AryamanBMS.Models;
 
 namespace AryamanBMS.Controllers
 {
@@ -497,9 +497,9 @@ namespace AryamanBMS.Controllers
 
         [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> ExportExcel(
-    string? searchText,
-    DateTime? fromDate,
-    DateTime? toDate)
+               string? searchText,
+               DateTime? fromDate,
+               DateTime? toDate)
         {
             var query = _attendanceRepository.Attendances
                 .Include(a => a.Employee)
@@ -525,7 +525,11 @@ namespace AryamanBMS.Controllers
                     a.AttendanceDate <= toDate.Value.Date);
             }
 
-            var records = await query
+            var attendanceList = await query
+                .Include(a => a.Employee)
+                    .ThenInclude(e => e.Department)
+                .Include(a => a.Employee)
+                    .ThenInclude(e => e.Designation)
                 .OrderByDescending(a => a.AttendanceDate)
                 .ToListAsync();
 
@@ -536,41 +540,57 @@ namespace AryamanBMS.Controllers
 
             worksheet.Cell(1, 1).Value = "Employee Code";
             worksheet.Cell(1, 2).Value = "Employee Name";
-            worksheet.Cell(1, 3).Value = "Date";
-            worksheet.Cell(1, 4).Value = "Status";
-            worksheet.Cell(1, 5).Value = "Check In";
-            worksheet.Cell(1, 6).Value = "Check Out";
+            worksheet.Cell(1, 3).Value = "Department";
+            worksheet.Cell(1, 4).Value = "Designation";
+            worksheet.Cell(1, 5).Value = "Date";
+            worksheet.Cell(1, 6).Value = "Status";
             worksheet.Cell(1, 7).Value = "Remarks";
+            worksheet.Cell(1, 8).Value = "Created On";
+
+            var headerRange = worksheet.Range("A1:H1");
+
+            headerRange.Style.Font.Bold = true;
+            headerRange.Style.Alignment.Horizontal =
+                XLAlignmentHorizontalValues.Center;
+
 
             int row = 2;
 
-            foreach (var item in records)
+            foreach (var attendance in attendanceList)
             {
                 worksheet.Cell(row, 1).Value =
-                    item.Employee?.EmployeeCode;
+                    attendance.Employee?.EmployeeCode;
 
                 worksheet.Cell(row, 2).Value =
-                    $"{item.Employee?.FirstName} {item.Employee?.LastName}";
+                    $"{attendance.Employee?.FirstName} {attendance.Employee?.LastName}";
 
                 worksheet.Cell(row, 3).Value =
-                    item.AttendanceDate;
+                    attendance.Employee?.Department?.DepartmentName;
 
                 worksheet.Cell(row, 4).Value =
-                    item.Status;
+                    attendance.Employee?.Designation?.DesignationName;
 
                 worksheet.Cell(row, 5).Value =
-                    item.CheckInTime?.ToString("hh:mm tt");
+                    attendance.AttendanceDate;
 
                 worksheet.Cell(row, 6).Value =
-                    item.CheckOutTime?.ToString("hh:mm tt");
+                    attendance.Status;
 
                 worksheet.Cell(row, 7).Value =
-                    item.Remarks;
+                    attendance.Remarks;
+
+                worksheet.Cell(row, 8).Value =
+                    attendance.CreatedOn;
 
                 row++;
             }
 
             worksheet.Columns().AdjustToContents();
+            worksheet.Column(5).Style.DateFormat.Format = "dd-MMM-yyyy";
+
+            worksheet.Column(8).Style.DateFormat.Format ="dd-MMM-yyyy HH:mm";
+
+
 
             using var stream =
                 new MemoryStream();
@@ -581,6 +601,95 @@ namespace AryamanBMS.Controllers
                 stream.ToArray(),
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 $"Attendance_{DateTime.Now:yyyyMMdd}.xlsx");
+        }
+
+        [Authorize(Roles = "Admin,HR")]
+        public async Task<IActionResult> Summary(int? month,int? year)
+        {
+            month ??= DateTime.Today.Month;
+            year ??= DateTime.Today.Year;
+
+            var attendanceRecords =
+                await _attendanceRepository.Attendances
+                .Include(a => a.Employee)
+                .Where(a =>
+                    a.AttendanceDate.Month == month &&
+                    a.AttendanceDate.Year == year)
+                .ToListAsync();
+
+            var summary =
+                attendanceRecords
+                .GroupBy(a => a.EmployeeId)
+                .Select(g =>
+                {
+                    int present =
+                        g.Count(x => x.Status == "P");
+
+                    int absent =
+                        g.Count(x => x.Status == "A");
+
+                    int leave =
+                        g.Count(x => x.Status == "L");
+
+                    int holiday =
+                        g.Count(x => x.Status == "H");
+
+                    int weekOff =
+                        g.Count(x => x.Status == "WO");
+
+                    int onDuty =
+                        g.Count(x => x.Status == "OD");
+
+                    int totalDays =
+                        g.Count();
+
+                    int workingDays =
+                        totalDays - holiday - weekOff;
+
+                    decimal percentage =
+                        workingDays == 0
+                        ? 0
+                        : Math.Round(
+                            ((decimal)(present + onDuty)
+                            / workingDays) * 100,
+                            2);
+
+                    return new AttendanceSummaryViewModel
+                    {
+                        EmployeeId =
+                            g.First().EmployeeId,
+
+                        EmployeeCode =
+                            g.First().Employee.EmployeeCode,
+
+                        EmployeeName =
+                            $"{g.First().Employee.FirstName} {g.First().Employee.LastName}",
+
+                        PresentCount = present,
+
+                        AbsentCount = absent,
+
+                        LeaveCount = leave,
+
+                        HolidayCount = holiday,
+
+                        WeekOffCount = weekOff,
+
+                        OnDutyCount = onDuty,
+
+                        TotalDays = totalDays,
+
+                        AttendancePercentage =
+                            percentage
+                    };
+                })
+                .OrderBy(x => x.EmployeeName)
+                .ToList();
+
+            ViewBag.Month = month;
+            ViewBag.Year = year;
+
+            return View(summary);
         }
     }
 }

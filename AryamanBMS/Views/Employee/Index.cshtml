@@ -7,11 +7,21 @@
         <p class="module-subtitle">Manage employee records</p>
     </div>
 
-    <a asp-action="Create"
-       class="btn-app btn-primary-app">
-        <i class="bi bi-plus-lg"></i>
-        Add Employee
-    </a>
+    <div class="d-flex flex-row gap-2">
+         <a asp-action="Create"
+            class="btn-app btn-primary-app">
+             <i class="bi bi-plus-lg"></i>
+             Add Employee
+         </a>
+         
+         <a asp-action="Export"
+            class="btn-app btn-success-app">
+         
+             <i class="bi bi-file-earmark-excel"></i>
+             Export
+         
+         </a>
+    </div>
 
 </div>
 

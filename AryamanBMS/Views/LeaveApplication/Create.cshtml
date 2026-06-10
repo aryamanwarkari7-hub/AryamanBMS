@@ -1,0 +1,113 @@
+﻿@model AryamanBMS.Models.LeaveApplicationModel
+
+@{
+    ViewData["Title"] = "Apply Leave";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Apply Leave</h1>
+        <p class="module-subtitle">Submit a new leave application</p>
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-body">
+
+        <form asp-action="Create"
+              method="post">
+
+            <div asp-validation-summary="ModelOnly"
+                 class="validation-message mb-3">
+            </div>
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+                    <label class="form-label">Leave Type</label>
+
+                    <select asp-for="LeaveTypeId"
+                            class="app-select">
+
+                        <option value="">Select Leave Type</option>
+
+                        @foreach (var leaveType in ViewBag.LeaveTypes)
+                        {
+                            <option value="@leaveType.Id">
+                                @leaveType.LeaveCode - @leaveType.LeaveName
+                            </option>
+                        }
+
+                    </select>
+
+                    <span asp-validation-for="LeaveTypeId"
+                          class="validation-message">
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">From Date</label>
+
+                    <input asp-for="FromDate"
+                           type="date"
+                           class="app-input" />
+
+                    <span asp-validation-for="FromDate"
+                          class="validation-message">
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">To Date</label>
+
+                    <input asp-for="ToDate"
+                           type="date"
+                           class="app-input" />
+
+                    <span asp-validation-for="ToDate"
+                          class="validation-message">
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Reason</label>
+
+                    <textarea asp-for="Reason"
+                              class="app-textarea"
+                              placeholder="Enter reason for leave">
+                    </textarea>
+
+                    <span asp-validation-for="Reason"
+                          class="validation-message">
+                    </span>
+                </div>
+
+            </div>
+
+            <div class="mt-4">
+
+                <button type="submit"
+                        class="btn-app btn-primary-app">
+                    Submit Application
+                </button>
+
+                <a asp-action="Index"
+                   class="btn-app btn-secondary-app">
+                    Cancel
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

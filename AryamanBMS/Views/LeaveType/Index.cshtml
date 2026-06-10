@@ -1,0 +1,118 @@
+﻿@model IEnumerable<AryamanBMS.Models.LeaveTypeModel>
+
+@{
+    ViewData["Title"] = "Leave Types";
+}
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">
+            Leave Types
+        </h1>
+
+        <p class="module-subtitle">
+            Manage leave policies
+        </p>
+    </div>
+
+    <a asp-action="Create"
+       class="btn-app btn-primary-app">
+
+        <i class="bi bi-plus-lg"></i>
+        Add Leave Type
+
+    </a>
+
+</div>
+
+<div class="app-card table-card">
+
+    <div class="card-body">
+
+        <table class="app-table">
+
+            <thead>
+
+                <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Days</th>
+                    <th>Carry Forward</th>
+                    <th>Paid Leave</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                @foreach (var item in Model)
+                {
+                    <tr>
+
+                        <td>@item.LeaveCode</td>
+
+                        <td>@item.LeaveName</td>
+
+                        <td>@item.DaysPerYear</td>
+
+                        <td>
+                            @(item.IsCarryForward ? "Yes" : "No")
+                        </td>
+
+                        <td>
+                            @(item.IsPaidLeave ? "Yes" : "No")
+                        </td>
+
+                        <td>
+
+                            @if (item.IsActive)
+                            {
+                                <span class="badge-success">
+                                    Active
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge-danger">
+                                    Inactive
+                                </span>
+                            }
+
+                        </td>
+
+                        <td>
+
+                            <div class="table-actions">
+
+                                <a asp-action="Edit"
+                                   asp-route-id="@item.Id"
+                                   class="btn-app btn-secondary-app btn-icon">
+
+                                    <i class="bi bi-pencil"></i>
+
+                                </a>
+
+                                <a asp-action="Delete"
+                                   asp-route-id="@item.Id"
+                                   class="btn-app btn-danger-app btn-icon">
+
+                                    <i class="bi bi-trash"></i>
+
+                                </a>
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+                }
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>

@@ -6,6 +6,8 @@
 @{
     var currentController =
         ViewContext.RouteData.Values["controller"]?.ToString();
+        
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
 
     var currentUser =
         await UserManager.GetUserAsync(User);
@@ -40,6 +42,18 @@
                     .Select(x => x[0]))
                     .ToUpper();
     }
+
+    bool isMasterSetupActive =
+        currentController == "User" ||
+        currentController == "Department" ||
+        currentController == "Designation" ||
+        currentController == "LeaveType";
+
+    bool isHrActive =
+        currentController == "Employee" ||
+        currentController == "Attendance" ||
+        currentController == "LeaveApplication" ||
+        currentController == "LeaveBalance";
 }
 
 @{
@@ -105,11 +119,11 @@
             <!-- Master Setup -->
             <div class="menu-group">
 
-                <button class="menu-group-header"
+                <button class="menu-group-header" @(isMasterSetupActive ? "active-menu" : "")"
                 type="button"
                 data-bs-toggle="collapse"
                 data-bs-target="#masterSetupMenu"
-                aria-expanded="true">
+                aria-expanded="@isMasterSetupActive.ToString().ToLower()">
 
                     <div class="menu-group-left">
                         <i class="bi bi-gear"></i>
@@ -119,8 +133,10 @@
                     <i class="bi bi-chevron-down"></i>
 
                 </button>
-
-                <div class="collapse show" id="masterSetupMenu" data-bs-parent="#sidebarAccordion">
+                 
+                <div class="collapse" @(isMasterSetupActive ? "show" : "")"
+                    id="masterSetupMenu" 
+                    data-bs-parent="#sidebarAccordion">
 
                     <div class="submenu">
                         @if (isAdmin)
@@ -192,13 +208,13 @@
 
         <!-- HR -->
         
-            <div class="menu-group">
+        <div class="menu-group">
 
-                <button class="menu-group-header"
+            <button class="menu-group-header" @(isHrActive ? "active-menu" : "")"
                 type="button"
                 data-bs-toggle="collapse"
                 data-bs-target="#hrMenu"
-                aria-expanded="false">
+                    aria-expanded="@isHrActive.ToString().ToLower()">
 
                     <div class="menu-group-left">
                         <i class="bi bi-person-workspace"></i>
@@ -209,7 +225,9 @@
 
                 </button>
 
-                <div class="collapse" id="hrMenu" data-bs-parent="#sidebarAccordion">
+            <div class="collapse" @(isHrActive ? "show" : "")"
+                    id="hrMenu" 
+                    data-bs-parent="#sidebarAccordion">
 
                     <div class="submenu">
                         @if (isAdmin || isHR)
@@ -225,35 +243,94 @@
                         }
 
                         @* <a href="#" class="submenu-item">Employee</a> *@
+                    @if (isEmployee || isHR){
                         <a asp-controller="Attendance"
                         asp-action="Index"
-                           class="submenu-item @(currentController == "Attendance" ? "active-menu" : "")">
+                           class="submenu-item @(currentController == "Attendance" && currentAction == "Index" ? "active-menu" : "" )">
 
                             <i class="bi bi-calendar-check"></i>
                             <span>Attendance</span>
 
                         </a>
-
-                        <a asp-controller="Attendance"
-                           asp-action="Dashboard"
-                           class="submenu-item @(currentController == "Attendance" ? "active-menu" : "")">
-                            <i class="bi bi-speedometer2"></i>
-                            Attendance Dashboard
-                        </a>
+                    }
 
                     @if (isAdmin || isHR)
                     {
                         <a asp-controller="Attendance"
-                           asp-action="Register"
-                           class="submenu-item @(currentController == "Attendance" ? "active-menu" : "")">
+                        asp-action="Dashboard"
+                        class="submenu-item @(currentController == "Attendance" && currentAction == "Dashboard" ? "active-menu" : "")">
+                            <i class="bi bi-speedometer2"></i>
+                            Attendance Dashboard
+                        </a>
 
-                            <i class="bi bi-people-fill"></i>
+
+
+                        <a asp-controller="Attendance"
+                        asp-action="Register"
+                        class="submenu-item @(currentController == "Attendance" && currentAction == "Register" ? "active-menu" : "")">
+
+                            <i class="bi bi-pencil"></i>
                             <span>Attendance register</span>
+
+                        </a>
+
+
+                        <a asp-controller="Attendance"
+                        asp-action="Summary"
+                        class="submenu-item @(currentController == "Attendance" && currentAction == "Summary" ? "active-menu" : "")
+                        ">
+
+                            <i class="bi bi-people"></i>
+                            <span>Attendance Summary</span>
+
+                        </a>
+                    }
+                                            
+                    @if (isAdmin || isHR)
+                    {
+                        <a asp-controller="LeaveApplication"
+                        asp-action="Dashboard"
+                        class="submenu-item @(currentController == "LeaveApplication" && currentAction == "Dashboard" ? "active-menu" : "")">
+
+                            <i class="bi bi-grid"></i>
+                            <span>Leave Dashboard</span>
+
+                        </a>
+
+
+                        <a asp-controller="LeaveType"
+                        asp-action="Index"
+                        class="submenu-item @(currentController == "LeaveType" ? "active-menu" : "")">
+
+                            <i class="bi bi-calendar-event"></i>
+                            <span>Leave Types</span>
 
                         </a>
                     }
 
-                        <a href="#" class="submenu-item">Leave Tracker</a>
+                    
+                    <a asp-controller="LeaveApplication"
+                       asp-action="Index"
+                       class="submenu-item @(currentController == "LeaveApplication" && currentAction == "Index" ? "active-menu" : "")">
+
+                        <i class="bi bi-calendar-event"></i>
+                        <span>Leave Application</span>
+
+                    </a>
+
+                    @if (isAdmin || isHR)
+                    {
+                        <a asp-controller="LeaveBalance"
+                        asp-action="Index"
+                        class="submenu-item @(currentController == "LeaveBalance" ? "active-menu" : "")">
+
+                            <i class="bi bi-wallet2"></i>
+                            <span>Leave Balance</span>
+
+                        </a>
+                    }
+
+                        @* <a href="#" class="submenu-item">Leave Tracker</a> *@
                         <a href="#" class="submenu-item">Salary Register</a>
                         <a href="#" class="submenu-item">Letters Log</a>
 
@@ -262,7 +339,6 @@
                 </div>
 
             </div>
-
 
         <!-- Sales -->
         <div class="menu-group">
@@ -297,9 +373,7 @@
             </div>
 
         </div>
-
-        
-
+            
         <!-- Projects -->
         <div class="menu-group">
 

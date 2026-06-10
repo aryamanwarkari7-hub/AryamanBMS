@@ -1,0 +1,181 @@
+﻿@model List<AryamanBMS.Models.LeaveApplicationModel>
+
+@{
+    ViewData["Title"] = "Leave Applications";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Leave Applications</h1>
+        <p class="module-subtitle">Manage employee leave requests</p>
+    </div>
+
+    <a asp-action="Create"
+       class="btn-app btn-primary-app">
+        <i class="bi bi-plus-lg"></i>
+        Apply Leave
+    </a>
+
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="app-alert app-alert-success">
+        @TempData["Success"]
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="app-alert app-alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Leave Application List</h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="table-responsive">
+
+            @if (!Model.Any())
+            {
+                <div class="empty-state">
+                    No leave applications found.
+                </div>
+            }
+            else
+            {
+                <table class="app-table">
+
+                    <thead>
+                        <tr>
+                            <th>Application No</th>
+                            <th>Employee</th>
+                            <th>Leave Type</th>
+                            <th>From</th>
+                            <th>To</th>
+                            <th>Days</th>
+                            <th>Status</th>
+                            <th>Applied On</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+
+                                <td>
+                                    <strong>@item.ApplicationNumber</strong>
+                                </td>
+
+                                <td>
+                                    @item.Employee?.FullName
+                                    <br />
+                                    <small>@item.Employee?.EmployeeCode</small>
+                                </td>
+
+                                <td>
+                                    @(item.LeaveType?.LeaveName ?? "-")
+                                </td>
+
+                                <td>
+                                    @item.FromDate.ToString("dd-MMM-yyyy")
+                                </td>
+
+                                <td>
+                                    @item.ToDate.ToString("dd-MMM-yyyy")
+                                </td>
+
+                                <td>
+                                    @item.NumberOfDays
+                                </td>
+
+                                <td>
+                                    @if (item.Status == "Pending")
+                                    {
+                                        <span class="badge-warning">Pending</span>
+                                    }
+                                    else if (item.Status == "Approved")
+                                    {
+                                        <span class="badge-success">Approved</span>
+                                    }
+                                    else if (item.Status == "Rejected")
+                                    {
+                                        <span class="badge-danger">Rejected</span>
+                                    }
+                                    else if (item.Status == "Cancelled")
+                                    {
+                                        <span class="badge-secondary">Cancelled</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@item.Status</span>
+                                    }
+                                </td>
+
+                                <td>
+                                    @item.AppliedOn.ToString("dd-MMM-yyyy")
+                                </td>
+
+                                <td>
+                                    <div class="table-actions">
+
+                                        <a asp-action="Details"
+                                           asp-route-id="@item.Id"
+                                           class="btn-app btn-primary-app btn-icon">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+
+                                        @if ((User.IsInRole("Admin") || User.IsInRole("HR"))
+                                            && item.Status == "Pending")
+                                        {
+                                            <a asp-action="Approve"
+                                               asp-route-id="@item.Id"
+                                               class="btn-app btn-success-app btn-icon"
+                                               onclick="return confirm('Approve this leave application?');">
+                                                <i class="bi bi-check-lg"></i>
+                                            </a>
+
+                                            <a asp-action="Reject"
+                                               asp-route-id="@item.Id"
+                                               class="btn-app btn-danger-app btn-icon"
+                                               onclick="return confirm('Reject this leave application?');">
+                                                <i class="bi bi-x-lg"></i>
+                                            </a>
+                                        }
+
+                                        @if (item.Status == "Pending")
+                                        {
+                                            <a asp-action="Cancel"
+                                               asp-route-id="@item.Id"
+                                               class="btn-app btn-danger-app btn-icon"
+                                               onclick="return confirm('Cancel this leave application?');">
+                                                <i class="bi bi-x-circle"></i>
+                                            </a>
+                                        }
+
+                                    </div>
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+            }
+
+        </div>
+
+    </div>
+
+</div>
