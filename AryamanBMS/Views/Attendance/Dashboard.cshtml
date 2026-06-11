@@ -53,54 +53,27 @@
 <div class="dashboard-grid">
 
     <div class="stats-card">
-
-        <div class="stats-label">
-            Total Employees
-        </div>
-
-        <div class="stats-number">
-            @Model.Employees.Count
-        </div>
-
+        <div class="stats-label">Present Today</div>
+        <div class="stats-number">@Model.PresentToday</div>
     </div>
 
     <div class="stats-card">
-
-        <div class="stats-label">
-            Present
-        </div>
-
-        <div class="stats-number">
-            @Model.Employees.Sum(x => x.PresentCount)
-        </div>
-
+        <div class="stats-label">On Leave Today</div>
+        <div class="stats-number">@Model.OnLeaveToday</div>
     </div>
 
     <div class="stats-card">
-
-        <div class="stats-label">
-            Absent
-        </div>
-
-        <div class="stats-number">
-            @Model.Employees.Sum(x => x.AbsentCount)
-        </div>
-
+        <div class="stats-label">Not Marked Today</div>
+        <div class="stats-number">@Model.NotMarkedToday</div>
     </div>
 
     <div class="stats-card">
-
-        <div class="stats-label">
-            Leave
-        </div>
-
-        <div class="stats-number">
-            @Model.Employees.Sum(x => x.LeaveCount)
-        </div>
-
+        <div class="stats-label">Attendance %</div>
+        <div class="stats-number">@Model.AttendancePercentage%</div>
     </div>
 
 </div>
+
 
 <!-- Filter Card -->
 

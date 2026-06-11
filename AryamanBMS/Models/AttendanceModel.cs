@@ -1,4 +1,6 @@
-﻿namespace AryamanBMS.Models
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace AryamanBMS.Models
 {
     public class AttendanceModel
     {
@@ -21,5 +23,19 @@
         public DateTime CreatedOn { get; set; }
 
         public EmployeeModel? Employee { get; set; }
+
+        [NotMapped]
+        public double WorkingHours
+        {
+            get
+            {
+                if (CheckInTime.HasValue && CheckOutTime.HasValue)
+                {
+                    return (CheckOutTime.Value - CheckInTime.Value).TotalHours;
+                }
+
+                return 0;
+            }
+        }
     }
 }

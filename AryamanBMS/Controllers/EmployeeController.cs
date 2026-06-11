@@ -8,7 +8,7 @@ using AryamanBMS.Models;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,HR")]
+    [Authorize]
     public class EmployeeController : Controller
     {
         private readonly IEmployeeRepository _employeeRepository;
@@ -27,6 +27,8 @@ namespace AryamanBMS.Controllers
             _designationRepository = designationRepository;
             _userManager = userManager;
         }
+
+        [Authorize(Roles = "Admin,HR")]
 
         public IActionResult Index(string searchText, int page = 1)
         {
@@ -61,6 +63,7 @@ namespace AryamanBMS.Controllers
             return View(pagedEmployees);
         }
 
+        [Authorize(Roles = "Admin,HR")]
         [HttpGet]
         public IActionResult Create()
         {
@@ -69,6 +72,7 @@ namespace AryamanBMS.Controllers
             return View();
         }
 
+        [Authorize(Roles = "Admin,HR")]
         [HttpPost]
         public async Task<IActionResult> Create(EmployeeModel employee)
         {
@@ -143,6 +147,7 @@ namespace AryamanBMS.Controllers
             return View(employee);
         }
 
+        [Authorize(Roles = "Admin,HR")]
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
@@ -160,6 +165,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Edit(EmployeeModel employee)
         {
             if (employee.DateOfBirth > DateTime.Today)
@@ -225,6 +231,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,HR")]
         public IActionResult Delete(int id)
         {
             var employee = _employeeRepository.Employees
@@ -239,6 +246,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var employee =
@@ -273,6 +281,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Details(int id)
         {
             var employee =
@@ -304,8 +313,9 @@ namespace AryamanBMS.Controllers
                 .ToList();
         }
 
-        // Exel Export
+        // Excel Export
         [HttpGet]
+        [Authorize(Roles = "Admin,HR")]
         public IActionResult Export()
         {
             var employees = _employeeRepository.Employees
@@ -383,6 +393,59 @@ namespace AryamanBMS.Controllers
                 stream.ToArray(),
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 $"Employees_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+        }
+
+        [Authorize(Roles = "Admin,HR")]
+        public IActionResult Dashboard()
+        {
+            var totalEmployees =
+                _employeeRepository.Employees.Count();
+
+            var activeEmployees =
+                _employeeRepository.Employees.Count(x => x.IsActive);
+
+            var inactiveEmployees =
+                _employeeRepository.Employees.Count(x => !x.IsActive);
+
+            var recentEmployees =
+                _employeeRepository.Employees
+                .OrderByDescending(x => x.Id)
+                .Take(5)
+                .ToList();
+
+            ViewBag.TotalEmployees = totalEmployees;
+            ViewBag.ActiveEmployees = activeEmployees;
+            ViewBag.InactiveEmployees = inactiveEmployees;
+            ViewBag.RecentEmployees = recentEmployees;
+
+            return View();
+        }
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> Profile()
+        {
+            var user = await _userManager.GetUserAsync(User);
+
+            if (user == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var employee = await _employeeRepository.Employees
+                .Include(x => x.Department)
+                .Include(x => x.Designation)
+                .Include(x => x.ApplicationUser)
+                .FirstOrDefaultAsync(x => x.ApplicationUserId == user.Id);
+
+            if (employee == null)
+            {
+                TempData["Error"] = "Employee profile not found.";
+
+                return RedirectToAction("Index", "Attendance");
+            }
+
+            return View(employee);
         }
     }
 }

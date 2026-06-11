@@ -1,0 +1,221 @@
+﻿@model AryamanBMS.Models.EmployeeModel
+
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">
+            My Profile
+        </h1>
+
+        <p class="module-subtitle">
+            Employee information and employment details
+        </p>
+    </div>
+
+</div>
+
+<div class="app-card mb-4">
+
+    <div class="card-header">
+
+        <h5 class="card-title">
+            Basic Information
+        </h5>
+
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-2">
+
+            <div>
+                <strong>Employee Code</strong>
+                <p>@Model.EmployeeCode</p>
+            </div>
+
+            <div>
+                <strong>Full Name</strong>
+                <p>@Model.FullName</p>
+            </div>
+
+            <div>
+                <strong>Date of Birth</strong>
+                <p>@(Model.DateOfBirth?.ToString("dd-MMM-yyyy") ?? "-")</p>
+            </div>
+
+            <div>
+                <strong>Gender</strong>
+                <p>@(Model.Gender ?? "-")</p>
+            </div>
+
+            <div>
+                <strong>Department</strong>
+                <p>@Model.Department?.DepartmentName</p>
+            </div>
+
+            <div>
+                <strong>Designation</strong>
+                <p>@Model.Designation?.DesignationName</p>
+            </div>
+
+            <div>
+                <strong>Joining Date</strong>
+                <p>@Model.JoiningDate.ToString("dd-MMM-yyyy")</p>
+            </div>
+
+            <div>
+                <strong>Employment Type</strong>
+                <p>@(Model.EmploymentType ?? "-")</p>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card mb-4">
+
+    <div class="card-header">
+
+        <h5 class="card-title">
+            Contact Information
+        </h5>
+
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-2">
+
+            <div>
+                <strong>Mobile Number</strong>
+                <p>@Model.MobileNumber</p>
+            </div>
+
+            <div>
+                <strong>Personal Email</strong>
+                <p>@(Model.PersonalEmail ?? "-")</p>
+            </div>
+
+            <div>
+                <strong>Official Email</strong>
+                <p>@(Model.OfficialEmail ?? "-")</p>
+            </div>
+
+            <div>
+                <strong>Emergency Contact</strong>
+                <p>@(Model.EmergencyContact ?? "-")</p>
+            </div>
+
+            <div>
+                <strong>Emergency Phone</strong>
+                <p>@(Model.EmergencyPhone ?? "-")</p>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card mb-4">
+
+    <div class="card-header">
+
+        <h5 class="card-title">
+            Address Information
+        </h5>
+
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-2">
+
+            <div>
+                <strong>Address</strong>
+                <p>@(Model.PermanentAddress ?? "-")</p>
+            </div>
+
+            <div>
+                <strong>City</strong>
+                <p>@(Model.City ?? "-")</p>
+            </div>
+
+            <div>
+                <strong>State</strong>
+                <p>@(Model.State ?? "-")</p>
+            </div>
+
+            <div>
+                <strong>Pin Code</strong>
+                <p>@(Model.PinCode ?? "-")</p>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+
+        <h5 class="card-title">
+            Statutory Information
+        </h5>
+
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-2">
+
+            <div>
+                <strong>Aadhaar Number</strong>
+                <p>@(Model.AadhaarNo ?? "-")</p>
+            </div>
+
+            <div>
+                <strong>PAN Number</strong>
+                <p>@(Model.PanNo ?? "-")</p>
+            </div>
+
+            <div>
+                <strong>UAN Number</strong>
+                <p>@(Model.UanNo ?? "-")</p>
+            </div>
+
+            <div>
+                <strong>Status</strong>
+
+                @if (Model.IsActive)
+                {
+                    <p>
+                        <span class="badge-success">
+                            Active
+                        </span>
+                    </p>
+                }
+                else
+                {
+                    <p>
+                        <span class="badge-danger">
+                            Inactive
+                        </span>
+                    </p>
+                }
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

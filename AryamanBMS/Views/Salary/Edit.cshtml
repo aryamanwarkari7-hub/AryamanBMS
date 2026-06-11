@@ -1,0 +1,189 @@
+﻿@model AryamanBMS.Models.SalaryRecordModel
+
+@{
+    ViewData["Title"] = "Edit Salary";
+}
+
+<div class="module-header">
+
+    <div>
+
+        <h1 class="module-title">
+            Edit Salary
+        </h1>
+
+        <p class="module-subtitle">
+            Update salary components
+        </p>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+
+        <h5 class="card-title">
+            Salary Details
+        </h5>
+
+    </div>
+
+    <div class="card-body">
+
+        <form asp-action="Edit"
+              method="post">
+
+            <input asp-for="Id"
+                   type="hidden" />
+
+            <input asp-for="EmployeeId"
+                   type="hidden" />
+
+            <input asp-for="Month"
+                   type="hidden" />
+
+            <input asp-for="Year"
+                   type="hidden" />
+
+            <div class="form-grid-2">
+
+                <div>
+
+                    <label asp-for="BasicSalary"
+                           class="form-label"></label>
+
+                    <input asp-for="BasicSalary"
+                           class="app-input" />
+
+                </div>
+
+                <div>
+
+                    <label asp-for="HRA"
+                           class="form-label"></label>
+
+                    <input asp-for="HRA"
+                           class="app-input" />
+
+                </div>
+
+                <div>
+
+                    <label asp-for="DA"
+                           class="form-label"></label>
+
+                    <input asp-for="DA"
+                           class="app-input" />
+
+                </div>
+
+                <div>
+
+                    <label asp-for="OtherAllowances"
+                           class="form-label"></label>
+
+                    <input asp-for="OtherAllowances"
+                           class="app-input" />
+
+                </div>
+
+            </div>
+
+            <hr />
+
+            <div class="form-grid-2">
+
+                <div>
+
+                    <label asp-for="PfDeduction"
+                           class="form-label"></label>
+
+                    <input asp-for="PfDeduction"
+                           class="app-input" />
+
+                </div>
+
+                <div>
+
+                    <label asp-for="EsicDeduction"
+                           class="form-label"></label>
+
+                    <input asp-for="EsicDeduction"
+                           class="app-input" />
+
+                </div>
+
+                <div>
+
+                    <label asp-for="TdsDeduction"
+                           class="form-label"></label>
+
+                    <input asp-for="TdsDeduction"
+                           class="app-input" />
+
+                </div>
+
+                <div>
+
+                    <label asp-for="OtherDeductions"
+                           class="form-label"></label>
+
+                    <input asp-for="OtherDeductions"
+                           class="app-input" />
+
+                </div>
+
+            </div>
+
+            <hr />
+
+            <div class="form-grid-2">
+
+                <div>
+
+                    <label asp-for="GrossSalary"
+                           class="form-label"></label>
+
+                    <input asp-for="GrossSalary"
+                           class="app-input" />
+
+                </div>
+
+                <div>
+
+                    <label asp-for="NetSalary"
+                           class="form-label"></label>
+
+                    <input asp-for="NetSalary"
+                           class="app-input" />
+
+                </div>
+
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+
+                <button type="submit"
+                        class="btn-app btn-primary-app">
+
+                    <i class="bi bi-save"></i>
+                    Save
+
+                </button>
+
+                <a asp-action="Index"
+                   class="btn-app btn-secondary-app">
+
+                    Cancel
+
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>

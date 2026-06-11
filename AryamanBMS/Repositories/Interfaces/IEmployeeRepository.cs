@@ -5,6 +5,9 @@ namespace AryamanBMS.Repositories.Interfaces;
 public interface IEmployeeRepository
 {
     IQueryable<EmployeeModel> Employees { get; }
+
+    //IQueryable<LeaveApplicationModel> LeaveApplications { get; }
+
     Task<List<EmployeeModel>> GetAllAsync();
 
     Task<EmployeeModel?> GetByIdAsync(int id);

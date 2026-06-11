@@ -53,7 +53,9 @@
 
         <br />
 
-        <form asp-action="Delete" method="post">
+        <form asp-action="DeleteConfirmed" method="post">
+
+            @Html.AntiForgeryToken()
 
             <input asp-for="Id" type="hidden" />
 

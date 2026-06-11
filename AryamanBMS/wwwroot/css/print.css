@@ -1,0 +1,60 @@
+﻿@media print {
+
+    .sidebar,
+    .top-navbar,
+    .module-header,
+    .btn-app,
+    .navbar,
+    .sidebar-footer {
+        display: none !important;
+    }
+
+    .main-content,
+    .page-content,
+    .content-container {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        background: white !important;
+    }
+
+    .app-card {
+        border: none !important;
+        box-shadow: none !important;
+        background: white !important;
+    }
+
+    .card-body {
+        padding: 0 !important;
+    }
+
+    body {
+        background: white !important;
+        color: black !important;
+        font-size: 12px;
+    }
+
+    table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+    }
+
+    th,
+    td {
+        border: 1px solid #000 !important;
+        padding: 8px !important;
+        color: black !important;
+    }
+
+    h3,
+    h4,
+    h5,
+    p {
+        color: black !important;
+    }
+
+    @page {
+        size: A4;
+        margin: 15mm;
+    }
+}

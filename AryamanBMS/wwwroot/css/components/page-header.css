@@ -16,6 +16,7 @@
     font-size: var(--font-3xl);
     font-weight: 700;
     color: var(--text-primary);
+    text-transform:uppercase;
 }
 
 .module-subtitle {

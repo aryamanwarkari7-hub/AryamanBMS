@@ -1,0 +1,172 @@
+﻿@model AryamanBMS.Models.SalaryRecordModel
+
+@{
+    ViewData["Title"] = "Payslip";
+
+    var totalEarnings =
+        Model.BasicSalary +
+        Model.HRA +
+        Model.DA +
+        Model.OtherAllowances;
+
+    var totalDeductions =
+        Model.PfDeduction +
+        Model.EsicDeduction +
+        Model.TdsDeduction +
+        Model.OtherDeductions;
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Payslip</h1>
+        <p class="module-subtitle">
+            Salary slip for @Model.Month/@Model.Year
+        </p>
+    </div>
+
+    <div class="d-flex gap-2">
+
+        <button onclick="window.print()"
+                class="btn-app btn-primary-app">
+            <i class="bi bi-printer"></i>
+            Print
+        </button>
+
+        <a asp-action="Index"
+           asp-route-month="@Model.Month"
+           asp-route-year="@Model.Year"
+           class="btn-app btn-secondary-app">
+            Back
+        </a>
+
+    </div>
+
+</div>
+
+<div class="payslip-print">
+
+    <div class="payslip-document">
+
+        <div class="payslip-header">
+
+            <div>
+                <h2>Aryaman BMS</h2>
+                <p>Management System</p>
+            </div>
+
+            <div class="payslip-title">
+                <h3>PAYSLIP</h3>
+                <p>@Model.Month/@Model.Year</p>
+            </div>
+
+        </div>
+
+        <div class="payslip-section">
+
+            <h4>Employee Details</h4>
+
+            <div class="payslip-info-grid">
+
+                <div>
+                    <span>Employee Code</span>
+                    <strong>@(Model.Employee?.EmployeeCode ?? "-")</strong>
+                </div>
+
+                <div>
+                    <span>Employee Name</span>
+                    <strong>@(Model.Employee?.FullName ?? "-")</strong>
+                </div>
+
+                <div>
+                    <span>Payment Status</span>
+                    <strong>@Model.PaymentStatus</strong>
+                </div>
+
+                <div>
+                    <span>Paid On</span>
+                    <strong>@(Model.PaidOn?.ToString("dd-MMM-yyyy") ?? "-")</strong>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="payslip-two-column">
+
+            <div class="payslip-section">
+
+                <h4>Earnings</h4>
+
+                <div class="payslip-row">
+                    <span>Basic Salary</span>
+                    <strong>₹ @Model.BasicSalary.ToString("N2")</strong>
+                </div>
+
+                <div class="payslip-row">
+                    <span>HRA</span>
+                    <strong>₹ @Model.HRA.ToString("N2")</strong>
+                </div>
+
+                <div class="payslip-row">
+                    <span>DA</span>
+                    <strong>₹ @Model.DA.ToString("N2")</strong>
+                </div>
+
+                <div class="payslip-row">
+                    <span>Other Allowances</span>
+                    <strong>₹ @Model.OtherAllowances.ToString("N2")</strong>
+                </div>
+
+                <div class="payslip-row payslip-total">
+                    <span>Total Earnings</span>
+                    <strong>₹ @totalEarnings.ToString("N2")</strong>
+                </div>
+
+            </div>
+
+            <div class="payslip-section">
+
+                <h4>Deductions</h4>
+
+                <div class="payslip-row">
+                    <span>PF Deduction</span>
+                    <strong>₹ @Model.PfDeduction.ToString("N2")</strong>
+                </div>
+
+                <div class="payslip-row">
+                    <span>ESIC Deduction</span>
+                    <strong>₹ @Model.EsicDeduction.ToString("N2")</strong>
+                </div>
+
+                <div class="payslip-row">
+                    <span>TDS Deduction</span>
+                    <strong>₹ @Model.TdsDeduction.ToString("N2")</strong>
+                </div>
+
+                <div class="payslip-row">
+                    <span>Other Deductions</span>
+                    <strong>₹ @Model.OtherDeductions.ToString("N2")</strong>
+                </div>
+
+                <div class="payslip-row payslip-total">
+                    <span>Total Deductions</span>
+                    <strong>₹ @totalDeductions.ToString("N2")</strong>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="payslip-net">
+            <span>Net Salary Payable</span>
+            <strong>₹ @Model.NetSalary.ToString("N2")</strong>
+        </div>
+
+        <div class="payslip-footer">
+            <p>This is a system-generated payslip.</p>
+        </div>
+
+    </div>
+
+</div>

@@ -1,0 +1,339 @@
+﻿@model List<AryamanBMS.Models.SalaryRecordModel>
+
+@{
+    ViewData["Title"] = "Salary Register";
+
+}
+
+<div class="module-header">
+
+    <div>
+
+        <h1 class="module-title">
+            Salary Register
+        </h1>
+
+        <p class="module-subtitle">
+            Monthly payroll management
+        </p>
+
+    </div>
+
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="app-alert app-alert-success">
+        @TempData["Success"]
+    </div>
+}
+
+<div class="app-card mb-3">
+
+    <div class="card-header">
+
+        <h5 class="card-title">
+            Salary Period
+        </h5>
+
+    </div>
+
+    <div class="card-body">
+
+        <form asp-action="Index"
+              method="get">
+
+            <div class="d-flex gap-2 align-items-end">
+
+                <div>
+
+                    <label class="form-label">
+                        Month
+                    </label>
+
+                    <select name="month"
+                            class="app-select">
+
+                        @for (int month = 1; month <= 12; month++)
+                        {
+                            var monthName =
+                                new DateTime(2000, month, 1)
+                                .ToString("MMMM");
+
+                            if (month == (int)ViewBag.Month)
+                            {
+                                <option value="@month" selected>
+                                    @monthName
+                                </option>
+                            }
+                            else
+                            {
+                                <option value="@month">
+                                    @monthName
+                                </option>
+                            }
+                        }
+
+                    </select>
+
+                </div>
+
+                <div>
+
+                    <label class="form-label">
+                        Year
+                    </label>
+
+                    <select name="year"
+                            class="app-select">
+
+                        @for (int year = DateTime.Today.Year - 2;
+                             year <= DateTime.Today.Year + 2;
+                             year++)
+                        {
+                            if (year == (int)ViewBag.Year)
+                            {
+                                <option value="@year" selected>
+                                    @year
+                                </option>
+                            }
+                            else
+                            {
+                                <option value="@year">
+                                    @year
+                                </option>
+                            }
+                        }
+
+                    </select>
+
+                </div>
+
+                <button type="submit"
+                        class="btn-app btn-primary-app">
+
+                    <i class="bi bi-search"></i>
+                    Load
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<div class="app-card mb-3">
+
+    <div class="card-body">
+
+        <form asp-action="Generate"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <input type="hidden"
+                   name="month"
+                   value="@ViewBag.Month" />
+
+            <input type="hidden"
+                   name="year"
+                   value="@ViewBag.Year" />
+
+            <button type="submit"
+                    class="btn-app btn-success-app">
+
+                <i class="bi bi-calculator"></i>
+                Generate Salary
+
+            </button>
+
+            <a asp-action="ExportExcel"
+               asp-route-month="@ViewBag.Month"
+               asp-route-year="@ViewBag.Year"
+               class="btn-app btn-success-app">
+
+                <i class="bi bi-file-earmark-excel"></i>
+                Export Excel
+
+            </a>
+
+
+
+        </form>
+
+    </div>
+
+</div>
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+
+        <h5 class="card-title">
+
+            Salary Register
+            -
+            @ViewBag.Month/@ViewBag.Year
+
+        </h5>
+
+    </div>
+
+    <div class="card-body">
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                No salary records found.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+
+                <table class="app-table">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Employee</th>
+                            <th>Gross Salary</th>
+                            <th>Deductions</th>
+                            <th>Net Salary</th>
+                            <th>Status</th>
+                            <th>Paid On</th>
+                            <th>Actions</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var salary in Model)
+                        {
+                           
+
+                            <tr>
+
+                                <td>
+
+                                    <strong>
+                                        @salary.Employee?.FullName
+                                    </strong>
+
+                                    <br />
+
+                                    <small>
+                                        @salary.Employee?.EmployeeCode
+                                    </small>
+
+                                </td>
+
+                                <td>
+                                    ₹ @salary.GrossSalary.ToString("N2")
+                                </td>
+
+                                <td>
+                                    ₹ @((salary.PfDeduction
+                                            + salary.EsicDeduction
+                                            + salary.TdsDeduction
+                                            + salary.OtherDeductions).ToString("N2"))
+                                </td>
+
+                                <td>
+
+                                    <strong>
+                                        ₹ @salary.NetSalary.ToString("N2")
+                                    </strong>
+
+                                </td>
+
+                                <td>
+
+                                    @if (salary.PaymentStatus == "Paid")
+                                    {
+                                        <span class="badge-success">
+                                            Paid
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-warning">
+                                            Pending
+                                        </span>
+                                    }
+
+                                </td>
+
+                                <td>
+
+                                    @(salary.PaidOn?.ToString("dd-MMM-yyyy")
+                                        ?? "-")
+
+                                </td>
+
+                                <td>
+
+                                    <div class="table-actions">
+
+                                        <a asp-action="Details"
+                                           asp-route-id="@salary.Id"
+                                           class="btn-app btn-primary-app btn-icon">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+
+                                        <a asp-action="Payslip"
+                                           asp-route-id="@salary.Id"
+                                           class="btn-app btn-outline-app btn-icon">
+                                            <i class="bi bi-receipt"></i>
+                                        </a>
+
+                                        <a asp-action="Edit"
+                                           asp-route-id="@salary.Id"
+                                           class="btn-app btn-secondary-app btn-icon">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+
+                                        @if (salary.PaymentStatus != "Paid")
+                                        {
+                                            <form asp-action="MarkPaid"
+                                                  method="post">
+
+                                                @Html.AntiForgeryToken()
+
+                                                <input type="hidden"
+                                                       name="id"
+                                                       value="@salary.Id" />
+
+                                                <button type="submit"
+                                                        class="btn-app btn-success-app btn-icon">
+
+                                                    <i class="bi bi-check-circle"></i>
+
+                                                </button>
+
+                                            </form>
+                                        }
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+    </div>
+
+</div>

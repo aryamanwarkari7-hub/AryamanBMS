@@ -10,6 +10,11 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 var(--space-xl);
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    flex-shrink: 0;
+    box-shadow: var(--shadow-md);
 }
 
 /* ==========================================
@@ -29,14 +34,14 @@
 
 .page-title {
     margin: 0;
-    font-size: var(--font-xl);
+    font-size: var(--font-md);
     font-weight: var(--fw-bold);
-    color: var(--text-primary);
+    color: var(--text-dark);
 }
 
 .page-subtitle {
     color: var(--text-secondary);
-    font-size: var(--font-md);
+    font-size: var(--font-sm);
 }
 
 /* ==========================================
@@ -97,10 +102,10 @@
     transition: var(--transition-fast);
 }
 
-.nav-icon:hover {
-    color: var(--primary-color);
-    border-color: var(--primary-color);
-}
+    .nav-icon:hover {
+        color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
 
 .navbar-date {
     font-size: var(--font-md);
@@ -109,11 +114,11 @@
 }
 
 .user-avatar {
-    width: 40px;
+    width: 45px;
     height: 40px;
     border-radius: 50%;
     background: var(--primary-color);
-    color: white;
+    color: var(--text-light);
     font-size: var(--font-sm);
     font-weight: var(--fw-semibold);
     display: flex;

@@ -157,8 +157,8 @@
 --     IsActive BIT NOT NULL DEFAULT b'1'
 -- );
 
-ALTER TABLE tableleavetypes
-MODIFY COLUMN DaysPerYear INT NOT NULL DEFAULT 0;
+-- ALTER TABLE tableleavetypes
+-- MODIFY COLUMN DaysPerYear INT NOT NULL DEFAULT 0;
 
 -- LEAVE APPLICATIONS --
 
@@ -239,3 +239,72 @@ MODIFY COLUMN DaysPerYear INT NOT NULL DEFAULT 0;
 
 -- CREATE INDEX IX_LeaveBalances_EmployeeId
 -- ON tableleavebalances(EmployeeId);
+
+-- SALARY --
+-- CREATE TABLE TableSalaryRecord
+-- (
+--     Id INT PRIMARY KEY AUTO_INCREMENT,
+
+--     EmployeeId INT NOT NULL,
+
+--     Month INT NOT NULL,
+
+--     Year INT NOT NULL,
+
+--     BasicSalary DECIMAL(18,2) NOT NULL,
+
+--     HRA DECIMAL(18,2) NOT NULL,
+
+--     DA DECIMAL(18,2) NOT NULL,
+
+--     OtherAllowances DECIMAL(18,2) NOT NULL,
+
+--     GrossSalary DECIMAL(18,2) NOT NULL,
+
+--     PfDeduction DECIMAL(18,2) NOT NULL,
+
+--     EsicDeduction DECIMAL(18,2) NOT NULL,
+
+--     TdsDeduction DECIMAL(18,2) NOT NULL,
+
+--     OtherDeductions DECIMAL(18,2) NOT NULL,
+
+--     NetSalary DECIMAL(18,2) NOT NULL,
+
+--     PaymentStatus VARCHAR(20) NOT NULL DEFAULT 'Pending',
+
+--     PaidOn DATETIME NULL,
+
+--     CONSTRAINT FK_SalaryRecord_Employee
+--     FOREIGN KEY(EmployeeId)
+--     REFERENCES TableEmployee(Id)
+-- );
+
+-- LETTER Table --
+
+CREATE TABLE TableLetters
+(
+    Id INT PRIMARY KEY AUTO_INCREMENT,
+
+    LetterNumber VARCHAR(50) NOT NULL,
+
+    LetterType VARCHAR(50) NOT NULL,
+
+    EmployeeId INT NOT NULL,
+
+    Subject VARCHAR(200) NOT NULL,
+
+    Body TEXT NOT NULL,
+
+    DocumentPath VARCHAR(500),
+
+    IssuedBy VARCHAR(100),
+
+    IssuedOn DATETIME NOT NULL,
+
+    IsActive BIT NOT NULL DEFAULT 1,
+
+    CONSTRAINT FK_Letters_Employee
+    FOREIGN KEY(EmployeeId)
+    REFERENCES TableEmployee(Id)
+);

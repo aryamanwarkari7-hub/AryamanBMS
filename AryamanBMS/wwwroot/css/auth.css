@@ -8,8 +8,8 @@
     align-items: center;
     justify-content: center;
     padding: var(--space-3xl);
-    background-color:yellow;
-    border:1px solid var(--primary-color);
+    background-color: var(--table-th-bg);
+    border: 1px solid var(--border-color);
 }
 
 .auth-logo {

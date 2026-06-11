@@ -8,6 +8,7 @@ namespace AryamanBMS.Repositories;
 public class EmployeeRepository : IEmployeeRepository
 {
     private readonly ApplicationDbContext _context;
+    
 
     public EmployeeRepository(ApplicationDbContext context)
     {
@@ -19,6 +20,14 @@ public class EmployeeRepository : IEmployeeRepository
             .Include(e => e.Department)
             .Include(e => e.Designation)
             .Include(e => e.ApplicationUser);
+
+    //public IQueryable<LeaveApplicationModel> LeaveApplications
+    //{
+    //    get
+    //    {
+    //        return _context.LeaveApplications;
+    //    }
+    //}
 
     public async Task<List<EmployeeModel>> GetAllAsync()
     {

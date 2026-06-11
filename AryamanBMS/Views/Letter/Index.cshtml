@@ -1,0 +1,131 @@
+﻿@model List<AryamanBMS.Models.LetterModel>
+
+@{
+    ViewData["Title"] = "Letters Register";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Letters Register</h1>
+        <p class="module-subtitle">
+            Manage HR letters and correspondence
+        </p>
+    </div>
+
+    <a asp-action="Create"
+       class="btn-app btn-primary-app">
+        <i class="bi bi-plus-lg"></i>
+        Add Letter
+    </a>
+
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="app-alert app-alert-success">
+        @TempData["Success"]
+    </div>
+}
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Letter List</h5>
+    </div>
+
+    <div class="card-body">
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                No letters found.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+
+                <table class="app-table">
+
+                    <thead>
+                        <tr>
+                            <th>Letter No</th>
+                            <th>Type</th>
+                            <th>Employee</th>
+                            <th>Subject</th>
+                            <th>Issued By</th>
+                            <th>Issued On</th>
+                            <th>Document</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var letter in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@letter.LetterNumber</strong>
+                                </td>
+
+                                <td>@letter.LetterType</td>
+
+                                <td>
+                                    @letter.Employee?.FullName
+                                    <br />
+                                    <small>@letter.Employee?.EmployeeCode</small>
+                                </td>
+
+                                <td>@letter.Subject</td>
+
+                                <td>@(letter.IssuedBy ?? "-")</td>
+
+                                <td>@letter.IssuedOn.ToString("dd-MMM-yyyy")</td>
+
+                                <td>
+                                    @if (!string.IsNullOrWhiteSpace(letter.DocumentPath))
+                                    {
+                                        <a href="@letter.DocumentPath"
+                                           target="_blank"
+                                           class="btn-app btn-secondary-app btn-icon">
+                                            <i class="bi bi-file-earmark-pdf"></i>
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span>-</span>
+                                    }
+                                </td>
+
+                                <td>
+                                    <div class="table-actions">
+
+                                        <a asp-action="Details"
+                                           asp-route-id="@letter.Id"
+                                           class="btn-app btn-primary-app btn-icon">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+
+                                        <a asp-action="Delete"
+                                           asp-route-id="@letter.Id"
+                                           class="btn-app btn-danger-app btn-icon">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+    </div>
+
+</div>

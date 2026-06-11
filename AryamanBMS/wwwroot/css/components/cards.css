@@ -8,8 +8,8 @@
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-md);
     overflow: hidden;
-    margin-bottom: var(--space-xl);
-    margin:0 var(--space-xl);
+/*    margin-bottom: var(--space-xl);*/
+    margin:var(--space-md) var(--space-xl);
 }
 
 /* ==========================================
@@ -22,15 +22,15 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: var(--primary-color);
-    margin-top:var(--space-md);
+    background-color: var(--card-bg);
+    margin-top: var(--space-md);
 }
 
 .card-title {
     margin: 0;
     font-size: var(--font-lg);
     font-weight: var(--fw-semibold);
-    color: var(--text-light);
+    color: var(--text-primary);
 }
 
 .card-subtitle {
@@ -44,6 +44,7 @@
 
 .card-body {
     padding: var(--space-xl);
+/*    margin-top:var(--space-md);*/
     
 /*    border:1px solid black;*/
 }

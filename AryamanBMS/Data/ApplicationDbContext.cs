@@ -28,6 +28,13 @@ namespace AryamanBMS.Data
 
         public DbSet<LeaveBalanceModel> LeaveBalances { get; set; }
 
+        // Salary
+
+        public DbSet<SalaryRecordModel> SalaryRecords { get; set; }
+
+        // Letters
+        public DbSet<LetterModel> Letters { get; set; } 
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -64,6 +71,12 @@ namespace AryamanBMS.Data
 
             modelBuilder.Entity<LeaveBalanceModel>()
                .ToTable("tableleavebalances");
+
+            modelBuilder.Entity<SalaryRecordModel>()
+               .ToTable("TableSalaryRecord");
+
+            modelBuilder.Entity<LetterModel>()
+               .ToTable("TableLetters");
 
         }
     }

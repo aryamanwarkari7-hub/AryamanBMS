@@ -1,26 +1,40 @@
 ﻿:root {
     /* ==========================================
-       COLORS
+       COLORS (Modern Tech Slate & Cyan)
     ========================================== */
-
-    --sidebar-bg: #1E293B;
-    --navbar-bg: #F8FAFC;
-    --page-bg: #F1F5F9;
+    /* BACKGROUNDS */
+    --sidebar-bg: #0F172A;
+    --navbar-bg: #FFFFFF;
+    --page-bg: #F8FAFC;
     --card-bg: #FFFFFF;
-    --table-th-bg:#94A3B8;
-    --primary-color: #2563EB;
-    --logout-btn:#ff0000;
-
+    --table-th-bg: #F1F5F9;
+    /* BRAND COLORS */
+    --primary-color: #2072AF;
+    --primary-hover: #4F46E5;
+    --secondary-color: #64748B;
+    --success-color: #10B981;
+    --danger-color: #EF4444;
+    --warning-color: #F59E0B;
+    --info-color: #3B82F6;
+    /* TEXT */
     --text-primary: #0F172A;
     --text-secondary: #475569;
     --text-muted: #94A3B8;
-    --text-light:#FFF;
-
+    --text-light: #FFFFFF;
+    --text-dark: #0F172A;
+    /* BORDER / SHADOW */
     --border-color: #E2E8F0;
+    --border-dark: #334155;
+    /* SIDEBAR */
+    --sidebar-text: #94A3B8;
+    --sidebar-text-active: #318CE7;
+    --sidebar-hover-bg: #1E293B;
+    --sidebar-active-bg: #1E293B;
+    /* BUTTONS */
+    --logout-btn: #8B0000;
     /* ==========================================
-       SPACING
+       SPACING (Kept from your original)
     ========================================== */
-
     --space-xs: 4px;
     --space-sm: 8px;
     --space-md: 12px;
@@ -31,48 +45,38 @@
     /* ==========================================
        BORDER RADIUS
     ========================================== */
-
     --radius-sm: 6px;
     --radius-md: 10px;
     --radius-lg: 14px;
     --radius-xl: 18px;
-    --radius-pill:99px;
+    --radius-pill: 99px;
     /* ==========================================
        SHADOWS
     ========================================== */
-
     --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
     --shadow-md: 0 4px 6px rgba(0,0,0,0.08);
     --shadow-lg: 0 10px 20px rgba(0,0,0,0.12);
     /* ==========================================
-       FONT SIZES
+       FONT SIZES / WEIGHTS
     ========================================== */
-    --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --font-xs: 12px;
     --font-sm: 14px;
     --font-md: 16px;
     --font-lg: 18px;
     --font-xl: 24px;
     --font-2xl: 32px;
-    --font-3xl:36px;
-    /* ==========================================
-       FONT WEIGHTS
-    ========================================== */
-
+    --font-3xl: 36px;
     --fw-normal: 400;
     --fw-medium: 500;
     --fw-semibold: 600;
     --fw-bold: 700;
     /* ==========================================
-       TRANSITIONS
+       TRANSITIONS / LAYOUT
     ========================================== */
-
     --transition-fast: 0.2s ease;
     --transition-normal: 0.3s ease;
-    /* ==========================================
-       LAYOUT
-    ========================================== */
-
     --sidebar-width: 280px;
-    --navbar-height: 72px;
+    --navbar-height: 78px;
+    --content-padding: 24px;
 }

@@ -10,5 +10,10 @@
 
         public List<EmployeeAttendanceViewModel> Employees
             = new();
+
+        public int PresentToday { get; set; }
+        public int OnLeaveToday { get; set; }
+        public int NotMarkedToday { get; set; }
+        public decimal AttendancePercentage { get; set; }
     }
 }

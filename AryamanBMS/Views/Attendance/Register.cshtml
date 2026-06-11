@@ -128,6 +128,8 @@
                             <th>Employee Code</th>
                             <th>Employee Name</th>
                             <th>Status</th>
+                            <th>Location</th>
+                            <th>Working Hours</th>
                             <th>Remarks</th>
                             <th>Actions</th>
                         </tr>
@@ -200,6 +202,10 @@
                                     }
 
                                 </td>
+
+                                <td>@(attendance.LocationType ?? "-")</td>
+
+                                <td>@attendance.WorkingHours.ToString("0.00") hrs</td>
 
                                 <td>
                                     @(attendance.Remarks ?? "-")

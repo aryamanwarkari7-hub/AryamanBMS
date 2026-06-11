@@ -1,0 +1,115 @@
+﻿@model List<Microsoft.AspNetCore.Identity.IdentityRole>
+
+@{
+    ViewData["Title"] = "User Roles";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">User Roles</h1>
+        <p class="module-subtitle">
+            Manage application roles
+        </p>
+    </div>
+
+    <a asp-action="Create"
+       class="btn-app btn-primary-app">
+        <i class="bi bi-plus-lg"></i>
+        Add Role
+    </a>
+
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="app-alert app-alert-success">
+        @TempData["Success"]
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="app-alert app-alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Role List</h5>
+    </div>
+
+    <div class="card-body">
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                No roles found.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+
+                <table class="app-table">
+
+                    <thead>
+                        <tr>
+                            <th>Role Name</th>
+                            <th>Role Id</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var role in Model)
+                        {
+                            <tr>
+
+                                <td>
+                                    <strong>@role.Name</strong>
+                                </td>
+
+                                <td>
+                                    @role.Id
+                                </td>
+
+                                <td>
+
+                                    <form asp-action="Delete"
+                                          method="post"
+                                          onsubmit="return confirm('Delete this role?');">
+
+                                        @Html.AntiForgeryToken()
+
+                                        <input type="hidden"
+                                               name="id"
+                                               value="@role.Id" />
+
+                                        <button type="submit"
+                                                class="btn-app btn-danger-app btn-icon">
+
+                                            <i class="bi bi-trash"></i>
+
+                                        </button>
+
+                                    </form>
+
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+    </div>
+
+</div>

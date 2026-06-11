@@ -1,0 +1,135 @@
+﻿@model AryamanBMS.Models.SalaryRecordModel
+
+@{
+    ViewData["Title"] = "Salary Details";
+}
+
+<div class="module-header">
+
+    <div>
+
+        <h1 class="module-title">
+            Salary Details
+        </h1>
+
+        <p class="module-subtitle">
+            Payroll breakdown
+        </p>
+
+    </div>
+
+    <a asp-action="Index"
+       class="btn-app btn-secondary-app">
+
+        Back
+
+    </a>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+
+        <h5 class="card-title">
+
+            @Model.Employee?.FullName
+            (@Model.Employee?.EmployeeCode)
+
+        </h5>
+
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-2">
+
+            <div>
+                <strong>Month</strong><br />
+                @Model.Month/@Model.Year
+            </div>
+
+            <div>
+                <strong>Status</strong><br />
+                @Model.PaymentStatus
+            </div>
+
+        </div>
+
+        <hr />
+
+        <h6>Earnings</h6>
+
+        <table class="table">
+
+            <tr>
+                <td>Basic Salary</td>
+                <td>₹ @Model.BasicSalary.ToString("N2")</td>
+            </tr>
+
+            <tr>
+                <td>HRA</td>
+                <td>₹ @Model.HRA.ToString("N2")</td>
+            </tr>
+
+            <tr>
+                <td>DA</td>
+                <td>₹ @Model.DA.ToString("N2")</td>
+            </tr>
+
+            <tr>
+                <td>Other Allowances</td>
+                <td>₹ @Model.OtherAllowances.ToString("N2")</td>
+            </tr>
+
+            <tr>
+                <th>Gross Salary</th>
+                <th>₹ @Model.GrossSalary.ToString("N2")</th>
+            </tr>
+
+        </table>
+
+        <hr />
+
+        <h6>Deductions</h6>
+
+        <table class="table">
+
+            <tr>
+                <td>PF</td>
+                <td>₹ @Model.PfDeduction.ToString("N2")</td>
+            </tr>
+
+            <tr>
+                <td>ESIC</td>
+                <td>₹ @Model.EsicDeduction.ToString("N2")</td>
+            </tr>
+
+            <tr>
+                <td>TDS</td>
+                <td>₹ @Model.TdsDeduction.ToString("N2")</td>
+            </tr>
+
+            <tr>
+                <td>Other Deductions</td>
+                <td>₹ @Model.OtherDeductions.ToString("N2")</td>
+            </tr>
+
+            <tr>
+                <th>Net Salary</th>
+                <th>₹ @Model.NetSalary.ToString("N2")</th>
+            </tr>
+
+        </table>
+
+        @if (Model.PaidOn != null)
+        {
+            <hr />
+
+            <strong>Paid On:</strong>
+            @Model.PaidOn.Value.ToString("dd-MMM-yyyy HH:mm")
+        }
+
+    </div>
+
+</div>

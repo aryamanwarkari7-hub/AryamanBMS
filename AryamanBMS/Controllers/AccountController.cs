@@ -42,14 +42,31 @@ namespace AryamanBMS.Controllers
                 return View(model);
             }
 
+            var user = await _userManager.FindByNameAsync(model.UserName);
+
+            if (user == null)
+            {
+                ModelState.AddModelError("", "Invalid username or password.");
+                return View(model);
+            }
+
             var result = await _signInManager.PasswordSignInAsync(
-                model.UserName,
+                user.UserName,
                 model.Password,
                 model.RememberMe,
                 lockoutOnFailure: false);
 
             if (result.Succeeded)
             {
+                var roles = await _userManager.GetRolesAsync(user);
+
+                if (roles.Contains("Employee") &&
+                    !roles.Contains("Admin") &&
+                    !roles.Contains("HR"))
+                {
+                    return RedirectToAction("Index", "Attendance");
+                }
+
                 return RedirectToAction("Index", "Dashboard");
             }
 

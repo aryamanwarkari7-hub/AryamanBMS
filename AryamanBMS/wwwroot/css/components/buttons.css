@@ -18,6 +18,7 @@
 }
 
 .btn-app:hover {
+    
     transform: translateY(-1px);
 }
 /* ==========================================
@@ -26,10 +27,11 @@
 
 .btn-primary-app {
     background-color: var(--primary-color);
-    color: white;
+    color: var(--text-light);
 }
 
 .btn-primary-app:hover {
+    color: var(--text-light);
     opacity: 0.9;
 }
 
@@ -45,6 +47,7 @@
 
     .btn-secondary-app:hover {
         background-color: var(--page-bg);
+        color: var(--text-primary);
     }
 
 /* ==========================================
@@ -61,7 +64,7 @@
 ========================================== */
 
 .btn-danger-app {
-    background-color: #DC2626;
+    background-color: #BA160C;
     color: white;
 }
 
@@ -87,6 +90,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    font-weight:bold;
 }
 
 .btn-app-primary{

@@ -1,0 +1,130 @@
+﻿@model List<AryamanBMS.Models.SalaryRecordModel>
+
+@{
+    ViewData["Title"] = "My Salary";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">My Salary</h1>
+        <p class="module-subtitle">
+            View salary history and payslips
+        </p>
+    </div>
+
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="app-alert app-alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Salary History</h5>
+    </div>
+
+    <div class="card-body">
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                No salary records found.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+
+                <table class="app-table">
+
+                    <thead>
+                        <tr>
+                            <th>Period</th>
+                            <th>Gross Salary</th>
+                            <th>Deductions</th>
+                            <th>Net Salary</th>
+                            <th>Status</th>
+                            <th>Paid On</th>
+                            <th>Payslip</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var salary in Model)
+                        {
+                            <tr>
+
+                                <td>
+                                    <strong>
+                                        @(new DateTime(
+                                            salary.Year,
+                                            salary.Month,
+                                            1).ToString("MMMM yyyy"))
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    ₹ @salary.GrossSalary.ToString("N2")
+                                </td>
+
+                                <td>
+                                    ₹ @((salary.PfDeduction
+                                                                            + salary.EsicDeduction
+                                                                            + salary.TdsDeduction
+                                                                            + salary.OtherDeductions).ToString("N2"))
+                                </td>
+
+                                <td>
+                                    <strong>
+                                        ₹ @salary.NetSalary.ToString("N2")
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    @if (salary.PaymentStatus == "Paid")
+                                    {
+                                        <span class="badge-success">
+                                            Paid
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-warning">
+                                            Pending
+                                        </span>
+                                    }
+                                </td>
+
+                                <td>
+                                    @(salary.PaidOn?.ToString("dd-MMM-yyyy") ?? "-")
+                                </td>
+
+                                <td>
+                                    <a asp-action="Payslip"
+                                       asp-route-id="@salary.Id"
+                                       class="btn-app btn-primary-app btn-icon">
+
+                                        <i class="bi bi-receipt"></i>
+
+                                    </a>
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+    </div>
+
+</div>

@@ -113,26 +113,44 @@ namespace AryamanBMS.Controllers
                 (leaveApplication.ToDate.Date -
                  leaveApplication.FromDate.Date).Days + 1;
 
-            var leaveBalance =
-                  await _leaveBalanceRepository.LeaveBalances
-                  .FirstOrDefaultAsync(x =>
-                  x.EmployeeId == leaveApplication.EmployeeId &&
-                  x.LeaveTypeId == leaveApplication.LeaveTypeId &&
-                  x.LeaveYear == leaveApplication.FromDate.Year);
+            if (leaveApplication.NumberOfDays <= 0)
+            {
+                ModelState.AddModelError(
+                    "",
+                    "Number of leave days must be greater than zero.");
 
-            if (leaveBalance == null)
+                var leaveType = await _leaveTypeRepository.LeaveTypes
+                      .FirstOrDefaultAsync(x =>
+                      x.Id == leaveApplication.LeaveTypeId);
+            }
+
+            bool overlappingLeaveExists =
+               await _leaveApplicationRepository.LeaveApplications
+               .AnyAsync(x =>
+                   x.EmployeeId == leaveApplication.EmployeeId &&
+                   x.Status != "Rejected" &&
+                   x.Status != "Cancelled" &&
+                   leaveApplication.FromDate <= x.ToDate &&
+                   leaveApplication.ToDate >= x.FromDate);
+
+            if (overlappingLeaveExists)
             {
                 ModelState.AddModelError(
                     "",
-                    "Leave balance not found. Please contact HR.");
+                    "Leave already exists for the selected date range.");
             }
-            else if (leaveBalance.BalanceDays <
-                     leaveApplication.NumberOfDays)
-            {
-                ModelState.AddModelError(
-                    "",
-                    $"Insufficient leave balance. Available balance: {leaveBalance.BalanceDays} day(s).");
-            }
+
+            bool leaveTypeActive =  await _leaveTypeRepository.LeaveTypes
+                    .AnyAsync(x =>
+                        x.Id == leaveApplication.LeaveTypeId &&
+                        x.IsActive);
+                    
+                     if (!leaveTypeActive)
+                     {
+                         ModelState.AddModelError(
+                             "LeaveTypeId",
+                             "Selected leave type is inactive.");
+                      }
 
 
             ModelState.Remove("Employee");
@@ -142,8 +160,6 @@ namespace AryamanBMS.Controllers
             ModelState.Remove("ApprovedBy");
             ModelState.Remove("ApprovedOn");
             ModelState.Remove("ApprovalRemarks");
-
-
 
             if (ModelState.IsValid)
             {
@@ -226,6 +242,33 @@ namespace AryamanBMS.Controllers
             leaveApplication.Status = "Approved";
             leaveApplication.ApprovedOn = DateTime.Now;
             leaveApplication.ApprovedBy = User.Identity?.Name;
+
+            var fromDate = leaveApplication.FromDate.Date;
+            var toDate = leaveApplication.ToDate.Date;
+
+            for (var date = fromDate; date <= toDate; date = date.AddDays(1))
+            {
+                bool attendanceExists = await _attendanceRepository.Attendances
+                    .AnyAsync(a =>
+                        a.EmployeeId == leaveApplication.EmployeeId &&
+                        a.AttendanceDate.Date == date);
+
+                if (!attendanceExists)
+                {
+                    var attendance = new AttendanceModel
+                    {
+                        EmployeeId = leaveApplication.EmployeeId,
+                        AttendanceDate = date,
+                        Status = "L",
+                        Remarks = "Auto marked from approved leave",
+                        CreatedOn = DateTime.Now
+                    };
+
+                    await _attendanceRepository.AddAsync(attendance);
+                }
+            }
+
+            await _attendanceRepository.SaveAsync();
 
             leaveBalance.UsedDays += leaveApplication.NumberOfDays;
             leaveBalance.BalanceDays -= leaveApplication.NumberOfDays;

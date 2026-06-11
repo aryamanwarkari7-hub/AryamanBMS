@@ -1,0 +1,193 @@
+﻿@using AryamanBMS.Models
+
+@{
+    ViewData["Title"] = "Employee Dashboard";
+
+    var recentEmployees =
+        ViewBag.RecentEmployees as List<EmployeeModel>;
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Employee Dashboard</h1>
+        <p class="module-subtitle">
+            Employee overview and quick summary
+        </p>
+    </div>
+
+    <div class="d-flex gap-2">
+
+        <a asp-action="Create"
+           class="btn-app btn-primary-app">
+            <i class="bi bi-plus-lg"></i>
+            Add Employee
+        </a>
+
+        <a asp-action="Index"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-table"></i>
+            Register
+        </a>
+
+    </div>
+
+</div>
+
+<div class="dashboard-grid">
+
+    <div class="stats-card">
+        <div class="stats-label">
+            Total Employees
+        </div>
+
+        <div class="stats-number">
+            @ViewBag.TotalEmployees
+        </div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">
+            Active Employees
+        </div>
+
+        <div class="stats-number">
+            @ViewBag.ActiveEmployees
+        </div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">
+            Inactive Employees
+        </div>
+
+        <div class="stats-number">
+            @ViewBag.InactiveEmployees
+        </div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">
+            Recently Added
+        </div>
+
+        <div class="stats-number">
+            @(recentEmployees?.Count ?? 0)
+        </div>
+    </div>
+
+</div>
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+
+        <h5 class="card-title">
+            Recent Employees
+        </h5>
+
+    </div>
+
+    <div class="card-body">
+
+        @if (recentEmployees == null || !recentEmployees.Any())
+        {
+            <div class="empty-state">
+                No employee records found.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+
+                <table class="app-table">
+
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Employee</th>
+                            <th>Department</th>
+                            <th>Designation</th>
+                            <th>Official Email</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var employee in recentEmployees)
+                        {
+                            <tr>
+
+                                <td>
+                                    <strong>@employee.EmployeeCode</strong>
+                                </td>
+
+                                <td>
+                                    <strong>@employee.FullName</strong>
+                                    <br />
+                                    <small>
+                                        DOJ:
+                                        @employee.JoiningDate.ToString("dd-MMM-yyyy")
+                                    </small>
+                                </td>
+
+                                <td>
+                                    @(employee.Department?.DepartmentName ?? "-")
+                                </td>
+
+                                <td>
+                                    @(employee.Designation?.DesignationName ?? "-")
+                                </td>
+
+                                <td>
+                                    @(employee.OfficialEmail ?? "-")
+                                </td>
+
+                                <td>
+                                    @if (employee.IsActive)
+                                    {
+                                        <span class="badge-success">
+                                            Active
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-danger">
+                                            Inactive
+                                        </span>
+                                    }
+                                </td>
+
+                                <td>
+                                    <div class="table-actions">
+
+                                        <a asp-action="Details"
+                                           asp-route-id="@employee.Id"
+                                           class="btn-app btn-primary-app btn-icon">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+
+                                        <a asp-action="Edit"
+                                           asp-route-id="@employee.Id"
+                                           class="btn-app btn-secondary-app btn-icon">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+
+                                    </div>
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+    </div>
+
+</div>

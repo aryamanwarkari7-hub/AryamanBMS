@@ -30,7 +30,7 @@
         text-transform: uppercase;
         font-size: var(--font-md);
         font-weight: var(--fw-semibold);
-        color: var(--text-primary);
+        color: var(--text-dark);
         border: 1px solid var(--border-color);
 
     }

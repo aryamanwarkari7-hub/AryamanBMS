@@ -1,0 +1,92 @@
+﻿@model AryamanBMS.Models.LetterModel
+
+@{
+    ViewData["Title"] = "Letter Details";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Letter Details</h1>
+        <p class="module-subtitle">
+            View issued letter information
+        </p>
+    </div>
+
+    <a asp-action="Index"
+       class="btn-app btn-secondary-app">
+        Back
+    </a>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">
+            @Model.LetterNumber
+        </h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-2">
+
+            <div>
+                <strong>Letter Type</strong>
+                <br />
+                @Model.LetterType
+            </div>
+
+            <div>
+                <strong>Employee</strong>
+                <br />
+                @Model.Employee?.FullName
+                (@Model.Employee?.EmployeeCode)
+            </div>
+
+            <div>
+                <strong>Issued By</strong>
+                <br />
+                @(Model.IssuedBy ?? "-")
+            </div>
+
+            <div>
+                <strong>Issued On</strong>
+                <br />
+                @Model.IssuedOn.ToString("dd-MMM-yyyy hh:mm tt")
+            </div>
+
+        </div>
+
+        <hr />
+
+        <div>
+            <strong>Subject</strong>
+            <p>@Model.Subject</p>
+        </div>
+
+        <div>
+            <strong>Body</strong>
+            <div class="app-card mt-2">
+                <div class="card-body">
+                    @Html.Raw(Model.Body.Replace("\n", "<br />"))
+                </div>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.DocumentPath))
+        {
+            <hr />
+
+            <a href="@Model.DocumentPath"
+               target="_blank"
+               class="btn-app btn-primary-app">
+                <i class="bi bi-file-earmark-pdf"></i>
+                View Uploaded Document
+            </a>
+        }
+
+    </div>
+
+</div>

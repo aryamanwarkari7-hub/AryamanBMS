@@ -1,0 +1,99 @@
+﻿@model AryamanBMS.ViewModels.SalaryDashboardViewModel
+
+@{
+    ViewData["Title"] = "Salary Dashboard";
+}
+
+<div class="module-header">
+
+    <div>
+
+        <h1 class="module-title">
+            Salary Dashboard
+        </h1>
+
+        <p class="module-subtitle">
+            Payroll overview
+        </p>
+
+    </div>
+
+    <div class="d-flex gap-2">
+
+        <a asp-action="Index"
+           asp-route-month="@ViewBag.Month"
+           asp-route-year="@ViewBag.Year"
+           class="btn-app btn-secondary-app">
+
+            <i class="bi bi-list"></i>
+            Salary Register
+
+        </a>
+
+    </div>
+
+</div>
+
+<div class="dashboard-grid">
+
+    <div class="stats-card">
+
+        <div class="stats-label">
+            Employees
+        </div>
+
+        <div class="stats-number">
+            @Model.TotalEmployees
+        </div>
+
+    </div>
+
+    <div class="stats-card">
+
+        <div class="stats-label">
+            Paid
+        </div>
+
+        <div class="stats-number">
+            @Model.PaidCount
+        </div>
+
+    </div>
+
+    <div class="stats-card">
+
+        <div class="stats-label">
+            Pending
+        </div>
+
+        <div class="stats-number">
+            @Model.PendingCount
+        </div>
+
+    </div>
+
+    <div class="stats-card">
+
+        <div class="stats-label">
+            Gross Salary
+        </div>
+
+        <div class="stats-number">
+            ₹ @Model.TotalGrossSalary.ToString("N0")
+        </div>
+
+    </div>
+
+    <div class="stats-card">
+
+        <div class="stats-label">
+            Net Salary
+        </div>
+
+        <div class="stats-number">
+            ₹ @Model.TotalNetSalary.ToString("N0")
+        </div>
+
+    </div>
+
+</div>

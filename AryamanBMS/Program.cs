@@ -45,6 +45,12 @@ builder.Services.AddScoped<ILeaveApplicationRepository,LeaveApplicationRepositor
 
 builder.Services.AddScoped<ILeaveBalanceRepository,LeaveBalanceRepository>();
 
+// Salary
+builder.Services.AddScoped<ISalaryRecordRepository,SalaryRecordRepository>();
+
+// Letter
+builder.Services.AddScoped<ILetterRepository, LetterRepository>();
+
 
 var app = builder.Build();
 

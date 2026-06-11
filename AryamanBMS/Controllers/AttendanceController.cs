@@ -1,12 +1,13 @@
-﻿using AryamanBMS.ViewModels;
+﻿using AryamanBMS.Data;
+using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
+using AryamanBMS.ViewModels;
+using ClosedXML.Excel;
+using DocumentFormat.OpenXml.InkML;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
-using ClosedXML.Excel;
-using AryamanBMS.Models;
 
 namespace AryamanBMS.Controllers
 {
@@ -16,14 +17,17 @@ namespace AryamanBMS.Controllers
         private readonly IAttendanceRepository _attendanceRepository;
         private readonly IEmployeeRepository _employeeRepository;
         private readonly UserManager<ApplicationUserModel> _userManager;
+        private readonly ILeaveApplicationRepository _leaveApplicationRepository;
 
         public AttendanceController(
-            IAttendanceRepository attendanceRepository,
-            IEmployeeRepository employeeRepository,
-            UserManager<ApplicationUserModel> userManager)
+        IAttendanceRepository attendanceRepository,
+        IEmployeeRepository employeeRepository,
+        ILeaveApplicationRepository leaveApplicationRepository,
+        UserManager<ApplicationUserModel> userManager)
         {
             _attendanceRepository = attendanceRepository;
             _employeeRepository = employeeRepository;
+            _leaveApplicationRepository = leaveApplicationRepository;
             _userManager = userManager;
         }
 
@@ -119,32 +123,68 @@ namespace AryamanBMS.Controllers
             return View(model);
         }
 
-        public async Task<IActionResult> CheckIn()
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CheckIn(string locationType)
         {
-            var user = await _userManager.GetUserAsync(User);
-
-            var employee = await _employeeRepository.Employees
-                .FirstOrDefaultAsync(e =>
-                    e.ApplicationUserId == user.Id);
-
-            if (employee == null)
+            if (string.IsNullOrWhiteSpace(locationType))
             {
-                TempData["Error"] =
-                    "Employee mapping not found.";
-
+                TempData["Error"] = "Please select Office or Site.";
                 return RedirectToAction(nameof(Index));
             }
 
-            bool alreadyMarked =
-                await _attendanceRepository.Attendances
-                .AnyAsync(a =>
-                    a.EmployeeId == employee.Id &&
-                    a.AttendanceDate.Date == DateTime.Today);
-
-            if (alreadyMarked)
+            if (locationType != "Office" && locationType != "Site")
             {
-                TempData["Error"] =
-                    "Attendance already marked today.";
+                TempData["Error"] = "Invalid attendance location.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+
+            var employee = await _employeeRepository.Employees
+                .FirstOrDefaultAsync(e => e.ApplicationUserId == user.Id);
+
+            if (employee == null)
+            {
+                TempData["Error"] = "Employee mapping not found.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var approvedLeaveToday =
+                await _leaveApplicationRepository.HasApprovedLeaveTodayAsync(employee.Id);
+
+            if (approvedLeaveToday)
+            {
+                TempData["Error"] = "You are on approved leave today. Attendance is not allowed.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var todayAttendance = await _attendanceRepository.Attendances
+              .FirstOrDefaultAsync(a =>
+              a.EmployeeId == employee.Id &&
+              a.AttendanceDate.Date == DateTime.Today);
+
+            if (todayAttendance != null)
+            {
+                if (todayAttendance.Status == "L")
+                {
+                    TempData["Error"] = "You are on leave today. Attendance is not allowed.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                if (todayAttendance.CheckInTime != null)
+                {
+                    TempData["Error"] = "Check In already completed today.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                todayAttendance.Status = "P";
+                todayAttendance.CheckInTime = DateTime.Now;
+                todayAttendance.LocationType = locationType;
+
+                await _attendanceRepository.SaveAsync();
+
+                TempData["Success"] = $"Check In successful from {locationType}.";
 
                 return RedirectToAction(nameof(Index));
             }
@@ -155,52 +195,62 @@ namespace AryamanBMS.Controllers
                 AttendanceDate = DateTime.Today,
                 Status = "P",
                 CheckInTime = DateTime.Now,
+                LocationType = locationType,
                 CreatedOn = DateTime.Now
             };
 
             await _attendanceRepository.AddAsync(attendance);
             await _attendanceRepository.SaveAsync();
 
-            TempData["Success"] =
-                "Check In successful.";
+            TempData["Success"] = $"Check In successful from {locationType}.";
 
             return RedirectToAction(nameof(Index));
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> CheckOut()
         {
             var user = await _userManager.GetUserAsync(User);
 
             var employee = await _employeeRepository.Employees
-                .FirstOrDefaultAsync(e =>
-                    e.ApplicationUserId == user.Id);
+                .FirstOrDefaultAsync(e => e.ApplicationUserId == user.Id);
 
             if (employee == null)
             {
-                TempData["Error"] =
-                    "Employee mapping not found.";
-
+                TempData["Error"] = "Employee mapping not found.";
                 return RedirectToAction(nameof(Index));
             }
 
-            var attendance =
-                await _attendanceRepository.Attendances
+            var approvedLeaveToday =
+                await _leaveApplicationRepository.HasApprovedLeaveTodayAsync(employee.Id);
+
+            if (approvedLeaveToday)
+            {
+                TempData["Error"] = "You are on approved leave today. Check-out is not allowed.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var attendance = await _attendanceRepository.Attendances
                 .FirstOrDefaultAsync(a =>
                     a.EmployeeId == employee.Id &&
                     a.AttendanceDate.Date == DateTime.Today);
 
             if (attendance == null)
             {
-                TempData["Error"] =
-                    "Check In first.";
+                TempData["Error"] = "Check In first.";
+                return RedirectToAction(nameof(Index));
+            }
 
+            if (attendance.Status == "L")
+            {
+                TempData["Error"] = "You are on leave today. Check-out is not allowed.";
                 return RedirectToAction(nameof(Index));
             }
 
             if (attendance.CheckOutTime != null)
             {
-                TempData["Error"] =
-                    "Already checked out.";
-
+                TempData["Error"] = "Already checked out.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -208,8 +258,7 @@ namespace AryamanBMS.Controllers
 
             await _attendanceRepository.SaveAsync();
 
-            TempData["Success"] =
-                "Check Out successful.";
+            TempData["Success"] = "Check Out successful.";
 
             return RedirectToAction(nameof(Index));
         }
@@ -413,6 +462,7 @@ namespace AryamanBMS.Controllers
         {
             month ??= DateTime.Today.Month;
             year ??= DateTime.Today.Year;
+            var today = DateTime.Today;
 
             int totalDays =
                 DateTime.DaysInMonth(
@@ -491,6 +541,31 @@ namespace AryamanBMS.Controllers
 
                 vm.Employees.Add(employeeAttendanceViewModel);
             }
+
+            int presentToday = _attendanceRepository.Attendances
+                 .Count(a =>
+                 a.AttendanceDate.Date == today &&
+                 a.Status == "P");
+
+            int onLeaveToday = _attendanceRepository.Attendances
+                .Count(a =>
+                    a.AttendanceDate.Date == today &&
+                    a.Status == "L");
+
+            int markedToday = _attendanceRepository.Attendances
+                .Count(a =>
+                    a.AttendanceDate.Date == today);
+
+            int notMarkedToday = employees.Count - markedToday;
+
+            decimal attendancePercentage = employees.Count > 0
+                ? Math.Round(((decimal)presentToday / employees.Count) * 100, 2)
+                : 0;
+
+            vm.PresentToday = presentToday;
+            vm.OnLeaveToday = onLeaveToday;
+            vm.NotMarkedToday = notMarkedToday;
+            vm.AttendancePercentage = attendancePercentage;
 
             return View(vm);
         }

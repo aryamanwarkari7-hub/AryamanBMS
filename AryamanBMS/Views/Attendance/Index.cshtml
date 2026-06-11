@@ -28,25 +28,41 @@
 
         <div class="d-flex gap-2 flex-wrap">
 
-            @if (Model == null)
-            {
-                <a asp-action="CheckIn"
-                   class="btn-app btn-primary-app">
 
-                    <i class="bi bi-box-arrow-in-right"></i>
-                    Check In
+                @if (Model == null || (Model.Status == "P" && Model.CheckInTime == null))
+                {
+                    <form asp-action="CheckIn" method="post" class="d-flex gap-2 flex-wrap">
+                    @Html.AntiForgeryToken()
 
-                </a>
-            }
+                    <select name="locationType" class="app-select" required>
+                        <option value="">Select Location</option>
+                        <option value="Office">Office</option>
+                        <option value="Site">Site</option>
+                    </select>
+
+                    <button type="submit" class="btn-app btn-primary-app">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                        Check In
+                    </button>
+                </form>
+                }
+            
             else if (Model.CheckOutTime == null)
             {
-                <a asp-action="CheckOut"
-                   class="btn-app btn-danger-app">
+                @if (Model != null &&
+                     Model.CheckInTime != null &&
+                     Model.CheckOutTime == null &&
+                     Model.Status != "L")
+                {
+                    <form asp-action="CheckOut" method="post">
+                        @Html.AntiForgeryToken()
 
-                    <i class="bi bi-box-arrow-right"></i>
-                    Check Out
-
-                </a>
+                        <button type="submit" class="btn-app btn-danger-app">
+                            <i class="bi bi-box-arrow-right"></i>
+                            Check Out
+                        </button>
+                    </form>
+                }
             }
             else
             {
@@ -103,6 +119,8 @@
                             <th>Status</th>
                             <th>Check In</th>
                             <th>Check Out</th>
+                            <th>Location</th>
+                            <th>Working Hours</th>
                             <th>Remarks</th>
                         </tr>
                     </thead>
@@ -169,6 +187,14 @@
                             <td>
                                 @(Model.CheckOutTime?.ToString("hh:mm tt") ?? "-")
                             </td>
+
+                            <td>
+                                @(string.IsNullOrWhiteSpace(Model.LocationType)
+                                    ? "-"
+                                    : Model.LocationType)
+                            </td>
+
+                            <td>@Model.WorkingHours.ToString("0.00") hrs</td>
 
                             <td>
                                 @(string.IsNullOrWhiteSpace(Model.Remarks)

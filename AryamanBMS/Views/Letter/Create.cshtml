@@ -1,0 +1,140 @@
+﻿@model AryamanBMS.Models.LetterModel
+
+@{
+    ViewData["Title"] = "Create Letter";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Create Letter</h1>
+        <p class="module-subtitle">
+            Add HR letter or upload document
+        </p>
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-body">
+
+        <form asp-action="Create"
+              method="post"
+              enctype="multipart/form-data">
+
+            @Html.AntiForgeryToken()
+
+            <div asp-validation-summary="ModelOnly"
+                 class="validation-message mb-3">
+            </div>
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+                    <label class="form-label">Employee</label>
+
+                    <select asp-for="EmployeeId"
+                            class="app-select">
+
+                        <option value="">Select Employee</option>
+
+                        @foreach (var employee in ViewBag.Employees)
+                        {
+                            <option value="@employee.Id">
+                                @employee.EmployeeCode - @employee.FullName
+                            </option>
+                        }
+
+                    </select>
+
+                    <span asp-validation-for="EmployeeId"
+                          class="validation-message">
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Letter Type</label>
+
+                    <select asp-for="LetterType"
+                            class="app-select">
+
+                        <option value="">Select Letter Type</option>
+
+                        @foreach (var type in ViewBag.LetterTypes)
+                        {
+                            <option value="@type">@type</option>
+                        }
+
+                    </select>
+
+                    <span asp-validation-for="LetterType"
+                          class="validation-message">
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Subject"
+                           class="form-label">
+                    </label>
+
+                    <input asp-for="Subject"
+                           class="app-input" />
+
+                    <span asp-validation-for="Subject"
+                          class="validation-message">
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        Upload PDF
+                    </label>
+
+                    <input type="file"
+                           name="documentFile"
+                           accept="application/pdf"
+                           class="app-input" />
+                </div>
+
+            </div>
+
+            <div class="form-group mt-3">
+                <label asp-for="Body"
+                       class="form-label">
+                </label>
+
+                <textarea asp-for="Body"
+                          class="app-textarea"
+                          rows="8">
+                </textarea>
+
+                <span asp-validation-for="Body"
+                      class="validation-message">
+                </span>
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+
+                <button type="submit"
+                        class="btn-app btn-primary-app">
+                    <i class="bi bi-save"></i>
+                    Save Letter
+                </button>
+
+                <a asp-action="Index"
+                   class="btn-app btn-secondary-app">
+                    Cancel
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,58 @@
+﻿@model AryamanBMS.Models.LetterModel
+
+@{
+    ViewData["Title"] = "Delete Letter";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Delete Letter</h1>
+        <p class="module-subtitle">
+            Confirm letter deletion
+        </p>
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-body">
+
+        <p>
+            Are you sure you want to delete this letter?
+        </p>
+
+        <div class="app-card mb-3">
+            <div class="card-body">
+                <strong>@Model.LetterNumber</strong>
+                <br />
+                @Model.LetterType
+                <br />
+                @Model.Employee?.FullName
+            </div>
+        </div>
+
+        <form asp-action="DeleteConfirmed"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <input asp-for="Id"
+                   type="hidden" />
+
+            <button type="submit"
+                    class="btn-app btn-danger-app">
+                Delete
+            </button>
+
+            <a asp-action="Index"
+               class="btn-app btn-secondary-app">
+                Cancel
+            </a>
+
+        </form>
+
+    </div>
+
+</div>

@@ -1,0 +1,61 @@
+﻿@{
+    ViewData["Title"] = "Create Role";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Create Role</h1>
+        <p class="module-subtitle">
+            Add a new application role
+        </p>
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-body">
+
+        <form asp-action="Create"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <div asp-validation-summary="ModelOnly"
+                 class="validation-message mb-3">
+            </div>
+
+            <div class="form-group mb-3">
+
+                <label class="form-label">
+                    Role Name
+                </label>
+
+                <input type="text"
+                       name="roleName"
+                       class="app-input"
+                       placeholder="Example: Finance" />
+
+            </div>
+
+            <div class="d-flex gap-2">
+
+                <button type="submit"
+                        class="btn-app btn-primary-app">
+                    <i class="bi bi-save"></i>
+                    Save Role
+                </button>
+
+                <a asp-action="Index"
+                   class="btn-app btn-secondary-app">
+                    Cancel
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
