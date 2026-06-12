@@ -294,6 +294,48 @@ namespace AryamanBMS.Controllers
                 row++;
                 serialNo++;
             }
+            int totalRow = row;
+
+            worksheet.Cell(totalRow, 3).Value = "Grand Total";
+
+            // Sum numeric columns
+            int[] sumColumns =
+            {
+               4,  // Actual Salary
+               5,  // Pay Days
+               6,  // Gross Salary
+               7,  // BASIC
+               8,  // HRA
+               9,  // Conveyance
+               10, // Medical Allowance
+               11, // Education Allowance
+               12, // Special Allowance
+               13, // TOTAL
+               14, // Gross - Conveyance
+               15, // PF Employee
+               16, // ESIC Employee
+               17, // Professional Tax
+               18, // Advance
+               19, // Total Payable
+               21, // PF Employer
+               22, // ESIC Employer
+               23  // CTC
+             };
+
+            foreach (var col in sumColumns)
+            {
+                string columnLetter = worksheet.Column(col).ColumnLetter();
+
+                worksheet.Cell(totalRow, col).FormulaA1 =
+                    $"=SUM({columnLetter}{startRow}:{columnLetter}{totalRow - 1})";
+            }
+
+            // Style Grand Total row
+            var totalRange = worksheet.Range(totalRow, 1, totalRow, 24);
+
+            totalRange.Style.Font.Bold = true;
+            totalRange.Style.Fill.BackgroundColor = XLColor.LightGray;
+            totalRange.Style.Border.TopBorder = XLBorderStyleValues.Thin;
 
             worksheet.Columns().AdjustToContents();
 
@@ -302,9 +344,6 @@ namespace AryamanBMS.Controllers
             workbook.SaveAs(stream);
 
             string fileName = $"Salary_Template_{month}_{year}.xlsx";
-
-
-
 
 
             return File(

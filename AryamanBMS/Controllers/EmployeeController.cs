@@ -29,12 +29,24 @@ namespace AryamanBMS.Controllers
         }
 
         [Authorize(Roles = "Admin,HR")]
-
-        public IActionResult Index(string searchText, int page = 1)
+        public IActionResult Index(
+           string searchText,
+           string status = "Active",
+           int page = 1)
         {
             int pageSize = 5;
 
             var employees = _employeeRepository.Employees;
+
+            if (status == "Active")
+            {
+                employees = employees.Where(e => e.IsActive);
+            }
+            else if (status == "Inactive")
+            {
+                employees = employees.Where(e => !e.IsActive);
+            }
+            // status == "All" means no IsActive filter
 
             if (!string.IsNullOrWhiteSpace(searchText))
             {
@@ -59,6 +71,7 @@ namespace AryamanBMS.Controllers
                 (int)Math.Ceiling((double)totalRecords / pageSize);
 
             ViewBag.SearchText = searchText;
+            ViewBag.Status = status;
 
             return View(pagedEmployees);
         }
@@ -246,20 +259,25 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var employee =
                 await _employeeRepository.GetByIdAsync(id);
 
-            if (employee != null)
+            if (employee == null)
             {
-                await _employeeRepository.DeleteAsync(employee);
-                await _employeeRepository.SaveAsync();
+                return NotFound();
             }
 
+            employee.IsActive = false;
+
+            await _employeeRepository.UpdateAsync(employee);
+            await _employeeRepository.SaveAsync();
+
             TempData["Success"] =
-                "Employee deleted successfully.";
+                "Employee deactivated successfully.";
 
             return RedirectToAction(nameof(Index));
         }

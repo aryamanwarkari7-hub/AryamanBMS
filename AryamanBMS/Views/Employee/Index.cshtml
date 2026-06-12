@@ -50,6 +50,38 @@
                            class="app-input"
                            placeholder="Search by code, name, mobile or email" />
 
+                    <select name="status"
+                            class="app-select">
+
+                        @if ((string)ViewBag.Status == "Active")
+                        {
+                            <option value="Active" selected>Active</option>
+                        }
+                        else
+                        {
+                            <option value="Active">Active</option>
+                        }
+
+                        @if ((string)ViewBag.Status == "Inactive")
+                        {
+                            <option value="Inactive" selected>Inactive</option>
+                        }
+                        else
+                        {
+                            <option value="Inactive">Inactive</option>
+                        }
+
+                        @if ((string)ViewBag.Status == "All")
+                        {
+                            <option value="All" selected>All</option>
+                        }
+                        else
+                        {
+                            <option value="All">All</option>
+                        }
+
+                    </select>
+
                     <button type="submit"
                             class="btn-app btn-primary-app">
                         <i class="bi bi-search"></i>

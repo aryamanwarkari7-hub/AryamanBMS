@@ -3,9 +3,9 @@
 <div class="module-header">
 
     <div>
-        <h1 class="module-title">Delete Employee</h1>
+        <h1 class="module-title">Deactivate  Employee</h1>
         <p class="module-subtitle">
-            Confirm employee deletion
+            Confirm employee deactivation
         </p>
     </div>
 
@@ -106,20 +106,21 @@
         </div>
 
         <div class="app-alert app-alert-danger mt-4">
-            This action will permanently delete this employee record.
+            This action will deactivate this employee. Existing attendance, leave, salary and history records will remain safe.
         </div>
 
         <div class="mt-4">
 
             <form asp-action="DeleteConfirmed"
                   method="post">
+                @Html.AntiForgeryToken()
 
                 <input type="hidden"
                        asp-for="Id" />
 
                 <button type="submit"
                         class="btn-app btn-danger-app">
-                    Delete Employee
+                    Deactivate Employee
                 </button>
 
                 <a asp-action="Index"

@@ -25,21 +25,36 @@ namespace AryamanBMS.Controllers
             _employeeRepository = employeeRepository;
         }
 
-        public async Task<IActionResult> Index(int? year)
+        [Authorize(Roles = "Admin,HR")]
+        public async Task<IActionResult> Index(int? year, int? employeeId)
         {
             year ??= DateTime.Today.Year;
 
-            var balances = await _leaveBalanceRepository.LeaveBalances
+            var query = _leaveBalanceRepository.LeaveBalances
                 .Include(x => x.Employee)
                 .Include(x => x.LeaveType)
-                .Where(x => x.LeaveYear == year.Value)
-                .OrderBy(x => x.Employee.EmployeeCode)
-                .ThenBy(x => x.LeaveType.LeaveCode)
+                .Where(x => x.LeaveYear == year)
+                .AsQueryable();
+
+            if (employeeId.HasValue && employeeId.Value > 0)
+            {
+                query = query.Where(x => x.EmployeeId == employeeId.Value);
+            }
+
+            var leaveBalances = await query
+                .OrderBy(x => x.Employee!.EmployeeCode)
+                .ThenBy(x => x.LeaveType!.LeaveCode)
                 .ToListAsync();
 
-            ViewBag.Year = year.Value;
+            ViewBag.Year = year;
+            ViewBag.EmployeeId = employeeId ?? 0;
 
-            return View(balances);
+            ViewBag.Employees = await _employeeRepository.Employees
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.EmployeeCode)
+                .ToListAsync();
+
+            return View(leaveBalances);
         }
 
         [HttpPost]
@@ -147,6 +162,41 @@ namespace AryamanBMS.Controllers
                 stream.ToArray(),
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 $"LeaveBalance_{year}_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+        }
+
+        private decimal CalculateProratedLeave(
+    decimal annualLeaveDays,
+    DateTime joiningDate,
+    int financialYear)
+        {
+            var fyStart = new DateTime(financialYear, 4, 1);
+            var fyEnd = new DateTime(financialYear + 1, 3, 31);
+
+            if (joiningDate > fyEnd)
+            {
+                return 0;
+            }
+
+            var effectiveStartDate =
+                joiningDate > fyStart
+                    ? joiningDate
+                    : fyStart;
+
+            int eligibleMonths =
+                ((fyEnd.Year - effectiveStartDate.Year) * 12)
+                + fyEnd.Month
+                - effectiveStartDate.Month
+                + 1;
+
+            if (eligibleMonths < 0)
+            {
+                eligibleMonths = 0;
+            }
+
+            decimal proratedLeave =
+                annualLeaveDays / 12m * eligibleMonths;
+
+            return Math.Round(proratedLeave, 2);
         }
     }
 }
