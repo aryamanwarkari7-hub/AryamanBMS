@@ -160,6 +160,58 @@
 -- ALTER TABLE tableleavetypes
 -- MODIFY COLUMN DaysPerYear INT NOT NULL DEFAULT 0;
 
+-- UPDATE TableLeaveTypes
+-- SET IsPaidLeave = 0
+-- WHERE Id=4;
+
+-- INSERT INTO TableLeaveTypes
+-- (
+--     LeaveCode,
+--     LeaveName,
+--     DaysPerYear,
+--     IsCarryForward,
+--     IsPaidLeave,
+--     IsActive
+-- )
+-- SELECT
+--     'UPL',
+--     'Unplanned Leave',
+--     0,
+--     0,
+--     1,
+--     1
+-- WHERE NOT EXISTS
+-- (
+--     SELECT 1
+--     FROM TableLeaveTypes
+--     WHERE LeaveCode = 'UPL'
+-- );
+
+-- INSERT INTO TableLeaveTypes
+-- (
+--     LeaveCode,
+--     LeaveName,
+--     DaysPeryear,
+--     IsCarryForward,
+--     IsPaidLeave,
+--     IsActive
+-- )
+-- SELECT
+--     'BDL',
+--     'Birthday Leave',
+--     1,
+--     0,
+--     1,
+--     1
+-- WHERE NOT EXISTS
+-- (
+--     SELECT 1
+--     FROM TableLeaveTypes
+--     WHERE LeaveCode = 'BDL'
+-- );
+
+-- SELECT * from tableleavetypes;
+
 -- LEAVE APPLICATIONS --
 
 -- CREATE TABLE tableleaveapplications
@@ -280,31 +332,59 @@
 --     REFERENCES TableEmployee(Id)
 -- );
 
+-- ALTER TABLE TableSalaryRecord
+-- ADD COLUMN ActualSalary DECIMAL(18,2) NOT NULL DEFAULT 0 AFTER Year,
+-- ADD COLUMN PayDays DECIMAL(18,2) NOT NULL DEFAULT 0 AFTER ActualSalary,
+
+-- ADD COLUMN Conveyance DECIMAL(18,2) NOT NULL DEFAULT 0 AFTER HRA,
+-- ADD COLUMN MedicalAllowance DECIMAL(18,2) NOT NULL DEFAULT 0 AFTER Conveyance,
+-- ADD COLUMN EducationAllowance DECIMAL(18,2) NOT NULL DEFAULT 0 AFTER MedicalAllowance,
+-- ADD COLUMN SpecialAllowance DECIMAL(18,2) NOT NULL DEFAULT 0 AFTER EducationAllowance,
+
+-- ADD COLUMN TotalEarnings DECIMAL(18,2) NOT NULL DEFAULT 0 AFTER GrossSalary,
+-- ADD COLUMN GrossMinusConveyance DECIMAL(18,2) NOT NULL DEFAULT 0 AFTER TotalEarnings,
+
+-- ADD COLUMN ProfessionalTax DECIMAL(18,2) NOT NULL DEFAULT 0 AFTER EsicDeduction,
+-- ADD COLUMN Advance DECIMAL(18,2) NOT NULL DEFAULT 0 AFTER ProfessionalTax,
+-- ADD COLUMN TotalDeductions DECIMAL(18,2) NOT NULL DEFAULT 0 AFTER Advance,
+
+-- ADD COLUMN EmployerPf DECIMAL(18,2) NOT NULL DEFAULT 0 AFTER NetSalary,
+-- ADD COLUMN EmployerEsic DECIMAL(18,2) NOT NULL DEFAULT 0 AFTER EmployerPf,
+-- ADD COLUMN CTC DECIMAL(18,2) NOT NULL DEFAULT 0 AFTER EmployerEsic,
+
+-- ADD COLUMN SourceFileName VARCHAR(255) NULL AFTER AbsentDays,
+-- ADD COLUMN ImportedOn DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER SourceFileName,
+-- ADD COLUMN Remark VARCHAR(500) NULL AFTER ImportedOn;
+
+-- ALTER TABLE TableSalaryRecord
+-- ADD CONSTRAINT UQ_SalaryRecord_Employee_Month_Year
+-- UNIQUE (EmployeeId, Month, Year);
+
 -- LETTER Table --
 
-CREATE TABLE TableLetters
-(
-    Id INT PRIMARY KEY AUTO_INCREMENT,
+-- CREATE TABLE TableLetters
+-- (
+--     Id INT PRIMARY KEY AUTO_INCREMENT,
 
-    LetterNumber VARCHAR(50) NOT NULL,
+--     LetterNumber VARCHAR(50) NOT NULL,
 
-    LetterType VARCHAR(50) NOT NULL,
+--     LetterType VARCHAR(50) NOT NULL,
 
-    EmployeeId INT NOT NULL,
+--     EmployeeId INT NOT NULL,
 
-    Subject VARCHAR(200) NOT NULL,
+--     Subject VARCHAR(200) NOT NULL,
 
-    Body TEXT NOT NULL,
+--     Body TEXT NOT NULL,
 
-    DocumentPath VARCHAR(500),
+--     DocumentPath VARCHAR(500),
 
-    IssuedBy VARCHAR(100),
+--     IssuedBy VARCHAR(100),
 
-    IssuedOn DATETIME NOT NULL,
+--     IssuedOn DATETIME NOT NULL,
 
-    IsActive BIT NOT NULL DEFAULT 1,
+--     IsActive BIT NOT NULL DEFAULT 1,
 
-    CONSTRAINT FK_Letters_Employee
-    FOREIGN KEY(EmployeeId)
-    REFERENCES TableEmployee(Id)
-);
+--     CONSTRAINT FK_Letters_Employee
+--     FOREIGN KEY(EmployeeId)
+--     REFERENCES TableEmployee(Id)
+-- );

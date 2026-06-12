@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 
 using AryamanBMS.Repositories;
 using AryamanBMS.Repositories.Interfaces;
+using AryamanBMS.Services;
+using AryamanBMS.Services.Interfaces;
 using AryamanBMS.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -51,6 +53,9 @@ builder.Services.AddScoped<ISalaryRecordRepository,SalaryRecordRepository>();
 // Letter
 builder.Services.AddScoped<ILetterRepository, LetterRepository>();
 
+// SALARY SERVICE
+builder.Services.AddScoped<ISalaryExcelImportService, SalaryExcelImportService>();
+builder.Services.AddScoped<ISalaryAttendanceSummaryService, SalaryAttendanceSummaryService>();
 
 var app = builder.Build();
 

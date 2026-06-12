@@ -449,6 +449,17 @@
                                     <span>Register</span>
 
                                 </a>
+
+                                <a asp-controller="Salary"
+                                   asp-action="AttendanceSummary"
+                                   class="submenu-item nested-item @(currentController == "Salary" && currentAction == "AttendanceSummary" ? "active-menu" : "")">
+
+                                    <i class="bi bi-cash-stack"></i>
+                                    <span>Attendance Count</span>
+
+                                </a>
+
+
                             }
 
                             @if (isEmployeeOnly)

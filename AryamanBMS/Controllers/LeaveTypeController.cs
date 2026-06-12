@@ -32,6 +32,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Create(
             LeaveTypeModel leaveType)
         {
@@ -77,6 +78,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Edit(
             LeaveTypeModel leaveType)
         {
@@ -111,22 +113,23 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> DeleteConfirmed(
-            int id)
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,HR")]
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var leaveType =
-                await _leaveTypeRepository.GetByIdAsync(id);
+            var leaveType = await _leaveTypeRepository.GetByIdAsync(id);
 
-            if (leaveType != null)
+            if (leaveType == null)
             {
-                await _leaveTypeRepository
-                    .DeleteAsync(leaveType);
-
-                await _leaveTypeRepository.SaveAsync();
+                return NotFound();
             }
 
-            TempData["Success"] =
-                "Leave Type deleted successfully.";
+            leaveType.IsActive = false;
+
+            await _leaveTypeRepository.UpdateAsync(leaveType);
+            await _leaveTypeRepository.SaveAsync();
+
+            TempData["Success"] = "Leave type deactivated successfully.";
 
             return RedirectToAction(nameof(Index));
         }

@@ -194,9 +194,26 @@ namespace AryamanBMS.Controllers
                 return NotFound();
             }
 
+            if (User.IsInRole("Employee") && !User.IsInRole("Admin") &&
+                     !User.IsInRole("HR"))
+            {
+                var user = await _userManager.GetUserAsync(User);
+
+                var employee = await _employeeRepository.Employees
+                    .FirstOrDefaultAsync(x => x.ApplicationUserId == user.Id);
+
+                if (employee == null || leaveApplication.EmployeeId != employee.Id)
+                {
+                    return Forbid();
+                }
+            }
+
+
             return View(leaveApplication);
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Approve(int id)
         {
@@ -216,25 +233,66 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var leaveBalance =
-                await _leaveBalanceRepository.LeaveBalances
-                .FirstOrDefaultAsync(x =>
-                    x.EmployeeId == leaveApplication.EmployeeId &&
-                    x.LeaveTypeId == leaveApplication.LeaveTypeId &&
-                    x.LeaveYear == leaveApplication.FromDate.Year);
+            var leaveType = await _leaveTypeRepository.LeaveTypes
+                .FirstOrDefaultAsync(x => x.Id == leaveApplication.LeaveTypeId);
 
-            if (leaveBalance == null)
+            if (leaveType == null)
             {
                 TempData["Error"] =
-                    "Leave balance not found for this employee and leave type.";
+                    "Leave type not found.";
 
                 return RedirectToAction(nameof(Index));
             }
 
-            if (leaveBalance.BalanceDays < leaveApplication.NumberOfDays)
+            bool requiresBalance =
+                leaveType.IsPaidLeave &&
+                leaveType.DaysPerYear > 0;
+
+            LeaveBalanceModel? leaveBalance = null;
+
+            if (requiresBalance)
+            {
+                leaveBalance = await _leaveBalanceRepository.LeaveBalances
+                    .FirstOrDefaultAsync(x =>
+                        x.EmployeeId == leaveApplication.EmployeeId &&
+                        x.LeaveTypeId == leaveApplication.LeaveTypeId &&
+                        x.LeaveYear == leaveApplication.FromDate.Year);
+
+                if (leaveBalance == null)
+                {
+                    TempData["Error"] =
+                        "Leave balance not found for this employee and leave type.";
+
+                    return RedirectToAction(nameof(Index));
+                }
+
+                if (leaveBalance.BalanceDays < leaveApplication.NumberOfDays)
+                {
+                    TempData["Error"] =
+                        "Insufficient leave balance.";
+
+                    return RedirectToAction(nameof(Index));
+                }
+            }
+
+            bool attendanceConflict =
+                await _attendanceRepository.Attendances
+                .AnyAsync(a =>
+                    a.EmployeeId == leaveApplication.EmployeeId &&
+                    a.AttendanceDate.Date >= leaveApplication.FromDate.Date &&
+                    a.AttendanceDate.Date <= leaveApplication.ToDate.Date &&
+                    (
+                        a.Status == "P" ||
+                        a.Status == "Present" ||
+                        a.Status == "OD" ||
+                        a.Status == "On Duty" ||
+                        a.Status == "OnDuty"
+                    ));
+
+            if (attendanceConflict)
             {
                 TempData["Error"] =
-                    "Insufficient leave balance.";
+                    "Cannot approve leave because Present or On Duty attendance already exists in this date range.";
 
                 return RedirectToAction(nameof(Index));
             }
@@ -243,52 +301,28 @@ namespace AryamanBMS.Controllers
             leaveApplication.ApprovedOn = DateTime.Now;
             leaveApplication.ApprovedBy = User.Identity?.Name;
 
-            var fromDate = leaveApplication.FromDate.Date;
-            var toDate = leaveApplication.ToDate.Date;
-
-            for (var date = fromDate; date <= toDate; date = date.AddDays(1))
+            if (leaveBalance != null)
             {
-                bool attendanceExists = await _attendanceRepository.Attendances
-                    .AnyAsync(a =>
+                leaveBalance.UsedDays += leaveApplication.NumberOfDays;
+                leaveBalance.BalanceDays -= leaveApplication.NumberOfDays;
+            }
+
+            for (var date = leaveApplication.FromDate.Date;
+                 date <= leaveApplication.ToDate.Date;
+                 date = date.AddDays(1))
+            {
+                var existingAttendance =
+                    await _attendanceRepository.Attendances
+                    .FirstOrDefaultAsync(a =>
                         a.EmployeeId == leaveApplication.EmployeeId &&
                         a.AttendanceDate.Date == date);
 
-                if (!attendanceExists)
+                if (existingAttendance == null)
                 {
                     var attendance = new AttendanceModel
                     {
                         EmployeeId = leaveApplication.EmployeeId,
                         AttendanceDate = date,
-                        Status = "L",
-                        Remarks = "Auto marked from approved leave",
-                        CreatedOn = DateTime.Now
-                    };
-
-                    await _attendanceRepository.AddAsync(attendance);
-                }
-            }
-
-            await _attendanceRepository.SaveAsync();
-
-            leaveBalance.UsedDays += leaveApplication.NumberOfDays;
-            leaveBalance.BalanceDays -= leaveApplication.NumberOfDays;
-
-            DateTime currentDate = leaveApplication.FromDate.Date;
-
-            while (currentDate <= leaveApplication.ToDate.Date)
-            {
-                bool attendanceExists =
-                    await _attendanceRepository.Attendances
-                    .AnyAsync(a =>
-                        a.EmployeeId == leaveApplication.EmployeeId &&
-                        a.AttendanceDate.Date == currentDate);
-
-                if (!attendanceExists)
-                {
-                    var attendance = new AttendanceModel
-                    {
-                        EmployeeId = leaveApplication.EmployeeId,
-                        AttendanceDate = currentDate,
                         Status = "L",
                         Remarks =
                             $"Leave approved: {leaveApplication.ApplicationNumber}",
@@ -297,24 +331,50 @@ namespace AryamanBMS.Controllers
 
                     await _attendanceRepository.AddAsync(attendance);
                 }
+                else if (IsAttendanceStatus(existingAttendance.Status, "A", "Absent"))
+                {
+                    existingAttendance.Status = "L";
+                    existingAttendance.Remarks =
+                        $"Absent converted to leave: {leaveApplication.ApplicationNumber}";
 
-                currentDate = currentDate.AddDays(1);
+                    await _attendanceRepository.UpdateAsync(existingAttendance);
+                }
+                else if (IsAttendanceStatus(existingAttendance.Status, "L", "Leave"))
+                {
+                    existingAttendance.Remarks =
+                        $"Leave approved: {leaveApplication.ApplicationNumber}";
+
+                    await _attendanceRepository.UpdateAsync(existingAttendance);
+                }
             }
 
             await _leaveApplicationRepository.UpdateAsync(leaveApplication);
-            await _leaveBalanceRepository.UpdateAsync(leaveBalance);
+
+            if (leaveBalance != null)
+            {
+                await _leaveBalanceRepository.UpdateAsync(leaveBalance);
+            }
 
             await _leaveApplicationRepository.SaveAsync();
-            await _leaveBalanceRepository.SaveAsync();
+
+            if (leaveBalance != null)
+            {
+                await _leaveBalanceRepository.SaveAsync();
+            }
+
             await _attendanceRepository.SaveAsync();
 
             TempData["Success"] =
-                "Leave application approved, balance updated and attendance marked.";
+                requiresBalance
+                    ? "Leave application approved, balance updated and attendance marked."
+                    : "Leave application approved and attendance marked.";
 
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpPost]
         [Authorize(Roles = "Admin,HR")]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Reject(int id)
         {
             var leaveApplication =
@@ -364,7 +424,9 @@ namespace AryamanBMS.Controllers
             return $"LA{nextId:00000}";
         }
 
+        [HttpPost]
         [Authorize(Roles = "Admin,HR,Employee")]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Cancel(int id)
         {
             var leaveApplication =
@@ -382,6 +444,21 @@ namespace AryamanBMS.Controllers
 
                 return RedirectToAction(nameof(Index));
             }
+
+            if (User.IsInRole("Employee") && !User.IsInRole("Admin") &&
+                      !User.IsInRole("HR"))
+            {
+                var user = await _userManager.GetUserAsync(User);
+
+                var employee = await _employeeRepository.Employees
+                    .FirstOrDefaultAsync(x => x.ApplicationUserId == user.Id);
+
+                if (employee == null || leaveApplication.EmployeeId != employee.Id)
+                {
+                    return Forbid();
+                }
+            }
+
 
             leaveApplication.Status = "Cancelled";
             leaveApplication.ApprovedOn = DateTime.Now;
@@ -490,5 +567,22 @@ namespace AryamanBMS.Controllers
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 $"LeaveApplications_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
         }
+
+        private bool IsAttendanceStatus(
+    string? status,
+    params string[] validStatuses)
+        {
+            if (string.IsNullOrWhiteSpace(status))
+            {
+                return false;
+            }
+
+            return validStatuses.Any(x =>
+                string.Equals(
+                    status.Trim(),
+                    x,
+                    StringComparison.OrdinalIgnoreCase));
+        }
     }
+
 }

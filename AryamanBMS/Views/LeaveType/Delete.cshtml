@@ -1,7 +1,7 @@
 ﻿@model AryamanBMS.Models.LeaveTypeModel
 
 @{
-    ViewData["Title"] = "Delete Leave Type";
+    ViewData["Title"] = "Deactivate Leave Type";
 }
 
 <div class="module-header">
@@ -9,7 +9,7 @@
     <div>
 
         <h1 class="module-title">
-            Delete Leave Type
+            Deactivate Leave Type
         </h1>
 
         <p class="module-subtitle">
@@ -26,7 +26,7 @@
 
         <p>
 
-            Are you sure you want to delete
+            Are you sure you want to deactivate this leave type?
 
             <strong>
                 @Model.LeaveName
@@ -41,9 +41,7 @@
 
             <button type="submit"
                     class="btn-app btn-danger-app">
-
-                Delete
-
+                Deactivate
             </button>
 
             <a asp-action="Index"

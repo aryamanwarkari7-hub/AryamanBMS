@@ -1,6 +1,7 @@
 ﻿using AryamanBMS.Models;
 using AryamanBMS.Repositories;
 using AryamanBMS.Repositories.Interfaces;
+using AryamanBMS.Services.Interfaces;
 using AryamanBMS.ViewModels;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
@@ -17,17 +18,29 @@ namespace AryamanBMS.Controllers
         private readonly IEmployeeRepository _employeeRepository;
         private readonly UserManager<ApplicationUserModel> _userManager;
 
-        public SalaryController(
-           ISalaryRecordRepository salaryRecordRepository,
-           IEmployeeRepository employeeRepository,UserManager<ApplicationUserModel> userManager)
-        {
-            _salaryRecordRepository =  salaryRecordRepository;
+        // Service
+        private readonly ISalaryExcelImportService _salaryExcelImportService;
+        private readonly ISalaryAttendanceSummaryService _salaryAttendanceSummaryService;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
+        public SalaryController(
+              ISalaryRecordRepository salaryRecordRepository,
+              IEmployeeRepository employeeRepository,
+              UserManager<ApplicationUserModel> userManager,
+              ISalaryExcelImportService salaryExcelImportService,
+              ISalaryAttendanceSummaryService salaryAttendanceSummaryService,
+              IWebHostEnvironment webHostEnvironment)
+        {
+            _salaryRecordRepository = salaryRecordRepository;
             _employeeRepository = employeeRepository;
-             _userManager = userManager;
+            _userManager = userManager;
+            _salaryExcelImportService = salaryExcelImportService;
+            _salaryAttendanceSummaryService = salaryAttendanceSummaryService;
+            _webHostEnvironment = webHostEnvironment;
         }
 
-        
+        [Authorize(Roles = "Admin,HR")]
+
         public IActionResult Index(int? month, int? year)
         {
             month ??= DateTime.Today.Month;
@@ -49,96 +62,10 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Admin,HR")]
-        public async Task<IActionResult> Generate(int month, int year)
+        public IActionResult Generate(int month, int year)
         {
-            var employees =
-                _employeeRepository.Employees
-                .Where(x => x.IsActive)
-                .ToList();
-
-            int generatedCount = 0;
-
-            foreach (var employee in employees)
-            {
-                bool alreadyExists =
-                    _salaryRecordRepository.SalaryRecords
-                    .Any(x =>
-                        x.EmployeeId == employee.Id &&
-                        x.Month == month &&
-                        x.Year == year);
-
-                if (alreadyExists)
-                {
-                    continue;
-                }
-
-                decimal basicSalary = 25000m;
-                decimal hra = 10000m;
-                decimal da = 5000m;
-                decimal otherAllowances = 2000m;
-
-                decimal grossSalary =
-                    basicSalary +
-                    hra +
-                    da +
-                    otherAllowances;
-
-                decimal pfDeduction =
-                    Math.Round(basicSalary * 0.12m, 2);
-
-                decimal esicDeduction = 0;
-
-                if (grossSalary <= 21000)
-                {
-                    esicDeduction =
-                        Math.Round(grossSalary * 0.0075m, 2);
-                }
-
-                decimal tdsDeduction = 0;
-                decimal otherDeductions = 0;
-
-                decimal netSalary =
-                    grossSalary -
-                    pfDeduction -
-                    esicDeduction -
-                    tdsDeduction -
-                    otherDeductions;
-
-                var salaryRecord =
-                    new SalaryRecordModel
-                    {
-                        EmployeeId = employee.Id,
-
-                        Month = month,
-                        Year = year,
-
-                        BasicSalary = basicSalary,
-                        HRA = hra,
-                        DA = da,
-                        OtherAllowances = otherAllowances,
-
-                        GrossSalary = grossSalary,
-
-                        PfDeduction = pfDeduction,
-                        EsicDeduction = esicDeduction,
-                        TdsDeduction = tdsDeduction,
-                        OtherDeductions = otherDeductions,
-
-                        NetSalary = netSalary,
-
-                        PaymentStatus = "Pending"
-                    };
-
-                await _salaryRecordRepository
-                    .AddAsync(salaryRecord);
-
-                generatedCount++;
-            }
-
-            await _salaryRecordRepository.SaveAsync();
-
-            TempData["Success"] =
-                $"{generatedCount} salary records generated successfully.";
+            TempData["Error"] =
+                "Salary generation is disabled. Please upload the final salary Excel.";
 
             return RedirectToAction(
                 nameof(Index),
@@ -252,7 +179,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
-        [Authorize]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Details(int id)
         {
             var salary =
@@ -268,75 +195,105 @@ namespace AryamanBMS.Controllers
         }
 
         [Authorize(Roles = "Admin,HR")]
-        public async Task<IActionResult> ExportExcel(int? month, int? year)
+        public async Task<IActionResult> ExportExcel(int month, int year)
         {
-            month ??= DateTime.Today.Month;
-            year ??= DateTime.Today.Year;
-
-            var salaries = await _salaryRecordRepository.SalaryRecords
-                .Include(x => x.Employee)
-                .Where(x => x.Month == month && x.Year == year)
-                .OrderBy(x => x.Employee!.EmployeeCode)
-                .ToListAsync();
-
-            using var workbook = new XLWorkbook();
-
-            var worksheet = workbook.Worksheets.Add("Salary Register");
-
-            worksheet.Cell("A1").Value = "Employee Code";
-            worksheet.Cell("B1").Value = "Employee Name";
-            worksheet.Cell("C1").Value = "Month";
-            worksheet.Cell("D1").Value = "Year";
-            worksheet.Cell("E1").Value = "Basic Salary";
-            worksheet.Cell("F1").Value = "HRA";
-            worksheet.Cell("G1").Value = "DA";
-            worksheet.Cell("H1").Value = "Other Allowances";
-            worksheet.Cell("I1").Value = "Gross Salary";
-            worksheet.Cell("J1").Value = "PF";
-            worksheet.Cell("K1").Value = "ESIC";
-            worksheet.Cell("L1").Value = "TDS";
-            worksheet.Cell("M1").Value = "Other Deductions";
-            worksheet.Cell("N1").Value = "Total Deductions";
-            worksheet.Cell("O1").Value = "Net Salary";
-            worksheet.Cell("P1").Value = "Payment Status";
-            worksheet.Cell("Q1").Value = "Paid On";
-
-            int row = 2;
-
-            foreach (var salary in salaries)
+            if (month == 0)
             {
-                decimal totalDeductions =
-                    salary.PfDeduction +
-                    salary.EsicDeduction +
-                    salary.TdsDeduction +
-                    salary.OtherDeductions;
-
-                worksheet.Cell(row, 1).Value = salary.Employee?.EmployeeCode;
-                worksheet.Cell(row, 2).Value = salary.Employee?.FullName;
-                worksheet.Cell(row, 3).Value = salary.Month;
-                worksheet.Cell(row, 4).Value = salary.Year;
-                worksheet.Cell(row, 5).Value = salary.BasicSalary;
-                worksheet.Cell(row, 6).Value = salary.HRA;
-                worksheet.Cell(row, 7).Value = salary.DA;
-                worksheet.Cell(row, 8).Value = salary.OtherAllowances;
-                worksheet.Cell(row, 9).Value = salary.GrossSalary;
-                worksheet.Cell(row, 10).Value = salary.PfDeduction;
-                worksheet.Cell(row, 11).Value = salary.EsicDeduction;
-                worksheet.Cell(row, 12).Value = salary.TdsDeduction;
-                worksheet.Cell(row, 13).Value = salary.OtherDeductions;
-                worksheet.Cell(row, 14).Value = totalDeductions;
-                worksheet.Cell(row, 15).Value = salary.NetSalary;
-                worksheet.Cell(row, 16).Value = salary.PaymentStatus;
-                worksheet.Cell(row, 17).Value = salary.PaidOn;
-
-                row++;
+                month = DateTime.Today.Month;
             }
 
-            var headerRange = worksheet.Range("A1:Q1");
-            headerRange.Style.Font.Bold = true;
-            headerRange.Style.Fill.BackgroundColor = XLColor.LightBlue;
+            if (year == 0)
+            {
+                year = DateTime.Today.Year;
+            }
 
-            worksheet.Column(17).Style.DateFormat.Format = "dd-MMM-yyyy HH:mm";
+            var templatePath = Path.Combine(
+                _webHostEnvironment.WebRootPath,
+                "templates",
+                "SalaryTemplate.xlsx");
+
+            if (!System.IO.File.Exists(templatePath))
+            {
+                TempData["Error"] =
+                    "Salary Excel template not found. Please add SalaryTemplate.xlsx in wwwroot/templates.";
+
+                return RedirectToAction(nameof(Index), new { month, year });
+            }
+
+            var attendanceSummary = await _salaryAttendanceSummaryService
+                .GetMonthlySummaryAsync(month, year);
+
+            var employees = await _employeeRepository.Employees
+                .Where(e => e.IsActive)
+                .ToListAsync();
+
+            var previousSalaryRecords = await _salaryRecordRepository.SalaryRecords
+                .ToListAsync();
+
+            using var workbook = new XLWorkbook(templatePath);
+
+            var worksheet = workbook.Worksheet("Salary");
+
+            // Helper cells used by Excel formulas
+            worksheet.Cell("AB1").Value = month;
+            worksheet.Cell("AB2").Value = year;
+            worksheet.Cell("AB3").Value = DateTime.DaysInMonth(year, month);
+
+            int startRow = 4;
+            int maxRows = 200;
+
+            // Clear input columns only. Do not clear formula columns.
+            for (int clearRow = startRow; clearRow <= maxRows; clearRow++)
+            {
+                worksheet.Cell(clearRow, 1).Clear(XLClearOptions.Contents);   // S. No.
+                worksheet.Cell(clearRow, 2).Clear(XLClearOptions.Contents);   // Emp ID
+                worksheet.Cell(clearRow, 3).Clear(XLClearOptions.Contents);   // DB Name
+                worksheet.Cell(clearRow, 4).Clear(XLClearOptions.Contents);   // Actual Salary
+                worksheet.Cell(clearRow, 5).Clear(XLClearOptions.Contents);   // Pay Days
+                worksheet.Cell(clearRow, 18).Clear(XLClearOptions.Contents);  // Advance
+                worksheet.Cell(clearRow, 20).Clear(XLClearOptions.Contents);  // Remark
+                worksheet.Cell(clearRow, 24).Clear(XLClearOptions.Contents);  // Gender
+            }
+
+            int row = startRow;
+            int serialNo = 1;
+
+            foreach (var item in attendanceSummary)
+            {
+                var employee = employees
+                    .FirstOrDefault(e => e.Id == item.EmployeeId);
+
+                if (employee == null)
+                {
+                    continue;
+                }
+
+                var latestSalary = previousSalaryRecords
+                    .Where(s =>
+                        s.EmployeeId == employee.Id &&
+                        (
+                            s.Year < year ||
+                            (s.Year == year && s.Month <= month)
+                        ))
+                    .OrderByDescending(s => s.Year)
+                    .ThenByDescending(s => s.Month)
+                    .ThenByDescending(s => s.ImportedOn)
+                    .FirstOrDefault();
+
+                decimal actualSalary = latestSalary?.ActualSalary ?? 0;
+
+                worksheet.Cell(row, 1).Value = serialNo;
+                worksheet.Cell(row, 2).Value = employee.EmployeeCode;
+                worksheet.Cell(row, 3).Value = employee.FullName;
+                worksheet.Cell(row, 4).Value = actualSalary;
+                worksheet.Cell(row, 5).Value = item.PayDays;
+                worksheet.Cell(row, 18).Value = 0;
+                worksheet.Cell(row, 20).Value = "";
+                worksheet.Cell(row, 24).Value = employee.Gender ?? "";
+
+                row++;
+                serialNo++;
+            }
 
             worksheet.Columns().AdjustToContents();
 
@@ -344,10 +301,16 @@ namespace AryamanBMS.Controllers
 
             workbook.SaveAs(stream);
 
+            string fileName = $"Salary_Template_{month}_{year}.xlsx";
+
+
+
+
+
             return File(
                 stream.ToArray(),
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                $"SalaryRegister_{month}_{year}_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+                fileName);
         }
 
         [Authorize]
@@ -437,6 +400,49 @@ namespace AryamanBMS.Controllers
                 .ToList();
 
             return View(salaries);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,HR")]
+        public async Task<IActionResult> ImportExcel(IFormFile file,
+            int month,int year)
+        {
+            var result = await _salaryExcelImportService
+                .ImportAsync(file, month, year);
+
+            if (result.HasErrors)
+            {
+                TempData["Error"] = string.Join("<br/>", result.Errors);
+            }
+
+            TempData["Success"] = result.Message;
+
+            return RedirectToAction(
+                nameof(Index),
+                new { month, year });
+        }
+
+        [Authorize(Roles = "Admin,HR")]
+        public async Task<IActionResult> AttendanceSummary(int month, int year)
+        {
+            if (month == 0)
+            {
+                month = DateTime.Today.Month;
+            }
+
+            if (year == 0)
+            {
+                year = DateTime.Today.Year;
+            }
+
+            var summary = await _salaryAttendanceSummaryService
+                .GetMonthlySummaryAsync(month, year);
+
+            ViewBag.Month = month;
+            ViewBag.Year = year;
+
+            return View(summary);
         }
     }
 }

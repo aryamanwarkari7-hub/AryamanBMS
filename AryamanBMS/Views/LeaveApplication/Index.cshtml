@@ -131,36 +131,80 @@
 
                                         <a asp-action="Details"
                                            asp-route-id="@item.Id"
-                                           class="btn-app btn-primary-app btn-icon">
+                                           class="btn-app btn-primary-app btn-icon"
+                                           title="Details">
+
                                             <i class="bi bi-eye"></i>
+
                                         </a>
-
-                                        @if ((User.IsInRole("Admin") || User.IsInRole("HR"))
-                                            && item.Status == "Pending")
-                                        {
-                                            <a asp-action="Approve"
-                                               asp-route-id="@item.Id"
-                                               class="btn-app btn-success-app btn-icon"
-                                               onclick="return confirm('Approve this leave application?');">
-                                                <i class="bi bi-check-lg"></i>
-                                            </a>
-
-                                            <a asp-action="Reject"
-                                               asp-route-id="@item.Id"
-                                               class="btn-app btn-danger-app btn-icon"
-                                               onclick="return confirm('Reject this leave application?');">
-                                                <i class="bi bi-x-lg"></i>
-                                            </a>
-                                        }
 
                                         @if (item.Status == "Pending")
                                         {
-                                            <a asp-action="Cancel"
-                                               asp-route-id="@item.Id"
-                                               class="btn-app btn-danger-app btn-icon"
-                                               onclick="return confirm('Cancel this leave application?');">
-                                                <i class="bi bi-x-circle"></i>
-                                            </a>
+                                            @if (User.IsInRole("Admin") || User.IsInRole("HR"))
+                                            {
+                                                <form asp-action="Approve"
+                                                      method="post"
+                                                      class="d-inline">
+
+                                                    @Html.AntiForgeryToken()
+
+                                                    <input type="hidden"
+                                                           name="id"
+                                                           value="@item.Id" />
+
+                                                    <button type="submit"
+                                                            class="btn-app btn-success-app btn-icon"
+                                                            title="Approve"
+                                                            onclick="return confirm('Approve this leave application?');">
+
+                                                        <i class="bi bi-check-lg"></i>
+
+                                                    </button>
+
+                                                </form>
+
+                                                <form asp-action="Reject"
+                                                      method="post"
+                                                      class="d-inline">
+
+                                                    @Html.AntiForgeryToken()
+
+                                                    <input type="hidden"
+                                                           name="id"
+                                                           value="@item.Id" />
+
+                                                    <button type="submit"
+                                                            class="btn-app btn-danger-app btn-icon"
+                                                            title="Reject"
+                                                            onclick="return confirm('Reject this leave application?');">
+
+                                                        <i class="bi bi-x-lg"></i>
+
+                                                    </button>
+
+                                                </form>
+                                            }
+
+                                            <form asp-action="Cancel"
+                                                  method="post"
+                                                  class="d-inline">
+
+                                                @Html.AntiForgeryToken()
+
+                                                <input type="hidden"
+                                                       name="id"
+                                                       value="@item.Id" />
+
+                                                <button type="submit"
+                                                        class="btn-app btn-secondary-app btn-icon"
+                                                        title="Cancel"
+                                                        onclick="return confirm('Cancel this leave application?');">
+
+                                                    <i class="bi bi-slash-circle"></i>
+
+                                                </button>
+
+                                            </form>
                                         }
 
                                     </div>

@@ -95,6 +95,21 @@ namespace AryamanBMS.Controllers
                     a.AttendanceDate.Date ==
                     model.AttendanceDate.Date);
 
+            bool approvedLeaveExists =
+               await _leaveApplicationRepository.LeaveApplications
+               .AnyAsync(l =>
+               l.EmployeeId == model.EmployeeId &&
+               l.Status == "Approved" &&
+               l.FromDate.Date <= model.AttendanceDate.Date &&
+               l.ToDate.Date >= model.AttendanceDate.Date);
+
+            if (approvedLeaveExists && model.Status != "L")
+            {
+                ModelState.AddModelError(
+                    "",
+                    "Approved leave exists for this date. Only Leave attendance is allowed.");
+            }
+
             if (alreadyExists)
             {
                 ModelState.AddModelError(
@@ -163,6 +178,14 @@ namespace AryamanBMS.Controllers
               .FirstOrDefaultAsync(a =>
               a.EmployeeId == employee.Id &&
               a.AttendanceDate.Date == DateTime.Today);
+
+            if (todayAttendance != null && todayAttendance.Status != "P")
+            {
+                TempData["Error"] =
+                    $"Attendance is already marked as {todayAttendance.Status}. Check-in is not allowed.";
+
+                return RedirectToAction(nameof(Index));
+            }
 
             if (todayAttendance != null)
             {
@@ -343,8 +366,7 @@ namespace AryamanBMS.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,HR")]
-        public async Task<IActionResult> Edit(
-            AttendanceModel model)
+        public async Task<IActionResult> Edit(AttendanceModel model)
         {
             if (!ModelState.IsValid)
             {

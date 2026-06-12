@@ -45,6 +45,8 @@
                     <thead>
                         <tr>
                             <th>Period</th>
+                            <th>Actual Salary</th>
+                            <th>Pay Days</th>
                             <th>Gross Salary</th>
                             <th>Deductions</th>
                             <th>Net Salary</th>
@@ -70,14 +72,19 @@
                                 </td>
 
                                 <td>
+                                    ₹ @salary.ActualSalary.ToString("N2")
+                                </td>
+
+                                <td>
+                                    @salary.PayDays.ToString("N2")
+                                </td>
+
+                                <td>
                                     ₹ @salary.GrossSalary.ToString("N2")
                                 </td>
 
                                 <td>
-                                    ₹ @((salary.PfDeduction
-                                                                            + salary.EsicDeduction
-                                                                            + salary.TdsDeduction
-                                                                            + salary.OtherDeductions).ToString("N2"))
+                                    ₹ @salary.TotalDeductions.ToString("N2")
                                 </td>
 
                                 <td>

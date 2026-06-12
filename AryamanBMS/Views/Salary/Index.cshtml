@@ -23,8 +23,17 @@
 
 @if (TempData["Success"] != null)
 {
-    <div class="app-alert app-alert-success">
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
         @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @Html.Raw(TempData["Error"])
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 }
 
@@ -40,10 +49,11 @@
 
     <div class="card-body">
 
-        <form asp-action="Index"
-              method="get">
+        <div class="d-flex justify-content-between align-items-end flex-wrap gap-3">
 
-            <div class="d-flex gap-2 align-items-end">
+            <form asp-action="Index"
+                  method="get"
+                  class="d-flex gap-2 align-items-end flex-wrap">
 
                 <div>
 
@@ -117,55 +127,98 @@
 
                 </button>
 
+            </form>
+
+            <div class="d-flex gap-2 flex-wrap">
+
+                <a asp-action="AttendanceSummary"
+                   asp-route-month="@ViewBag.Month"
+                   asp-route-year="@ViewBag.Year"
+                   class="btn-app btn-outline-app">
+
+                    <i class="bi bi-calendar-check"></i>
+                    Attendance Summary
+
+                </a>
+
+                <a asp-controller="Salary"
+                   asp-action="ExportExcel"
+                   asp-route-month="@ViewBag.Month"
+                   asp-route-year="@ViewBag.Year"
+                   class="btn-app btn-success-app">
+
+                    <i class="bi bi-file-earmark-excel"></i>
+                    Export Excel
+
+                </a>
+
             </div>
 
-        </form>
+        </div>
 
     </div>
 
 </div>
 
+
+
 <div class="app-card mb-3">
-
     <div class="card-body">
+       <form asp-action="ImportExcel"
+      asp-controller="Salary"
+      method="post"
+      enctype="multipart/form-data"
+      class="mb-4">
 
-        <form asp-action="Generate"
-              method="post">
+    @Html.AntiForgeryToken()
 
-            @Html.AntiForgeryToken()
+    <input type="hidden"
+           name="month"
+           value="@ViewBag.Month" />
 
-            <input type="hidden"
-                   name="month"
-                   value="@ViewBag.Month" />
+    <input type="hidden"
+           name="year"
+           value="@ViewBag.Year" />
 
-            <input type="hidden"
-                   name="year"
-                   value="@ViewBag.Year" />
-
-            <button type="submit"
-                    class="btn-app btn-success-app">
-
-                <i class="bi bi-calculator"></i>
-                Generate Salary
-
-            </button>
-
-            <a asp-action="ExportExcel"
-               asp-route-month="@ViewBag.Month"
-               asp-route-year="@ViewBag.Year"
-               class="btn-app btn-success-app">
-
+    <div class="app-card">
+        <div class="card-header">
+            <h5 class="mb-0">
                 <i class="bi bi-file-earmark-excel"></i>
-                Export Excel
+                Import Salary Excel
+            </h5>
+        </div>
 
-            </a>
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
 
+                <div class="col-md-8">
+                    <label class="form-label">
+                        Upload Final Salary Sheet
+                    </label>
 
+                    <input type="file"
+                           name="file"
+                           accept=".xlsx"
+                           class="form-control"
+                           required />
+                </div>
 
-        </form>
+                <div class="col-md-4">
+                    <button type="submit"
+                            class="btn-app btn-primary-app w-100">
 
+                        <i class="bi bi-upload"></i>
+                        Import Salary
+
+                    </button>
+                </div>
+
+            </div>
+        </div>
     </div>
 
+</form>
+    </div>
 </div>
 
 <div class="app-card table-card">
@@ -196,28 +249,30 @@
 
                 <table class="app-table">
 
-                    <thead>
+                       <thead>
 
-                        <tr>
+                            <tr>
 
-                            <th>Employee</th>
-                            <th>Gross Salary</th>
-                            <th>Deductions</th>
-                            <th>Net Salary</th>
-                            <th>Status</th>
-                            <th>Paid On</th>
-                            <th>Actions</th>
+                                <th>Employee</th>
+                                <th>Actual Salary</th>
+                                <th>Pay Days</th>
+                                <th>Gross Salary</th>
+                                <th>Deductions</th>
+                                <th>Net Salary</th>
+                                <th>CTC</th>
+                                <th>Status</th>
+                                <th>Paid On</th>
+                                <th>Actions</th>
 
-                        </tr>
+                            </tr>
 
-                    </thead>
+                       </thead>
 
+              
                     <tbody>
 
                         @foreach (var salary in Model)
                         {
-                           
-
                             <tr>
 
                                 <td>
@@ -235,14 +290,19 @@
                                 </td>
 
                                 <td>
+                                    ₹ @salary.ActualSalary.ToString("N2")
+                                </td>
+
+                                <td>
+                                    @salary.PayDays.ToString("N2")
+                                </td>
+
+                                <td>
                                     ₹ @salary.GrossSalary.ToString("N2")
                                 </td>
 
                                 <td>
-                                    ₹ @((salary.PfDeduction
-                                            + salary.EsicDeduction
-                                            + salary.TdsDeduction
-                                            + salary.OtherDeductions).ToString("N2"))
+                                    ₹ @salary.TotalDeductions.ToString("N2")
                                 </td>
 
                                 <td>
@@ -251,6 +311,10 @@
                                         ₹ @salary.NetSalary.ToString("N2")
                                     </strong>
 
+                                </td>
+
+                                <td>
+                                    ₹ @salary.CTC.ToString("N2")
                                 </td>
 
                                 <td>
@@ -272,8 +336,7 @@
 
                                 <td>
 
-                                    @(salary.PaidOn?.ToString("dd-MMM-yyyy")
-                                        ?? "-")
+                                    @(salary.PaidOn?.ToString("dd-MMM-yyyy") ?? "-")
 
                                 </td>
 
@@ -293,11 +356,11 @@
                                             <i class="bi bi-receipt"></i>
                                         </a>
 
-                                        <a asp-action="Edit"
+                                        @* <a asp-action="Edit"
                                            asp-route-id="@salary.Id"
                                            class="btn-app btn-secondary-app btn-icon">
                                             <i class="bi bi-pencil"></i>
-                                        </a>
+                                        </a> *@
 
                                         @if (salary.PaymentStatus != "Paid")
                                         {

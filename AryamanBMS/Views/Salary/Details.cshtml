@@ -13,7 +13,7 @@
         </h1>
 
         <p class="module-subtitle">
-            Payroll breakdown
+            Excel-imported payroll breakdown
         </p>
 
     </div>
@@ -51,7 +51,29 @@
 
             <div>
                 <strong>Status</strong><br />
-                @Model.PaymentStatus
+
+                @if (Model.PaymentStatus == "Paid")
+                {
+                    <span class="badge-success">
+                        Paid
+                    </span>
+                }
+                else
+                {
+                    <span class="badge-warning">
+                        Pending
+                    </span>
+                }
+            </div>
+
+            <div>
+                <strong>Pay Days</strong><br />
+                @Model.PayDays.ToString("N2")
+            </div>
+
+            <div>
+                <strong>Source File</strong><br />
+                @(Model.SourceFileName ?? "-")
             </div>
 
         </div>
@@ -61,6 +83,16 @@
         <h6>Earnings</h6>
 
         <table class="table">
+
+            <tr>
+                <td>Actual Salary</td>
+                <td>₹ @Model.ActualSalary.ToString("N2")</td>
+            </tr>
+
+            <tr>
+                <td>Gross Salary</td>
+                <td>₹ @Model.GrossSalary.ToString("N2")</td>
+            </tr>
 
             <tr>
                 <td>Basic Salary</td>
@@ -73,18 +105,33 @@
             </tr>
 
             <tr>
-                <td>DA</td>
-                <td>₹ @Model.DA.ToString("N2")</td>
+                <td>Conveyance</td>
+                <td>₹ @Model.Conveyance.ToString("N2")</td>
             </tr>
 
             <tr>
-                <td>Other Allowances</td>
-                <td>₹ @Model.OtherAllowances.ToString("N2")</td>
+                <td>Medical Allowance</td>
+                <td>₹ @Model.MedicalAllowance.ToString("N2")</td>
             </tr>
 
             <tr>
-                <th>Gross Salary</th>
-                <th>₹ @Model.GrossSalary.ToString("N2")</th>
+                <td>Education Allowance</td>
+                <td>₹ @Model.EducationAllowance.ToString("N2")</td>
+            </tr>
+
+            <tr>
+                <td>Special Allowance</td>
+                <td>₹ @Model.SpecialAllowance.ToString("N2")</td>
+            </tr>
+
+            <tr>
+                <th>Total Earnings</th>
+                <th>₹ @Model.TotalEarnings.ToString("N2")</th>
+            </tr>
+
+            <tr>
+                <td>Gross - Conveyance</td>
+                <td>₹ @Model.GrossMinusConveyance.ToString("N2")</td>
             </tr>
 
         </table>
@@ -96,23 +143,28 @@
         <table class="table">
 
             <tr>
-                <td>PF</td>
+                <td>PF Employee</td>
                 <td>₹ @Model.PfDeduction.ToString("N2")</td>
             </tr>
 
             <tr>
-                <td>ESIC</td>
+                <td>ESIC Employee</td>
                 <td>₹ @Model.EsicDeduction.ToString("N2")</td>
             </tr>
 
             <tr>
-                <td>TDS</td>
-                <td>₹ @Model.TdsDeduction.ToString("N2")</td>
+                <td>Professional Tax</td>
+                <td>₹ @Model.ProfessionalTax.ToString("N2")</td>
             </tr>
 
             <tr>
-                <td>Other Deductions</td>
-                <td>₹ @Model.OtherDeductions.ToString("N2")</td>
+                <td>Advance</td>
+                <td>₹ @Model.Advance.ToString("N2")</td>
+            </tr>
+
+            <tr>
+                <th>Total Deductions</th>
+                <th>₹ @Model.TotalDeductions.ToString("N2")</th>
             </tr>
 
             <tr>
@@ -121,6 +173,37 @@
             </tr>
 
         </table>
+
+        <hr />
+
+        <h6>Employer Contribution</h6>
+
+        <table class="table">
+
+            <tr>
+                <td>Employer PF</td>
+                <td>₹ @Model.EmployerPf.ToString("N2")</td>
+            </tr>
+
+            <tr>
+                <td>Employer ESIC</td>
+                <td>₹ @Model.EmployerEsic.ToString("N2")</td>
+            </tr>
+
+            <tr>
+                <th>CTC</th>
+                <th>₹ @Model.CTC.ToString("N2")</th>
+            </tr>
+
+        </table>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Remark))
+        {
+            <hr />
+
+            <strong>Remark:</strong>
+            @Model.Remark
+        }
 
         @if (Model.PaidOn != null)
         {
