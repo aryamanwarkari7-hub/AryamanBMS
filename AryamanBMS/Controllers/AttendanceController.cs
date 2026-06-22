@@ -1,4 +1,5 @@
 ﻿using AryamanBMS.Data;
+using AryamanBMS.Extensions;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.ViewModels;
@@ -287,65 +288,90 @@ namespace AryamanBMS.Controllers
         }
 
         [Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Register(
-            string? searchText,
-            DateTime? fromDate,
-            DateTime? toDate,
-            int page = 1)
+    string? searchText,
+    DateTime? fromDate,
+    DateTime? toDate,
+    int page = 1)
         {
-            int pageSize = 10;
+            const int pageSize = 10;
 
-            var query =
-                _attendanceRepository.Attendances
+            var query = _attendanceRepository.Attendances
+                .AsNoTracking()
                 .Include(a => a.Employee)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(searchText))
             {
+                searchText = searchText.Trim();
+
                 query = query.Where(a =>
-                    a.Employee.EmployeeCode.Contains(searchText) ||
-                    a.Employee.FirstName.Contains(searchText) ||
-                    a.Employee.LastName.Contains(searchText) ||
-                    (a.Employee.MobileNumber != null &&
-                     a.Employee.MobileNumber.Contains(searchText)) ||
-                    (a.Employee.OfficialEmail != null &&
-                     a.Employee.OfficialEmail.Contains(searchText)));
+                    a.Employee != null &&
+                    (
+                        (a.Employee.EmployeeCode != null &&
+                         a.Employee.EmployeeCode.Contains(searchText)) ||
+
+                        a.Employee.FirstName.Contains(searchText) ||
+
+                        a.Employee.LastName.Contains(searchText) ||
+
+                        (a.Employee.MobileNumber != null &&
+                         a.Employee.MobileNumber.Contains(searchText)) ||
+
+                        (a.Employee.OfficialEmail != null &&
+                         a.Employee.OfficialEmail.Contains(searchText))
+                    ));
             }
 
             if (fromDate.HasValue)
             {
                 query = query.Where(a =>
-                    a.AttendanceDate >= fromDate.Value.Date);
+                    a.AttendanceDate.Date >= fromDate.Value.Date);
             }
 
             if (toDate.HasValue)
             {
                 query = query.Where(a =>
-                    a.AttendanceDate <= toDate.Value.Date);
+                    a.AttendanceDate.Date <= toDate.Value.Date);
             }
 
-            int totalRecords =
-                await query.CountAsync();
-
-            var attendance =
-                await query
+            query = query
                 .OrderByDescending(a => a.AttendanceDate)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
+                .ThenByDescending(a => a.Id);
+
+            var routeValues = new Dictionary<string, string>();
+
+            if (!string.IsNullOrWhiteSpace(searchText))
+            {
+                routeValues["searchText"] = searchText;
+            }
+
+            if (fromDate.HasValue)
+            {
+                routeValues["fromDate"] =
+                    fromDate.Value.ToString("yyyy-MM-dd");
+            }
+
+            if (toDate.HasValue)
+            {
+                routeValues["toDate"] =
+                    toDate.Value.ToString("yyyy-MM-dd");
+            }
+
+            var model = await query.ToPagedListAsync(
+                page,
+                pageSize,
+                routeValues);
+
+            model.Pagination.ControllerName = "Attendance";
+            model.Pagination.ActionName = nameof(Register);
 
             ViewBag.SearchText = searchText;
-            ViewBag.FromDate =
-                fromDate?.ToString("yyyy-MM-dd");
-            ViewBag.ToDate =
-                toDate?.ToString("yyyy-MM-dd");
+            ViewBag.FromDate = fromDate?.ToString("yyyy-MM-dd");
+            ViewBag.ToDate = toDate?.ToString("yyyy-MM-dd");
 
-            ViewBag.CurrentPage = page;
-            ViewBag.TotalPages =
-                (int)Math.Ceiling(
-                    (double)totalRecords / pageSize);
-
-            return View(attendance);
+            return View(model);
         }
 
         [Authorize(Roles = "Admin,HR")]

@@ -1,4 +1,4 @@
-﻿@model List<AryamanBMS.Models.AttendanceModel>
+﻿@model PagedListViewModel<AttendanceModel>
 
 @{
     ViewData["Title"] = "Attendance Register";
@@ -16,7 +16,7 @@
         </p>
     </div>
 
-    <div class="d-flex flex-row gap-2">
+    <div class="d-flex flex-wrap gap-2">
 
         <a asp-action="Create"
            class="btn-app btn-primary-app">
@@ -25,6 +25,7 @@
             Add Attendance
 
         </a>
+
         <a asp-action="Dashboard"
            class="btn-app btn-secondary-app">
 
@@ -60,15 +61,17 @@
 
     <div class="card-body">
 
-        <form method="get">
+        <form asp-action="Register"
+              method="get">
 
-            <div class="d-flex gap-2">
+            <div class="d-flex flex-wrap gap-2">
 
                 <input type="text"
                        name="searchText"
                        value="@ViewBag.SearchText"
-                       class="app-input"
-                       placeholder="Employee Code / Name / Mobile / Email" />
+                       class="app-input flex-grow-1"
+                       placeholder="Employee Code / Name / Mobile / Email"
+                       autocomplete="off" />
 
                 <input type="date"
                        name="fromDate"
@@ -82,12 +85,18 @@
 
                 <button type="submit"
                         class="btn-app btn-primary-app">
+
+                    <i class="bi bi-search"></i>
                     Search
+
                 </button>
 
                 <a asp-action="Register"
                    class="btn-app btn-secondary-app">
+
+                    <i class="bi bi-arrow-counterclockwise"></i>
                     Reset
+
                 </a>
 
             </div>
@@ -101,27 +110,34 @@
 <div class="app-card table-card">
 
     <div class="card-header">
+
         <h5 class="card-title">
             Attendance List
         </h5>
+
     </div>
 
     <div class="card-body">
 
-        <div class="table-responsive">
+        @if (!Model.Items.Any())
+        {
+            <div class="empty-state">
 
-            @if (!Model.Any())
-            {
-                <div class="empty-state">
+                <i class="bi bi-calendar-x"></i>
+
+                <p class="mb-0">
                     No attendance records found.
-                </div>
-            }
-            else
-            {
+                </p>
+
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+
                 <table class="app-table">
 
                     <thead>
-
                         <tr>
                             <th>ID</th>
                             <th>Date</th>
@@ -131,29 +147,32 @@
                             <th>Location</th>
                             <th>Working Hours</th>
                             <th>Remarks</th>
-                            <th>Actions</th>
+                            <th class="text-end">Actions</th>
                         </tr>
-
                     </thead>
 
                     <tbody>
 
-                        @foreach (var attendance in Model)
+                        @foreach (var attendance in Model.Items)
                         {
                             <tr>
 
-                                <td>@attendance.Id</td>
-
                                 <td>
-                                    @attendance.AttendanceDate.ToString("dd-MMM-yyyy")
+                                    @attendance.Id
                                 </td>
 
                                 <td>
-                                    @attendance.Employee?.EmployeeCode
+                                    @(attendance.AttendanceDate.ToString("dd-MMM-yyyy"))
                                 </td>
 
                                 <td>
-                                    @attendance.Employee?.FullName
+                                    @(attendance.Employee?.EmployeeCode
+                                      ?? "-")
+                                </td>
+
+                                <td>
+                                    @(attendance.Employee?.FullName
+                                      ?? "-")
                                 </td>
 
                                 <td>
@@ -203,9 +222,14 @@
 
                                 </td>
 
-                                <td>@(attendance.LocationType ?? "-")</td>
+                                <td>
+                                    @(attendance.LocationType ?? "-")
+                                </td>
 
-                                <td>@attendance.WorkingHours.ToString("0.00") hrs</td>
+                                <td>
+                                    @attendance.WorkingHours.ToString("0.00")
+                                    hrs
+                                </td>
 
                                 <td>
                                     @(attendance.Remarks ?? "-")
@@ -213,24 +237,36 @@
 
                                 <td>
 
-                                    <div class="table-actions">
+                                    <div class="table-actions justify-content-end">
 
                                         <a asp-action="Details"
                                            asp-route-id="@attendance.Id"
-                                           class="btn-app btn-primary-app btn-icon">
+                                           class="btn-app btn-primary-app btn-icon"
+                                           title="View attendance"
+                                           aria-label="View attendance">
+
                                             <i class="bi bi-eye"></i>
+
                                         </a>
 
                                         <a asp-action="Edit"
                                            asp-route-id="@attendance.Id"
-                                           class="btn-app btn-secondary-app btn-icon">
+                                           class="btn-app btn-secondary-app btn-icon"
+                                           title="Edit attendance"
+                                           aria-label="Edit attendance">
+
                                             <i class="bi bi-pencil"></i>
+
                                         </a>
 
                                         <a asp-action="Delete"
                                            asp-route-id="@attendance.Id"
-                                           class="btn-app btn-danger-app btn-icon">
+                                           class="btn-app btn-danger-app btn-icon"
+                                           title="Delete attendance"
+                                           aria-label="Delete attendance">
+
                                             <i class="bi bi-trash"></i>
+
                                         </a>
 
                                     </div>
@@ -243,44 +279,12 @@
                     </tbody>
 
                 </table>
-            }
-
-        </div>
-
-        @if (ViewBag.TotalPages > 1)
-        {
-            <div class="pagination-container">
-
-                @if (ViewBag.CurrentPage > 1)
-                {
-                    <a asp-action="Register"
-                       asp-route-page="@(ViewBag.CurrentPage - 1)"
-                       asp-route-searchText="@ViewBag.SearchText"
-                       asp-route-fromDate="@ViewBag.FromDate"
-                       asp-route-toDate="@ViewBag.ToDate"
-                       class="btn-app btn-secondary-app">
-                        Previous
-                    </a>
-                }
-
-                <span class="pagination-info">
-                    Page @ViewBag.CurrentPage of @ViewBag.TotalPages
-                </span>
-
-                @if (ViewBag.CurrentPage < ViewBag.TotalPages)
-                {
-                    <a asp-action="Register"
-                       asp-route-page="@(ViewBag.CurrentPage + 1)"
-                       asp-route-searchText="@ViewBag.SearchText"
-                       asp-route-fromDate="@ViewBag.FromDate"
-                       asp-route-toDate="@ViewBag.ToDate"
-                       class="btn-app btn-secondary-app">
-                        Next
-                    </a>
-                }
 
             </div>
         }
+
+        <partial name="_Pagination"
+                 model="Model.Pagination" />
 
     </div>
 

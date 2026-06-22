@@ -1,177 +1,201 @@
-﻿@model List<AryamanBMS.Models.DesignationModel>
+﻿@model PagedListViewModel<DesignationModel>
+
+@{
+    ViewData["Title"] = "Designations";
+}
 
 <div class="module-header">
 
     <div>
-        <h1 class="module-title">Designation Master</h1>
-        <p class="module-subtitle">Manage designation records</p>
+        <h1 class="module-title">
+            Designation Master
+        </h1>
+
+        <p class="module-subtitle">
+            Manage designation records
+        </p>
     </div>
 
     <a asp-action="Create"
        class="btn-app btn-primary-app">
+
         <i class="bi bi-plus-lg"></i>
         Add Designation
+
     </a>
 
 </div>
 
+@if (TempData["Error"] != null)
+{
+    <div class="app-alert app-alert-danger mb-3">
+
+        <i class="bi bi-exclamation-circle"></i>
+        @TempData["Error"]
+
+    </div>
+}
+
 <div class="app-card table-card">
-    @if (TempData["Error"] != null)
-    {
-        <div class="app-alert app-alert-danger">
-            @TempData["Error"]
-        </div>
-    }
+
     <div class="card-header">
-        <h5 class="card-title">Designation List</h5>
+
+        <h5 class="card-title">
+            Designation List
+        </h5>
+
     </div>
 
-    <div class="app-card mb-3">
+    <div class="card-body border-bottom">
 
-        <div class="card-body">
+        <form asp-action="Index"
+              method="get">
 
-            <form method="get">
+            <div class="d-flex flex-wrap gap-2">
 
-                <div class="d-flex gap-2">
+                <input type="text"
+                       name="searchText"
+                       value="@ViewBag.SearchText"
+                       class="app-input flex-grow-1"
+                       placeholder="Search designation name or code"
+                       autocomplete="off" />
 
-                    <input type="text"
-                           name="searchText"
-                           value="@ViewBag.SearchText"
-                           class="app-input"
-                           placeholder="Search designation name or code" />
+                <button type="submit"
+                        class="btn-app btn-primary-app">
 
-                    <button type="submit"
-                            class="btn-app btn-primary-app">
-                        <i class="bi bi-search"></i>
-                        Search
-                    </button>
+                    <i class="bi bi-search"></i>
+                    Search
 
-                    <a asp-action="Index"
-                       class="btn-app btn-secondary-app">
-                        Reset
-                    </a>
+                </button>
 
-                </div>
+                <a asp-action="Index"
+                   class="btn-app btn-secondary-app">
 
-            </form>
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                    Reset
 
-        </div>
+                </a>
+
+            </div>
+
+        </form>
 
     </div>
 
     <div class="card-body">
 
-        <div class="table-responsive">
-            @if (!Model.Any())
-            {
-                <div class="empty-state">
-                    No records found.
-                </div>
-            } 
-            else{
-
-        <table class="app-table">
-
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Designation Name</th>
-                    <th>Designation Code</th>
-                    <th>Department</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-
-            <tbody>
-
-                @foreach (var designation in Model)
-                {
-                    <tr>
-
-                        <td>@designation.Id</td>
-
-                        <td>
-                            <strong>@designation.DesignationName</strong>
-                        </td>
-
-                        <td>
-                            <strong>@designation.DisplayCode</strong>
-                        </td>
-                        <td>
-                            <strong>@designation.Department?.DepartmentName</strong>
-                        </td>
-
-                        <td>
-                            @if (designation.IsActive)
-                            {
-                                <span class="badge-success">Active</span>
-                            }
-                            else
-                            {
-                                <span class="badge-danger">Inactive</span>
-                            }
-                        </td>
-
-                        <td>
-
-                            <div class="table-actions">
-
-                                <a asp-action="Edit"
-                                   asp-route-id="@designation.Id"
-                                   class="btn-app btn-secondary-app btn-icon">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-
-                                <a asp-action="Delete"
-                                   asp-route-id="@designation.Id"
-                                   class="btn-app btn-danger-app btn-icon">
-                                    <i class="bi bi-trash"></i>
-                                </a>
-
-                            </div>
-
-                        </td>
-
-                    </tr>
-                }
-
-            </tbody>
-
-        </table>
-        }
-        </div>
-
-        @if (ViewBag.TotalPages > 1)
+        @if (!Model.Items.Any())
         {
-            <div class="pagination-container">
+            <div class="empty-state">
 
-                @if (ViewBag.CurrentPage > 1)
-                {
-                    <a asp-action="Index"
-                       asp-route-page="@(ViewBag.CurrentPage - 1)"
-                       asp-route-searchText="@ViewBag.SearchText"
-                       class="btn-app btn-secondary-app">
-                        Previous
-                    </a>
-                }
+                <i class="bi bi-person-badge"></i>
 
-                <span class="pagination-info">
-                    Page @ViewBag.CurrentPage of @ViewBag.TotalPages
-                </span>
-
-                @if (ViewBag.CurrentPage < ViewBag.TotalPages)
-                {
-                    <a asp-action="Index"
-                       asp-route-page="@(ViewBag.CurrentPage + 1)"
-                       asp-route-searchText="@ViewBag.SearchText"
-                       class="btn-app btn-secondary-app">
-                        Next
-                    </a>
-                }
+                <p class="mb-0">
+                    No designation records found.
+                </p>
 
             </div>
         }
+        else
+        {
+            <div class="table-responsive">
+
+                <table class="app-table">
+
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Designation Name</th>
+                            <th>Designation Code</th>
+                            <th>Department</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var designation in Model.Items)
+                        {
+                            <tr>
+
+                                <td>
+                                    @designation.Id
+                                </td>
+
+                                <td>
+                                    <strong>
+                                        @designation.DesignationName
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    @designation.DisplayCode
+                                </td>
+
+                                <td>
+                                    @(designation.Department?.DepartmentName
+                                        ?? "Not Assigned")
+                                </td>
+
+                                <td>
+
+                                    @if (designation.IsActive)
+                                    {
+                                        <span class="badge-success">
+                                            Active
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-danger">
+                                            Inactive
+                                        </span>
+                                    }
+
+                                </td>
+
+                                <td>
+
+                                    <div class="table-actions justify-content-end">
+
+                                        <a asp-action="Edit"
+                                           asp-route-id="@designation.Id"
+                                           class="btn-app btn-secondary-app btn-icon"
+                                           title="Edit designation"
+                                           aria-label="Edit designation">
+
+                                            <i class="bi bi-pencil"></i>
+
+                                        </a>
+
+                                        <a asp-action="Delete"
+                                           asp-route-id="@designation.Id"
+                                           class="btn-app btn-danger-app btn-icon"
+                                           title="Delete designation"
+                                           aria-label="Delete designation">
+
+                                            <i class="bi bi-trash"></i>
+
+                                        </a>
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+        <partial name="_Pagination"
+                 model="Model.Pagination" />
+
     </div>
 
 </div>

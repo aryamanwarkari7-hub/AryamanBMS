@@ -1,4 +1,5 @@
-﻿using AryamanBMS.Models;
+﻿using AryamanBMS.Extensions;
+using AryamanBMS.Models;
 using AryamanBMS.Repositories;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.ViewModels;
@@ -37,39 +38,110 @@ namespace AryamanBMS.Controllers
             _userManager = userManager;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(
+    string? searchText,
+    string status = "All",
+    int page = 1)
         {
+            const int pageSize = 10;
+
             var query = _leaveApplicationRepository.LeaveApplications
+                .AsNoTracking()
                 .Include(x => x.Employee)
                 .Include(x => x.LeaveType)
                 .AsQueryable();
 
-            if (User.IsInRole("Employee") &&
+            bool isEmployeeOnly =
+                User.IsInRole("Employee") &&
                 !User.IsInRole("Admin") &&
-                !User.IsInRole("HR"))
+                !User.IsInRole("HR");
+
+            if (isEmployeeOnly)
             {
                 var user = await _userManager.GetUserAsync(User);
 
-                var employee = await _employeeRepository.Employees
-                    .FirstOrDefaultAsync(x =>
-                        x.ApplicationUserId == user.Id);
+                var employee = user == null
+                    ? null
+                    : await _employeeRepository.Employees
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(x =>
+                            x.ApplicationUserId == user.Id);
 
                 if (employee == null)
                 {
                     TempData["Error"] =
                         "No employee record mapped to this user.";
 
-                    return View(new List<LeaveApplicationModel>());
+                    query = query.Where(x => false);
                 }
-
-                query = query.Where(x => x.EmployeeId == employee.Id);
+                else
+                {
+                    query = query.Where(x =>
+                        x.EmployeeId == employee.Id);
+                }
             }
 
-            var leaveApplications = await query
-                .OrderByDescending(x => x.AppliedOn)
-                .ToListAsync();
+            if (!string.IsNullOrWhiteSpace(searchText))
+            {
+                searchText = searchText.Trim();
 
-            return View(leaveApplications);
+                query = query.Where(x =>
+                    x.ApplicationNumber.Contains(searchText) ||
+
+                    (x.Employee != null &&
+                     x.Employee.EmployeeCode != null &&
+                     x.Employee.EmployeeCode.Contains(searchText)) ||
+
+                    (x.Employee != null &&
+                     x.Employee.FirstName != null &&
+                     x.Employee.FirstName.Contains(searchText)) ||
+
+                    (x.Employee != null &&
+                     x.Employee.LastName != null &&
+                     x.Employee.LastName.Contains(searchText)) ||
+
+                    (x.LeaveType != null &&
+                     x.LeaveType.LeaveName.Contains(searchText)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(status) &&
+                status != "All")
+            {
+                query = query.Where(x =>
+                    x.Status == status);
+            }
+
+            query = query
+                .OrderByDescending(x => x.AppliedOn)
+                .ThenByDescending(x => x.Id);
+
+            var routeValues = new Dictionary<string, string>();
+
+            if (!string.IsNullOrWhiteSpace(searchText))
+            {
+                routeValues["searchText"] = searchText;
+            }
+
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                routeValues["status"] = status;
+            }
+
+            var model = await query.ToPagedListAsync(
+                page,
+                pageSize,
+                routeValues);
+
+            model.Pagination.ControllerName =
+                "LeaveApplication";
+
+            model.Pagination.ActionName =
+                nameof(Index);
+
+            ViewBag.SearchText = searchText;
+            ViewBag.Status = status;
+
+            return View(model);
         }
 
         [HttpGet]

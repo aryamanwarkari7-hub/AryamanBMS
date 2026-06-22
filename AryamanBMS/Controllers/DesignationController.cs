@@ -1,4 +1,6 @@
-﻿using AryamanBMS.Models;
+﻿using AryamanBMS.Extensions;
+using Microsoft.EntityFrameworkCore;
+using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,35 +21,47 @@ namespace AryamanBMS.Controllers
             _departmentRepository = departmentRepository;
         }
 
-        public IActionResult Index(string searchText, int page = 1)
+        public async Task<IActionResult> Index(
+    string? searchText,
+    int page = 1)
         {
-            int pageSize = 5;
+            const int pageSize = 5;
 
             var designations = _designationRepository.Designations
+                .AsNoTracking()
+                .Include(d => d.Department)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(searchText))
             {
+                searchText = searchText.Trim();
+
                 designations = designations.Where(d =>
                     d.DesignationName.Contains(searchText) ||
                     d.DisplayCode.Contains(searchText));
             }
 
-            int totalRecords = designations.Count();
+            designations = designations
+                .OrderBy(d => d.Id);
 
-            var pagedDesignations = designations
-                .OrderBy(d => d.Id)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
+            var routeValues = new Dictionary<string, string>();
 
-            ViewBag.CurrentPage = page;
-            ViewBag.TotalPages =
-                (int)Math.Ceiling((double)totalRecords / pageSize);
+            if (!string.IsNullOrWhiteSpace(searchText))
+            {
+                routeValues["searchText"] = searchText;
+            }
+
+            var model = await designations.ToPagedListAsync(
+                page,
+                pageSize,
+                routeValues);
+
+            model.Pagination.ControllerName = "Designation";
+            model.Pagination.ActionName = nameof(Index);
 
             ViewBag.SearchText = searchText;
 
-            return View(pagedDesignations);
+            return View(model);
         }
 
         [HttpGet]

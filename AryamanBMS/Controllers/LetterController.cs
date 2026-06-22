@@ -1,4 +1,5 @@
-﻿using AryamanBMS.Models;
+﻿using AryamanBMS.Extensions;
+using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -27,13 +28,23 @@ namespace AryamanBMS.Controllers
             _environment = environment;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1)
         {
-            var letters = await _letterRepository.Letters
-                .OrderByDescending(x => x.IssuedOn)
-                .ToListAsync();
+            const int pageSize = 10;
 
-            return View(letters);
+            var query = _letterRepository.Letters
+                .AsNoTracking()
+                .OrderByDescending(x => x.IssuedOn)
+                .ThenByDescending(x => x.Id);
+
+            var model = await query.ToPagedListAsync(
+                page,
+                pageSize);
+
+            model.Pagination.ControllerName = "Letter";
+            model.Pagination.ActionName = nameof(Index);
+
+            return View(model);
         }
 
         [HttpGet]

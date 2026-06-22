@@ -1,10 +1,21 @@
-﻿@model IEnumerable<AryamanBMS.ViewModels.UserListViewModel>
+﻿@model PagedListViewModel<UserListViewModel>
+
+@{
+    ViewData["Title"] = "Users";
+}
 
 <div class="module-header">
 
     <div>
-        <h2>Users</h2>
-        <p>Manage system users and roles.</p>
+
+        <h1 class="module-title">
+            Users
+        </h1>
+
+        <p class="module-subtitle">
+            Manage system users and roles
+        </p>
+
     </div>
 
     <div class="module-header-actions">
@@ -21,90 +32,154 @@
 
 </div>
 
-<div class="app-card">
+@if (TempData["Success"] != null)
+{
+    <div class="app-alert app-alert-success mb-3">
 
-    <div class="table-responsive">
+        <i class="bi bi-check-circle"></i>
+        @TempData["Success"]
 
-        <table class="app-table">
+    </div>
+}
 
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>User Name</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th width="120">Actions</th>
-                </tr>
-            </thead>
+@if (TempData["Error"] != null)
+{
+    <div class="app-alert app-alert-danger mb-3">
 
-            <tbody>
+        <i class="bi bi-exclamation-circle"></i>
+        @TempData["Error"]
 
-                @if (!Model.Any())
-                {
-                    <tr>
-                        <td colspan="6"
-                            class="text-center py-4">
-                            No users found.
-                        </td>
-                    </tr>
-                }
+    </div>
+}
 
-                @foreach (var user in Model)
-                {
-                    <tr>
+<div class="app-card table-card">
 
-                        <td>@user.FullName</td>
+    <div class="card-header">
 
-                        <td>@user.UserName</td>
+        <h5 class="card-title">
+            User List
+        </h5>
 
-                        <td>@user.Email</td>
+    </div>
 
-                        <td >@user.Role</td>
+    <div class="card-body">
 
-                        <td>
+        @if (!Model.Items.Any())
+        {
+            <div class="empty-state">
 
-                            @if (user.IsActive)
-                            {
-                                <span class="badge bg-success d-flex justify-content-center align-items-center">
-                                    Active
-                                </span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-danger d-flex justify-content-center align-items-center">
-                                    Inactive
-                                </span>
-                            }
+                <i class="bi bi-people"></i>
 
-                        </td>
+                <p class="mb-0">
+                    No users found.
+                </p>
 
-                        <td>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
 
-                            <a asp-action="Edit"
-                               asp-route-id="@user.Id"
-                               class="btn btn-sm btn-outline-primary fw-bold">
+                <table class="app-table">
 
-                                <i class="bi bi-pencil"></i>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>User Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
 
-                            </a>
+                    <tbody>
 
-                            <a asp-action="ResetPassword"
-                               asp-route-id="@user.Id"
-                               class="btn btn-sm btn-outline-success fw-bold">
+                        @foreach (var user in Model.Items)
+                        {
+                            <tr>
 
-                                <i class="bi bi-key"></i>
+                                <td>
+                                    <strong>
+                                        @(string.IsNullOrWhiteSpace(user.FullName)
+                                            ? "-"
+                                            : user.FullName)
+                                    </strong>
+                                </td>
 
-                            </a>
+                                <td>
+                                    @user.UserName
+                                </td>
 
-                        </td>
+                                <td>
+                                    @(string.IsNullOrWhiteSpace(user.Email)
+                                        ? "-"
+                                        : user.Email)
+                                </td>
 
-                    </tr>
-                }
+                                <td>
+                                    @(string.IsNullOrWhiteSpace(user.Role)
+                                        ? "Not Assigned"
+                                        : user.Role)
+                                </td>
 
-            </tbody>
+                                <td>
 
-        </table>
+                                    @if (user.IsActive)
+                                    {
+                                        <span class="badge-success">
+                                            Active
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-danger">
+                                            Inactive
+                                        </span>
+                                    }
+
+                                </td>
+
+                                <td>
+
+                                    <div class="table-actions justify-content-end">
+
+                                        <a asp-action="Edit"
+                                           asp-route-id="@user.Id"
+                                           class="btn-app btn-primary-app btn-icon"
+                                           title="Edit user"
+                                           aria-label="Edit user">
+
+                                            <i class="bi bi-pencil"></i>
+
+                                        </a>
+
+                                        <a asp-action="ResetPassword"
+                                           asp-route-id="@user.Id"
+                                           class="btn-app btn-success-app btn-icon"
+                                           title="Reset password"
+                                           aria-label="Reset password">
+
+                                            <i class="bi bi-key"></i>
+
+                                        </a>
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+        <partial name="_Pagination"
+                 model="Model.Pagination" />
 
     </div>
 

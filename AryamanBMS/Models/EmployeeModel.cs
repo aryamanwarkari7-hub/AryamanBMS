@@ -107,5 +107,12 @@ namespace AryamanBMS.Models
 
         public ICollection<LeaveBalanceModel>
         LeaveBalances{ get; set; } = new List<LeaveBalanceModel>();
+
+        // Document Uploads and Records
+        public ICollection<EmployeeAcademicModel> AcademicRecords { get; set; }
+    = new List<EmployeeAcademicModel>();
+
+        public ICollection<EmployeeDocumentModel> Documents { get; set; }
+            = new List<EmployeeDocumentModel>();
     }
 }

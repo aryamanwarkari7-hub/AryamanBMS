@@ -1,4 +1,5 @@
-﻿using AryamanBMS.Models;
+﻿using AryamanBMS.Extensions;
+using AryamanBMS.Models;
 using AryamanBMS.Repositories;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
@@ -41,23 +42,52 @@ namespace AryamanBMS.Controllers
 
         [Authorize(Roles = "Admin,HR")]
 
-        public IActionResult Index(int? month, int? year)
+        [Authorize(Roles = "Admin,HR")]
+        public async Task<IActionResult> Index(
+    int? month,
+    int? year,
+    int page = 1)
         {
-            month ??= DateTime.Today.Month;
-            year ??= DateTime.Today.Year;
+            const int pageSize = 10;
 
-            var salaries =
-                _salaryRecordRepository.SalaryRecords
+            int selectedMonth =
+                month.HasValue &&
+                month.Value >= 1 &&
+                month.Value <= 12
+                    ? month.Value
+                    : DateTime.Today.Month;
+
+            int selectedYear =
+                year ?? DateTime.Today.Year;
+
+            var query = _salaryRecordRepository.SalaryRecords
+                .AsNoTracking()
+                .Include(x => x.Employee)
                 .Where(x =>
-                    x.Month == month &&
-                    x.Year == year)
+                    x.Month == selectedMonth &&
+                    x.Year == selectedYear)
                 .OrderBy(x => x.Employee!.EmployeeCode)
-                .ToList();
+                .ThenBy(x => x.Id);
 
-            ViewBag.Month = month;
-            ViewBag.Year = year;
+            var routeValues =
+                new Dictionary<string, string>
+                {
+                    ["month"] = selectedMonth.ToString(),
+                    ["year"] = selectedYear.ToString()
+                };
 
-            return View(salaries);
+            var model = await query.ToPagedListAsync(
+                page,
+                pageSize,
+                routeValues);
+
+            model.Pagination.ControllerName = "Salary";
+            model.Pagination.ActionName = nameof(Index);
+
+            ViewBag.Month = selectedMonth;
+            ViewBag.Year = selectedYear;
+
+            return View(model);
         }
 
         [HttpPost]
@@ -112,11 +142,17 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Admin,HR")]
-        public async Task<IActionResult> MarkPaid(int id)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,HR")]
+        public async Task<IActionResult> MarkPaid(
+    int id,
+    int month,
+    int year,
+    int page = 1)
         {
             var salary =
-                await _salaryRecordRepository
-                .GetByIdAsync(id);
+                await _salaryRecordRepository.GetByIdAsync(id);
 
             if (salary == null)
             {
@@ -126,17 +162,20 @@ namespace AryamanBMS.Controllers
             salary.PaymentStatus = "Paid";
             salary.PaidOn = DateTime.Now;
 
-            await _salaryRecordRepository
-                .UpdateAsync(salary);
-
-            await _salaryRecordRepository
-                .SaveAsync();
+            await _salaryRecordRepository.UpdateAsync(salary);
+            await _salaryRecordRepository.SaveAsync();
 
             TempData["Success"] =
                 "Salary marked as paid.";
 
             return RedirectToAction(
-                nameof(Index));
+                nameof(Index),
+                new
+                {
+                    month,
+                    year,
+                    page
+                });
         }
 
         [Authorize(Roles = "Admin,HR")]

@@ -47,9 +47,3 @@
 --     ON sr.EmployeeId = e.Id
 -- WHERE Month=6
 -- ORDER BY sr.Id DESC;
-
-DELETE FROM TableSalaryRecord
-WHERE Month = 5
-AND Year = 2026;
-
--- SELECT * FROM tablesalaryrecord WHERE Month=5;

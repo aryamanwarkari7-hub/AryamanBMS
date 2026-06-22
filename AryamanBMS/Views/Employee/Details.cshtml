@@ -227,6 +227,151 @@
     </div>
 </div>
 
+<!-- Academic Information Card -->
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">
+            Academic Information
+        </h5>
+    </div>
+
+    <div class="card-body">
+
+        @if (!Model.AcademicRecords.Any())
+        {
+            <div class="empty-state">
+                No academic records found.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+
+                <table class="app-table">
+
+                    <thead>
+                        <tr>
+                            <th>Qualification</th>
+                            <th>Course</th>
+                            <th>Institute</th>
+                            <th>University</th>
+                            <th>Year</th>
+                            <th>Result</th>
+                            <th>Highest</th>
+                            <th>Documents</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var academic in
+                            Model.AcademicRecords
+                                .OrderByDescending(x => x.PassingYear))
+                        {
+                            <tr>
+
+                                <td>
+                                    @academic.QualificationLevel
+                                </td>
+
+                                <td>
+                                    @(academic.CourseName ?? "-")
+
+                                    @if (!string.IsNullOrWhiteSpace(
+                                        academic.Specialization))
+                                    {
+                                        <br />
+                                        <small>
+                                            @academic.Specialization
+                                        </small>
+                                    }
+                                </td>
+
+                                <td>
+                                    @(academic.InstituteName ?? "-")
+                                </td>
+
+                                <td>
+                                    @(academic.BoardOrUniversity ?? "-")
+                                </td>
+
+                                <td>
+                                    @(academic.PassingYear?.ToString() ?? "-")
+                                </td>
+
+                                <td>
+                                    @if (academic.ResultType == "Grade")
+                                    {
+                                        @(academic.Grade ?? "-")
+                                    }
+                                    else if (academic.Score.HasValue)
+                                    {
+                                        @academic.Score
+                                        <span>
+                                            @academic.ResultType
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span>-</span>
+                                    }
+                                </td>
+
+                                <td>
+                                    @if (academic.IsHighestQualification)
+                                    {
+                                        <span class="badge-success">
+                                            Yes
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span>-</span>
+                                    }
+                                </td>
+
+                                <td>
+
+                                    @if (academic.Documents.Any())
+                                    {
+                                        <div class="d-flex flex-column gap-1">
+
+                                            @foreach (var document in academic.Documents)
+                                            {
+                                                <a asp-action="DownloadDocument"
+                                                   asp-route-id="@document.Id"
+                                                   class="btn-app btn-outline-app">
+
+                                                    <i class="bi bi-download"></i>
+                                                    @document.OriginalFileName
+
+                                                </a>
+                                            }
+
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span>-</span>
+                                    }
+
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+    </div>
+
+</div>
+
 <!-- Actions Card -->
 <div class="app-card">
     <div class="card-body">

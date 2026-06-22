@@ -42,7 +42,13 @@ public class EmployeeRepository : IEmployeeRepository
 
     public async Task<EmployeeModel?> GetDetailsAsync(int id)
     {
-        return await Employees
+        return await _context.Employees
+            .AsNoTracking()
+            .Include(e => e.Department)
+            .Include(e => e.Designation)
+            .Include(e => e.ApplicationUser)
+            .Include(e => e.AcademicRecords)
+                .ThenInclude(a => a.Documents)
             .FirstOrDefaultAsync(e => e.Id == id);
     }
 

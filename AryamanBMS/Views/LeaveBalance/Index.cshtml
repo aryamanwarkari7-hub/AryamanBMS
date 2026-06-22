@@ -1,13 +1,19 @@
-﻿@model List<AryamanBMS.Models.LeaveBalanceModel>
+﻿@model PagedListViewModel<LeaveBalanceModel>
 
 @{
     ViewData["Title"] = "Leave Balance";
+
+    int selectedYear = (int)ViewBag.Year;
+    int selectedEmployeeId = (int)ViewBag.EmployeeId;
 }
 
 <div class="module-header">
 
     <div>
-        <h1 class="module-title">Leave Balance</h1>
+        <h1 class="module-title">
+            Leave Balance
+        </h1>
+
         <p class="module-subtitle">
             Employee-wise yearly leave balance
         </p>
@@ -17,35 +23,62 @@
 
 @if (TempData["Success"] != null)
 {
-    <div class="app-alert app-alert-success">
+    <div class="app-alert app-alert-success mb-3">
+
+        <i class="bi bi-check-circle"></i>
         @TempData["Success"]
+
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="app-alert app-alert-danger mb-3">
+
+        <i class="bi bi-exclamation-circle"></i>
+        @TempData["Error"]
+
     </div>
 }
 
 <div class="app-card mb-3">
 
     <div class="card-header">
-        <h5 class="card-title">Leave Balance Filter</h5>
+
+        <h5 class="card-title">
+            Leave Balance Filter
+        </h5>
+
     </div>
 
     <div class="card-body">
 
-        <div class="d-flex justify-content-between align-items-end flex-wrap">
+        <div class="d-flex justify-content-between
+            align-items-end flex-wrap gap-3">
 
-            <form method="get"
+            <form asp-action="Index"
+                  method="get"
                   class="d-flex align-items-end gap-2 flex-wrap">
 
                 <div>
-                    <label class="form-label">Year</label>
 
-                    <select name="year" class="app-select">
+                    <label class="form-label"
+                           for="year">
+                        Year
+                    </label>
+
+                    <select id="year"
+                            name="year"
+                            class="app-select">
+
                         @for (int y = DateTime.Today.Year - 2;
                              y <= DateTime.Today.Year + 2;
                              y++)
                         {
-                            if (y == (int)ViewBag.Year)
+                            if (y == selectedYear)
                             {
-                                <option value="@y" selected>
+                                <option value="@y"
+                                        selected>
                                     @y
                                 </option>
                             }
@@ -56,65 +89,102 @@
                                 </option>
                             }
                         }
+
                     </select>
+
                 </div>
 
                 <div>
-                    <label class="form-label">Employee</label>
 
-                    <select name="employeeId" class="app-select">
+                    <label class="form-label"
+                           for="employeeId">
+                        Employee
+                    </label>
 
-                        <option value="0">
-                            All Employees
-                        </option>
+                    <select id="employeeId"
+                            name="employeeId"
+                            class="app-select">
+
+                        @if (selectedEmployeeId == 0)
+                        {
+                            <option value="0"
+                                    selected>
+                                All Employees
+                            </option>
+                        }
+                        else
+                        {
+                            <option value="0">
+                                All Employees
+                            </option>
+                        }
 
                         @foreach (var employee in ViewBag.Employees)
                         {
-                            if (employee.Id == (int)ViewBag.EmployeeId)
+                            if (employee.Id == selectedEmployeeId)
                             {
-                                <option value="@employee.Id" selected>
-                                    @employee.EmployeeCode - @employee.FullName
+                                <option value="@employee.Id"
+                                        selected>
+                                    @employee.EmployeeCode -
+                                    @employee.FullName
                                 </option>
                             }
                             else
                             {
                                 <option value="@employee.Id">
-                                    @employee.EmployeeCode - @employee.FullName
+                                    @employee.EmployeeCode -
+                                    @employee.FullName
                                 </option>
                             }
                         }
 
                     </select>
+
                 </div>
 
                 <button type="submit"
                         class="btn-app btn-primary-app">
+
+                    <i class="bi bi-search"></i>
                     Load
+
                 </button>
+
+                <a asp-action="Index"
+                   class="btn-app btn-secondary-app">
+
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                    Reset
+
+                </a>
 
             </form>
 
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 flex-wrap">
 
-                <form asp-action="Generate" method="post">
+                <form asp-action="Generate"
+                      method="post">
 
                     @Html.AntiForgeryToken()
 
                     <input type="hidden"
                            name="year"
-                           value="@ViewBag.Year" />
+                           value="@selectedYear" />
 
                     <button type="submit"
                             class="btn-app btn-success-app"
                             onclick="return confirm('Generate leave balance for selected year?');">
+
+                        <i class="bi bi-plus-circle"></i>
                         Generate Balance
+
                     </button>
 
                 </form>
 
                 <a asp-action="Export"
-                   asp-route-year="@ViewBag.Year"
-                   asp-route-employeeId="@ViewBag.EmployeeId"
+                   asp-route-year="@selectedYear"
+                   asp-route-employeeId="@selectedEmployeeId"
                    class="btn-app btn-success-app">
 
                     <i class="bi bi-file-earmark-excel"></i>
@@ -133,23 +203,31 @@
 <div class="app-card table-card">
 
     <div class="card-header">
+
         <h5 class="card-title">
-            Leave Balance Register - @ViewBag.Year
+            Leave Balance Register - @selectedYear
         </h5>
+
     </div>
 
     <div class="card-body">
 
-        <div class="table-responsive">
+        @if (!Model.Items.Any())
+        {
+            <div class="empty-state">
 
-            @if (!Model.Any())
-            {
-                <div class="empty-state">
+                <i class="bi bi-calendar-x"></i>
+
+                <p class="mb-0">
                     No leave balance records found.
-                </div>
-            }
-            else
-            {
+                </p>
+
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+
                 <table class="app-table">
 
                     <thead>
@@ -166,21 +244,22 @@
 
                     <tbody>
 
-                        @foreach (var item in Model)
+                        @foreach (var item in Model.Items)
                         {
                             <tr>
 
                                 <td>
-                                    @item.Employee?.EmployeeCode
+                                    @(item.Employee?.EmployeeCode ?? "-")
                                 </td>
 
                                 <td>
-                                    @item.Employee?.FullName
+                                    @(item.Employee?.FullName ?? "-")
                                 </td>
 
                                 <td>
-                                    @item.LeaveType?.LeaveCode -
-                                    @item.LeaveType?.LeaveName
+                                    @(item.LeaveType?.LeaveCode ?? "-")
+                                    -
+                                    @(item.LeaveType?.LeaveName ?? "-")
                                 </td>
 
                                 <td>
@@ -207,9 +286,12 @@
                     </tbody>
 
                 </table>
-            }
 
-        </div>
+            </div>
+        }
+
+        <partial name="_Pagination"
+                 model="Model.Pagination" />
 
     </div>
 

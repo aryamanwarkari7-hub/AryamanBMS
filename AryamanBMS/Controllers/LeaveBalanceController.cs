@@ -1,4 +1,5 @@
-﻿using AryamanBMS.Models;
+﻿using AryamanBMS.Extensions;
+using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -26,35 +27,72 @@ namespace AryamanBMS.Controllers
         }
 
         [Authorize(Roles = "Admin,HR")]
-        public async Task<IActionResult> Index(int? year, int? employeeId)
+        [Authorize(Roles = "Admin,HR")]
+        public async Task<IActionResult> Index(
+    int? year,
+    int? employeeId,
+    int page = 1)
         {
-            year ??= DateTime.Today.Year;
+            const int pageSize = 10;
+
+            int selectedYear =
+                year ?? DateTime.Today.Year;
 
             var query = _leaveBalanceRepository.LeaveBalances
+                .AsNoTracking()
                 .Include(x => x.Employee)
                 .Include(x => x.LeaveType)
-                .Where(x => x.LeaveYear == year)
+                .Where(x => x.LeaveYear == selectedYear)
                 .AsQueryable();
 
-            if (employeeId.HasValue && employeeId.Value > 0)
+            if (employeeId.HasValue &&
+                employeeId.Value > 0)
             {
-                query = query.Where(x => x.EmployeeId == employeeId.Value);
+                query = query.Where(x =>
+                    x.EmployeeId == employeeId.Value);
             }
 
-            var leaveBalances = await query
+            query = query
                 .OrderBy(x => x.Employee!.EmployeeCode)
-                .ThenBy(x => x.LeaveType!.LeaveCode)
-                .ToListAsync();
+                .ThenBy(x => x.LeaveType!.LeaveCode);
 
-            ViewBag.Year = year;
-            ViewBag.EmployeeId = employeeId ?? 0;
+            var routeValues =
+                new Dictionary<string, string>
+                {
+                    ["year"] = selectedYear.ToString()
+                };
 
-            ViewBag.Employees = await _employeeRepository.Employees
-                .Where(x => x.IsActive)
-                .OrderBy(x => x.EmployeeCode)
-                .ToListAsync();
+            if (employeeId.HasValue &&
+                employeeId.Value > 0)
+            {
+                routeValues["employeeId"] =
+                    employeeId.Value.ToString();
+            }
 
-            return View(leaveBalances);
+            var model = await query.ToPagedListAsync(
+                page,
+                pageSize,
+                routeValues);
+
+            model.Pagination.ControllerName =
+                "LeaveBalance";
+
+            model.Pagination.ActionName =
+                nameof(Index);
+
+            ViewBag.Year = selectedYear;
+
+            ViewBag.EmployeeId =
+                employeeId.GetValueOrDefault();
+
+            ViewBag.Employees =
+                await _employeeRepository.Employees
+                    .AsNoTracking()
+                    .Where(x => x.IsActive)
+                    .OrderBy(x => x.EmployeeCode)
+                    .ToListAsync();
+
+            return View(model);
         }
 
         [HttpPost]
@@ -106,16 +144,30 @@ namespace AryamanBMS.Controllers
 
 
         [Authorize(Roles = "Admin,HR")]
-        public async Task<IActionResult> Export(int? year)
+        public async Task<IActionResult> Export(
+    int? year,
+    int? employeeId)
         {
-            year ??= DateTime.Today.Year;
+            int selectedYear =
+                year ?? DateTime.Today.Year;
 
-            var balances = await _leaveBalanceRepository.LeaveBalances
+            var query = _leaveBalanceRepository.LeaveBalances
+                .AsNoTracking()
                 .Include(x => x.Employee)
                 .Include(x => x.LeaveType)
-                .Where(x => x.LeaveYear == year.Value)
-                .OrderBy(x => x.Employee.EmployeeCode)
-                .ThenBy(x => x.LeaveType.LeaveCode)
+                .Where(x => x.LeaveYear == selectedYear)
+                .AsQueryable();
+
+            if (employeeId.HasValue &&
+                employeeId.Value > 0)
+            {
+                query = query.Where(x =>
+                    x.EmployeeId == employeeId.Value);
+            }
+
+            var balances = await query
+                .OrderBy(x => x.Employee!.EmployeeCode)
+                .ThenBy(x => x.LeaveType!.LeaveCode)
                 .ToListAsync();
 
             using var workbook = new XLWorkbook();
@@ -161,7 +213,7 @@ namespace AryamanBMS.Controllers
             return File(
                 stream.ToArray(),
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                $"LeaveBalance_{year}_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+                $"LeaveBalance_{selectedYear}_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
         }
 
         private decimal CalculateProratedLeave(

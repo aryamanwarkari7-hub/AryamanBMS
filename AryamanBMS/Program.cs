@@ -34,6 +34,12 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 
+builder.Services.AddScoped< IEmployeeAcademicRepository,EmployeeAcademicRepository>();
+
+builder.Services.AddScoped<IEmployeeDocumentRepository,EmployeeDocumentRepository>();
+
+
+
 builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
 
 builder.Services.AddScoped<IDepartmentRepository, DepartmentRepository>();
@@ -56,6 +62,9 @@ builder.Services.AddScoped<ILetterRepository, LetterRepository>();
 // SALARY SERVICE
 builder.Services.AddScoped<ISalaryExcelImportService, SalaryExcelImportService>();
 builder.Services.AddScoped<ISalaryAttendanceSummaryService, SalaryAttendanceSummaryService>();
+
+// EMPLOYEE SERVICE
+builder.Services.AddScoped<IEmployeeDocumentService, EmployeeDocumentService>();
 
 var app = builder.Build();
 

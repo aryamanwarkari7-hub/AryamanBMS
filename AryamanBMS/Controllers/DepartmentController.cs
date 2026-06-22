@@ -1,7 +1,9 @@
-﻿using AryamanBMS.Models;
+﻿using AryamanBMS.Extensions;
+using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+
 
 namespace AryamanBMS.Controllers
 {
@@ -19,35 +21,45 @@ namespace AryamanBMS.Controllers
             _designationRepository = designationRepository;
         }
 
-        public IActionResult Index(string searchText, int page = 1)
+        public async Task<IActionResult> Index(
+        string? searchText,
+        int page = 1)
         {
-            int pageSize = 5;
+            const int pageSize = 5;
 
             var departments = _departmentRepository.Departments
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(searchText))
             {
+                searchText = searchText.Trim();
+
                 departments = departments.Where(d =>
                     d.DepartmentName.Contains(searchText) ||
                     d.DisplayCode.Contains(searchText));
             }
 
-            int totalRecords = departments.Count();
+            departments = departments
+                .OrderBy(d => d.Id);
 
-            var pagedDepartments = departments
-                .OrderBy(d => d.Id)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
+            var routeValues = new Dictionary<string, string>();
 
-            ViewBag.CurrentPage = page;
-            ViewBag.TotalPages =
-                (int)Math.Ceiling((double)totalRecords / pageSize);
+            if (!string.IsNullOrWhiteSpace(searchText))
+            {
+                routeValues["searchText"] = searchText;
+            }
+
+            var model = await departments.ToPagedListAsync(
+                page,
+                pageSize,
+                routeValues);
+
+            model.Pagination.ControllerName = "Department";
+            model.Pagination.ActionName = nameof(Index);
 
             ViewBag.SearchText = searchText;
 
-            return View(pagedDepartments);
+            return View(model);
         }
 
         [HttpGet]

@@ -18,6 +18,9 @@ namespace AryamanBMS.Data
 
         public DbSet<EmployeeModel> Employees { get; set; }
 
+        public DbSet<EmployeeAcademicModel> EmployeeAcademics { get; set; }
+        public DbSet<EmployeeDocumentModel> EmployeeDocuments { get; set; }
+
         public DbSet<AttendanceModel> Attendances { get; set; }
 
 
@@ -47,6 +50,34 @@ namespace AryamanBMS.Data
 
             modelBuilder.Entity<EmployeeModel>()
                 .ToTable("TableEmployee");
+
+            modelBuilder.Entity<EmployeeAcademicModel>()
+                 .ToTable("TableEmployeeAcademic");
+
+            modelBuilder.Entity<EmployeeDocumentModel>()
+                .ToTable("TableEmployeeDocument");
+
+            modelBuilder.Entity<EmployeeAcademicModel>()
+                .HasOne(x => x.Employee)
+                .WithMany(x => x.AcademicRecords)
+                .HasForeignKey(x => x.EmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<EmployeeDocumentModel>()
+                .HasOne(x => x.Employee)
+                .WithMany(x => x.Documents)
+                .HasForeignKey(x => x.EmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<EmployeeDocumentModel>()
+                .HasOne(x => x.EmployeeAcademic)
+                .WithMany(x => x.Documents)
+                .HasForeignKey(x => x.EmployeeAcademicId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<EmployeeAcademicModel>()
+                .Property(x => x.Score)
+                .HasPrecision(6, 2);
 
             modelBuilder.Entity<EmployeeModel>()
                 .HasOne(e => e.ApplicationUser)

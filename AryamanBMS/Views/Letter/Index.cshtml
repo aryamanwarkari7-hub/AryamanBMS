@@ -1,4 +1,4 @@
-﻿@model List<AryamanBMS.Models.LetterModel>
+﻿@model PagedListViewModel<LetterModel>
 
 @{
     ViewData["Title"] = "Letters Register";
@@ -7,7 +7,10 @@
 <div class="module-header">
 
     <div>
-        <h1 class="module-title">Letters Register</h1>
+        <h1 class="module-title">
+            Letters Register
+        </h1>
+
         <p class="module-subtitle">
             Manage HR letters and correspondence
         </p>
@@ -15,31 +18,56 @@
 
     <a asp-action="Create"
        class="btn-app btn-primary-app">
+
         <i class="bi bi-plus-lg"></i>
         Add Letter
+
     </a>
 
 </div>
 
 @if (TempData["Success"] != null)
 {
-    <div class="app-alert app-alert-success">
+    <div class="app-alert app-alert-success mb-3">
+
+        <i class="bi bi-check-circle"></i>
         @TempData["Success"]
+
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="app-alert app-alert-danger mb-3">
+
+        <i class="bi bi-exclamation-circle"></i>
+        @TempData["Error"]
+
     </div>
 }
 
 <div class="app-card table-card">
 
     <div class="card-header">
-        <h5 class="card-title">Letter List</h5>
+
+        <h5 class="card-title">
+            Letter List
+        </h5>
+
     </div>
 
     <div class="card-body">
 
-        @if (!Model.Any())
+        @if (!Model.Items.Any())
         {
             <div class="empty-state">
-                No letters found.
+
+                <i class="bi bi-envelope-paper"></i>
+
+                <p class="mb-0">
+                    No letters found.
+                </p>
+
             </div>
         }
         else
@@ -57,65 +85,99 @@
                             <th>Issued By</th>
                             <th>Issued On</th>
                             <th>Document</th>
-                            <th>Actions</th>
+                            <th class="text-end">Actions</th>
                         </tr>
                     </thead>
 
                     <tbody>
 
-                        @foreach (var letter in Model)
+                        @foreach (var letter in Model.Items)
                         {
                             <tr>
+
                                 <td>
-                                    <strong>@letter.LetterNumber</strong>
+                                    <strong>
+                                        @letter.LetterNumber
+                                    </strong>
                                 </td>
 
-                                <td>@letter.LetterType</td>
+                                <td>
+                                    @letter.LetterType
+                                </td>
 
                                 <td>
-                                    @letter.Employee?.FullName
+                                    @(letter.Employee?.FullName ?? "-")
+
                                     <br />
-                                    <small>@letter.Employee?.EmployeeCode</small>
+
+                                    <small>
+                                        @(letter.Employee?.EmployeeCode ?? "-")
+                                    </small>
                                 </td>
 
-                                <td>@letter.Subject</td>
-
-                                <td>@(letter.IssuedBy ?? "-")</td>
-
-                                <td>@letter.IssuedOn.ToString("dd-MMM-yyyy")</td>
+                                <td>
+                                    @letter.Subject
+                                </td>
 
                                 <td>
-                                    @if (!string.IsNullOrWhiteSpace(letter.DocumentPath))
+                                    @(letter.IssuedBy ?? "-")
+                                </td>
+
+                                <td>
+                                    @(letter.IssuedOn.ToString("dd-MMM-yyyy"))
+                                </td>
+
+                                <td>
+
+                                    @if (!string.IsNullOrWhiteSpace(
+                                        letter.DocumentPath))
                                     {
                                         <a href="@letter.DocumentPath"
                                            target="_blank"
-                                           class="btn-app btn-secondary-app btn-icon">
+                                           rel="noopener noreferrer"
+                                           class="btn-app btn-secondary-app btn-icon"
+                                           title="Open document"
+                                           aria-label="Open letter document">
+
                                             <i class="bi bi-file-earmark-pdf"></i>
+
                                         </a>
                                     }
                                     else
                                     {
                                         <span>-</span>
                                     }
+
                                 </td>
 
                                 <td>
-                                    <div class="table-actions">
+
+                                    <div class="table-actions justify-content-end">
 
                                         <a asp-action="Details"
                                            asp-route-id="@letter.Id"
-                                           class="btn-app btn-primary-app btn-icon">
+                                           class="btn-app btn-primary-app btn-icon"
+                                           title="View letter"
+                                           aria-label="View letter">
+
                                             <i class="bi bi-eye"></i>
+
                                         </a>
 
                                         <a asp-action="Delete"
                                            asp-route-id="@letter.Id"
-                                           class="btn-app btn-danger-app btn-icon">
+                                           class="btn-app btn-danger-app btn-icon"
+                                           title="Delete letter"
+                                           aria-label="Delete letter">
+
                                             <i class="bi bi-trash"></i>
+
                                         </a>
 
                                     </div>
+
                                 </td>
+
                             </tr>
                         }
 
@@ -125,6 +187,9 @@
 
             </div>
         }
+
+        <partial name="_Pagination"
+                 model="Model.Pagination" />
 
     </div>
 

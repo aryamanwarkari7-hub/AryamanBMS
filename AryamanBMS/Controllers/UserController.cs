@@ -1,4 +1,5 @@
-﻿using AryamanBMS.Models;
+﻿using AryamanBMS.Extensions;
+using AryamanBMS.Models;
 using AryamanBMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -20,16 +21,23 @@ namespace AryamanBMS.Controllers
             _roleManager = roleManager;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1)
         {
-            var users = _userManager.Users.ToList();
+            const int pageSize = 10;
+
+            var userQuery = _userManager.Users
+                .OrderBy(x => x.FullName)
+                .ThenBy(x => x.UserName);
+
+            var pagedUsers = await userQuery.ToPagedListAsync(
+                page,
+                pageSize);
 
             var userList = new List<UserListViewModel>();
 
-            foreach (var user in users)
+            foreach (var user in pagedUsers.Items)
             {
-                var roles =
-                    await _userManager.GetRolesAsync(user);
+                var roles = await _userManager.GetRolesAsync(user);
 
                 userList.Add(new UserListViewModel
                 {
@@ -37,12 +45,21 @@ namespace AryamanBMS.Controllers
                     FullName = user.FullName ?? "",
                     UserName = user.UserName ?? "",
                     Email = user.Email ?? "",
-                    Role = roles.FirstOrDefault() ?? "",
+                    Role = roles.FirstOrDefault() ?? "Not Assigned",
                     IsActive = user.IsActive
                 });
             }
 
-            return View(userList);
+            var model = new PagedListViewModel<UserListViewModel>
+            {
+                Items = userList,
+                Pagination = pagedUsers.Pagination
+            };
+
+            model.Pagination.ControllerName = "User";
+            model.Pagination.ActionName = nameof(Index);
+
+            return View(model);
         }
         public IActionResult Create()
         {

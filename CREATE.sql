@@ -388,3 +388,74 @@
 --     FOREIGN KEY(EmployeeId)
 --     REFERENCES TableEmployee(Id)
 -- );
+
+-- EMPLOYEE ACADEMIC TABLES --
+
+-- CREATE TABLE IF NOT EXISTS TableEmployeeAcademic
+-- (
+--     Id INT NOT NULL AUTO_INCREMENT,
+--     EmployeeId INT NOT NULL,
+
+--     QualificationLevel VARCHAR(100) NOT NULL,
+--     CourseName VARCHAR(150) NULL,
+--     Specialization VARCHAR(150) NULL,
+--     InstituteName VARCHAR(200) NULL,
+--     BoardOrUniversity VARCHAR(200) NULL,
+
+--     PassingYear INT NULL,
+--     ResultType VARCHAR(30) NULL,
+--     Score DECIMAL(6,2) NULL,
+--     Grade VARCHAR(20) NULL,
+
+--     IsHighestQualification TINYINT(1) NOT NULL DEFAULT 0,
+
+--     PRIMARY KEY (Id),
+
+--     INDEX IX_EmployeeAcademic_EmployeeId (EmployeeId),
+
+--     CONSTRAINT FK_EmployeeAcademic_Employee
+--         FOREIGN KEY (EmployeeId)
+--         REFERENCES TableEmployee(Id)
+--         ON DELETE RESTRICT
+--         ON UPDATE CASCADE
+
+-- ) ENGINE=InnoDB
+--   DEFAULT CHARSET=utf8mb4
+--   COLLATE=utf8mb4_unicode_ci;
+
+-- CREATE TABLE IF NOT EXISTS TableEmployeeDocument
+-- (
+--     Id INT NOT NULL AUTO_INCREMENT,
+--     EmployeeId INT NOT NULL,
+--     EmployeeAcademicId INT NULL,
+
+--     DocumentType VARCHAR(100) NOT NULL,
+--     OriginalFileName VARCHAR(255) NOT NULL,
+--     StoredFileName VARCHAR(255) NOT NULL,
+--     StoragePath VARCHAR(500) NOT NULL,
+--     ContentType VARCHAR(100) NULL,
+
+--     FileSize BIGINT NOT NULL,
+--     UploadedOn DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+--     UploadedBy VARCHAR(256) NULL,
+
+--     PRIMARY KEY (Id),
+
+--     INDEX IX_EmployeeDocument_EmployeeId (EmployeeId),
+--     INDEX IX_EmployeeDocument_AcademicId (EmployeeAcademicId),
+
+--     CONSTRAINT FK_EmployeeDocument_Employee
+--         FOREIGN KEY (EmployeeId)
+--         REFERENCES TableEmployee(Id)
+--         ON DELETE RESTRICT
+--         ON UPDATE CASCADE,
+
+--     CONSTRAINT FK_EmployeeDocument_Academic
+--         FOREIGN KEY (EmployeeAcademicId)
+--         REFERENCES TableEmployeeAcademic(Id)
+--         ON DELETE SET NULL
+--         ON UPDATE CASCADE
+
+-- ) ENGINE=InnoDB
+--   DEFAULT CHARSET=utf8mb4
+--   COLLATE=utf8mb4_unicode_ci;

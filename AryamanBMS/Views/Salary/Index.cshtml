@@ -1,8 +1,10 @@
-﻿@model List<AryamanBMS.Models.SalaryRecordModel>
+﻿@model PagedListViewModel<SalaryRecordModel>
 
 @{
     ViewData["Title"] = "Salary Register";
 
+    int selectedMonth = (int)ViewBag.Month;
+    int selectedYear = (int)ViewBag.Year;
 }
 
 <div class="module-header">
@@ -23,17 +25,31 @@
 
 @if (TempData["Success"] != null)
 {
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
+    <div class="alert alert-success alert-dismissible fade show"
+         role="alert">
+
         @TempData["Success"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="alert">
+        </button>
+
     </div>
 }
 
 @if (TempData["Error"] != null)
 {
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <div class="alert alert-danger alert-dismissible fade show"
+         role="alert">
+
         @Html.Raw(TempData["Error"])
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="alert">
+        </button>
+
     </div>
 }
 
@@ -49,7 +65,8 @@
 
     <div class="card-body">
 
-        <div class="d-flex justify-content-between align-items-end flex-wrap gap-3">
+        <div class="d-flex justify-content-between
+            align-items-end flex-wrap gap-3">
 
             <form asp-action="Index"
                   method="get"
@@ -57,22 +74,27 @@
 
                 <div>
 
-                    <label class="form-label">
+                    <label class="form-label"
+                           for="month">
                         Month
                     </label>
 
-                    <select name="month"
+                    <select id="month"
+                            name="month"
                             class="app-select">
 
-                        @for (int month = 1; month <= 12; month++)
+                        @for (int month = 1;
+                              month <= 12;
+                              month++)
                         {
-                            var monthName =
+                            string monthName =
                                 new DateTime(2000, month, 1)
-                                .ToString("MMMM");
+                                    .ToString("MMMM");
 
-                            if (month == (int)ViewBag.Month)
+                            if (month == selectedMonth)
                             {
-                                <option value="@month" selected>
+                                <option value="@month"
+                                        selected>
                                     @monthName
                                 </option>
                             }
@@ -90,20 +112,23 @@
 
                 <div>
 
-                    <label class="form-label">
+                    <label class="form-label"
+                           for="year">
                         Year
                     </label>
 
-                    <select name="year"
+                    <select id="year"
+                            name="year"
                             class="app-select">
 
                         @for (int year = DateTime.Today.Year - 2;
-                             year <= DateTime.Today.Year + 2;
-                             year++)
+                              year <= DateTime.Today.Year + 2;
+                              year++)
                         {
-                            if (year == (int)ViewBag.Year)
+                            if (year == selectedYear)
                             {
-                                <option value="@year" selected>
+                                <option value="@year"
+                                        selected>
                                     @year
                                 </option>
                             }
@@ -132,8 +157,8 @@
             <div class="d-flex gap-2 flex-wrap">
 
                 <a asp-action="AttendanceSummary"
-                   asp-route-month="@ViewBag.Month"
-                   asp-route-year="@ViewBag.Year"
+                   asp-route-month="@selectedMonth"
+                   asp-route-year="@selectedYear"
                    class="btn-app btn-outline-app">
 
                     <i class="bi bi-calendar-check"></i>
@@ -141,10 +166,9 @@
 
                 </a>
 
-                <a asp-controller="Salary"
-                   asp-action="ExportExcel"
-                   asp-route-month="@ViewBag.Month"
-                   asp-route-year="@ViewBag.Year"
+                <a asp-action="ExportExcel"
+                   asp-route-month="@selectedMonth"
+                   asp-route-year="@selectedYear"
                    class="btn-app btn-success-app">
 
                     <i class="bi bi-file-earmark-excel"></i>
@@ -160,76 +184,14 @@
 
 </div>
 
-
-
 <div class="app-card mb-3">
-    <div class="card-body">
-       <form asp-action="ImportExcel"
-      asp-controller="Salary"
-      method="post"
-      enctype="multipart/form-data"
-      class="mb-4">
-
-    @Html.AntiForgeryToken()
-
-    <input type="hidden"
-           name="month"
-           value="@ViewBag.Month" />
-
-    <input type="hidden"
-           name="year"
-           value="@ViewBag.Year" />
-
-    <div class="app-card">
-        <div class="card-header">
-            <h5 class="mb-0">
-                <i class="bi bi-file-earmark-excel"></i>
-                Import Salary Excel
-            </h5>
-        </div>
-
-        <div class="card-body">
-            <div class="row g-3 align-items-end">
-
-                <div class="col-md-8">
-                    <label class="form-label">
-                        Upload Final Salary Sheet
-                    </label>
-
-                    <input type="file"
-                           name="file"
-                           accept=".xlsx"
-                           class="form-control"
-                           required />
-                </div>
-
-                <div class="col-md-4">
-                    <button type="submit"
-                            class="btn-app btn-primary-app w-100">
-
-                        <i class="bi bi-upload"></i>
-                        Import Salary
-
-                    </button>
-                </div>
-
-            </div>
-        </div>
-    </div>
-
-</form>
-    </div>
-</div>
-
-<div class="app-card table-card">
 
     <div class="card-header">
 
         <h5 class="card-title">
 
-            Salary Register
-            -
-            @ViewBag.Month/@ViewBag.Year
+            <i class="bi bi-file-earmark-excel"></i>
+            Import Salary Excel
 
         </h5>
 
@@ -237,10 +199,82 @@
 
     <div class="card-body">
 
-        @if (!Model.Any())
+        <form asp-action="ImportExcel"
+              method="post"
+              enctype="multipart/form-data">
+
+            @Html.AntiForgeryToken()
+
+            <input type="hidden"
+                   name="month"
+                   value="@selectedMonth" />
+
+            <input type="hidden"
+                   name="year"
+                   value="@selectedYear" />
+
+            <div class="row g-3 align-items-end">
+
+                <div class="col-md-8">
+
+                    <label class="form-label"
+                           for="salaryFile">
+                        Upload Final Salary Sheet
+                    </label>
+
+                    <input id="salaryFile"
+                           type="file"
+                           name="file"
+                           accept=".xlsx"
+                           class="form-control"
+                           required />
+
+                </div>
+
+                <div class="col-md-4">
+
+                    <button type="submit"
+                            class="btn-app btn-primary-app w-100">
+
+                        <i class="bi bi-upload"></i>
+                        Import Salary
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+
+        <h5 class="card-title">
+            Salary Register -
+            @(new DateTime(2000, selectedMonth, 1).ToString("MMMM"))
+            @selectedYear
+        </h5>
+
+    </div>
+
+    <div class="card-body">
+
+        @if (!Model.Items.Any())
         {
             <div class="empty-state">
-                No salary records found.
+
+                <i class="bi bi-cash-stack"></i>
+
+                <p class="mb-0">
+                    No salary records found.
+                </p>
+
             </div>
         }
         else
@@ -249,42 +283,39 @@
 
                 <table class="app-table">
 
-                       <thead>
+                    <thead>
 
-                            <tr>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Actual Salary</th>
+                            <th>Pay Days</th>
+                            <th>Gross Salary</th>
+                            <th>Deductions</th>
+                            <th>Net Salary</th>
+                            <th>CTC</th>
+                            <th>Status</th>
+                            <th>Paid On</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
 
-                                <th>Employee</th>
-                                <th>Actual Salary</th>
-                                <th>Pay Days</th>
-                                <th>Gross Salary</th>
-                                <th>Deductions</th>
-                                <th>Net Salary</th>
-                                <th>CTC</th>
-                                <th>Status</th>
-                                <th>Paid On</th>
-                                <th>Actions</th>
+                    </thead>
 
-                            </tr>
-
-                       </thead>
-
-              
                     <tbody>
 
-                        @foreach (var salary in Model)
+                        @foreach (var salary in Model.Items)
                         {
                             <tr>
 
                                 <td>
 
                                     <strong>
-                                        @salary.Employee?.FullName
+                                        @(salary.Employee?.FullName ?? "-")
                                     </strong>
 
                                     <br />
 
                                     <small>
-                                        @salary.Employee?.EmployeeCode
+                                        @(salary.Employee?.EmployeeCode ?? "-")
                                     </small>
 
                                 </td>
@@ -335,37 +366,39 @@
                                 </td>
 
                                 <td>
-
-                                    @(salary.PaidOn?.ToString("dd-MMM-yyyy") ?? "-")
-
+                                    @(salary.PaidOn?.ToString("dd-MMM-yyyy")
+                                      ?? "-")
                                 </td>
 
                                 <td>
 
-                                    <div class="table-actions">
+                                    <div class="table-actions justify-content-end">
 
                                         <a asp-action="Details"
                                            asp-route-id="@salary.Id"
-                                           class="btn-app btn-primary-app btn-icon">
+                                           class="btn-app btn-primary-app btn-icon"
+                                           title="View salary details"
+                                           aria-label="View salary details">
+
                                             <i class="bi bi-eye"></i>
+
                                         </a>
 
                                         <a asp-action="Payslip"
                                            asp-route-id="@salary.Id"
-                                           class="btn-app btn-outline-app btn-icon">
-                                            <i class="bi bi-receipt"></i>
-                                        </a>
+                                           class="btn-app btn-outline-app btn-icon"
+                                           title="View payslip"
+                                           aria-label="View payslip">
 
-                                        @* <a asp-action="Edit"
-                                           asp-route-id="@salary.Id"
-                                           class="btn-app btn-secondary-app btn-icon">
-                                            <i class="bi bi-pencil"></i>
-                                        </a> *@
+                                            <i class="bi bi-receipt"></i>
+
+                                        </a>
 
                                         @if (salary.PaymentStatus != "Paid")
                                         {
                                             <form asp-action="MarkPaid"
-                                                  method="post">
+                                                  method="post"
+                                                  class="d-inline">
 
                                                 @Html.AntiForgeryToken()
 
@@ -373,8 +406,23 @@
                                                        name="id"
                                                        value="@salary.Id" />
 
+                                                <input type="hidden"
+                                                       name="month"
+                                                       value="@selectedMonth" />
+
+                                                <input type="hidden"
+                                                       name="year"
+                                                       value="@selectedYear" />
+
+                                                <input type="hidden"
+                                                       name="page"
+                                                       value="@Model.Pagination.CurrentPage" />
+
                                                 <button type="submit"
-                                                        class="btn-app btn-success-app btn-icon">
+                                                        class="btn-app btn-success-app btn-icon"
+                                                        title="Mark as paid"
+                                                        aria-label="Mark salary as paid"
+                                                        onclick="return confirm('Mark this salary as paid?');">
 
                                                     <i class="bi bi-check-circle"></i>
 
@@ -396,6 +444,9 @@
 
             </div>
         }
+
+        <partial name="_Pagination"
+                 model="Model.Pagination" />
 
     </div>
 
