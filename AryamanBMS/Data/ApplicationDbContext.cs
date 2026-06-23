@@ -36,7 +36,10 @@ namespace AryamanBMS.Data
         public DbSet<SalaryRecordModel> SalaryRecords { get; set; }
 
         // Letters
-        public DbSet<LetterModel> Letters { get; set; } 
+        public DbSet<LetterModel> Letters { get; set; }
+
+        // Projects
+        public DbSet<ProjectModel> Projects { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -108,6 +111,23 @@ namespace AryamanBMS.Data
 
             modelBuilder.Entity<LetterModel>()
                .ToTable("TableLetters");
+
+            modelBuilder.Entity<ProjectModel>()
+               .ToTable("TableProject");
+
+            modelBuilder.Entity<ProjectModel>()
+                .HasIndex(p => p.ProjectCode)
+                .IsUnique();
+
+            modelBuilder.Entity<ProjectModel>()
+                .Property(p => p.Budget)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<ProjectModel>()
+                .HasOne(p => p.ProjectManager)
+                .WithMany()
+                .HasForeignKey(p => p.ProjectManagerId)
+                .OnDelete(DeleteBehavior.Restrict);
 
         }
     }

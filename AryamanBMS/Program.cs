@@ -59,6 +59,9 @@ builder.Services.AddScoped<ISalaryRecordRepository,SalaryRecordRepository>();
 // Letter
 builder.Services.AddScoped<ILetterRepository, LetterRepository>();
 
+// Project
+builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
+
 // SALARY SERVICE
 builder.Services.AddScoped<ISalaryExcelImportService, SalaryExcelImportService>();
 builder.Services.AddScoped<ISalaryAttendanceSummaryService, SalaryAttendanceSummaryService>();

@@ -1,0 +1,186 @@
+﻿@model AryamanBMS.Models.ProjectModel
+
+@{
+    ViewData["Title"] = "Project Details";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Project Details</h1>
+        <p class="module-subtitle">View project information</p>
+    </div>
+
+    
+
+    <a asp-action="Edit"
+       asp-route-id="@Model.Id"
+       class="btn-app btn-primary-app">
+        Edit Project
+    </a> 
+
+</div>
+
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Basic Information</h5>
+    </div>
+
+    <div class="card-body">
+
+        <table class="app-table">
+            <tbody>
+
+                <tr>
+                    <th>Project Code</th>
+                    <td>@Model.ProjectCode</td>
+                </tr>
+
+                <tr>
+                    <th>Project Name</th>
+                    <td>@Model.ProjectName</td>
+                </tr>
+
+                <tr>
+                    <th>Project Type</th>
+                    <td>@Model.ProjectType</td>
+                </tr>
+
+                <tr>
+                    <th>Client Name</th>
+                    <td>@(Model.ClientName ?? "-")</td>
+                </tr>
+
+                <tr>
+                    <th>Project Manager</th>
+                    <td>@(Model.ProjectManager?.FullName ?? "-")</td>
+                </tr>
+
+                <tr>
+                    <th>Status</th>
+                    <td>
+                        @if (Model.Status == "Completed")
+                        {
+                            <span class="badge-success">Completed</span>
+                        }
+                        else if (Model.Status == "Cancelled" || Model.Status == "On Hold")
+                        {
+                            <span class="badge-danger">@Model.Status</span>
+                        }
+                        else
+                        {
+                            <span class="badge-warning">@Model.Status</span>
+                        }
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Priority</th>
+                    <td>@Model.Priority</td>
+                </tr>
+
+                <tr>
+                    <th>Active Status</th>
+                    <td>
+                        @if (Model.IsActive)
+                        {
+                            <span class="badge-success">Active</span>
+                        }
+                        else
+                        {
+                            <span class="badge-danger">Inactive</span>
+                        }
+                    </td>
+                </tr>
+
+            </tbody>
+        </table>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Schedule and Budget</h5>
+    </div>
+
+    <div class="card-body">
+
+        <table class="app-table">
+            <tbody>
+
+                <tr>
+                    <th>Start Date</th>
+                    <td>@(Model.StartDate?.ToString("dd-MMM-yyyy") ?? "-")</td>
+                </tr>
+
+                <tr>
+                    <th>End Date</th>
+                    <td>@(Model.EndDate?.ToString("dd-MMM-yyyy") ?? "-")</td>
+                </tr>
+
+                <tr>
+                    <th>Budget</th>
+                    <td>₹@Model.Budget.ToString("N2")</td>
+                </tr>
+
+                <tr>
+                    <th>Created On</th>
+                    <td>@Model.CreatedOn.ToString("dd-MMM-yyyy hh:mm tt")</td>
+                </tr>
+
+                <tr>
+                    <th>Updated On</th>
+                    <td>@(Model.UpdatedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")</td>
+                </tr>
+
+            </tbody>
+        </table>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Project Description</h5>
+    </div>
+
+    <div class="card-body">
+
+        <table class="app-table">
+            <tbody>
+
+                <tr>
+                    <th>Business Objective</th>
+                    <td style="white-space: pre-wrap;">@(Model.BusinessObjective ?? "-")</td>
+                </tr>
+
+                <tr>
+                    <th>Scope</th>
+                    <td style="white-space: pre-wrap;">@(Model.Scope ?? "-")</td>
+                </tr>
+
+            </tbody>
+        </table>
+
+    </div>
+    
+
+</div>
+<div class="app-card">
+    <div class="card-body">
+       
+        <a asp-action="Index" class="btn-app btn-secondary-app">
+            Back
+        </a>
+    </div>
+</div>
+
+
+

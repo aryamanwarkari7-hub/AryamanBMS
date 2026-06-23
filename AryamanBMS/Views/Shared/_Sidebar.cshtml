@@ -569,7 +569,14 @@
 
                     <div class="submenu">
 
-                        <a href="#" class="submenu-item">Projects</a>
+                        <a asp-controller="Project"
+                           asp-action="Index"
+                           class="submenu-item @(currentController == "Project" ? "active-menu" : "")">
+
+                            <i class="bi bi-kanban"></i>
+                            <span>Projects</span>
+
+                        </a>
                         <a href="#" class="submenu-item">Project Flow</a>
                         <a href="#" class="submenu-item">Task Tracker</a>
                         <a href="#" class="submenu-item">MOM Tracker</a>

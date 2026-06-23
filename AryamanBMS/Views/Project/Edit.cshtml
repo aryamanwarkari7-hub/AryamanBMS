@@ -1,0 +1,180 @@
+﻿@model AryamanBMS.Models.ProjectModel
+
+@{
+    ViewData["Title"] = "Edit Project";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Edit Project</h1>
+        <p class="module-subtitle">Update project information</p>
+    </div>
+
+    <a asp-action="Index" class="btn-app btn-secondary-app">
+        Back
+    </a>
+</div>
+
+<form asp-action="Edit" method="post">
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="CreatedOn" />
+
+    <div asp-validation-summary="ModelOnly" class="validation-message"></div>
+    <div class="app-card">
+    <div class="app-card">
+        <div class="card-header">
+            <h5 class="card-title">Basic Information</h5>
+        </div>
+
+        <div class="card-body">
+            <div class="form-grid-2">
+
+                <div class="form-group">
+                    <label asp-for="ProjectCode"></label>
+                    <input asp-for="ProjectCode" class="app-input" />
+                    <span asp-validation-for="ProjectCode" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ProjectName"></label>
+                    <input asp-for="ProjectName" class="app-input" />
+                    <span asp-validation-for="ProjectName" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ProjectType"></label>
+                    <select asp-for="ProjectType" class="app-select">
+                        <option value="">Select Type</option>
+                        <option>Software</option>
+                        <option>Infrastructure</option>
+                        <option>Consulting</option>
+                        <option>Internal</option>
+                        <option>Other</option>
+                    </select>
+                    <span asp-validation-for="ProjectType" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ClientName"></label>
+                    <input asp-for="ClientName" class="app-input" />
+                    <span asp-validation-for="ClientName" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label>Project Manager</label>
+                    <select asp-for="ProjectManagerId" class="app-select">
+                        <option value="">Select Manager</option>
+                        @foreach (var emp in ViewBag.ProjectManagers)
+                        {
+                            <option value="@emp.Id">@emp.FullName</option>
+                        }
+                    </select>
+                    <span asp-validation-for="ProjectManagerId" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label>Active Status</label>
+                    <div>
+                        <input asp-for="IsActive" />
+                        <label asp-for="IsActive">Active Project</label>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="app-card">
+        <div class="card-header">
+            <h5 class="card-title">Schedule & Budget</h5>
+        </div>
+
+        <div class="card-body">
+            <div class="form-grid-2">
+
+                <div class="form-group">
+                    <label asp-for="StartDate"></label>
+                    <input asp-for="StartDate" type="date" class="app-input" />
+                    <span asp-validation-for="StartDate" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="EndDate"></label>
+                    <input asp-for="EndDate" type="date" class="app-input" />
+                    <span asp-validation-for="EndDate" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Budget"></label>
+                    <input asp-for="Budget" type="number" step="0.01" class="app-input" />
+                    <span asp-validation-for="Budget" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Priority"></label>
+                    <select asp-for="Priority" class="app-select">
+                        <option>Low</option>
+                        <option>Medium</option>
+                        <option>High</option>
+                        <option>Critical</option>
+                    </select>
+                    <span asp-validation-for="Priority" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Status"></label>
+                    <select asp-for="Status" class="app-select">
+                        <option>Planning</option>
+                        <option>In Progress</option>
+                        <option>On Hold</option>
+                        <option>Completed</option>
+                        <option>Cancelled</option>
+                    </select>
+                    <span asp-validation-for="Status" class="validation-message"></span>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="app-card">
+        <div class="card-header">
+            <h5 class="card-title">Project Description</h5>
+        </div>
+
+        <div class="card-body">
+            <div class="form-group">
+                <label asp-for="BusinessObjective"></label>
+                <textarea asp-for="BusinessObjective" class="app-textarea"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Scope"></label>
+                <textarea asp-for="Scope" class="app-textarea"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-card">
+    <div class="card-body">
+
+        <a asp-action="Index"
+           class="btn-app btn-secondary-app">
+            Cancel
+        </a>
+
+        <button type="submit"
+                class="btn-app btn-primary-app">
+            Save Changes
+        </button>
+
+    </div>
+</div>
+</div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
