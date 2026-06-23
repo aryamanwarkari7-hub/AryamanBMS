@@ -60,19 +60,16 @@
     currentController == "Department" ||
     currentController == "Designation";
 
-    bool isAttendanceActive =
-        currentController == "Attendance";
+    bool isAttendanceActive = currentController == "Attendance";
 
     bool isLeaveActive =
         currentController == "LeaveApplication" ||
         currentController == "LeaveBalance" ||
         currentController == "LeaveType";
 
-    bool isSalaryActive =
-       currentController == "Salary";
+    bool isSalaryActive = currentController == "Salary";
 
-    bool isLetterActive =
- currentController == "Letter";
+    bool isLetterActive = currentController == "Letter";
 
     bool isHrActive =
          currentController == "Employee" ||
@@ -81,10 +78,16 @@
          isSalaryActive ||
          isLetterActive;
 
-    bool isEmployeeActive =
-    currentController == "Employee";
+    bool isEmployeeActive = currentController == "Employee";
 
-    
+    bool isProjectActive =
+    currentController == "Project" ||
+    currentController == "ProjectTask" ||
+    currentController == "ProjectMember" ||
+    currentController == "ProjectFlow" ||
+    currentController == "TaskTracker" ||
+    currentController == "MOM" ||
+    currentController == "Risk";
 }
 
 <div class="sidebar">
@@ -548,11 +551,11 @@
             @* Project Management *@
             <div class="menu-group">
 
-                <button class="menu-group-header"
+                <button class="menu-group-header @(isProjectActive ? "active-menu" : "")"
                         type="button"
                         data-bs-toggle="collapse"
                         data-bs-target="#projectMenu"
-                        aria-expanded="false">
+                        aria-expanded="@isProjectActive.ToString().ToLower()">
 
                     <div class="menu-group-left">
                         <i class="bi bi-kanban"></i>
@@ -563,7 +566,7 @@
 
                 </button>
 
-                <div class="collapse"
+                <div class="collapse @(isProjectActive ? "show" : "")"
                      id="projectMenu"
                      data-bs-parent="#sidebarAccordion">
 
@@ -577,10 +580,54 @@
                             <span>Projects</span>
 
                         </a>
-                        <a href="#" class="submenu-item">Project Flow</a>
-                        <a href="#" class="submenu-item">Task Tracker</a>
-                        <a href="#" class="submenu-item">MOM Tracker</a>
-                        <a href="#" class="submenu-item">Risk Register</a>
+                        <a asp-controller="ProjectTask"
+                           asp-action="Index"
+                           class="submenu-item @(currentController == "ProjectTask" ? "active-menu" : "")">
+
+                            <i class="bi bi-list-task"></i>
+                            <span>Project Tasks</span>
+
+                        </a>
+                        <a asp-controller="ProjectMember"
+                           asp-action="AllMembers"
+                           class="submenu-item @(currentController == "ProjectMember" ? "active-menu" : "")">
+
+                            <i class="bi bi-people"></i>
+                            <span>Project Members</span>
+
+                        </a>
+                        <a asp-controller="ProjectFlow"
+                           asp-action="Index"
+                           class="submenu-item @(currentController == "ProjectFlow" ? "active-menu" : "")">
+
+                            <i class="bi bi-diagram-3"></i>
+                            <span>Project Flow</span>
+
+                        </a>
+                        <a asp-controller="TaskTracker"
+                           asp-action="Index"
+                           class="submenu-item @(currentController == "TaskTracker" ? "active-menu" : "")">
+
+                            <i class="bi bi-activity"></i>
+                            <span>Task Tracker</span>
+
+                        </a>
+                        <a asp-controller="MOM"
+                           asp-action="Index"
+                           class="submenu-item @(currentController == "MOM" ? "active-menu" : "")">
+
+                            <i class="bi bi-journal-text"></i>
+                            <span>MOM Tracker</span>
+
+                        </a>
+                        <a asp-controller="Risk"
+                           asp-action="Index"
+                           class="submenu-item @(currentController == "Risk" ? "active-menu" : "")">
+
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <span>Risk Register</span>
+
+                        </a>
 
                     </div>
 

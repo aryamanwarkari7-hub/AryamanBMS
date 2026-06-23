@@ -1,0 +1,289 @@
+﻿@model AryamanBMS.Models.ProjectTaskModel
+
+@{
+    ViewData["Title"] = "Edit Project Task";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Edit Project Task</h1>
+        <p class="module-subtitle">Update project task information</p>
+    </div>
+
+    <a asp-action="Index"
+       asp-route-projectId="@Model.ProjectId"
+       class="btn-app btn-secondary-app">
+        Back
+    </a>
+</div>
+
+<form asp-action="Edit"
+      method="post">
+
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="CreatedOn" />
+
+    <div asp-validation-summary="ModelOnly"
+         class="validation-message">
+    </div>
+
+    <div class="app-card">
+        <div class="card-header">
+            <h5 class="card-title">Task Information</h5>
+        </div>
+
+        <div class="card-body">
+            <div class="form-grid-2">
+
+                <div class="form-group">
+                    <label asp-for="ProjectId">Project</label>
+
+                    <select asp-for="ProjectId"
+                            id="projectSelect"
+                            class="app-select">
+
+                        <option value="">Select Project</option>
+
+                        @foreach (var project in ViewBag.Projects)
+                        {
+                            <option value="@project.Id">
+                                @project.ProjectCode - @project.ProjectName
+                            </option>
+                        }
+                    </select>
+
+                    <span asp-validation-for="ProjectId"
+                          class="validation-message">
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="AssignedEmployeeId">
+                        Assigned Employee
+                    </label>
+
+                    <select asp-for="AssignedEmployeeId"
+                            id="employeeSelect"
+                            class="app-select">
+
+                        <option value="">Select Project Member</option>
+
+                        @foreach (var member in ViewBag.ProjectMembers)
+                        {
+                            <option value="@member.EmployeeId">
+                                @member.Employee.EmployeeCode -
+                                @member.Employee.FullName
+                            </option>
+                        }
+                    </select>
+
+                    <span asp-validation-for="AssignedEmployeeId"
+                          class="validation-message">
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="TaskCode">Task Code</label>
+
+                    <input asp-for="TaskCode"
+                           class="app-input" />
+
+                    <span asp-validation-for="TaskCode"
+                          class="validation-message">
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="TaskTitle">Task Title</label>
+
+                    <input asp-for="TaskTitle"
+                           class="app-input" />
+
+                    <span asp-validation-for="TaskTitle"
+                          class="validation-message">
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="StartDate">Start Date</label>
+
+                    <input asp-for="StartDate"
+                           type="date"
+                           class="app-input" />
+
+                    <span asp-validation-for="StartDate"
+                          class="validation-message">
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="DueDate">Due Date</label>
+
+                    <input asp-for="DueDate"
+                           type="date"
+                           class="app-input" />
+
+                    <span asp-validation-for="DueDate"
+                          class="validation-message">
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Priority">Priority</label>
+
+                    <select asp-for="Priority"
+                            class="app-select">
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                        <option value="Critical">Critical</option>
+                    </select>
+
+                    <span asp-validation-for="Priority"
+                          class="validation-message">
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Status">Status</label>
+
+                    <select asp-for="Status"
+                            class="app-select">
+                        <option value="Not Started">Not Started</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Completed">Completed</option>
+                        <option value="On Hold">On Hold</option>
+                    </select>
+
+                    <span asp-validation-for="Status"
+                          class="validation-message">
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ProgressPercent">
+                        Progress Percentage
+                    </label>
+
+                    <input asp-for="ProgressPercent"
+                           type="number"
+                           min="0"
+                           max="100"
+                           class="app-input" />
+
+                    <span asp-validation-for="ProgressPercent"
+                          class="validation-message">
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="EstimatedHours">
+                        Estimated Hours
+                    </label>
+
+                    <input asp-for="EstimatedHours"
+                           type="number"
+                           min="0"
+                           step="0.01"
+                           class="app-input" />
+
+                    <span asp-validation-for="EstimatedHours"
+                          class="validation-message">
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ActualHours">
+                        Actual Hours
+                    </label>
+
+                    <input asp-for="ActualHours"
+                           type="number"
+                           min="0"
+                           step="0.01"
+                           class="app-input" />
+
+                    <span asp-validation-for="ActualHours"
+                          class="validation-message">
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="IsActive">Status</label>
+
+                    <select asp-for="IsActive"
+                            class="app-select">
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <div class="form-group mt-3">
+                <label asp-for="Description">Description</label>
+
+                <textarea asp-for="Description"
+                          class="app-textarea"
+                          rows="4">
+                </textarea>
+
+                <span asp-validation-for="Description"
+                      class="validation-message">
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-card">
+        <div class="card-body">
+            <button type="submit"
+                    class="btn-app btn-primary-app">
+                <i class="bi bi-check-lg"></i>
+                Update Task
+            </button>
+
+            <a asp-action="Details"
+               asp-route-id="@Model.Id"
+               class="btn-app btn-secondary-app">
+                Cancel
+            </a>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.getElementById("projectSelect")
+            .addEventListener("change", async function () {
+
+                const projectId = this.value;
+                const employeeSelect =
+                    document.getElementById("employeeSelect");
+
+                employeeSelect.innerHTML =
+                    '<option value="">Select Project Member</option>';
+
+                if (!projectId) {
+                    return;
+                }
+
+                const response = await fetch(
+                    `/ProjectTask/GetProjectMembers?projectId=${projectId}`
+                );
+
+                const members = await response.json();
+
+                members.forEach(member => {
+                    const option = document.createElement("option");
+                    option.value = member.id;
+                    option.textContent = member.name;
+                    employeeSelect.appendChild(option);
+                });
+            });
+    </script>
+}

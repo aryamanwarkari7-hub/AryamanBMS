@@ -1,0 +1,182 @@
+﻿@model AryamanBMS.Models.ProjectTaskModel
+
+@{
+    ViewData["Title"] = "Task Details";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Task Details</h1>
+        <p class="module-subtitle">View complete project task information</p>
+    </div>
+
+    <div class="d-flex gap-2">
+        <a asp-action="Edit"
+           asp-route-id="@Model.Id"
+           class="btn-app btn-primary-app">
+            <i class="bi bi-pencil"></i>
+            Edit Task
+        </a>
+
+        <a asp-action="Index"
+           asp-route-projectId="@Model.ProjectId"
+           class="btn-app btn-secondary-app">
+            Back
+        </a>
+    </div>
+</div>
+
+<div class="app-card">
+    <div class="card-header">
+        <h5 class="card-title">Basic Information</h5>
+    </div>
+
+    <div class="card-body">
+        <table class="app-table">
+            <tbody>
+                <tr>
+                    <th>Task Code</th>
+                    <td>@Model.TaskCode</td>
+                </tr>
+
+                <tr>
+                    <th>Task Title</th>
+                    <td>@Model.TaskTitle</td>
+                </tr>
+
+                <tr>
+                    <th>Project</th>
+                    <td>
+                        @Model.Project?.ProjectCode -
+                        @Model.Project?.ProjectName
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Assigned Employee</th>
+                    <td>
+                        @if (Model.AssignedEmployee != null)
+                        {
+                            <span>
+                                @Model.AssignedEmployee.EmployeeCode -
+                                @Model.AssignedEmployee.FullName
+                            </span>
+                        }
+                        else
+                        {
+                            <span>-</span>
+                        }
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Department</th>
+                    <td>
+                        @(Model.AssignedEmployee?.Department?.DepartmentName ?? "-")
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Designation</th>
+                    <td>
+                        @(Model.AssignedEmployee?.Designation?.DesignationName ?? "-")
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Priority</th>
+                    <td>@Model.Priority</td>
+                </tr>
+
+                <tr>
+                    <th>Status</th>
+                    <td>@Model.Status</td>
+                </tr>
+
+                <tr>
+                    <th>Progress</th>
+                    <td>@Model.ProgressPercent%</td>
+                </tr>
+
+                <tr>
+                    <th>Active</th>
+                    <td>
+                        @if (Model.IsActive)
+                        {
+                            <span class="status-badge status-active">Active</span>
+                        }
+                        else
+                        {
+                            <span class="status-badge status-inactive">Inactive</span>
+                        }
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="app-card">
+    <div class="card-header">
+        <h5 class="card-title">Schedule and Hours</h5>
+    </div>
+
+    <div class="card-body">
+        <table class="app-table">
+            <tbody>
+                <tr>
+                    <th>Start Date</th>
+                    <td>
+                        @(Model.StartDate?.ToString("dd-MM-yyyy") ?? "-")
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Due Date</th>
+                    <td>
+                        @(Model.DueDate?.ToString("dd-MM-yyyy") ?? "-")
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Estimated Hours</th>
+                    <td>@Model.EstimatedHours.ToString("0.##")</td>
+                </tr>
+
+                <tr>
+                    <th>Actual Hours</th>
+                    <td>@Model.ActualHours.ToString("0.##")</td>
+                </tr>
+
+                <tr>
+                    <th>Created On</th>
+                    <td>@Model.CreatedOn.ToString("dd-MM-yyyy hh:mm tt")</td>
+                </tr>
+
+                <tr>
+                    <th>Updated On</th>
+                    <td>
+                        @(Model.UpdatedOn?.ToString("dd-MM-yyyy hh:mm tt") ?? "-")
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="app-card">
+    <div class="card-header">
+        <h5 class="card-title">Description</h5>
+    </div>
+
+    <div class="card-body">
+        @if (!string.IsNullOrWhiteSpace(Model.Description))
+        {
+            <p class="mb-0">@Model.Description</p>
+        }
+        else
+        {
+            <p class="text-muted mb-0">No description provided.</p>
+        }
+    </div>
+</div>

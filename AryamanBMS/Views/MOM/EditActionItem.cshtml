@@ -1,0 +1,209 @@
+﻿@model AryamanBMS.Models.ProjectMeetingActionItemModel
+
+@using AryamanBMS.Models
+
+@{
+    ViewData["Title"] = "Edit Action Item";
+
+    var employees =
+        ViewBag.Employees as IEnumerable<EmployeeModel>
+        ?? Enumerable.Empty<EmployeeModel>();
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Edit Action Item</h1>
+        <p class="module-subtitle">
+            Update meeting action item
+        </p>
+    </div>
+
+    <a asp-action="Details"
+       asp-route-id="@Model.MeetingId"
+       class="btn-app btn-secondary-app">
+        Back
+    </a>
+
+</div>
+
+<form asp-action="EditActionItem"
+      method="post">
+
+    @Html.AntiForgeryToken()
+
+    <input asp-for="Id" type="hidden" />
+    <input asp-for="MeetingId" type="hidden" />
+
+    <div asp-validation-summary="ModelOnly"
+         class="validation-message">
+    </div>
+
+    <div class="app-card">
+
+        <div class="card-header">
+            <h5 class="card-title">Action Item Information</h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+
+                    <label asp-for="ActionTitle">
+                        Action Title
+                    </label>
+
+                    <input asp-for="ActionTitle"
+                           class="app-input" />
+
+                    <span asp-validation-for="ActionTitle"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="AssignedEmployeeId">
+                        Assigned Employee
+                    </label>
+
+                    <select asp-for="AssignedEmployeeId"
+                            class="app-select">
+
+                        <option value="">Not Assigned</option>
+
+                        @foreach (var employee in employees)
+                        {
+                            <option value="@employee.Id">
+                                @employee.EmployeeCode -
+                                @employee.FullName
+                            </option>
+                        }
+
+                    </select>
+
+                    <span asp-validation-for="AssignedEmployeeId"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="DueDate">
+                        Due Date
+                    </label>
+
+                    <input asp-for="DueDate"
+                           type="date"
+                           class="app-input" />
+
+                    <span asp-validation-for="DueDate"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="ActionStatus">
+                        Action Status
+                    </label>
+
+                    <select asp-for="ActionStatus"
+                            class="app-select">
+
+                        <option value="Pending">Pending</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Cancelled">Cancelled</option>
+
+                    </select>
+
+                    <span asp-validation-for="ActionStatus"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="CompletedOn">
+                        Completed On
+                    </label>
+
+                    <input asp-for="CompletedOn"
+                           type="date"
+                           class="app-input" />
+
+                    <span asp-validation-for="CompletedOn"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="IsActive">
+                        Active Status
+                    </label>
+
+                    <select asp-for="IsActive"
+                            class="app-select">
+
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+
+                    </select>
+
+                </div>
+
+            </div>
+
+            <div class="form-group mt-3">
+
+                <label asp-for="Description">
+                    Description
+                </label>
+
+                <textarea asp-for="Description"
+                          rows="4"
+                          class="app-textarea">
+                </textarea>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="app-card">
+
+        <div class="card-body">
+
+            <button type="submit"
+                    class="btn-app btn-primary-app">
+
+                <i class="bi bi-check-lg"></i>
+                Update Action Item
+
+            </button>
+
+            <a asp-action="Details"
+               asp-route-id="@Model.MeetingId"
+               class="btn-app btn-secondary-app">
+                Cancel
+            </a>
+
+        </div>
+
+    </div>
+
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,107 @@
+﻿@model AryamanBMS.Models.ProjectFlowModel
+
+@{
+    ViewData["Title"] = "Delete Project Stage";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Delete Project Stage</h1>
+        <p class="module-subtitle">
+            Confirm stage deletion
+        </p>
+    </div>
+
+    <a asp-action="Index"
+       asp-route-projectId="@Model.ProjectId"
+       class="btn-app btn-secondary-app">
+        Back
+    </a>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Stage Information</h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="alert alert-danger">
+            Are you sure you want to permanently delete this project stage?
+        </div>
+
+        <table class="app-table">
+
+            <tbody>
+
+                <tr>
+                    <th>Project</th>
+                    <td>
+                        @Model.Project?.ProjectCode -
+                        @Model.Project?.ProjectName
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Stage Order</th>
+                    <td>@Model.StageOrder</td>
+                </tr>
+
+                <tr>
+                    <th>Stage Name</th>
+                    <td>@Model.StageName</td>
+                </tr>
+
+                <tr>
+                    <th>Stage Status</th>
+                    <td>@Model.StageStatus</td>
+                </tr>
+
+                <tr>
+                    <th>Planned Dates</th>
+                    <td>
+                        @(Model.PlannedStartDate?.ToString("dd-MM-yyyy") ?? "-")
+                        to
+                        @(Model.PlannedEndDate?.ToString("dd-MM-yyyy") ?? "-")
+                    </td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+</div>
+
+<div class="app-card">
+
+    <div class="card-body">
+
+        <form asp-action="Delete"
+              asp-route-id="@Model.Id"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <button type="submit"
+                    class="btn-app btn-danger-app btn-icon">
+
+                <i class="bi bi-trash"></i>
+                Delete Stage
+
+            </button>
+
+            <a asp-action="Details"
+               asp-route-id="@Model.Id"
+               class="btn-app btn-secondary-app btn-icon">
+                Cancel
+            </a>
+
+        </form>
+
+    </div>
+
+</div>

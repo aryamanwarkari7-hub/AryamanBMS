@@ -1,13 +1,11 @@
 using AryamanBMS.Data;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore;
-
+using AryamanBMS.Models;
 using AryamanBMS.Repositories;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services;
-using AryamanBMS.Services.Interfaces;
-using AryamanBMS.Models;
+using AryamanBMS.Services.Interface;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,9 +32,9 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 
-builder.Services.AddScoped< IEmployeeAcademicRepository,EmployeeAcademicRepository>();
+builder.Services.AddScoped<IEmployeeAcademicRepository, EmployeeAcademicRepository>();
 
-builder.Services.AddScoped<IEmployeeDocumentRepository,EmployeeDocumentRepository>();
+builder.Services.AddScoped<IEmployeeDocumentRepository, EmployeeDocumentRepository>();
 
 
 
@@ -49,18 +47,28 @@ builder.Services.AddScoped<IDesignationRepository, DesignationRepository>();
 // Leave Repo
 builder.Services.AddScoped<ILeaveTypeRepository, LeaveTypeRepository>();
 
-builder.Services.AddScoped<ILeaveApplicationRepository,LeaveApplicationRepository>();
+builder.Services.AddScoped<ILeaveApplicationRepository, LeaveApplicationRepository>();
 
-builder.Services.AddScoped<ILeaveBalanceRepository,LeaveBalanceRepository>();
+builder.Services.AddScoped<ILeaveBalanceRepository, LeaveBalanceRepository>();
 
 // Salary
-builder.Services.AddScoped<ISalaryRecordRepository,SalaryRecordRepository>();
+builder.Services.AddScoped<ISalaryRecordRepository, SalaryRecordRepository>();
 
 // Letter
 builder.Services.AddScoped<ILetterRepository, LetterRepository>();
 
 // Project
 builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
+builder.Services.AddScoped<IProjectMemberRepository, ProjectMemberRepository>();
+builder.Services.AddScoped<IProjectTaskRepository, ProjectTaskRepository>();
+builder.Services.AddScoped<IProjectFlowRepository, ProjectFlowRepository>();
+builder.Services.AddScoped<IProjectTaskProgressRepository, ProjectTaskProgressRepository>();
+
+// Meetings
+builder.Services.AddScoped<IProjectMeetingRepository, ProjectMeetingRepository>();
+
+//Risk
+builder.Services.AddScoped<IProjectRiskRepository, ProjectRiskRepository>();
 
 // SALARY SERVICE
 builder.Services.AddScoped<ISalaryExcelImportService, SalaryExcelImportService>();

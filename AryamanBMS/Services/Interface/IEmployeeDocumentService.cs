@@ -1,7 +1,7 @@
 ﻿using AryamanBMS.Models;
 using Microsoft.AspNetCore.Http;
 
-namespace AryamanBMS.Services.Interfaces
+namespace AryamanBMS.Services.Interface
 {
     public interface IEmployeeDocumentService
     {

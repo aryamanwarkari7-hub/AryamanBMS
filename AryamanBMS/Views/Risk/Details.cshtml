@@ -1,0 +1,228 @@
+﻿@model AryamanBMS.Models.ProjectRiskModel
+
+@{
+    ViewData["Title"] = "Project Risk Details";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Project Risk Details</h1>
+        <p class="module-subtitle">
+            View risk assessment and response plans
+        </p>
+    </div>
+
+    <div class="d-flex gap-2">
+
+        <a asp-action="Edit"
+           asp-route-id="@Model.Id"
+           class="btn-app btn-primary-app">
+
+            <i class="bi bi-pencil"></i>
+            Edit
+
+        </a>
+
+        <a asp-action="Index"
+           asp-route-projectId="@Model.ProjectId"
+           class="btn-app btn-secondary-app">
+            Back
+        </a>
+
+    </div>
+
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="app-alert-success">
+        @TempData["Success"]
+    </div>
+}
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Risk Information</h5>
+    </div>
+
+    <div class="card-body">
+
+        <table class="app-table">
+
+            <tbody>
+
+                <tr>
+                    <th>Project</th>
+                    <td>
+                        @Model.Project?.ProjectCode -
+                        @Model.Project?.ProjectName
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Risk Title</th>
+                    <td>@Model.RiskTitle</td>
+                </tr>
+
+                <tr>
+                    <th>Category</th>
+                    <td>@Model.RiskCategory</td>
+                </tr>
+
+                <tr>
+                    <th>Risk Owner</th>
+                    <td>
+                        @(Model.RiskOwnerEmployee?.FullName
+                                                ?? "Not Assigned")
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Probability</th>
+                    <td>@Model.Probability / 5</td>
+                </tr>
+
+                <tr>
+                    <th>Impact</th>
+                    <td>@Model.Impact / 5</td>
+                </tr>
+
+                <tr>
+                    <th>Risk Score</th>
+                    <td>
+                        <strong>@Model.RiskScore / 25</strong>
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Severity</th>
+                    <td>@Model.Severity</td>
+                </tr>
+
+                <tr>
+                    <th>Status</th>
+                    <td>@Model.RiskStatus</td>
+                </tr>
+
+                <tr>
+                    <th>Target Resolution Date</th>
+                    <td>
+                        @(Model.TargetResolutionDate?
+                                                .ToString("dd-MM-yyyy") ?? "-")
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Resolved On</th>
+                    <td>
+                        @(Model.ResolvedOn?
+                                                .ToString("dd-MM-yyyy") ?? "-")
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Active Status</th>
+                    <td>
+                        @if (Model.IsActive)
+                        {
+                            <span class="status-badge status-active">
+                                Active
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="status-badge status-inactive">
+                                Inactive
+                            </span>
+                        }
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Created On</th>
+                    <td>
+                        @Model.CreatedOn.ToString("dd-MM-yyyy hh:mm tt")
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Updated On</th>
+                    <td>
+                        @(Model.UpdatedOn?
+                                                .ToString("dd-MM-yyyy hh:mm tt") ?? "-")
+                    </td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Risk Description</h5>
+    </div>
+
+    <div class="card-body">
+        <p class="mb-0">
+            @(string.IsNullOrWhiteSpace(Model.RiskDescription)
+                        ? "No risk description provided."
+                        : Model.RiskDescription)
+        </p>
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Mitigation Plan</h5>
+    </div>
+
+    <div class="card-body">
+        <p class="mb-0">
+            @(string.IsNullOrWhiteSpace(Model.MitigationPlan)
+                        ? "No mitigation plan provided."
+                        : Model.MitigationPlan)
+        </p>
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Contingency Plan</h5>
+    </div>
+
+    <div class="card-body">
+        <p class="mb-0">
+            @(string.IsNullOrWhiteSpace(Model.ContingencyPlan)
+                        ? "No contingency plan provided."
+                        : Model.ContingencyPlan)
+        </p>
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Resolution Remarks</h5>
+    </div>
+
+    <div class="card-body">
+        <p class="mb-0">
+            @(string.IsNullOrWhiteSpace(Model.ResolutionRemarks)
+                        ? "No resolution remarks provided."
+                        : Model.ResolutionRemarks)
+        </p>
+    </div>
+
+</div>

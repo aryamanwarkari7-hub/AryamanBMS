@@ -1,7 +1,7 @@
 ﻿using AryamanBMS.ViewModels;
 using Microsoft.AspNetCore.Http;
 
-namespace AryamanBMS.Services.Interfaces
+namespace AryamanBMS.Services.Interface
 {
     public interface ISalaryExcelImportService
     {

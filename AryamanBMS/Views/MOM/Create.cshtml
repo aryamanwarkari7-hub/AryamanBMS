@@ -1,0 +1,283 @@
+﻿@model AryamanBMS.Models.ProjectMeetingModel
+
+@{
+    ViewData["Title"] = "Create Meeting";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Create Meeting</h1>
+        <p class="module-subtitle">
+            Record a new project meeting
+        </p>
+    </div>
+
+    <a asp-action="Index"
+       class="btn-app btn-secondary-app">
+        Back
+    </a>
+
+</div>
+
+<form asp-action="Create" method="post">
+
+    @Html.AntiForgeryToken()
+
+    <div asp-validation-summary="ModelOnly"
+         class="validation-message">
+    </div>
+
+    <div class="app-card">
+
+        <div class="card-header">
+            <h5 class="card-title">Meeting Information</h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+
+                    <label asp-for="ProjectId">Project</label>
+
+                    <select asp-for="ProjectId"
+                            class="app-select">
+
+                        <option value="">Select Project</option>
+
+                        @foreach (var project in ViewBag.Projects)
+                        {
+                            <option value="@project.Id">
+
+                                @project.ProjectCode -
+                                @project.ProjectName
+
+                            </option>
+                        }
+
+                    </select>
+
+                    <span asp-validation-for="ProjectId"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="MeetingTitle">
+                        Meeting Title
+                    </label>
+
+                    <input asp-for="MeetingTitle"
+                           class="app-input" />
+
+                    <span asp-validation-for="MeetingTitle"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="MeetingDate">
+                        Meeting Date
+                    </label>
+
+                    <input asp-for="MeetingDate"
+                           type="date"
+                           class="app-input" />
+
+                    <span asp-validation-for="MeetingDate"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="MeetingMode">
+                        Meeting Mode
+                    </label>
+
+                    <select asp-for="MeetingMode"
+                            class="app-select">
+
+                        <option value="In Person">In Person</option>
+                        <option value="Online">Online</option>
+                        <option value="Hybrid">Hybrid</option>
+
+                    </select>
+                    <span asp-validation-for="MeetingMode"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="StartTime">
+                        Start Time
+                    </label>
+
+                    <input asp-for="StartTime"
+                           type="time"
+                           class="app-input" />
+
+                    <span asp-validation-for="StartTime"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="EndTime">
+                        End Time
+                    </label>
+
+                    <input asp-for="EndTime"
+                           type="time"
+                           class="app-input" />
+
+                    <span asp-validation-for="EndTime"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="LocationOrLink">
+                        Location / Meeting Link
+                    </label>
+
+                    <input asp-for="LocationOrLink"
+                           class="app-input" />
+
+                    <span asp-validation-for="LocationOrLink"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="MeetingStatus">
+                        Meeting Status
+                    </label>
+
+                    <select asp-for="MeetingStatus"
+                            class="app-select">
+
+                        <option value="Scheduled">Scheduled</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Cancelled">Cancelled</option>
+
+                    </select>
+
+                    <span asp-validation-for="MeetingStatus"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="NextMeetingDate">
+                        Next Meeting Date
+                    </label>
+
+                    <input asp-for="NextMeetingDate"
+                           type="date"
+                           class="app-input" />
+
+                    <span asp-validation-for="NextMeetingDate"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+            </div>
+
+            <div class="form-group mt-3">
+
+                <label asp-for="Agenda">Agenda</label>
+
+                <textarea asp-for="Agenda"
+                          rows="4"
+                          class="app-textarea">
+                </textarea>
+
+                <span asp-validation-for="Agenda"
+                      class="validation-message">
+                </span>
+
+            </div>
+
+            <div class="form-group mt-3">
+
+                <label asp-for="DiscussionSummary">
+                    Discussion Summary
+                </label>
+
+                <textarea asp-for="DiscussionSummary"
+                          rows="5"
+                          class="app-textarea">
+                </textarea>
+
+                <span asp-validation-for="DiscussionSummary"
+                      class="validation-message">
+                </span>
+
+            </div>
+
+            <div class="form-group mt-3">
+
+                <label asp-for="DecisionsTaken">
+                    Decisions Taken
+                </label>
+
+                <textarea asp-for="DecisionsTaken"
+                          rows="4"
+                          class="app-textarea">
+                </textarea>
+
+                <span asp-validation-for="DecisionsTaken"
+                      class="validation-message">
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="app-card">
+
+        <div class="card-body">
+
+            <button type="submit"
+                    class="btn-app btn-primary-app">
+
+                <i class="bi bi-check-lg"></i>
+                Create Meeting
+
+            </button>
+
+            <a asp-action="Index"
+               class="btn-app btn-secondary-app">
+                Cancel
+            </a>
+
+        </div>
+
+    </div>
+
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

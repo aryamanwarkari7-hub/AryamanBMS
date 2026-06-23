@@ -1,0 +1,140 @@
+﻿@model IEnumerable<AryamanBMS.Models.ProjectMemberModel>
+
+@{
+    ViewData["Title"] = "Project Members";
+    var project = ViewBag.Project as AryamanBMS.Models.ProjectModel;
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Project Members</h1>
+        <p class="module-subtitle">
+            @(project != null
+                        ? $"{project.ProjectCode} - {project.ProjectName}"
+                        : "Manage assigned project members")
+        </p>
+    </div>
+
+    <div class="d-flex gap-2">
+        <a asp-action="Add"
+           asp-route-projectId="@project?.Id"
+           class="btn-app btn-primary-app">
+            <i class="bi bi-person-plus"></i>
+            Add Member
+        </a>
+
+        <a asp-controller="Project"
+           asp-action="Details"
+           asp-route-id="@project?.Id"
+           class="btn-app btn-secondary-app">
+            Back
+        </a>
+    </div>
+</div>
+
+@* @if (TempData["Success"] != null)
+{
+    <div class="app-alert-success">
+        @TempData["Success"]
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+} *@
+
+<div class="app-card table-card">
+    <div class="card-header">
+        <h5 class="card-title">Assigned Members</h5>
+    </div>
+
+    <div class="card-body">
+        <table class="app-table">
+            <thead>
+                <tr>
+                    <th>Employee Code</th>
+                    <th>Employee Name</th>
+                    <th>Department</th>
+                    <th>Designation</th>
+                    <th>Project Role</th>
+                    <th>Assigned On</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @if (Model.Any())
+                {
+                    foreach (var member in Model)
+                    {
+                        <tr>
+                            <td>@member.Employee?.EmployeeCode</td>
+
+                            <td>@member.Employee?.FullName</td>
+
+                            <td>
+                                @(member.Employee?.Department?.DepartmentName ?? "-")
+                            </td>
+
+                            <td>
+                                @(member.Employee?.Designation?.DesignationName ?? "-")
+                            </td>
+
+                            <td>
+                                @(member.RoleInProject ?? "-")
+                            </td>
+
+                            <td>
+                                @member.AssignedOn.ToString("dd-MM-yyyy")
+                            </td>
+
+                            <td>
+                                @if (member.IsActive)
+                                {
+                                    <span class="status-badge status-active">
+                                        Active
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="status-badge status-inactive">
+                                        Inactive
+                                    </span>
+                                }
+                            </td>
+
+                            <td>
+                                <form asp-action="Remove"
+                                      asp-route-id="@member.Id"
+                                      method="post"
+                                      onsubmit="return confirm('Remove this project member?');">
+
+                                    @Html.AntiForgeryToken()
+
+                                    <button type="submit"
+                                            class="btn-app btn-danger-app btn-icon"
+                                            title="Remove">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="8"
+                            class="text-center text-muted">
+                            No project members assigned.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

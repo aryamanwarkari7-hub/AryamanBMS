@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 using AryamanBMS.Data;
-using AryamanBMS.Services.Interfaces;
+using AryamanBMS.Services.Interface;
 
 namespace AryamanBMS.Controllers
 {

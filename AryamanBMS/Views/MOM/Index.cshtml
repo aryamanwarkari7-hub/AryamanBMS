@@ -1,0 +1,272 @@
+﻿@model IEnumerable<AryamanBMS.Models.ProjectMeetingModel>
+
+@using AryamanBMS.Models
+
+@{
+    ViewData["Title"] = "MOM Tracker";
+
+    var projects =
+        ViewBag.Projects as IEnumerable<ProjectModel>
+        ?? Enumerable.Empty<ProjectModel>();
+}
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">MOM Tracker</h1>
+        <p class="module-subtitle">
+            Manage project meetings, attendees and action items
+        </p>
+    </div>
+
+    <a asp-action="Create"
+       asp-route-projectId="@ViewBag.ProjectId"
+       class="btn-app btn-primary-app">
+
+        <i class="bi bi-plus-lg"></i>
+        Add Meeting
+
+    </a>
+
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="app-alert-success">
+        @TempData["Success"]
+    </div>
+}
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Filters</h5>
+    </div>
+
+    <div class="card-body">
+
+        <form asp-action="Index" method="get">
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+
+                    <label>Project</label>
+
+                    <select name="projectId"
+                            class="app-select">
+
+                        <option value="">All Projects</option>
+
+                        @foreach (var project in projects)
+                        {
+                            <option value="@project.Id"
+                                    selected="@(ViewBag.ProjectId == project.Id)">
+
+                                @project.ProjectCode -
+                                @project.ProjectName
+
+                            </option>
+                        }
+
+                    </select>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Status</label>
+
+                    <select name="status"
+                            class="app-select">
+
+                        <option value="">All Statuses</option>
+                        <option value="Scheduled"
+                                selected="@(ViewBag.Status == "Scheduled")">
+                            Scheduled
+                        </option>
+                        <option value="Completed"
+                                selected="@(ViewBag.Status == "Completed")">
+                            Completed
+                        </option>
+                        <option value="Cancelled"
+                                selected="@(ViewBag.Status == "Cancelled")">
+                            Cancelled
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Search</label>
+
+                    <input type="text"
+                           name="searchText"
+                           value="@ViewBag.SearchText"
+                           class="app-input"
+                           placeholder="Title, agenda or project" />
+
+                </div>
+
+                <div class="form-group d-flex flex-row align-items-end gap-2">
+
+                    <button type="submit"
+                            class="btn-app btn-primary-app">
+                        Filter
+                    </button>
+
+                    <a asp-action="Index"
+                       class="btn-app btn-secondary-app">
+                        Reset
+                    </a>
+
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Project Meetings</h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="table-responsive">
+
+            <table class="app-table">
+
+                <thead>
+                    <tr>
+                        <th>Project</th>
+                        <th>Meeting</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Mode</th>
+                        <th>Status</th>
+                        <th>Attendees</th>
+                        <th>Actions Pending</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @if (Model?.Any() == true)
+                    {
+                        foreach (var meeting in Model)
+                        {
+                            <tr>
+
+                                <td>
+                                    @meeting.Project?.ProjectCode
+                                </td>
+
+                                <td>
+                                    <strong>
+                                        @meeting.MeetingTitle
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    @meeting.MeetingDate.ToString("dd-MM-yyyy")
+                                </td>
+
+                                <td>
+                                    @meeting.StartTime.ToString(@"hh\:mm")
+
+                                    @if (meeting.EndTime.HasValue)
+                                    {
+                                        <span>
+                                            -
+                                            @meeting.EndTime.Value.ToString(@"hh\:mm")
+                                        </span>
+                                    }
+                                </td>
+
+                                <td>
+                                    @meeting.MeetingMode
+                                </td>
+
+                                <td>
+                                    <span class="status-badge">
+                                        @meeting.MeetingStatus
+                                    </span>
+                                </td>
+
+                                <td>
+                                    @(meeting.Attendees?.Count ?? 0)
+                                </td>
+
+                                <td>
+                                  @(meeting.ActionItems?.Count(a =>
+                                  a.ActionStatus != "Completed" &&
+                                  a.ActionStatus != "Cancelled") ?? 0)
+                        </td>
+
+                        <td>
+
+                            <div class="action-buttons d-flex flex-grow-0 gap-1">
+
+                                <a asp-action="Details"
+                                   asp-route-id="@meeting.Id"
+                                   class="btn-icon btn-primary-app btn-view"
+                                   title="Details">
+
+                                    <i class="bi bi-eye"></i>
+
+                                </a>
+
+                                <a asp-action="Edit"
+                                   asp-route-id="@meeting.Id"
+                                   class="btn-icon btn-secondary-app btn-edit"
+                                   title="Edit">
+
+                                    <i class="bi bi-pencil"></i>
+
+                                </a>
+
+                                <a asp-action="Delete"
+                                   asp-route-id="@meeting.Id"
+                                   class="btn-icon btn-danger-app btn-delete"
+                                   title="Delete">
+
+                                    <i class="bi bi-trash"></i>
+
+                                </a>
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+                                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="9"
+                                class="text-center text-muted">
+
+                                No meetings found.
+
+                            </td>
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>

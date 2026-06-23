@@ -1,0 +1,123 @@
+﻿@model AryamanBMS.Models.ProjectTaskProgressModel
+
+@{
+    ViewData["Title"] = "Delete Task Progress";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Delete Task Progress</h1>
+
+        <p class="module-subtitle">
+            Confirm task progress deletion
+        </p>
+    </div>
+
+    <a asp-action="Details"
+       asp-route-id="@Model.Id"
+       class="btn-app btn-secondary-app">
+        Back
+    </a>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Progress Information</h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="alert alert-danger">
+            Are you sure you want to permanently delete this task progress record?
+        </div>
+
+        <table class="app-table">
+
+            <tbody>
+
+                <tr>
+                    <th>Project</th>
+                    <td>
+                        @Model.ProjectTask?.Project?.ProjectCode -
+                        @Model.ProjectTask?.Project?.ProjectName
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Task</th>
+                    <td>
+                        @Model.ProjectTask?.TaskCode -
+                        @Model.ProjectTask?.TaskTitle
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Progress Date</th>
+                    <td>
+                        @Model.ProgressDate.ToString("dd-MM-yyyy")
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Hours Worked</th>
+                    <td>
+                        @Model.HoursWorked.ToString("0.00")
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Completion</th>
+                    <td>
+                        @Model.CompletionPercentage%
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Progress Notes</th>
+                    <td>
+                        @Model.ProgressNotes
+                    </td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-body">
+
+        <form asp-action="Delete"
+              asp-route-id="@Model.Id"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <button type="submit"
+                    class="btn-app btn-danger-app">
+
+                <i class="bi bi-trash"></i>
+                Delete Progress
+
+            </button>
+
+            <a asp-action="Details"
+               asp-route-id="@Model.Id"
+               class="btn-app btn-secondary-app">
+
+                Cancel
+
+            </a>
+
+        </form>
+
+    </div>
+
+</div>

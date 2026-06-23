@@ -1,0 +1,107 @@
+﻿@model AryamanBMS.Models.ProjectMeetingModel
+
+@{
+    ViewData["Title"] = "Delete Meeting";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Delete Meeting</h1>
+        <p class="module-subtitle">
+            Confirm meeting deletion
+        </p>
+    </div>
+
+    <a asp-action="Details"
+       asp-route-id="@Model.Id"
+       class="btn-app btn-secondary-app">
+        Back
+    </a>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Meeting Information</h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="alert alert-danger">
+            Deleting this meeting will also delete its attendees
+            and action items. Continue?
+        </div>
+
+        <table class="app-table">
+
+            <tbody>
+
+                <tr>
+                    <th>Project</th>
+                    <td>
+                        @Model.Project?.ProjectCode -
+                        @Model.Project?.ProjectName
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Meeting</th>
+                    <td>@Model.MeetingTitle</td>
+                </tr>
+
+                <tr>
+                    <th>Date</th>
+                    <td>
+                        @Model.MeetingDate.ToString("dd-MM-yyyy")
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Attendees</th>
+                    <td>@(Model.Attendees?.Count ?? 0)</td>
+                </tr>
+
+                <tr>
+                    <th>Action Items</th>
+                    <td>@(Model.ActionItems?.Count ?? 0)</td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-body">
+
+        <form asp-action="Delete"
+              asp-route-id="@Model.Id"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <button type="submit"
+                    class="btn-app btn-danger-app">
+
+                <i class="bi bi-trash"></i>
+                Delete Meeting
+
+            </button>
+
+            <a asp-action="Details"
+               asp-route-id="@Model.Id"
+               class="btn-app btn-secondary-app">
+                Cancel
+            </a>
+
+        </form>
+
+    </div>
+
+</div>

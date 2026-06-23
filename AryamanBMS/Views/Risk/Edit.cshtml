@@ -1,0 +1,464 @@
+﻿@model AryamanBMS.Models.ProjectRiskModel
+
+@using AryamanBMS.Models
+
+@{
+    ViewData["Title"] = "Edit Project Risk";
+
+    var projects =
+        ViewBag.Projects as IEnumerable<ProjectModel>
+        ?? Enumerable.Empty<ProjectModel>();
+
+    var employees =
+        ViewBag.Employees as IEnumerable<EmployeeModel>
+        ?? Enumerable.Empty<EmployeeModel>();
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Edit Project Risk</h1>
+
+        <p class="module-subtitle">
+            Update project risk information
+        </p>
+    </div>
+
+    <a asp-action="Details"
+       asp-route-id="@Model.Id"
+       class="btn-app btn-secondary-app">
+        Back
+    </a>
+
+</div>
+
+<form asp-action="Edit"
+      method="post">
+
+    @Html.AntiForgeryToken()
+
+    <input asp-for="Id"
+           type="hidden" />
+
+    <div asp-validation-summary="ModelOnly"
+         class="validation-message">
+    </div>
+
+    <div class="app-card">
+
+        <div class="card-header">
+            <h5 class="card-title">Risk Information</h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+
+                    <label asp-for="ProjectId">
+                        Project
+                    </label>
+
+                    <select asp-for="ProjectId"
+                            class="app-select">
+
+                        <option value="">Select Project</option>
+
+                        @foreach (var project in projects)
+                        {
+                            <option value="@project.Id">
+                                @project.ProjectCode -
+                                @project.ProjectName
+                            </option>
+                        }
+
+                    </select>
+
+                    <span asp-validation-for="ProjectId"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="RiskOwnerEmployeeId">
+                        Risk Owner
+                    </label>
+
+                    <select asp-for="RiskOwnerEmployeeId"
+                            class="app-select">
+
+                        <option value="">Not Assigned</option>
+
+                        @foreach (var employee in employees)
+                        {
+                            <option value="@employee.Id">
+                                @employee.EmployeeCode -
+                                @employee.FullName
+                            </option>
+                        }
+
+                    </select>
+
+                    <span asp-validation-for="RiskOwnerEmployeeId"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="RiskTitle">
+                        Risk Title
+                    </label>
+
+                    <input asp-for="RiskTitle"
+                           class="app-input" />
+
+                    <span asp-validation-for="RiskTitle"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="RiskCategory">
+                        Risk Category
+                    </label>
+
+                    <select asp-for="RiskCategory"
+                            class="app-select">
+
+                        <option value="Technical">Technical</option>
+                        <option value="Schedule">Schedule</option>
+                        <option value="Cost">Cost</option>
+                        <option value="Resource">Resource</option>
+                        <option value="Quality">Quality</option>
+                        <option value="Operational">Operational</option>
+                        <option value="Security">Security</option>
+                        <option value="Compliance">Compliance</option>
+                        <option value="External">External</option>
+                        <option value="Other">Other</option>
+
+                    </select>
+
+                    <span asp-validation-for="RiskCategory"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="Probability">
+                        Probability
+                    </label>
+
+                    <select asp-for="Probability"
+                            class="app-select"
+                            id="Probability">
+
+                        <option value="1">1 - Very Low</option>
+                        <option value="2">2 - Low</option>
+                        <option value="3">3 - Medium</option>
+                        <option value="4">4 - High</option>
+                        <option value="5">5 - Very High</option>
+
+                    </select>
+
+                    <span asp-validation-for="Probability"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="Impact">
+                        Impact
+                    </label>
+
+                    <select asp-for="Impact"
+                            class="app-select"
+                            id="Impact">
+
+                        <option value="1">1 - Very Low</option>
+                        <option value="2">2 - Low</option>
+                        <option value="3">3 - Medium</option>
+                        <option value="4">4 - High</option>
+                        <option value="5">5 - Very High</option>
+
+                    </select>
+
+                    <span asp-validation-for="Impact"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>
+                        Risk Score
+                    </label>
+
+                    <input type="text"
+                           id="RiskScoreDisplay"
+                           class="app-input"
+                           value="@Model.RiskScore"
+                           readonly />
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>
+                        Severity
+                    </label>
+
+                    <input type="text"
+                           id="SeverityDisplay"
+                           class="app-input"
+                           value="@Model.Severity"
+                           readonly />
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="RiskStatus">
+                        Risk Status
+                    </label>
+
+                    <select asp-for="RiskStatus"
+                            class="app-select">
+
+                        <option value="Open">Open</option>
+                        <option value="Monitoring">Monitoring</option>
+                        <option value="Mitigated">Mitigated</option>
+                        <option value="Resolved">Resolved</option>
+                        <option value="Closed">Closed</option>
+
+                    </select>
+
+                    <span asp-validation-for="RiskStatus"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="TargetResolutionDate">
+                        Target Resolution Date
+                    </label>
+
+                    <input asp-for="TargetResolutionDate"
+                           type="date"
+                           class="app-input" />
+
+                    <span asp-validation-for="TargetResolutionDate"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="ResolvedOn">
+                        Resolved On
+                    </label>
+
+                    <input asp-for="ResolvedOn"
+                           type="date"
+                           class="app-input" />
+
+                    <span asp-validation-for="ResolvedOn"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="IsActive">
+                        Active Status
+                    </label>
+
+                    <select asp-for="IsActive"
+                            class="app-select">
+
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+
+                    </select>
+
+                    <span asp-validation-for="IsActive"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+            </div>
+
+            <div class="form-group mt-3">
+
+                <label asp-for="RiskDescription">
+                    Risk Description
+                </label>
+
+                <textarea asp-for="RiskDescription"
+                          rows="4"
+                          class="app-textarea">
+                </textarea>
+
+                <span asp-validation-for="RiskDescription"
+                      class="validation-message">
+                </span>
+
+            </div>
+
+            <div class="form-group mt-3">
+
+                <label asp-for="MitigationPlan">
+                    Mitigation Plan
+                </label>
+
+                <textarea asp-for="MitigationPlan"
+                          rows="4"
+                          class="app-textarea">
+                </textarea>
+
+                <span asp-validation-for="MitigationPlan"
+                      class="validation-message">
+                </span>
+
+            </div>
+
+            <div class="form-group mt-3">
+
+                <label asp-for="ContingencyPlan">
+                    Contingency Plan
+                </label>
+
+                <textarea asp-for="ContingencyPlan"
+                          rows="4"
+                          class="app-textarea">
+                </textarea>
+
+                <span asp-validation-for="ContingencyPlan"
+                      class="validation-message">
+                </span>
+
+            </div>
+
+            <div class="form-group mt-3">
+
+                <label asp-for="ResolutionRemarks">
+                    Resolution Remarks
+                </label>
+
+                <textarea asp-for="ResolutionRemarks"
+                          rows="3"
+                          class="app-textarea">
+                </textarea>
+
+                <span asp-validation-for="ResolutionRemarks"
+                      class="validation-message">
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="app-card">
+
+        <div class="card-body">
+
+            <button type="submit"
+                    class="btn-app btn-primary-app">
+
+                <i class="bi bi-check-lg"></i>
+                Update Risk
+
+            </button>
+
+            <a asp-action="Details"
+               asp-route-id="@Model.Id"
+               class="btn-app btn-secondary-app">
+                Cancel
+            </a>
+
+        </div>
+
+    </div>
+
+</form>
+
+@section Scripts {
+
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const probability =
+                document.getElementById("Probability");
+
+            const impact =
+                document.getElementById("Impact");
+
+            const riskScoreDisplay =
+                document.getElementById("RiskScoreDisplay");
+
+            const severityDisplay =
+                document.getElementById("SeverityDisplay");
+
+            function calculateRisk() {
+
+                const probabilityValue =
+                    parseInt(probability.value) || 1;
+
+                const impactValue =
+                    parseInt(impact.value) || 1;
+
+                const score =
+                    probabilityValue * impactValue;
+
+                let severity = "Low";
+
+                if (score <= 4) {
+                    severity = "Low";
+                }
+                else if (score <= 9) {
+                    severity = "Medium";
+                }
+                else if (score <= 16) {
+                    severity = "High";
+                }
+                else {
+                    severity = "Critical";
+                }
+
+                riskScoreDisplay.value = score;
+                severityDisplay.value = severity;
+            }
+
+            probability.addEventListener(
+                "change",
+                calculateRisk);
+
+            impact.addEventListener(
+                "change",
+                calculateRisk);
+
+            calculateRisk();
+        });
+    </script>
+
+}
