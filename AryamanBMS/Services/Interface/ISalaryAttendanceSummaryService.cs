@@ -1,6 +1,6 @@
 ﻿using AryamanBMS.ViewModels;
 
-namespace AryamanBMS.Services.Interfaces
+namespace AryamanBMS.Services.Interface
 {
     public interface ISalaryAttendanceSummaryService
     {

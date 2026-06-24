@@ -1,0 +1,527 @@
+﻿@model AryamanBMS.ViewModels.ProjectMeetingDetailsViewModel
+
+@{
+    ViewData["Title"] = "Meeting Details";
+
+    var meeting = Model.Meeting;
+    var employees = Model.Employees
+        ?? Enumerable.Empty<AryamanBMS.Models.EmployeeModel>();
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Meeting Details</h1>
+        <p class="module-subtitle">
+            View minutes, attendees and action items
+        </p>
+    </div>
+
+    <div class="d-flex gap-2">
+
+        <a asp-action="Edit"
+           asp-route-id="@meeting.Id"
+           class="btn-app btn-primary-app">
+
+            <i class="bi bi-pencil"></i>
+            Edit
+
+        </a>
+
+        <a asp-action="Index"
+           asp-route-projectId="@meeting.ProjectId"
+           class="btn-app btn-secondary-app">
+            Back
+        </a>
+
+    </div>
+
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="app-alert-success">
+        @TempData["Success"]
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Meeting Information</h5>
+    </div>
+
+    <div class="card-body">
+
+        <table class="app-table">
+
+            <tbody>
+
+                <tr>
+                    <th>Project</th>
+                    <td>
+                        @(meeting.Project?.ProjectCode ?? "-")
+                        -
+                        @(meeting.Project?.ProjectName ?? "Project unavailable")
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Meeting</th>
+                    <td>@meeting.MeetingTitle</td>
+                </tr>
+
+                <tr>
+                    <th>Date and Time</th>
+                    <td>
+                        @meeting.MeetingDate.ToString("dd-MM-yyyy")
+                        |
+                        @meeting.StartTime.ToString(@"hh\:mm")
+
+                        @if (meeting.EndTime.HasValue)
+                        {
+                            <span>
+                                -
+                                @meeting.EndTime.Value.ToString(@"hh\:mm")
+                            </span>
+                        }
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Mode</th>
+                    <td>@meeting.MeetingMode</td>
+                </tr>
+
+                <tr>
+                    <th>Location / Link</th>
+                    <td class="d-flex flex-wrap">
+                        @(meeting.LocationOrLink ?? "-")
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Status</th>
+                    <td>@meeting.MeetingStatus</td>
+                </tr>
+
+                <tr>
+                    <th>Next Meeting</th>
+                    <td>
+                        @(meeting.NextMeetingDate?.ToString("dd-MM-yyyy") ?? "-")
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Active</th>
+                    <td>
+                        @(meeting.IsActive ? "Active" : "Inactive")
+                    </td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Minutes of Meeting</h5>
+    </div>
+
+    <div class="card-body">
+
+        <h6>Agenda</h6>
+        <p>@meeting.Agenda</p>
+
+        <hr />
+
+        <h6>Discussion Summary</h6>
+
+        <p>
+            @(string.IsNullOrWhiteSpace(meeting.DiscussionSummary)
+                        ? "No discussion summary recorded."
+                        : meeting.DiscussionSummary)
+        </p>
+
+        <hr />
+
+        <h6>Decisions Taken</h6>
+
+        <p>
+            @(string.IsNullOrWhiteSpace(meeting.DecisionsTaken)
+                        ? "No decisions recorded."
+                        : meeting.DecisionsTaken)
+        </p>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Meeting Attendees</h5>
+    </div>
+
+    <div class="card-body">
+
+        <form asp-action="AddAttendee"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <input type="hidden"
+                   name="meetingId"
+                   value="@meeting.Id" />
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+
+                    <label>Employee</label>
+
+                    <select name="employeeId"
+                            class="app-select"
+                            required>
+
+                        <option value="">Select Employee</option>
+
+                        @foreach (var employee in employees)
+                        {
+                            <option value="@employee.Id">
+                                @employee.EmployeeCode -
+                                @employee.FullName
+                            </option>
+                        }
+
+                    </select>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Attendance</label>
+
+                    <select name="isPresent"
+                            class="app-select">
+
+                        <option value="true">Present</option>
+                        <option value="false">Absent</option>
+
+                    </select>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Remarks</label>
+
+                    <input type="text"
+                           name="remarks"
+                           class="app-input" />
+
+                </div>
+
+                <div class="form-group d-flex flex-row align-items-end">
+
+                    <button type="submit"
+                            class="btn-app btn-primary-app">
+
+                        <i class="bi bi-plus-lg"></i>
+                        Add Attendee
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </form>
+
+        <div class="table-responsive mt-4">
+
+            <table class="app-table">
+
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Attendance</th>
+                        <th>Remarks</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @if (meeting.Attendees.Any())
+                    {
+                        foreach (var attendee in meeting.Attendees)
+                        {
+                            <tr>
+
+                                <td>
+                                    @attendee.Employee?.EmployeeCode -
+                                    @attendee.Employee?.FullName
+                                </td>
+
+                                <td>
+                                    @(attendee.IsPresent
+                                                                ? "Present"
+                                                                : "Absent")
+                        </td>
+
+                                <td>
+                                    @(attendee.Remarks ?? "-")
+                                </td>
+
+                                <td>
+
+                                    <form asp-action="DeleteAttendee"
+                                          method="post">
+
+                                        @Html.AntiForgeryToken()
+
+                                        <input type="hidden"
+                                               name="id"
+                                               value="@attendee.Id" />
+
+                                        <button type="submit"
+                                                class="btn-icon btn-danger-app d-flex align-content-center justify-content-center"
+                                                title="Remove">
+
+                                            <i class="bi bi-trash"></i>
+
+                                        </button>
+
+                                    </form>
+
+                                </td>
+
+                            </tr>
+                                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="4"
+                                class="text-center text-muted">
+                                No attendees added.
+                            </td>
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Action Items</h5>
+    </div>
+
+    <div class="card-body">
+
+        <form asp-action="AddActionItem"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <input type="hidden"
+                   name="MeetingId"
+                   value="@meeting.Id" />
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+
+                    <label>Action Title</label>
+
+                    <input type="text"
+                           name="ActionTitle"
+                           class="app-input"
+                           required />
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Assigned Employee</label>
+
+                    <select name="AssignedEmployeeId"
+                            class="app-select">
+
+                        <option value="">Not Assigned</option>
+
+                        @foreach (var employee in employees)
+                        {
+                            <option value="@employee.Id">
+                                @employee.EmployeeCode -
+                                @employee.FullName
+                            </option>
+                        }
+
+                    </select>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Due Date</label>
+
+                    <input type="date"
+                           name="DueDate"
+                           min="@meeting.MeetingDate.ToString("yyyy-MM-dd")"
+                           class="app-input" />
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Description</label>
+
+                    <input type="text"
+                           name="Description"
+                           class="app-input" />
+
+                </div>
+
+            </div>
+
+            <button type="submit"
+                    class="btn-app btn-primary-app mt-3">
+
+                <i class="bi bi-plus-lg"></i>
+                Add Action Item
+
+            </button>
+
+        </form>
+
+        <div class="table-responsive mt-4">
+
+            <table class="app-table">
+
+                <thead>
+                    <tr>
+                        <th>Action</th>
+                        <th>Assigned To</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                        <th>Completed On</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @if (meeting.ActionItems.Any())
+                    {
+                        foreach (var item in meeting.ActionItems)
+                        {
+                            <tr>
+
+                                <td>
+                                    <strong>@item.ActionTitle</strong>
+
+                                    @if (!string.IsNullOrWhiteSpace(item.Description))
+                                    {
+                                        <div class="text-muted">
+                                            @item.Description
+                                        </div>
+                                    }
+                        </td>
+
+                        <td>
+                            @(item.AssignedEmployee?.FullName
+                                                        ?? "Not Assigned")
+                                                                      </td>
+
+                        <td>
+                            @(item.DueDate?.ToString("dd-MM-yyyy")
+                                                        ?? "-")
+                                                           </td>
+
+                        <td>@item.ActionStatus</td>
+
+                        <td>
+                            @(item.CompletedOn?.ToString("dd-MM-yyyy")
+                                                        ?? "-")
+                        </td>
+
+                                <td>
+
+                                    <div class="action-buttons d-flex flex-row gap-1">
+
+                                        <a asp-action="EditActionItem"
+                                           asp-route-id="@item.Id"
+                                           class="btn-icon btn-secondary-app"
+                                           title="Edit">
+
+                                            <i class="bi bi-pencil"></i>
+
+                                        </a>
+
+                                        <form asp-action="DeleteActionItem"
+                                              method="post">
+
+                                            @Html.AntiForgeryToken()
+
+                                            <input type="hidden"
+                                                   name="id"
+                                                   value="@item.Id" />
+
+                                            <button type="submit"
+                                                    class="btn-icon btn-danger-app"
+                                                    title="Delete">
+
+                                                <i class="bi bi-trash"></i>
+
+                                            </button>
+
+                                        </form>
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+                                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6"
+                                class="text-center text-muted">
+                                No action items added.
+                            </td>
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>

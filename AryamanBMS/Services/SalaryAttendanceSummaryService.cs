@@ -1,5 +1,5 @@
 ﻿using AryamanBMS.Repositories.Interfaces;
-using AryamanBMS.Services.Interfaces;
+using AryamanBMS.Services.Interface;
 using AryamanBMS.ViewModels;
 using Microsoft.EntityFrameworkCore;
 

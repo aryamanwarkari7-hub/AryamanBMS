@@ -1,0 +1,340 @@
+﻿@model IEnumerable<AryamanBMS.Models.ProjectRiskModel>
+
+@using AryamanBMS.Models
+
+@{
+    ViewData["Title"] = "Risk Register";
+
+    var projects =
+        ViewBag.Projects as IEnumerable<ProjectModel>
+        ?? Enumerable.Empty<ProjectModel>();
+
+    var employees =
+        ViewBag.Employees as IEnumerable<EmployeeModel>
+        ?? Enumerable.Empty<EmployeeModel>();
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Risk Register</h1>
+        <p class="module-subtitle">
+            Identify, assess and monitor project risks
+        </p>
+    </div>
+
+    <a asp-action="Create"
+       asp-route-projectId="@ViewBag.ProjectId"
+       class="btn-app btn-primary-app">
+
+        <i class="bi bi-plus-lg"></i>
+        Add Risk
+
+    </a>
+
+</div>
+
+@* @if (TempData["Success"] != null)
+{
+    <div class="app-alert-success">
+        @TempData["Success"]
+    </div>
+} *@
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Filters</h5>
+    </div>
+
+    <div class="card-body">
+
+        <form asp-action="Index"
+              method="get">
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+
+                    <label>Project</label>
+
+                    <select name="projectId"
+                            class="app-select">
+
+                        <option value="">All Projects</option>
+
+                        @foreach (var project in projects)
+                        {
+                            <option value="@project.Id"
+                                    selected="@(ViewBag.ProjectId == project.Id)">
+
+                                @project.ProjectCode -
+                                @project.ProjectName
+
+                            </option>
+                        }
+
+                    </select>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Status</label>
+
+                    <select name="status"
+                            class="app-select">
+
+                        <option value="">All Statuses</option>
+                        <option value="Open"
+                                selected="@(ViewBag.Status == "Open")">
+                            Open
+                        </option>
+                        <option value="Monitoring"
+                                selected="@(ViewBag.Status == "Monitoring")">
+                            Monitoring
+                        </option>
+                        <option value="Mitigated"
+                                selected="@(ViewBag.Status == "Mitigated")">
+                            Mitigated
+                        </option>
+                        <option value="Resolved"
+                                selected="@(ViewBag.Status == "Resolved")">
+                            Resolved
+                        </option>
+                        <option value="Closed"
+                                selected="@(ViewBag.Status == "Closed")">
+                            Closed
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Severity</label>
+
+                    <select name="severity"
+                            class="app-select">
+
+                        <option value="">All Severities</option>
+                        <option value="Low"
+                                selected="@(ViewBag.Severity == "Low")">
+                            Low
+                        </option>
+                        <option value="Medium"
+                                selected="@(ViewBag.Severity == "Medium")">
+                            Medium
+                        </option>
+                        <option value="High"
+                                selected="@(ViewBag.Severity == "High")">
+                            High
+                        </option>
+                        <option value="Critical"
+                                selected="@(ViewBag.Severity == "Critical")">
+                            Critical
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Risk Owner</label>
+
+                    <select name="ownerId"
+                            class="app-select">
+
+                        <option value="">All Owners</option>
+
+                        @foreach (var employee in employees)
+                        {
+                            <option value="@employee.Id"
+                                    selected="@(ViewBag.OwnerId == employee.Id)">
+
+                                @employee.EmployeeCode -
+                                @employee.FullName
+
+                            </option>
+                        }
+
+                    </select>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Search</label>
+
+                    <input type="text"
+                           name="searchText"
+                           value="@ViewBag.SearchText"
+                           class="app-input"
+                           placeholder="Risk title, description or project" />
+
+                </div>
+
+                <div class="form-group d-flex flex-row align-items-end gap-2">
+
+                    <button type="submit"
+                            class="btn-app btn-primary-app">
+
+                        <i class="bi bi-funnel"></i>
+                        Filter
+
+                    </button>
+
+                    <a asp-action="Index"
+                       class="btn-app btn-secondary-app">
+                        Reset
+                    </a>
+
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Project Risks</h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="table-responsive">
+
+            <table class="app-table">
+
+                <thead>
+                    <tr>
+                        <th>Project</th>
+                        <th>Risk</th>
+                        <th>Category</th>
+                        <th>Owner</th>
+                        <th>Probability</th>
+                        <th>Impact</th>
+                        <th>Score</th>
+                        <th>Severity</th>
+                        <th>Status</th>
+                        <th>Target Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @if (Model?.Any() == true)
+                    {
+                        foreach (var risk in Model)
+                        {
+                            <tr>
+
+                                <td>
+                                    @risk.Project?.ProjectCode
+                                </td>
+
+                                <td>
+                                    <strong>@risk.RiskTitle</strong>
+                                </td>
+
+                                <td>
+                                    @risk.RiskCategory
+                                </td>
+
+                                <td>
+                                    @(risk.RiskOwnerEmployee?.FullName
+                                                                ?? "Not Assigned")
+                                                                              </td>
+
+                                <td>
+                                    @risk.Probability
+                                </td>
+
+                                <td>
+                                    @risk.Impact
+                                </td>
+
+                                <td>
+                                    <strong>@risk.RiskScore</strong>
+                                </td>
+
+                                <td>
+                                    <span class="status-badge">
+                                        @risk.Severity
+                                    </span>
+                                </td>
+
+                                <td>
+                                    @risk.RiskStatus
+                                </td>
+
+                                <td>
+                                    @(risk.TargetResolutionDate?
+                                                                .ToString("dd-MM-yyyy") ?? "-")
+                        </td>
+
+                                <td>
+
+                                    <div class="action-buttons d-flex flex-row gap-1">
+
+                                        <a asp-action="Details"
+                                           asp-route-id="@risk.Id"
+                                           class="btn-icon btn-primary-app btn-view"
+                                           title="Details">
+
+                                            <i class="bi bi-eye"></i>
+
+                                        </a>
+
+                                        <a asp-action="Edit"
+                                           asp-route-id="@risk.Id"
+                                           class="btn-icon btn-secondary-app btn-edit"
+                                           title="Edit">
+
+                                            <i class="bi bi-pencil"></i>
+
+                                        </a>
+
+                                        <a asp-action="Delete"
+                                           asp-route-id="@risk.Id"
+                                           class="btn-icon btn-danger-app btn-delete"
+                                           title="Delete">
+
+                                            <i class="bi bi-trash"></i>
+
+                                        </a>
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+                                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="11"
+                                class="text-center text-muted">
+                                No project risks found.
+                            </td>
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>

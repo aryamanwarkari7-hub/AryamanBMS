@@ -1,0 +1,210 @@
+﻿@model AryamanBMS.Models.ProjectFlowModel
+
+@{
+    ViewData["Title"] = "Create Project Stage";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Create Project Stage</h1>
+        <p class="module-subtitle">
+            Add a new lifecycle stage
+        </p>
+    </div>
+
+    <a asp-action="Index"
+       asp-route-projectId="@Model.ProjectId"
+       class="btn-app btn-secondary-app">
+        Back
+    </a>
+</div>
+
+<form asp-action="Create"
+      method="post">
+
+    @Html.AntiForgeryToken()
+
+    <div asp-validation-summary="ModelOnly"
+         class="validation-message">
+    </div>
+
+    <div class="app-card">
+
+        <div class="card-header">
+            <h5 class="card-title">Stage Information</h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+                    <label asp-for="ProjectId">Project</label>
+
+                    <select asp-for="ProjectId"
+                            class="app-select">
+
+                        <option value="">Select Project</option>
+
+                        @foreach (var project in ViewBag.Projects)
+                        {
+                            <option value="@project.Id">
+                                @project.ProjectCode - @project.ProjectName
+                            </option>
+                        }
+
+                    </select>
+
+                    <span asp-validation-for="ProjectId"
+                          class="validation-message">
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="StageOrder">
+                        Stage Order
+                    </label>
+
+                    <input asp-for="StageOrder"
+                           type="number"
+                           min="1"
+                           class="app-input" />
+
+                    <span asp-validation-for="StageOrder"
+                          class="validation-message">
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="StageName">
+                        Stage Name
+                    </label>
+
+                    <input asp-for="StageName"
+                           class="app-input"
+                           placeholder="Example: Requirement Gathering" />
+
+                    <span asp-validation-for="StageName"
+                          class="validation-message">
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="StageStatus">
+                        Stage Status
+                    </label>
+
+                    <select asp-for="StageStatus"
+                            class="app-select">
+
+                        <option value="Pending">Pending</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Completed">Completed</option>
+                        <option value="On Hold">On Hold</option>
+
+                    </select>
+
+                    <span asp-validation-for="StageStatus"
+                          class="validation-message">
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="PlannedStartDate">
+                        Planned Start Date
+                    </label>
+
+                    <span asp-validation-for="PlannedStartDate"
+                          class="validation-message">
+                    </span>
+
+                    <input asp-for="PlannedStartDate"
+                           type="date"
+                           class="app-input" />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="PlannedEndDate">
+                        Planned End Date
+                    </label>
+
+                    <input asp-for="PlannedEndDate"
+                           type="date"
+                           class="app-input" />
+
+                    <span asp-validation-for="PlannedEndDate"
+                          class="validation-message">
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ActualStartDate">
+                        Actual Start Date
+                    </label>
+
+                    <input asp-for="ActualStartDate"
+                           type="date"
+                           class="app-input" />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ActualEndDate">
+                        Actual End Date
+                    </label>
+
+                    <input asp-for="ActualEndDate"
+                           type="date"
+                           class="app-input" />
+
+                    <span asp-validation-for="ActualEndDate"
+                          class="validation-message">
+                    </span>
+                </div>
+
+            </div>
+
+            <div class="form-group mt-3">
+
+                <label asp-for="Remarks">
+                    Remarks
+                </label>
+
+                <textarea asp-for="Remarks"
+                          rows="4"
+                          class="app-textarea">
+                </textarea>
+
+                <span asp-validation-for="Remarks"
+                      class="validation-message">
+                </span>
+
+            </div>
+
+        </div>
+    </div>
+
+    <div class="app-card">
+        <div class="card-body">
+
+            <button type="submit"
+                    class="btn-app btn-primary-app">
+
+                <i class="bi bi-check-lg"></i>
+                Create Stage
+
+            </button>
+
+            <a asp-action="Index"
+               asp-route-projectId="@Model.ProjectId"
+               class="btn-app btn-secondary-app">
+                Cancel
+            </a>
+
+        </div>
+    </div>
+
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

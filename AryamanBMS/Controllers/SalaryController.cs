@@ -2,7 +2,7 @@
 using AryamanBMS.Models;
 using AryamanBMS.Repositories;
 using AryamanBMS.Repositories.Interfaces;
-using AryamanBMS.Services.Interfaces;
+using AryamanBMS.Services.Interface;
 using AryamanBMS.ViewModels;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;

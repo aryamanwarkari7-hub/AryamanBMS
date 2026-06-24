@@ -1,7 +1,6 @@
 ﻿using AryamanBMS.Models;
-using AryamanBMS.Services.Interfaces;
 
-namespace AryamanBMS.Services
+namespace AryamanBMS.Services.Interface
 {
     public class EmployeeDocumentService : IEmployeeDocumentService
     {

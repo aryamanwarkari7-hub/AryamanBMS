@@ -1,0 +1,100 @@
+﻿@model AryamanBMS.Models.ProjectTaskModel
+
+@{
+    ViewData["Title"] = "Delete Project Task";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Delete Project Task</h1>
+        <p class="module-subtitle">Confirm task deletion</p>
+    </div>
+
+    <a asp-action="Index"
+       asp-route-projectId="@Model.ProjectId"
+       class="btn-app btn-secondary-app">
+        Back
+    </a>
+</div>
+
+<div class="app-card">
+    <div class="card-header">
+        <h5 class="card-title">Task Information</h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="alert alert-danger">
+            Are you sure you want to permanently delete this task?
+        </div>
+
+        <table class="app-table">
+            <tbody>
+                <tr>
+                    <th>Task Code</th>
+                    <td>@Model.TaskCode</td>
+                </tr>
+
+                <tr>
+                    <th>Task Title</th>
+                    <td>@Model.TaskTitle</td>
+                </tr>
+
+                <tr>
+                    <th>Project</th>
+                    <td>
+                        @Model.Project?.ProjectCode -
+                        @Model.Project?.ProjectName
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Assigned Employee</th>
+                    <td>
+                        @(Model.AssignedEmployee?.FullName ?? "-")
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Priority</th>
+                    <td>@Model.Priority</td>
+                </tr>
+
+                <tr>
+                    <th>Status</th>
+                    <td>@Model.Status</td>
+                </tr>
+
+                <tr>
+                    <th>Due Date</th>
+                    <td>
+                        @(Model.DueDate?.ToString("dd-MM-yyyy") ?? "-")
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="app-card">
+    <div class="card-body">
+        <form asp-action="Delete"
+              asp-route-id="@Model.Id"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <button type="submit"
+                    class="btn-app btn-danger-app">
+                <i class="bi bi-trash"></i>
+                Delete Task
+            </button>
+
+            <a asp-action="Details"
+               asp-route-id="@Model.Id"
+               class="btn-app btn-secondary-app">
+                Cancel
+            </a>
+        </form>
+    </div>
+</div>

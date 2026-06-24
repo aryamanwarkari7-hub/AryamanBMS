@@ -1,0 +1,347 @@
+﻿@model IEnumerable<AryamanBMS.Models.ProjectTaskProgressModel>
+
+@using AryamanBMS.Models
+
+@{
+    ViewData["Title"] = "Task Tracker";
+
+    var tasks =
+        ViewBag.Tasks as IEnumerable<ProjectTaskModel>
+        ?? Enumerable.Empty<ProjectTaskModel>();
+
+    var projects = tasks
+        .Where(t => t.Project != null)
+        .GroupBy(t => t.ProjectId)
+        .Select(group => group.First().Project!)
+        .OrderBy(p => p.ProjectName)
+        .ToList();
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Task Tracker</h1>
+
+        <p class="module-subtitle">
+            Record and monitor project task progress
+        </p>
+    </div>
+
+    <a asp-action="Create"
+       asp-route-projectTaskId="@ViewBag.ProjectTaskId"
+       class="btn-app btn-primary-app">
+
+        <i class="bi bi-plus-lg"></i>
+        Add Progress
+
+    </a>
+
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="app-alert-success">
+        @TempData["Success"]
+    </div>
+}
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Filters</h5>
+    </div>
+
+    <div class="card-body">
+
+        <form asp-action="Index"
+              method="get">
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+
+                    <label>Project</label>
+
+                    <select name="projectId"
+                            id="projectFilter"
+                            class="app-select">
+
+                        <option value="">All Projects</option>
+
+                        @foreach (var project in projects)
+                        {
+                            <option value="@project.Id"
+                                    selected="@(ViewBag.ProjectId == project.Id)">
+
+                                @project.ProjectCode -
+                                @project.ProjectName
+
+                            </option>
+                        }
+
+                    </select>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Project Task</label>
+
+                    <select name="projectTaskId"
+                            id="taskFilter"
+                            class="app-select">
+
+                        <option value="">All Tasks</option>
+
+                        @foreach (var task in tasks)
+                        {
+                            <option value="@task.Id"
+                                    data-project-id="@task.ProjectId"
+                                    selected="@(ViewBag.ProjectTaskId == task.Id)">
+
+                                @task.Project?.ProjectCode -
+                                @task.TaskCode -
+                                @task.TaskTitle
+
+                            </option>
+                        }
+
+                    </select>
+
+                </div>
+
+            </div>
+
+            <div class="d-flex gap-2 mt-3">
+
+                <button type="submit"
+                        class="btn-app btn-primary-app">
+
+                    <i class="bi bi-funnel"></i>
+                    Filter
+
+                </button>
+
+                <a asp-action="Index"
+                   class="btn-app btn-secondary-app">
+
+                    Reset
+
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Task Progress Records</h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="table-responsive">
+
+            <table class="app-table">
+
+                <thead>
+
+                    <tr>
+                        <th>Project</th>
+                        <th>Task</th>
+                        <th>Progress Date</th>
+                        <th>Hours Worked</th>
+                        <th>Completion</th>
+                        <th>Progress Notes</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    @if (Model.Any())
+                    {
+                        foreach (var progress in Model)
+                        {
+                            <tr>
+
+                                <td>
+                                    @progress.ProjectTask?.Project?.ProjectCode
+                                </td>
+
+                                <td>
+
+                                    <strong>
+                                        @progress.ProjectTask?.TaskCode
+                                    </strong>
+
+                                    <div class="text-muted">
+                                        @progress.ProjectTask?.TaskTitle
+                                    </div>
+
+                                </td>
+
+                                <td>
+                                    @progress.ProgressDate.ToString("dd-MM-yyyy")
+                                </td>
+
+                                <td>
+                                    @progress.HoursWorked.ToString("0.00")
+                                </td>
+
+                                <td>
+
+                                    <strong>
+                                        @progress.CompletionPercentage%
+                                    </strong>
+
+                                    <div class="progress mt-1"
+                                         style="height: 6px;">
+
+                                        <div class="progress-bar"
+                                             role="progressbar"
+                                             style="width: @progress.CompletionPercentage%;"
+                                             aria-valuenow="@progress.CompletionPercentage"
+                                             aria-valuemin="0"
+                                             aria-valuemax="100">
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+                                <td>
+                                    @progress.ProgressNotes
+                                </td>
+
+                                <td>
+
+                                    @if (progress.IsActive)
+                                    {
+                                        <span class="status-badge status-active">
+                                            Active
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-badge status-inactive">
+                                            Inactive
+                                        </span>
+                                    }
+
+                                </td>
+
+                                <td>
+
+                                    <div class="action-buttons d-flex flex-row gap-1">
+
+                                        <a asp-action="Details"
+                                           asp-route-id="@progress.Id"
+                                           class="btn-icon btn-primary-app btn-view"
+                                           title="Details">
+
+                                            <i class="bi bi-eye"></i>
+
+                                        </a>
+
+                                        <a asp-action="Edit"
+                                           asp-route-id="@progress.Id"
+                                           class="btn-icon btn-secondary-app btn-edit"
+                                           title="Edit">
+
+                                            <i class="bi bi-pencil"></i>
+
+                                        </a>
+
+                                        <a asp-action="Delete"
+                                           asp-route-id="@progress.Id"
+                                           class="btn-icon btn-danger-app btn-delete"
+                                           title="Delete">
+
+                                            <i class="bi bi-trash"></i>
+
+                                        </a>
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+
+                            <td colspan="8"
+                                class="text-center text-muted">
+
+                                No task progress records found.
+
+                            </td>
+
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts {
+
+    <script>
+
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const projectFilter =
+                document.getElementById("projectFilter");
+
+            const taskFilter =
+                document.getElementById("taskFilter");
+
+            const taskOptions =
+                Array.from(taskFilter.options);
+
+            projectFilter.addEventListener("change", function () {
+
+                const selectedProjectId = this.value;
+
+                taskFilter.innerHTML = "";
+
+                taskOptions.forEach(function (option) {
+
+                    const optionProjectId =
+                        option.getAttribute("data-project-id");
+
+                    if (
+                        !option.value ||
+                        !selectedProjectId ||
+                        optionProjectId === selectedProjectId
+                    ) {
+                        taskFilter.appendChild(option);
+                    }
+
+                });
+
+                taskFilter.value = "";
+
+            });
+
+        });
+
+    </script>
+
+}

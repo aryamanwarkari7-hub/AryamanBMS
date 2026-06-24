@@ -1,0 +1,213 @@
+﻿@model AryamanBMS.Models.ProjectTaskProgressModel
+
+@using AryamanBMS.Models
+
+@{
+    ViewData["Title"] = "Edit Task Progress";
+
+    var tasks =
+        ViewBag.Tasks as IEnumerable<ProjectTaskModel>
+        ?? Enumerable.Empty<ProjectTaskModel>();
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Edit Task Progress</h1>
+
+        <p class="module-subtitle">
+            Update recorded task progress information
+        </p>
+    </div>
+
+    <a asp-action="Details"
+       asp-route-id="@Model.Id"
+       class="btn-app btn-secondary-app">
+
+        Back
+
+    </a>
+
+</div>
+
+<form asp-action="Edit"
+      method="post">
+
+    @Html.AntiForgeryToken()
+
+    <input type="hidden"
+           asp-for="Id" />
+
+    <div asp-validation-summary="ModelOnly"
+         class="validation-message">
+    </div>
+
+    <div class="app-card">
+
+        <div class="card-header">
+            <h5 class="card-title">Progress Information</h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+
+                    <label asp-for="ProjectTaskId">
+                        Project Task
+                    </label>
+
+                    <select asp-for="ProjectTaskId"
+                            class="app-select">
+
+                        <option value="">Select Project Task</option>
+
+                        @foreach (var task in tasks)
+                        {
+                            <option value="@task.Id">
+
+                                @task.Project?.ProjectCode -
+                                @task.TaskCode -
+                                @task.TaskTitle
+
+                            </option>
+                        }
+
+                    </select>
+
+                    <span asp-validation-for="ProjectTaskId"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="ProgressDate">
+                        Progress Date
+                    </label>
+
+                    <input asp-for="ProgressDate"
+                           type="date"
+                           max="@DateTime.Today.ToString("yyyy-MM-dd")"
+                           class="app-input" />
+
+                    <span asp-validation-for="ProgressDate"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="HoursWorked">
+                        Hours Worked
+                    </label>
+
+                    <input asp-for="HoursWorked"
+                           type="number"
+                           min="0"
+                           max="24"
+                           step="0.25"
+                           class="app-input" />
+
+                    <span asp-validation-for="HoursWorked"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="CompletionPercentage">
+                        Completion Percentage
+                    </label>
+
+                    <input asp-for="CompletionPercentage"
+                           type="number"
+                           min="0"
+                           max="100"
+                           class="app-input" />
+
+                    <span asp-validation-for="CompletionPercentage"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="IsActive">
+                        Active Status
+                    </label>
+
+                    <select asp-for="IsActive"
+                            class="app-select">
+
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+
+                    </select>
+
+                    <span asp-validation-for="IsActive"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+            </div>
+
+            <div class="form-group mt-3">
+
+                <label asp-for="ProgressNotes">
+                    Progress Notes
+                </label>
+
+                <textarea asp-for="ProgressNotes"
+                          rows="5"
+                          class="app-textarea"
+                          placeholder="Describe the work completed, issues found, or next steps">
+                </textarea>
+
+                <span asp-validation-for="ProgressNotes"
+                      class="validation-message">
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="app-card">
+
+        <div class="card-body">
+
+            <button type="submit"
+                    class="btn-app btn-primary-app">
+
+                @* <i class="bi bi-check-lg"></i> *@
+                Update Progress
+
+            </button>
+
+            <a asp-action="Details"
+               asp-route-id="@Model.Id"
+               class="btn-app btn-secondary-app">
+
+                Cancel
+
+            </a>
+
+        </div>
+
+    </div>
+
+</form>
+
+@section Scripts {
+
+    <partial name="_ValidationScriptsPartial" />
+
+}
