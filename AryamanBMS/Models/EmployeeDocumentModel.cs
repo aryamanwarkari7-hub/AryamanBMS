@@ -39,5 +39,9 @@ namespace AryamanBMS.Models
         public EmployeeModel? Employee { get; set; }
 
         public EmployeeAcademicModel? EmployeeAcademic { get; set; }
+
+        [Required]
+        [StringLength(30)]
+        public string DocumentCategory { get; set; } = string.Empty;
     }
 }

@@ -72,6 +72,18 @@ namespace AryamanBMS.Models
          ErrorMessage = "PIN code must contain exactly 6 digits.")]
         public string? PinCode { get; set; }
 
+        public string? LocalAddress { get; set; }
+
+        public string? LocalCity { get; set; }
+
+        public string? LocalState { get; set; }
+
+        [StringLength(6)]
+        [RegularExpression(
+            @"^[0-9]{6}$",
+            ErrorMessage = "Local PIN code must contain exactly 6 digits.")]
+        public string? LocalPinCode { get; set; }
+
         // ==========================
         // Emergency Contact
         // ==========================

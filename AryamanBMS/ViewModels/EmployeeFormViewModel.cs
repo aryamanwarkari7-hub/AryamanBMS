@@ -8,5 +8,11 @@ namespace AryamanBMS.ViewModels
 
         public List<EmployeeAcademicInputViewModel> Academics { get; set; }
             = new();
+
+        public List<EmployeeDocumentInputViewModel> StatutoryDocuments
+        { get; set; } = new();
+
+        public List<EmployeeDocumentInputViewModel> JoiningDocuments
+        { get; set; } = new();
     }
 }

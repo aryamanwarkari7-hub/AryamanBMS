@@ -271,14 +271,17 @@
                             }
 
                             
-                            <a asp-controller="Employee"
-                               asp-action="Profile"
-                               class="submenu-item nested-item @(currentController == "Employee" && currentAction == "Profile" ? "active-menu" : "")">
+                            @if (!isAdmin)
+                            {
+                                <a asp-controller="Employee"
+                                   asp-action="Profile"
+                                   class="submenu-item nested-item @(currentController == "Employee" && currentAction == "Profile" ? "active-menu" : "")">
 
-                                <i class="bi bi-person-badge"></i>
-                                <span>Profile</span>
+                                    <i class="bi bi-person-badge"></i>
+                                    <span>Profile</span>
 
-                            </a>
+                                </a>
+                            }
 
 
 

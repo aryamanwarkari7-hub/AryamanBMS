@@ -1,13 +1,22 @@
 ﻿@model EmployeeFormViewModel
 @{
-    string currentState =
+    string currentPermanentState =
         Model.Employee.State ?? string.Empty;
 
-    string currentCity =
+    string currentPermanentCity =
         Model.Employee.City ?? string.Empty;
 
-    string currentPinCode =
+    string currentPermanentPin =
         Model.Employee.PinCode ?? string.Empty;
+
+    string currentLocalState =
+        Model.Employee.LocalState ?? string.Empty;
+
+    string currentLocalCity =
+        Model.Employee.LocalCity ?? string.Empty;
+
+    string currentLocalPin =
+        Model.Employee.LocalPinCode ?? string.Empty;
 }
 
 <div class="module-header">
@@ -15,15 +24,22 @@
         <h1 class="module-title">Edit Employee</h1>
         <p class="module-subtitle">Update employee information</p>
     </div>
-    <button type="button"
-            class="btn-app btn-secondary-app">
-           Back
-    </button>
+    <a asp-action="Index"
+       class="btn-app btn-secondary-app">
+        Back
+    </a>
 </div>
 
 <form asp-action="Edit" method="post" enctype="multipart/form-data">
 
     <input asp-for="Employee.Id" type="hidden" />
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div asp-validation-summary="ModelOnly"
+             class="app-alert app-alert-danger mb-3">
+        </div>
+    }
 
     <div class="app-card">
         <div class="card-header">
@@ -47,6 +63,8 @@
                         <option value="Female">Female</option>
                         <option value="Other">Other</option>
                     </select>
+                    <span asp-validation-for="Employee.Gender"
+                          class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
@@ -74,6 +92,8 @@
                 <div class="form-group">
                     <label class="form-label">Date Of Birth</label>
                     <input asp-for="Employee.DateOfBirth" type="date" class="app-input" />
+                    <span asp-validation-for="Employee.DateOfBirth"
+                          class="validation-message"></span>
                 </div>
 
             </div>
@@ -91,6 +111,8 @@
                 <div class="form-group">
                     <label class="form-label">Joining Date</label>
                     <input asp-for="Employee.JoiningDate" type="date" class="app-input" />
+                    <span asp-validation-for="Employee.JoiningDate"
+                          class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
@@ -102,6 +124,8 @@
                         <option value="Intern">Intern</option>
                         <option value="Consultant">Consultant</option>
                     </select>
+                    <span asp-validation-for="Employee.EmploymentType"
+                          class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
@@ -115,6 +139,8 @@
                             </option>
                         }
                     </select>
+                    <span asp-validation-for="Employee.DepartmentId"
+                          class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
@@ -122,6 +148,8 @@
                     <select asp-for="Employee.DesignationId" id="designationDropdown" class="app-select">
                         <option value="">Select Designation</option>
                     </select>
+                    <span asp-validation-for="Employee.DesignationId"
+                          class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
@@ -144,6 +172,8 @@
                         <option value="true">Active</option>
                         <option value="false">Inactive</option>
                     </select>
+                    <span asp-validation-for="Employee.IsActive"
+                          class="validation-message"></span>
                 </div>
 
             </div>
@@ -181,65 +211,242 @@
     </div>
 
     <div class="app-card">
+
         <div class="card-header">
             <h5 class="card-title">Address Information</h5>
         </div>
 
         <div class="card-body">
-            <div class="form-grid-2">
 
-                <div class="form-group">
-                    <label class="form-label">Permanent Address</label>
-                    <textarea asp-for="Employee.PermanentAddress" class="app-textarea"></textarea>
+            <h6 class="mb-3">Permanent Address</h6>
+
+            <div class="row g-3">
+
+                <div class="col-md-12">
+
+                    <label asp-for="Employee.PermanentAddress"
+                           class="form-label">
+                        Permanent Address
+                    </label>
+
+                    <textarea asp-for="Employee.PermanentAddress"
+                              id="permanentAddress"
+                              class="app-textarea"
+                              rows="3"></textarea>
+
+                    <span asp-validation-for="Employee.PermanentAddress"
+                          class="validation-message"></span>
+
                 </div>
 
-                <select asp-for="Employee.State"
-                        id="stateDropdown"
-                        class="app-input">
+                <div class="col-md-4">
 
-                    <option value="">Select State</option>
+                    <label asp-for="Employee.State"
+                           class="form-label">
+                        Permanent State
+                    </label>
 
-                    @foreach (var state in ViewBag.States)
-                    {
-                        if (state.StateName == currentState)
+                    <select asp-for="Employee.State"
+                            id="permanentStateDropdown"
+                            class="app-select">
+
+                        <option value="">Select State</option>
+
+                        @foreach (var state in ViewBag.States)
                         {
-                            <option value="@state.StateName"
-                                    data-state-id="@state.Id"
-                                    selected>
-                                @state.StateName
-                            </option>
+                            if (state.StateName == currentPermanentState)
+                            {
+                                <option value="@state.StateName"
+                                        data-state-id="@state.Id"
+                                        selected>
+                                    @state.StateName
+                                </option>
+                            }
+                            else
+                            {
+                                <option value="@state.StateName"
+                                        data-state-id="@state.Id">
+                                    @state.StateName
+                                </option>
+                            }
                         }
-                        else
-                        {
-                            <option value="@state.StateName"
-                                    data-state-id="@state.Id">
-                                @state.StateName
-                            </option>
-                        }
-                    }
 
-                </select>
+                    </select>
 
-                <select asp-for="Employee.City"
-                        id="cityDropdown"
-                        class="app-input">
+                    <span asp-validation-for="Employee.State"
+                          class="validation-message"></span>
 
-                    <option value="">Select City</option>
+                </div>
 
-                </select>
+                <div class="col-md-4">
 
-                <input asp-for="Employee.PinCode"
-                       id="pinCodeInput"
-                       list="pinCodeOptions"
-                       class="app-input"
-                       maxlength="6"
-                       inputmode="numeric"
-                       placeholder="Select or type PIN code" />
+                    <label asp-for="Employee.City"
+                           class="form-label">
+                        Permanent City
+                    </label>
 
-                <datalist id="pinCodeOptions"></datalist>
+                    <select asp-for="Employee.City"
+                            id="permanentCityDropdown"
+                            class="app-select"
+                            disabled>
+
+                        <option value="">Select City</option>
+
+                    </select>
+
+                    <span asp-validation-for="Employee.City"
+                          class="validation-message"></span>
+
+                </div>
+
+                <div class="col-md-4">
+
+                    <label asp-for="Employee.PinCode"
+                           class="form-label">
+                        Permanent PIN Code
+                    </label>
+
+                    <input asp-for="Employee.PinCode"
+                           id="permanentPinCodeInput"
+                           list="permanentPinCodeOptions"
+                           class="app-input"
+                           maxlength="6"
+                           inputmode="numeric"
+                           placeholder="Select or type PIN code" />
+
+                    <datalist id="permanentPinCodeOptions"></datalist>
+
+                    <span asp-validation-for="Employee.PinCode"
+                          class="validation-message"></span>
+
+                </div>
 
             </div>
+
+            <hr class="my-4" />
+
+            <div class="d-flex align-items-center gap-2 mb-3">
+
+                <input type="checkbox"
+                       id="sameAsPermanent"
+                       class="form-check-input" />
+
+                <label for="sameAsPermanent"
+                       class="form-check-label">
+
+                    Local address is same as permanent address
+
+                </label>
+
+            </div>
+
+            <h6 class="mb-3">Local Address</h6>
+
+            <div class="row g-3">
+
+                <div class="col-md-12">
+
+                    <label asp-for="Employee.LocalAddress"
+                           class="form-label">
+                        Local Address
+                    </label>
+
+                    <textarea asp-for="Employee.LocalAddress"
+                              id="localAddress"
+                              class="app-textarea"
+                              rows="3"></textarea>
+
+                    <span asp-validation-for="Employee.LocalAddress"
+                          class="validation-message"></span>
+
+                </div>
+
+                <div class="col-md-4">
+
+                    <label asp-for="Employee.LocalState"
+                           class="form-label">
+                        Local State
+                    </label>
+
+                    <select asp-for="Employee.LocalState"
+                            id="localStateDropdown"
+                            class="app-select">
+
+                        <option value="">Select State</option>
+
+                        @foreach (var state in ViewBag.States)
+                        {
+                            if (state.StateName == currentLocalState)
+                            {
+                                <option value="@state.StateName"
+                                        data-state-id="@state.Id"
+                                        selected>
+                                    @state.StateName
+                                </option>
+                            }
+                            else
+                            {
+                                <option value="@state.StateName"
+                                        data-state-id="@state.Id">
+                                    @state.StateName
+                                </option>
+                            }
+                        }
+
+                    </select>
+
+                    <span asp-validation-for="Employee.LocalState"
+                          class="validation-message"></span>
+
+                </div>
+
+                <div class="col-md-4">
+
+                    <label asp-for="Employee.LocalCity"
+                           class="form-label">
+                        Local City
+                    </label>
+
+                    <select asp-for="Employee.LocalCity"
+                            id="localCityDropdown"
+                            class="app-select"
+                            disabled>
+
+                        <option value="">Select City</option>
+
+                    </select>
+
+                    <span asp-validation-for="Employee.LocalCity"
+                          class="validation-message"></span>
+
+                </div>
+
+                <div class="col-md-4">
+
+                    <label asp-for="Employee.LocalPinCode"
+                           class="form-label">
+                        Local PIN Code
+                    </label>
+
+                    <input asp-for="Employee.LocalPinCode"
+                           id="localPinCodeInput"
+                           list="localPinCodeOptions"
+                           class="app-input"
+                           maxlength="6"
+                           inputmode="numeric"
+                           placeholder="Select or type PIN code" />
+
+                    <datalist id="localPinCodeOptions"></datalist>
+
+                    <span asp-validation-for="Employee.LocalPinCode"
+                          class="validation-message"></span>
+
+                </div>
+
+            </div>
+
         </div>
+
     </div>
 
     <div class="app-card">
@@ -253,11 +460,15 @@
                 <div class="form-group">
                     <label class="form-label">Emergency Contact Name</label>
                     <input asp-for="Employee.EmergencyContact" class="app-input" />
+                    <span asp-validation-for="Employee.EmergencyContact"
+                          class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Emergency Contact Number</label>
                     <input asp-for="Employee.EmergencyPhone" class="app-input" />
+                    <span asp-validation-for="Employee.EmergencyPhone"
+                          class="validation-message"></span>
                 </div>
 
             </div>
@@ -274,19 +485,30 @@
 
                 <div class="form-group">
                     <label class="form-label">Aadhaar Number</label>
-                    <input asp-for="Employee.AadhaarNo" class="app-input" />
+                    <input asp-for="Employee.AadhaarNo"
+                           class="app-input"
+                           maxlength="12"
+                           inputmode="numeric"
+                           placeholder="Enter 12-digit Aadhaar number" />
                     <span asp-validation-for="Employee.AadhaarNo" class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">PAN Number</label>
-                    <input asp-for="Employee.PanNo" class="app-input" />
+                    <input asp-for="Employee.PanNo"
+                           class="app-input"
+                           maxlength="10"
+                           placeholder="Enter 10-character PAN number" />
                     <span asp-validation-for="Employee.PanNo" class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">UAN Number</label>
-                    <input asp-for="Employee.UanNo" class="app-input" />
+                    <input asp-for="Employee.UanNo"
+                           class="app-input"
+                           maxlength="12"
+                           inputmode="numeric"
+                           placeholder="Enter 12-digit UAN number" />
                     <span asp-validation-for="Employee.UanNo" class="validation-message"></span>
                 </div>
 
@@ -306,6 +528,191 @@
 
             </div>
         </div>
+    </div>
+
+    <div class="app-card">
+
+        <div class="card-header">
+            <h5 class="card-title">Statutory Documents</h5>
+        </div>
+
+        <div class="card-body">
+
+            @for (int i = 0;
+                        i < Model.StatutoryDocuments.Count;
+                        i++)
+            {
+                <div class="row align-items-center border-bottom py-3">
+
+                    <div class="col-md-3">
+
+                        <input asp-for="StatutoryDocuments[i].DocumentType"
+                               type="hidden" />
+
+                        <label class="form-label mb-0">
+                            @Model.StatutoryDocuments[i].DocumentType
+                        </label>
+
+                    </div>
+
+                    <div class="col-md-5">
+
+                        <input asp-for="StatutoryDocuments[i].File"
+                               type="file"
+                               accept=".pdf,application/pdf"
+                               class="form-control document-pdf-input" />
+
+                        <span asp-validation-for="StatutoryDocuments[i].File"
+                              class="validation-message"></span>
+
+                    </div>
+
+                    <div class="col-md-4">
+
+                        @if (Model.StatutoryDocuments[i].ExistingDocument != null)
+                        {
+                            <div class="d-flex align-items-center gap-2">
+
+                                <span class="text-success">
+                                    <i class="bi bi-file-earmark-pdf"></i>
+
+                                    @Model.StatutoryDocuments[i]
+                                    .ExistingDocument!
+                                    .OriginalFileName
+                                </span>
+
+                                <a asp-action="DownloadDocument"
+                                   asp-route-id="@Model.StatutoryDocuments[i].ExistingDocument!.Id"
+                                   class="btn-app btn-primary-app btn-icon"
+                                   title="Download">
+
+                                    <i class="bi bi-download"></i>
+
+                                </a>
+
+                                <button type="submit"
+                                        asp-action="DeleteDocument"
+                                        asp-route-id="@Model.StatutoryDocuments[i].ExistingDocument!.Id"
+                                        asp-route-employeeId="@Model.Employee.Id"
+                                        formmethod="post"
+                                        formnovalidate
+                                        class="btn-app btn-danger-app btn-icon"
+                                        onclick="return confirm('Delete this document?');">
+
+                                    <i class="bi bi-trash"></i>
+
+                                </button>
+
+                            </div>
+                        }
+                        else
+                        {
+                            <span class="text-muted">
+                                No document uploaded
+                            </span>
+                        }
+
+                    </div>
+
+                </div>
+            }
+
+        </div>
+
+    </div>
+    <div class="app-card">
+
+        <div class="card-header">
+            <h5 class="card-title">Joining Documents</h5>
+        </div>
+
+        <div class="card-body">
+
+            @for (int i = 0;
+                        i < Model.JoiningDocuments.Count;
+                        i++)
+            {
+                <div class="row align-items-center border-bottom py-3">
+
+                    <div class="col-md-3">
+
+                        <input asp-for="JoiningDocuments[i].DocumentType"
+                               type="hidden" />
+
+                        <strong>
+                            @Model.JoiningDocuments[i].DocumentType
+                        </strong>
+
+                    </div>
+
+                    <div class="col-md-5">
+
+                        <input asp-for="JoiningDocuments[i].File"
+                               type="file"
+                               accept=".pdf,application/pdf"
+                               class="form-control document-pdf-input" />
+
+                        <span asp-validation-for="JoiningDocuments[i].File"
+                              class="validation-message"></span>
+
+                    </div>
+
+                    <div class="col-md-4">
+
+                        @if (Model.JoiningDocuments[i].ExistingDocument != null)
+                        {
+                            <div class="d-flex align-items-center gap-2">
+
+                                <span class="text-success">
+                                    <i class="bi bi-file-earmark-pdf"></i>
+
+                                    @Model.JoiningDocuments[i]
+                                    .ExistingDocument!
+                                    .OriginalFileName
+                                </span>
+
+                                <a asp-action="DownloadDocument"
+                                   asp-route-id="@Model.JoiningDocuments[i].ExistingDocument!.Id"
+                                   class="btn-app btn-primary-app btn-icon"
+                                   title="Download">
+
+                                    <i class="bi bi-download"></i>
+
+                                </a>
+
+                                <button type="submit"
+                                        asp-action="DeleteDocument"
+                                        asp-route-id="@Model.JoiningDocuments[i].ExistingDocument!.Id"
+                                        asp-route-employeeId="@Model.Employee.Id"
+                                        formmethod="post"
+                                        formnovalidate
+                                        class="btn-app btn-danger-app btn-icon"
+                                        onclick="return confirm('Delete this document?');">
+
+                                    <i class="bi bi-trash"></i>
+
+                                </button>
+
+                            </div>
+                        }
+                        else
+                        {
+                            <span class="text-muted">
+                                No document uploaded
+                            </span>
+                        }
+
+                    </div>
+
+                </div>
+            }
+
+            <small class="text-muted d-block mt-3">
+                Uploading a new PDF replaces the previous document.
+            </small>
+
+        </div>
+
     </div>
 
     <div class="app-card">
@@ -462,11 +869,11 @@
                                 </label>
 
                                 @foreach (var document in
-                                    Model.Academics[i].ExistingDocuments)
+                                                        Model.Academics[i].ExistingDocuments)
                                 {
                                     <div class="d-flex align-items-center
-                                        justify-content-between
-                                        border rounded p-2 mb-2">
+                                                    justify-content-between
+                                                    border rounded p-2 mb-2">
 
                                         <div>
                                             <i class="bi bi-file-earmark"></i>
@@ -489,6 +896,7 @@
                                                     asp-route-id="@document.Id"
                                                     asp-route-employeeId="@Model.Employee.Id"
                                                     formmethod="post"
+                                                    formnovalidate
                                                     class="btn-app btn-danger-app btn-icon"
                                                     title="Delete document"
                                                     onclick="return confirm('Delete this document?');">
@@ -537,35 +945,54 @@
 </form>
 
 <script>
-    function loadDesignations(departmentId, selectedDesignationId = null)
-    {
-        fetch('/Employee/GetDesignations?departmentId=' + departmentId)
-            .then(response => response.json())
-            .then(data =>
-            {
-                let dropdown = document.getElementById('designationDropdown');
-                dropdown.innerHTML = '<option value="">Select Designation</option>';
+    document.addEventListener("DOMContentLoaded", function () {
+        const departmentDropdown = document.getElementById("departmentDropdown");
+        const designationDropdown = document.getElementById("designationDropdown");
+        const selectedDesignationId = @Model.Employee.DesignationId;
 
-                data.forEach(function (designation)
-                {
-                    let selected = designation.id == selectedDesignationId ? 'selected' : '';
-                    dropdown.innerHTML += `<option value="${designation.id}" ${selected}>${designation.designationName}</option>`;
+        async function loadDesignations(departmentId, selectedId = 0) {
+            designationDropdown.innerHTML =
+                '<option value="">Select Designation</option>';
+
+            if (!departmentId) {
+                return;
+            }
+
+            try {
+                const response = await fetch(
+                    `/Employee/GetDesignations?departmentId=${departmentId}`
+                );
+
+                if (!response.ok) {
+                    throw new Error("Unable to load designations.");
+                }
+
+                const data = await response.json();
+
+                data.forEach(function (designation) {
+                    const option = document.createElement("option");
+                    option.value = designation.id;
+                    option.textContent = designation.designationName;
+                    option.selected = Number(designation.id) === Number(selectedId);
+                    designationDropdown.appendChild(option);
                 });
-            });
-    }
+            }
+            catch (error) {
+                console.error(error);
+            }
+        }
 
-    document.getElementById('departmentDropdown').addEventListener('change', function ()
-    {
-        loadDesignations(this.value);
+        departmentDropdown.addEventListener("change", function () {
+            loadDesignations(this.value);
+        });
+
+        if (departmentDropdown.value) {
+            loadDesignations(
+                departmentDropdown.value,
+                selectedDesignationId
+            );
+        }
     });
-
-    window.onload = function ()
-    {
-        let departmentId = '@Model.Employee.DepartmentId';
-        let designationId = '@Model.Employee.DesignationId';
-
-        loadDesignations(departmentId, designationId);
-    };
 </script>
 
 <script>
@@ -712,46 +1139,37 @@
 <script>
     document.addEventListener("DOMContentLoaded", async function () {
 
-        const stateDropdown =
-            document.getElementById("stateDropdown");
+        const currentPermanentCity =
+            @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                Model.Employee.City ?? ""));
 
-        const cityDropdown =
-            document.getElementById("cityDropdown");
+        const currentPermanentPin =
+            @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                                                                Model.Employee.PinCode ?? ""));
 
-        const pinCodeInput =
-            document.getElementById("pinCodeInput");
+        const currentLocalCity =
+            @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                                                                Model.Employee.LocalCity ?? ""));
 
-        const pinCodeOptions =
-            document.getElementById("pinCodeOptions");
+        const currentLocalPin =
+            @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                                                                Model.Employee.LocalPinCode ?? ""));
 
-        const currentCity =
-            @Html.Raw(
-                System.Text.Json.JsonSerializer.Serialize(
-                        Model.Employee.City ?? ""
-                )
-                        );
-
-        const currentPinCode =
-            @Html.Raw(
-                                System.Text.Json.JsonSerializer.Serialize(
-                                        Model.Employee.PinCode ?? ""
-                                )
-                        );
-
-        async function loadCities(selectedCity = "") {
+        async function loadCities(
+            stateDropdown,
+            cityDropdown,
+            selectedCity = "") {
 
             cityDropdown.innerHTML =
                 '<option value="">Select City</option>';
 
-            pinCodeOptions.innerHTML = "";
-
-            const selectedStateOption =
+            const selectedState =
                 stateDropdown.options[
                     stateDropdown.selectedIndex
                 ];
 
             const stateId =
-                selectedStateOption?.dataset.stateId;
+                selectedState?.dataset.stateId;
 
             if (!stateId) {
                 cityDropdown.disabled = true;
@@ -787,17 +1205,20 @@
         }
 
         async function loadPincodes(
-            preservePinCode = ""
-        ) {
-            pinCodeOptions.innerHTML = "";
+            cityDropdown,
+            pinList,
+            pinInput,
+            selectedPin = "") {
 
-            const selectedCityOption =
+            pinList.innerHTML = "";
+
+            const selectedCity =
                 cityDropdown.options[
                     cityDropdown.selectedIndex
                 ];
 
             const cityId =
-                selectedCityOption?.dataset.cityId;
+                selectedCity?.dataset.cityId;
 
             if (!cityId) {
                 return;
@@ -820,55 +1241,216 @@
                 option.value = pin.value;
                 option.label = pin.text;
 
-                pinCodeOptions.appendChild(option);
+                pinList.appendChild(option);
             });
 
-            if (preservePinCode) {
-                pinCodeInput.value = preservePinCode;
+            if (selectedPin) {
+                pinInput.value = selectedPin;
             }
         }
 
-        stateDropdown.addEventListener(
-            "change",
-            async function () {
+        function setupLocationSection(
+            stateId,
+            cityId,
+            pinInputId,
+            pinListId) {
 
-                cityDropdown.innerHTML =
-                    '<option value="">Select City</option>';
+            const stateDropdown =
+                document.getElementById(stateId);
 
-                pinCodeOptions.innerHTML = "";
-                pinCodeInput.value = "";
+            const cityDropdown =
+                document.getElementById(cityId);
 
-                await loadCities();
-            }
+            const pinInput =
+                document.getElementById(pinInputId);
+
+            const pinList =
+                document.getElementById(pinListId);
+
+            stateDropdown.addEventListener(
+                "change",
+                async function () {
+
+                    pinInput.value = "";
+                    pinList.innerHTML = "";
+
+                    try {
+                        await loadCities(
+                            stateDropdown,
+                            cityDropdown
+                        );
+                    }
+                    catch (error) {
+                        console.error(error);
+                        alert("Cities could not be loaded.");
+                    }
+                }
+            );
+
+            cityDropdown.addEventListener(
+                "change",
+                async function () {
+
+                    pinInput.value = "";
+
+                    try {
+                        await loadPincodes(
+                            cityDropdown,
+                            pinList,
+                            pinInput
+                        );
+                    }
+                    catch (error) {
+                        console.error(error);
+                        alert("PIN codes could not be loaded.");
+                    }
+                }
+            );
+
+            pinInput.addEventListener(
+                "input",
+                function () {
+
+                    this.value = this.value
+                        .replace(/\D/g, "")
+                        .slice(0, 6);
+                }
+            );
+        }
+
+        const permanentState =
+            document.getElementById(
+                "permanentStateDropdown"
+            );
+
+        const permanentCity =
+            document.getElementById(
+                "permanentCityDropdown"
+            );
+
+        const permanentPin =
+            document.getElementById(
+                "permanentPinCodeInput"
+            );
+
+        const permanentPinList =
+            document.getElementById(
+                "permanentPinCodeOptions"
+            );
+
+        const localState =
+            document.getElementById(
+                "localStateDropdown"
+            );
+
+        const localCity =
+            document.getElementById(
+                "localCityDropdown"
+            );
+
+        const localPin =
+            document.getElementById(
+                "localPinCodeInput"
+            );
+
+        const localPinList =
+            document.getElementById(
+                "localPinCodeOptions"
+            );
+
+        setupLocationSection(
+            "permanentStateDropdown",
+            "permanentCityDropdown",
+            "permanentPinCodeInput",
+            "permanentPinCodeOptions"
         );
 
-        cityDropdown.addEventListener(
-            "change",
-            async function () {
-
-                pinCodeInput.value = "";
-                await loadPincodes();
-            }
-        );
-
-        pinCodeInput.addEventListener(
-            "input",
-            function () {
-
-                this.value = this.value
-                    .replace(/\D/g, "")
-                    .slice(0, 6);
-            }
+        setupLocationSection(
+            "localStateDropdown",
+            "localCityDropdown",
+            "localPinCodeInput",
+            "localPinCodeOptions"
         );
 
         try {
-            if (stateDropdown.value) {
-                await loadCities(currentCity);
-                await loadPincodes(currentPinCode);
+            if (permanentState.value) {
+                await loadCities(
+                    permanentState,
+                    permanentCity,
+                    currentPermanentCity
+                );
+
+                await loadPincodes(
+                    permanentCity,
+                    permanentPinList,
+                    permanentPin,
+                    currentPermanentPin
+                );
+            }
+
+            if (localState.value) {
+                await loadCities(
+                    localState,
+                    localCity,
+                    currentLocalCity
+                );
+
+                await loadPincodes(
+                    localCity,
+                    localPinList,
+                    localPin,
+                    currentLocalPin
+                );
             }
         }
         catch (error) {
-            console.error(error);
+            console.error(
+                "Saved address values could not be loaded.",
+                error
+            );
         }
+
+        const sameAsPermanent =
+            document.getElementById(
+                "sameAsPermanent"
+            );
+
+        sameAsPermanent.addEventListener(
+            "change",
+            async function () {
+
+                if (!this.checked) {
+                    return;
+                }
+
+                document.getElementById(
+                    "localAddress"
+                ).value =
+                    document.getElementById(
+                        "permanentAddress"
+                    ).value;
+
+                localState.value =
+                    permanentState.value;
+
+                await loadCities(
+                    localState,
+                    localCity,
+                    permanentCity.value
+                );
+
+                await loadPincodes(
+                    localCity,
+                    localPinList,
+                    localPin,
+                    permanentPin.value
+                );
+            }
+        );
     });
 </script>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

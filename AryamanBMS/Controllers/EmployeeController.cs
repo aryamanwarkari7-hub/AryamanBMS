@@ -166,10 +166,23 @@ namespace AryamanBMS.Controllers
         {
             await LoadDropdownsAsync();
 
-            var model = new EmployeeFormViewModel();
+            var model = new EmployeeFormViewModel
+            {
+                Employee = new EmployeeModel
+                {
+                    JoiningDate = DateTime.Today,
+                    IsActive = true
+                },
 
-            model.Academics.Add(
-                new EmployeeAcademicInputViewModel());
+                Academics = new List<EmployeeAcademicInputViewModel>
+        {
+            new()
+        },
+
+                StatutoryDocuments = GetStatutoryDocumentInputs(),
+
+                JoiningDocuments = GetJoiningDocumentInputs()
+            };
 
             return View(model);
         }
@@ -214,9 +227,28 @@ namespace AryamanBMS.Controllers
                     "Only one highest qualification is allowed.");
             }
 
+            ValidateFixedPdfDocuments(
+    model.StatutoryDocuments,
+    "StatutoryDocuments");
+
+            ValidateFixedPdfDocuments(
+                model.JoiningDocuments,
+                "JoiningDocuments");
+
             if (!ModelState.IsValid)
             {
+                model.StatutoryDocuments =
+                    RestoreDocumentInputs(
+                        model.StatutoryDocuments,
+                        GetStatutoryDocumentInputs());
+
+                model.JoiningDocuments =
+                    RestoreDocumentInputs(
+                        model.JoiningDocuments,
+                        GetJoiningDocumentInputs());
+
                 await LoadDropdownsAsync();
+
                 return View(model);
             }
 
@@ -268,6 +300,11 @@ namespace AryamanBMS.Controllers
                 {
                     foreach (var file in pair.Input.Documents)
                     {
+                        if (file == null || file.Length == 0)
+                        {
+                            continue;
+                        }
+
                         var document =
                             await _employeeDocumentService.SaveAsync(
                                 file,
@@ -278,6 +315,8 @@ namespace AryamanBMS.Controllers
                         document.EmployeeId = employee.Id;
                         document.EmployeeAcademicId = pair.Entity.Id;
 
+                        document.DocumentCategory = "Academic";
+
                         storedFiles.Add(document.StoragePath);
 
                         await _employeeDocumentRepository
@@ -285,11 +324,34 @@ namespace AryamanBMS.Controllers
                     }
                 }
 
+                int statutoryUploadCount =
+    await SaveFixedDocumentsAsync(
+        model.StatutoryDocuments,
+        employee,
+        "Statutory",
+        storedFiles);
+
+                int joiningUploadCount =
+    await SaveFixedDocumentsAsync(
+        model.JoiningDocuments,
+        employee,
+        "Joining",
+        storedFiles);
+
                 await _employeeDocumentRepository.SaveAsync();
                 await transaction.CommitAsync();
 
+                int totalUploadedDocuments =
+                academicPairs.Sum(x =>
+                    x.Input.Documents?.Count(f =>
+                        f != null && f.Length > 0) ?? 0)
+                + statutoryUploadCount
+                + joiningUploadCount;
+
                 TempData["Success"] =
-                    "Employee created successfully.";
+                    totalUploadedDocuments > 0
+                        ? $"Employee created successfully. {totalUploadedDocuments} document(s) uploaded successfully."
+                        : "Employee created successfully.";
 
                 return RedirectToAction(nameof(Index));
             }
@@ -354,10 +416,31 @@ namespace AryamanBMS.Controllers
                     new EmployeeAcademicInputViewModel());
             }
 
+            var fixedDocuments =
+    await _context.EmployeeDocuments
+        .AsNoTracking()
+        .Where(x =>
+            x.EmployeeId == id &&
+            x.EmployeeAcademicId == null)
+        .ToListAsync();
+
             var model = new EmployeeFormViewModel
             {
                 Employee = employee,
-                Academics = academics
+
+                Academics = academics,
+
+                StatutoryDocuments =
+        BuildFixedDocumentInputs(
+            GetStatutoryDocumentInputs(),
+            fixedDocuments.Where(x =>
+                x.DocumentCategory == "Statutory")),
+
+                JoiningDocuments =
+        BuildFixedDocumentInputs(
+            GetJoiningDocumentInputs(),
+            fixedDocuments.Where(x =>
+                x.DocumentCategory == "Joining"))
             };
 
             await LoadDropdownsAsync();
@@ -428,14 +511,23 @@ namespace AryamanBMS.Controllers
                     "Academics",
                     "Only one highest qualification is allowed.");
             }
+            ValidateFixedPdfDocuments(
+    model.StatutoryDocuments,
+    "StatutoryDocuments");
+
+            ValidateFixedPdfDocuments(
+                model.JoiningDocuments,
+                "JoiningDocuments");
 
             if (!ModelState.IsValid)
             {
                 await ReloadExistingDocumentsAsync(model);
+                await LoadExistingFixedDocumentsAsync(model);
                 await LoadDropdownsAsync();
 
                 return View(model);
             }
+
 
             var newFilePaths = new List<string>();
             var deletedFilePaths = new List<string>();
@@ -548,6 +640,11 @@ namespace AryamanBMS.Controllers
                 {
                     foreach (var file in pair.Input.Documents)
                     {
+                        if (file == null || file.Length == 0)
+                        {
+                            continue;
+                        }
+
                         var document =
                             await _employeeDocumentService.SaveAsync(
                                 file,
@@ -558,6 +655,7 @@ namespace AryamanBMS.Controllers
 
                         document.EmployeeId = existingEmployee.Id;
                         document.EmployeeAcademicId = pair.Entity.Id;
+                        document.DocumentCategory = "Academic";
 
                         newFilePaths.Add(document.StoragePath);
 
@@ -566,16 +664,48 @@ namespace AryamanBMS.Controllers
                     }
                 }
 
+                int statutoryUploadCount =
+                    await ReplaceFixedDocumentsAsync(
+                        model.StatutoryDocuments,
+                        existingEmployee,
+                        "Statutory",
+                        newFilePaths,
+                        deletedFilePaths);
+
+                int joiningUploadCount =
+                    await ReplaceFixedDocumentsAsync(
+                        model.JoiningDocuments,
+                        existingEmployee,
+                        "Joining",
+                        newFilePaths,
+                        deletedFilePaths);
+
+                await _employeeRepository.SaveAsync();
                 await _employeeDocumentRepository.SaveAsync();
                 await transaction.CommitAsync();
 
                 foreach (var path in deletedFilePaths)
                 {
-                    await _employeeDocumentService.DeleteAsync(path);
+                    if (!string.IsNullOrWhiteSpace(path))
+                    {
+                        await _employeeDocumentService.DeleteAsync(path);
+                    }
                 }
 
+                int academicUploadCount =
+                    academicPairs.Sum(x =>
+                        x.Input.Documents?.Count(file =>
+                            file != null && file.Length > 0) ?? 0);
+
+                int totalUploadedDocuments =
+                    academicUploadCount +
+                    statutoryUploadCount +
+                    joiningUploadCount;
+
                 TempData["Success"] =
-                    "Employee updated successfully.";
+                    totalUploadedDocuments > 0
+                        ? $"Employee updated successfully. {totalUploadedDocuments} document(s) uploaded successfully."
+                        : "Employee updated successfully.";
 
                 return RedirectToAction(
                     nameof(Details),
@@ -595,6 +725,7 @@ namespace AryamanBMS.Controllers
                     $"Employee could not be updated: {ex.Message}");
 
                 await ReloadExistingDocumentsAsync(model);
+                await LoadExistingFixedDocumentsAsync(model);
                 await LoadDropdownsAsync();
 
                 return View(model);
@@ -694,6 +825,37 @@ namespace AryamanBMS.Controllers
                     .GetActiveStatesAsync();
         }
 
+        private static List<EmployeeDocumentInputViewModel>
+    GetStatutoryDocumentInputs()
+        {
+            return new List<EmployeeDocumentInputViewModel>
+    {
+        new() { DocumentType = "Aadhaar Card" },
+        new() { DocumentType = "PAN Card" },
+        new() { DocumentType = "UAN Document" },
+        new() { DocumentType = "ESIC Document" }
+    };
+        }
+
+        private static List<EmployeeDocumentInputViewModel>
+            GetJoiningDocumentInputs()
+        {
+            return new List<EmployeeDocumentInputViewModel>
+    {
+        new() { DocumentType = "Resume / CV" },
+        new() { DocumentType = "Offer Letter" },
+        new() { DocumentType = "Appointment Letter" },
+        new() { DocumentType = "Joining Form" },
+        new() { DocumentType = "Relieving Letter" },
+        new() { DocumentType = "Experience Letter" },
+        new() { DocumentType = "Salary Slip" },
+        new() { DocumentType = "Bank Proof" },
+        new() { DocumentType = "Address Proof" },
+        new() { DocumentType = "Signed NDA" },
+        new() { DocumentType = "Other Joining Document" }
+    };
+        }
+
         // Excel Export
         [HttpGet]
         [Authorize(Roles = "Admin,HR")]
@@ -741,7 +903,7 @@ namespace AryamanBMS.Controllers
                     employee.EmployeeCode;
 
                 worksheet.Cell(row, 2).Value =
-                    employee.FullName;
+    employee.FullName;
 
                 worksheet.Cell(row, 3).Value =
                     employee.Department?.DepartmentName;
@@ -755,8 +917,18 @@ namespace AryamanBMS.Controllers
                 worksheet.Cell(row, 6).Value =
                     employee.OfficialEmail;
 
-                worksheet.Cell(row, 7).Value =
-                    employee.JoiningDate;
+                if (employee.JoiningDate >= new DateTime(1900, 1, 1))
+                {
+                    worksheet.Cell(row, 7).Value =
+                        employee.JoiningDate;
+
+                    worksheet.Cell(row, 7).Style.DateFormat.Format =
+                        "dd-MM-yyyy";
+                }
+                else
+                {
+                    worksheet.Cell(row, 7).Value = "";
+                }
 
                 worksheet.Cell(row, 8).Value =
                     employee.IsActive ? "Active" : "Inactive";
@@ -901,5 +1073,230 @@ namespace AryamanBMS.Controllers
                         .ToListAsync();
             }
         }
+
+        private static List<EmployeeDocumentInputViewModel>
+    RestoreDocumentInputs(
+        List<EmployeeDocumentInputViewModel>? submittedDocuments,
+        List<EmployeeDocumentInputViewModel> defaultDocuments)
+        {
+            submittedDocuments ??=
+                new List<EmployeeDocumentInputViewModel>();
+
+            foreach (var defaultDocument in defaultDocuments)
+            {
+                var submittedDocument =
+                    submittedDocuments.FirstOrDefault(x =>
+                        x.DocumentType == defaultDocument.DocumentType);
+
+                if (submittedDocument == null)
+                {
+                    submittedDocuments.Add(defaultDocument);
+                }
+            }
+
+            return submittedDocuments;
+        }
+
+        private void ValidateFixedPdfDocuments(
+    List<EmployeeDocumentInputViewModel>? documents,
+    string modelKey)
+        {
+            if (documents == null)
+            {
+                return;
+            }
+
+            const long maximumFileSize = 5 * 1024 * 1024;
+
+            for (int i = 0; i < documents.Count; i++)
+            {
+                var file = documents[i].File;
+
+                if (file == null || file.Length == 0)
+                {
+                    continue;
+                }
+
+                var extension =
+                    Path.GetExtension(file.FileName).ToLowerInvariant();
+
+                if (extension != ".pdf")
+                {
+                    ModelState.AddModelError(
+                        $"{modelKey}[{i}].File",
+                        $"{documents[i].DocumentType} must be a PDF file.");
+                }
+
+                if (!string.Equals(
+                        file.ContentType,
+                        "application/pdf",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    ModelState.AddModelError(
+                        $"{modelKey}[{i}].File",
+                        $"{documents[i].DocumentType} has an invalid file type.");
+                }
+
+                if (file.Length > maximumFileSize)
+                {
+                    ModelState.AddModelError(
+                        $"{modelKey}[{i}].File",
+                        $"{documents[i].DocumentType} cannot exceed 5 MB.");
+                }
+            }
+        }
+
+        private async Task<int> SaveFixedDocumentsAsync(
+    List<EmployeeDocumentInputViewModel>? documentInputs,
+    EmployeeModel employee,
+    string documentCategory,
+    List<string> storedFiles)
+        {
+            if (documentInputs == null)
+            {
+                return 0;
+            }
+
+            int uploadedCount = 0;
+
+            foreach (var input in documentInputs)
+            {
+                var file = input.File;
+
+                if (file == null || file.Length == 0)
+                {
+                    continue;
+                }
+
+                var document =
+                    await _employeeDocumentService.SaveAsync(
+                        file,
+                        employee.EmployeeCode ?? $"EMP{employee.Id}",
+                        input.DocumentType,
+                        User.Identity?.Name);
+
+                document.EmployeeId = employee.Id;
+                document.EmployeeAcademicId = null;
+                document.DocumentCategory = documentCategory;
+
+                storedFiles.Add(document.StoragePath);
+
+                await _employeeDocumentRepository.AddAsync(document);
+
+                uploadedCount++;
+            }
+
+            return uploadedCount;
+        }
+
+        private static List<EmployeeDocumentInputViewModel>
+    BuildFixedDocumentInputs(
+        List<EmployeeDocumentInputViewModel> defaults,
+        IEnumerable<EmployeeDocumentModel> existingDocuments)
+        {
+            var existingList = existingDocuments.ToList();
+
+            foreach (var item in defaults)
+            {
+                item.ExistingDocument =
+                    existingList.FirstOrDefault(x =>
+                        x.DocumentType == item.DocumentType);
+            }
+
+            return defaults;
+        }
+
+        private async Task LoadExistingFixedDocumentsAsync(
+    EmployeeFormViewModel model)
+        {
+            var existingDocuments =
+                await _context.EmployeeDocuments
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.EmployeeId == model.Employee.Id &&
+                        x.EmployeeAcademicId == null)
+                    .ToListAsync();
+
+            model.StatutoryDocuments =
+                BuildFixedDocumentInputs(
+                    RestoreDocumentInputs(
+                        model.StatutoryDocuments,
+                        GetStatutoryDocumentInputs()),
+                    existingDocuments.Where(x =>
+                        x.DocumentCategory == "Statutory"));
+
+            model.JoiningDocuments =
+                BuildFixedDocumentInputs(
+                    RestoreDocumentInputs(
+                        model.JoiningDocuments,
+                        GetJoiningDocumentInputs()),
+                    existingDocuments.Where(x =>
+                        x.DocumentCategory == "Joining"));
+        }
+
+        private async Task<int> ReplaceFixedDocumentsAsync(
+            List<EmployeeDocumentInputViewModel>? inputs,
+            EmployeeModel employee,
+            string category,
+            List<string> newlyStoredFiles,
+            List<string> deletedFilePaths)
+        {
+            if (inputs == null)
+            {
+                return 0;
+            }
+
+            int uploadedCount = 0;
+
+            foreach (var input in inputs)
+            {
+                if (input.File == null || input.File.Length == 0)
+                {
+                    continue;
+                }
+
+                var existingDocument =
+                    await _context.EmployeeDocuments
+                        .FirstOrDefaultAsync(x =>
+                            x.EmployeeId == employee.Id &&
+                            x.EmployeeAcademicId == null &&
+                            x.DocumentCategory == category &&
+                            x.DocumentType == input.DocumentType);
+
+                var newDocument =
+                    await _employeeDocumentService.SaveAsync(
+                        input.File,
+                        employee.EmployeeCode ?? $"EMP{employee.Id}",
+                        input.DocumentType,
+                        User.Identity?.Name);
+
+                newDocument.EmployeeId = employee.Id;
+                newDocument.EmployeeAcademicId = null;
+                newDocument.DocumentCategory = category;
+
+                newlyStoredFiles.Add(newDocument.StoragePath);
+
+                await _employeeDocumentRepository.AddAsync(
+                    newDocument);
+
+                if (existingDocument != null)
+                {
+                    if (!string.IsNullOrWhiteSpace(
+                            existingDocument.StoragePath))
+                    {
+                        deletedFilePaths.Add(
+                            existingDocument.StoragePath);
+                    }
+
+                    await _employeeDocumentRepository.DeleteAsync(
+                        existingDocument);
+                }
+
+                uploadedCount++;
+            }
+
+            return uploadedCount;
+        }
     }
+
 }
