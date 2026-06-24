@@ -32,6 +32,13 @@
     </div>
 </div>
 
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
 @* @if (TempData["Success"] != null)
 {
     <div class="app-alert-success">

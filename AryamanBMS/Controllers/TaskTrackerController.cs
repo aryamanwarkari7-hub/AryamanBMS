@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,HR")]
+    [Authorize(Roles = "Admin,HR,ProjectManager")]
     public class TaskTrackerController : Controller
     {
         private readonly IProjectTaskRepository _projectTaskRepository;
@@ -86,8 +86,10 @@ namespace AryamanBMS.Controllers
             await _progressRepository.AddAsync(model);
             await _progressRepository.SaveAsync();
 
+            await SyncProjectTaskAsync(model.ProjectTaskId);
+
             TempData["Success"] =
-                "Task progress added successfully.";
+                "Task progress addedand project task updated successfully.";
 
             return RedirectToAction(
                 nameof(Index),
@@ -138,6 +140,7 @@ namespace AryamanBMS.Controllers
 
             if (existing == null)
                 return NotFound();
+            int previousProjectTaskId = existing.ProjectTaskId;
 
             existing.ProjectTaskId = model.ProjectTaskId;
             existing.ProgressDate = model.ProgressDate;
@@ -152,8 +155,14 @@ namespace AryamanBMS.Controllers
             await _progressRepository.UpdateAsync(existing);
             await _progressRepository.SaveAsync();
 
-            TempData["Success"] =
-                "Task progress updated successfully.";
+            await SyncProjectTaskAsync(existing.ProjectTaskId);
+
+            if (previousProjectTaskId != existing.ProjectTaskId)
+            {
+                await SyncProjectTaskAsync(previousProjectTaskId);
+            }
+
+            TempData["Success"] = "Task progress and project task updated successfully.";
 
             return RedirectToAction(
                 nameof(Index),
@@ -187,8 +196,10 @@ namespace AryamanBMS.Controllers
             await _progressRepository.DeleteAsync(progress);
             await _progressRepository.SaveAsync();
 
+            await SyncProjectTaskAsync(projectTaskId);
+
             TempData["Success"] =
-                "Task progress deleted successfully.";
+               "Task progress deleted and project task recalculated successfully.";
 
             return RedirectToAction(
                 nameof(Index),
@@ -219,12 +230,55 @@ namespace AryamanBMS.Controllers
                     "Please select a valid project task.");
             }
 
+
+
             if (model.ProgressDate.Date > DateTime.Today)
             {
                 ModelState.AddModelError(
                     nameof(model.ProgressDate),
                     "Progress date cannot be in the future.");
             }
+        }
+
+        private async Task SyncProjectTaskAsync(int projectTaskId)
+        {
+            var task =
+                await _projectTaskRepository.GetByIdAsync(projectTaskId);
+
+            if (task == null)
+                return;
+
+            var activeProgressRecords =
+                _progressRepository.ProjectTaskProgresses
+                    .Where(p =>
+                        p.ProjectTaskId == projectTaskId &&
+                        p.IsActive);
+
+            task.ActualHours =
+                await activeProgressRecords
+                    .SumAsync(p => (decimal?)p.HoursWorked)
+                ?? 0;
+
+            var latestProgress =
+                await activeProgressRecords
+                    .OrderByDescending(p => p.ProgressDate)
+                    .ThenByDescending(p => p.Id)
+                    .FirstOrDefaultAsync();
+
+            task.ProgressPercent =
+                latestProgress?.CompletionPercentage ?? 0;
+
+            task.Status = task.ProgressPercent switch
+            {
+                >= 100 => "Completed",
+                > 0 => "In Progress",
+                _ => "Not Started"
+            };
+
+            task.UpdatedOn = DateTime.Now;
+
+            await _projectTaskRepository.UpdateAsync(task);
+            await _projectTaskRepository.SaveAsync();
         }
     }
 }

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,HR")]
+    [Authorize(Roles = "Admin,HR,ProjectManager")]
     public class ProjectTaskController : Controller
     {
         private readonly IProjectRepository _projectRepository;

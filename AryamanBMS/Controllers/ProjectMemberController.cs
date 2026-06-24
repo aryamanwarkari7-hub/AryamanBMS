@@ -6,40 +6,33 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,HR")]
+    [Authorize(Roles = "Admin,HR,ProjectManager")]
     public class ProjectMemberController : Controller
     {
         private readonly IProjectRepository _projectRepository;
         private readonly IProjectMemberRepository _projectMemberRepository;
         private readonly IEmployeeRepository _employeeRepository;
+        private readonly IProjectTaskRepository _projectTaskRepository;
 
         public ProjectMemberController(
             IProjectRepository projectRepository,
             IProjectMemberRepository projectMemberRepository,
-            IEmployeeRepository employeeRepository)
+            IEmployeeRepository employeeRepository,
+            IProjectTaskRepository projectTaskRepository)
         {
             _projectRepository = projectRepository;
             _projectMemberRepository = projectMemberRepository;
             _employeeRepository = employeeRepository;
+            _projectTaskRepository = projectTaskRepository;
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index(int projectId)
+        [HttpGet]
+        public IActionResult Index(int? projectId)
         {
-            var project = await _projectRepository.GetDetailsAsync(projectId);
-
-            if (project == null)
-                return NotFound();
-
-            var members = await _projectMemberRepository.ProjectMembers
-                .Where(pm => pm.ProjectId == projectId)
-                .OrderBy(pm => pm.Employee!.FirstName)
-                .ThenBy(pm => pm.Employee!.LastName)
-                .ToListAsync();
-
-            ViewBag.Project = project;
-
-            return View(members);
+            return RedirectToAction(
+                nameof(AllMembers),
+                new { projectId });
         }
 
         [HttpGet]
@@ -102,7 +95,7 @@ namespace AryamanBMS.Controllers
                 "Project member added successfully.";
 
             return RedirectToAction(
-                nameof(Index),
+                nameof(AllMembers),
                 new { projectId = model.ProjectId });
         }
 
@@ -128,8 +121,24 @@ namespace AryamanBMS.Controllers
                     "The project manager cannot be removed from project members.";
 
                 return RedirectToAction(
-                    nameof(Index),
+                    nameof(AllMembers),
                     new { projectId = member.ProjectId });
+            }
+
+            bool hasAssignedTasks = await _projectTaskRepository.ProjectTasks
+            .AnyAsync(t =>
+            t.ProjectId == member.ProjectId &&
+            t.AssignedEmployeeId == member.EmployeeId &&
+            t.IsActive);
+
+            if (hasAssignedTasks)
+            {
+                TempData["Error"] =
+                    "This member has active assigned tasks. Reassign those tasks before removing the member.";
+
+                return RedirectToAction(
+                   nameof(AllMembers),
+                   new { projectId = member.ProjectId });
             }
 
             int projectId = member.ProjectId;
@@ -141,8 +150,8 @@ namespace AryamanBMS.Controllers
                 "Project member removed successfully.";
 
             return RedirectToAction(
-                nameof(Index),
-                new { projectId });
+                  nameof(AllMembers),
+                  new { projectId });
         }
 
         private async Task LoadAvailableEmployeesAsync(int projectId)
@@ -170,7 +179,7 @@ namespace AryamanBMS.Controllers
     int page = 1)
         {
             const int pageSize = 10;
-
+            page = Math.Max(page, 1);
             var members = _projectMemberRepository.ProjectMembers;
 
             if (projectId.HasValue)
@@ -195,6 +204,13 @@ namespace AryamanBMS.Controllers
             }
 
             int totalRecords = await members.CountAsync();
+            int totalPages =
+             (int)Math.Ceiling(totalRecords / (double)pageSize);
+
+            if (totalPages > 0 && page > totalPages)
+            {
+                page = totalPages;
+            }
 
             var data = await members
                 .OrderBy(pm => pm.Project!.ProjectName)
@@ -212,8 +228,7 @@ namespace AryamanBMS.Controllers
             ViewBag.ProjectId = projectId;
             ViewBag.SearchText = searchText;
             ViewBag.CurrentPage = page;
-            ViewBag.TotalPages =
-                (int)Math.Ceiling(totalRecords / (double)pageSize);
+            ViewBag.TotalPages = totalPages;
 
             return View(data);
         }

@@ -6,15 +6,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,HR")]
+    [Authorize(Roles = "Admin,HR,ProjectManager")]
     public class RiskController : Controller
     {
         private readonly IProjectRiskRepository _riskRepository;
-
+        private readonly IProjectMemberRepository _projectMemberRepository;
         public RiskController(
-            IProjectRiskRepository riskRepository)
+         IProjectRiskRepository riskRepository,
+         IProjectMemberRepository projectMemberRepository)
         {
             _riskRepository = riskRepository;
+            _projectMemberRepository = projectMemberRepository;
         }
 
         [HttpGet]
@@ -83,7 +85,7 @@ namespace AryamanBMS.Controllers
         [HttpGet]
         public async Task<IActionResult> Create(int? projectId)
         {
-            await LoadDropdownsAsync();
+            await LoadDropdownsAsync(projectId);
 
             return View(new ProjectRiskModel
             {
@@ -109,7 +111,7 @@ namespace AryamanBMS.Controllers
 
             if (!ModelState.IsValid)
             {
-                await LoadDropdownsAsync();
+                await LoadDropdownsAsync(model.ProjectId);
                 return View(model);
             }
 
@@ -167,7 +169,7 @@ namespace AryamanBMS.Controllers
             if (risk == null)
                 return NotFound();
 
-            await LoadDropdownsAsync();
+            await LoadDropdownsAsync(risk.ProjectId);
 
             return View(risk);
         }
@@ -183,7 +185,7 @@ namespace AryamanBMS.Controllers
 
             if (!ModelState.IsValid)
             {
-                await LoadDropdownsAsync();
+                await LoadDropdownsAsync(model.ProjectId);
                 return View(model);
             }
 
@@ -272,13 +274,21 @@ namespace AryamanBMS.Controllers
                 new { projectId });
         }
 
-        private async Task LoadDropdownsAsync()
+        private async Task LoadDropdownsAsync(int? projectId = null)
         {
             ViewBag.Projects =
                 await _riskRepository.GetActiveProjectsAsync();
 
-            ViewBag.Employees =
-                await _riskRepository.GetActiveEmployeesAsync();
+            if (projectId.HasValue && projectId.Value > 0)
+            {
+                ViewBag.Employees =
+                    await GetProjectMembersAsync(projectId.Value);
+            }
+            else
+            {
+                ViewBag.Employees =
+                    new List<EmployeeModel>();
+            }
         }
 
         private static void CalculateRisk(
@@ -314,18 +324,19 @@ namespace AryamanBMS.Controllers
 
             if (model.RiskOwnerEmployeeId.HasValue)
             {
-                var employees =
-                    await _riskRepository.GetActiveEmployeesAsync();
+                bool isProjectMember =
+                    await _projectMemberRepository.ProjectMembers
+                        .AnyAsync(pm =>
+                            pm.ProjectId == model.ProjectId &&
+                            pm.EmployeeId ==
+                                model.RiskOwnerEmployeeId.Value &&
+                            pm.IsActive);
 
-                bool employeeExists =
-                    employees.Any(e =>
-                        e.Id == model.RiskOwnerEmployeeId.Value);
-
-                if (!employeeExists)
+                if (!isProjectMember)
                 {
                     ModelState.AddModelError(
                         nameof(model.RiskOwnerEmployeeId),
-                        "Please select a valid risk owner.");
+                        "The risk owner must be an active member of the selected project.");
                 }
             }
 
@@ -384,6 +395,21 @@ namespace AryamanBMS.Controllers
                     nameof(model.ResolutionRemarks),
                     "Resolution remarks are required when the risk is resolved.");
             }
+        }
+
+        private async Task<List<EmployeeModel>> GetProjectMembersAsync(
+    int projectId)
+        {
+            return await _projectMemberRepository.ProjectMembers
+                .Where(pm =>
+                    pm.ProjectId == projectId &&
+                    pm.IsActive &&
+                    pm.Employee != null &&
+                    pm.Employee.IsActive)
+                .OrderBy(pm => pm.Employee!.FirstName)
+                .ThenBy(pm => pm.Employee!.LastName)
+                .Select(pm => pm.Employee!)
+                .ToListAsync();
         }
     }
 }

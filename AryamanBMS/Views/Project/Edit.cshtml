@@ -10,7 +10,9 @@
         <p class="module-subtitle">Update project information</p>
     </div>
 
-    <a asp-action="Index" class="btn-app btn-secondary-app">
+    <a asp-action="Details"
+       asp-route-id="@Model.Id"
+       class="btn-app btn-secondary-app">
         Back
     </a>
 </div>
@@ -164,9 +166,10 @@
                     Save Project
                 </button>
 
-                <a asp-action="Index"
+                <a asp-action="Details"
+                   asp-route-id="@Model.Id"
                    class="btn-app btn-secondary-app">
-                    Cancel
+                    Back
                 </a>
             </div>
         </div>

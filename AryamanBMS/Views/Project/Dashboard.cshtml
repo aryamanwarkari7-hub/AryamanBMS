@@ -1,0 +1,288 @@
+﻿@model AryamanBMS.ViewModels.ProjectDashboardViewModel
+
+@{
+    ViewData["Title"] = "Project Dashboard";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Project Dashboard</h1>
+
+        <p class="module-subtitle">
+            @Model.Project.ProjectCode -
+            @Model.Project.ProjectName
+        </p>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2">
+
+        <a asp-action="Details"
+           asp-route-id="@Model.Project.Id"
+           class="btn-app btn-secondary-app">
+
+            <i class="bi bi-arrow-left"></i>
+            Project Details
+
+        </a>
+
+        <a asp-controller="ProjectTask"
+           asp-action="Index"
+           asp-route-projectId="@Model.Project.Id"
+           class="btn-app btn-primary-app">
+
+            <i class="bi bi-list-task"></i>
+            View Tasks
+
+        </a>
+
+    </div>
+
+</div>
+
+<div class="row g-3 mb-4">
+
+    <div class="col-xl-3 col-md-6">
+        <div class="app-card h-100">
+            <div class="card-body">
+                <div class="text-muted">Active Members</div>
+                <h2 class="mb-0">@Model.ActiveMemberCount</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="app-card h-100">
+            <div class="card-body">
+                <div class="text-muted">Total Tasks</div>
+                <h2 class="mb-0">@Model.TotalTaskCount</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="app-card h-100">
+            <div class="card-body">
+                <div class="text-muted">Completed Tasks</div>
+                <h2 class="mb-0">@Model.CompletedTaskCount</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="app-card h-100">
+            <div class="card-body">
+                <div class="text-muted">Overdue Tasks</div>
+                <h2 class="mb-0">@Model.OverdueTaskCount</h2>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="row g-3 mb-4">
+
+    <div class="col-lg-6">
+
+        <div class="app-card h-100">
+
+            <div class="card-header">
+                <h5 class="card-title">Task Progress</h5>
+            </div>
+
+            <div class="card-body">
+
+                <div class="mb-2 d-flex justify-content-between">
+                    <span>Overall Progress</span>
+                    <strong>@Model.OverallProgress.ToString("0.##")%</strong>
+                </div>
+
+                <div class="progress mb-4"
+                     style="height: 18px;">
+
+                    <div class="progress-bar"
+                         role="progressbar"
+                         style="width: @Model.OverallProgress%;"
+                         aria-valuenow="@Model.OverallProgress"
+                         aria-valuemin="0"
+                         aria-valuemax="100">
+
+                        @Model.OverallProgress.ToString("0")%
+
+                    </div>
+
+                </div>
+
+                <table class="app-table">
+                    <tbody>
+
+                        <tr>
+                            <th>Not Started</th>
+                            <td>@Model.NotStartedTaskCount</td>
+                        </tr>
+
+                        <tr>
+                            <th>In Progress</th>
+                            <td>@Model.InProgressTaskCount</td>
+                        </tr>
+
+                        <tr>
+                            <th>Completed</th>
+                            <td>@Model.CompletedTaskCount</td>
+                        </tr>
+
+                        <tr>
+                            <th>Overdue</th>
+                            <td>@Model.OverdueTaskCount</td>
+                        </tr>
+
+                    </tbody>
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-lg-6">
+
+        <div class="app-card h-100">
+
+            <div class="card-header">
+                <h5 class="card-title">Hours Summary</h5>
+            </div>
+
+            <div class="card-body">
+
+                <table class="app-table">
+                    <tbody>
+
+                        <tr>
+                            <th>Estimated Hours</th>
+                            <td>@Model.EstimatedHours.ToString("N2")</td>
+                        </tr>
+
+                        <tr>
+                            <th>Actual Hours</th>
+                            <td>@Model.ActualHours.ToString("N2")</td>
+                        </tr>
+
+                        <tr>
+                            <th>Variance</th>
+                            <td>
+                                @{
+                                    decimal variance =
+                                    Model.EstimatedHours -
+                                    Model.ActualHours;
+                                }
+
+                                @variance.ToString("N2")
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Current Flow Stage</th>
+                            <td>@Model.CurrentFlowStage</td>
+                        </tr>
+
+                        <tr>
+                            <th>Flow Status</th>
+                            <td>@Model.CurrentFlowStatus</td>
+                        </tr>
+
+                    </tbody>
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="row g-3">
+
+    <div class="col-lg-6">
+
+        <div class="app-card h-100">
+
+            <div class="card-header">
+                <h5 class="card-title">Risk Summary</h5>
+            </div>
+
+            <div class="card-body">
+
+                <table class="app-table">
+                    <tbody>
+
+                        <tr>
+                            <th>Open Risks</th>
+                            <td>@Model.OpenRiskCount</td>
+                        </tr>
+
+                        <tr>
+                            <th>Critical Risks</th>
+                            <td>@Model.CriticalRiskCount</td>
+                        </tr>
+
+                    </tbody>
+                </table>
+
+                <div class="mt-3">
+                    <a asp-controller="Risk"
+                       asp-action="Index"
+                       asp-route-projectId="@Model.Project.Id"
+                       class="btn-app btn-secondary-app">
+
+                        View Risk Register
+
+                    </a>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-lg-6">
+
+        <div class="app-card h-100">
+
+            <div class="card-header">
+                <h5 class="card-title">Meeting Summary</h5>
+            </div>
+
+            <div class="card-body">
+
+                <table class="app-table">
+                    <tbody>
+
+                        <tr>
+                            <th>Upcoming Meetings</th>
+                            <td>@Model.UpcomingMeetingCount</td>
+                        </tr>
+
+                    </tbody>
+                </table>
+
+                <div class="mt-3">
+                    <a asp-controller="MOM"
+                       asp-action="Index"
+                       asp-route-projectId="@Model.Project.Id"
+                       class="btn-app btn-secondary-app">
+
+                        View MOM Tracker
+
+                    </a>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

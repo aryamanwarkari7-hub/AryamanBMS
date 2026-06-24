@@ -1,9 +1,17 @@
 ﻿@model AryamanBMS.Models.ProjectMemberModel
+@using AryamanBMS.Models
 
 @{
     ViewData["Title"] = "Add Project Member";
-    var project = ViewBag.Project as AryamanBMS.Models.ProjectModel;
+
+    var project =
+        ViewBag.Project as ProjectModel;
+
+    var employees =
+        ViewBag.Employees as IEnumerable<EmployeeModel>
+        ?? Enumerable.Empty<EmployeeModel>();
 }
+
 
 <div class="module-header">
     <div>
@@ -15,7 +23,7 @@
         </p>
     </div>
 
-    <a asp-action="Index"
+    <a asp-action="AllMembers"
        asp-route-projectId="@Model.ProjectId"
        class="btn-app btn-secondary-app">
         Back
@@ -54,7 +62,7 @@
                             Select Employee
                         </option>
 
-                        @foreach (var employee in ViewBag.Employees)
+                        @foreach (var employee in employees)
                         {
                             <option value="@employee.Id">
                                 @employee.EmployeeCode - @employee.FullName
@@ -93,7 +101,7 @@
                 Add Member
             </button>
 
-            <a asp-action="Index"
+            <a asp-action="AllMembers"
                asp-route-projectId="@Model.ProjectId"
                class="btn-app btn-secondary-app">
                 Cancel

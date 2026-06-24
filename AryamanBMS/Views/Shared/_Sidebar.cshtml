@@ -572,20 +572,21 @@
 
                     <div class="submenu">
 
+                        @* <a asp-controller="Project"
+                           asp-action="Dashboard"
+                           class="submenu-item @(currentController == "Project" && currentAction == "Dashboard" ? "active-menu" : "")">
+
+                            <i class="bi bi-speedometer2"></i>
+                            <span>Dashboard</span>
+
+                        </a> *@
+
                         <a asp-controller="Project"
                            asp-action="Index"
                            class="submenu-item @(currentController == "Project" ? "active-menu" : "")">
 
                             <i class="bi bi-kanban"></i>
                             <span>Projects</span>
-
-                        </a>
-                        <a asp-controller="ProjectTask"
-                           asp-action="Index"
-                           class="submenu-item @(currentController == "ProjectTask" ? "active-menu" : "")">
-
-                            <i class="bi bi-list-task"></i>
-                            <span>Project Tasks</span>
 
                         </a>
                         <a asp-controller="ProjectMember"
@@ -596,12 +597,12 @@
                             <span>Project Members</span>
 
                         </a>
-                        <a asp-controller="ProjectFlow"
+                        <a asp-controller="ProjectTask"
                            asp-action="Index"
-                           class="submenu-item @(currentController == "ProjectFlow" ? "active-menu" : "")">
+                           class="submenu-item @(currentController == "ProjectTask" ? "active-menu" : "")">
 
-                            <i class="bi bi-diagram-3"></i>
-                            <span>Project Flow</span>
+                            <i class="bi bi-list-task"></i>
+                            <span>Project Tasks</span>
 
                         </a>
                         <a asp-controller="TaskTracker"
@@ -612,6 +613,15 @@
                             <span>Task Tracker</span>
 
                         </a>
+                        <a asp-controller="ProjectFlow"
+                           asp-action="Index"
+                           class="submenu-item @(currentController == "ProjectFlow" ? "active-menu" : "")">
+
+                            <i class="bi bi-diagram-3"></i>
+                            <span>Project Flow</span>
+
+                        </a>
+                        
                         <a asp-controller="MOM"
                            asp-action="Index"
                            class="submenu-item @(currentController == "MOM" ? "active-menu" : "")">

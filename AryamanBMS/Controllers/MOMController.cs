@@ -7,15 +7,18 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,HR")]
+    [Authorize(Roles = "Admin,HR,ProjectManager")]
     public class MOMController : Controller
     {
         private readonly IProjectMeetingRepository _meetingRepository;
+        private readonly IProjectMemberRepository _projectMemberRepository;
 
         public MOMController(
-            IProjectMeetingRepository meetingRepository)
+           IProjectMeetingRepository meetingRepository,
+           IProjectMemberRepository projectMemberRepository)
         {
             _meetingRepository = meetingRepository;
+            _projectMemberRepository = projectMemberRepository;
         }
 
         [HttpGet]
@@ -126,8 +129,7 @@ namespace AryamanBMS.Controllers
             var viewModel = new ProjectMeetingDetailsViewModel
             {
                 Meeting = meeting,
-                Employees =
-                    await _meetingRepository.GetActiveEmployeesAsync()
+                Employees = await GetProjectMembersAsync(meeting.ProjectId)
             };
 
             return View(viewModel);
@@ -240,14 +242,14 @@ namespace AryamanBMS.Controllers
             if (meeting == null)
                 return NotFound();
 
-            bool employeeExists =
-                (await _meetingRepository.GetActiveEmployeesAsync())
-                .Any(e => e.Id == employeeId);
+            bool employeeExists = await IsActiveProjectMemberAsync(
+                     meeting.ProjectId,
+                     employeeId);
 
             if (!employeeExists)
             {
                 TempData["Error"] =
-                    "Please select a valid employee.";
+                    "The selected employee must be an active member of this project.";
 
                 return RedirectToAction(
                     nameof(Details),
@@ -366,8 +368,16 @@ namespace AryamanBMS.Controllers
             if (actionItem == null)
                 return NotFound();
 
+            var meeting =
+                await _meetingRepository.GetByIdAsync(
+                    actionItem.MeetingId);
+
+            if (meeting == null)
+                return NotFound();
+
             ViewBag.Employees =
-                await _meetingRepository.GetActiveEmployeesAsync();
+                await GetProjectMembersAsync(
+                    meeting.ProjectId);
 
             return View(actionItem);
         }
@@ -547,19 +557,44 @@ namespace AryamanBMS.Controllers
 
             if (model.AssignedEmployeeId.HasValue)
             {
-                bool employeeExists =
-                    (await _meetingRepository
-                        .GetActiveEmployeesAsync())
-                    .Any(e =>
-                        e.Id == model.AssignedEmployeeId.Value);
+                bool isProjectMember =
+                    await IsActiveProjectMemberAsync(
+                        meeting.ProjectId,
+                        model.AssignedEmployeeId.Value);
 
-                if (!employeeExists)
+                if (!isProjectMember)
                 {
                     ModelState.AddModelError(
                         nameof(model.AssignedEmployeeId),
-                        "Please select a valid employee.");
+                        "The assigned employee must be an active member of this project.");
                 }
             }
+        }
+
+        private async Task<List<EmployeeModel>> GetProjectMembersAsync(
+         int projectId)
+        {
+            return await _projectMemberRepository.ProjectMembers
+            .Where(pm =>
+                pm.ProjectId == projectId &&
+                pm.IsActive &&
+                pm.Employee != null &&
+                pm.Employee.IsActive)
+            .OrderBy(pm => pm.Employee!.FirstName)
+            .ThenBy(pm => pm.Employee!.LastName)
+            .Select(pm => pm.Employee!)
+            .ToListAsync();
+        }
+
+        private async Task<bool> IsActiveProjectMemberAsync(
+            int projectId,
+            int employeeId)
+        {
+            return await _projectMemberRepository.ProjectMembers
+                .AnyAsync(pm =>
+                    pm.ProjectId == projectId &&
+                    pm.EmployeeId == employeeId &&
+                    pm.IsActive);
         }
     }
 }
