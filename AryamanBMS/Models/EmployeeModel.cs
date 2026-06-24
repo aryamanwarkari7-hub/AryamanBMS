@@ -12,11 +12,20 @@ namespace AryamanBMS.Models
 
         public string? FirstName { get; set; }
 
+        [StringLength(100)]
+        public string? MiddleName { get; set; }
+
         public string? LastName { get; set; }
 
         [NotMapped]
-        public string FullName =>
-         $"{FirstName ?? string.Empty} {LastName ?? string.Empty}".Trim();
+        public string FullName => string.Join(" ",
+        new[]
+        {
+            FirstName,
+            MiddleName,
+            LastName
+        }
+        .Where(name => !string.IsNullOrWhiteSpace(name)));
 
         //public string? Email { get; set; }
 
@@ -58,6 +67,9 @@ namespace AryamanBMS.Models
         public string? State { get; set; }
 
         [StringLength(6)]
+        [RegularExpression(
+         @"^[0-9]{6}$",
+         ErrorMessage = "PIN code must contain exactly 6 digits.")]
         public string? PinCode { get; set; }
 
         // ==========================
@@ -82,6 +94,13 @@ namespace AryamanBMS.Models
         [MaxLength(30)]
         public string? UanNo { get; set; }
 
+        [Display(Name = "ESIC Number")]
+        [StringLength(10, MinimumLength = 10,
+            ErrorMessage = "ESIC Number must contain exactly 10 digits.")]
+        [RegularExpression(@"^[0-9]{10}$",
+            ErrorMessage = "ESIC Number must contain exactly 10 digits.")]
+        public string? EsicNo { get; set; }
+
         // ==========================
         // Employment Information
         // ==========================
@@ -102,11 +121,13 @@ namespace AryamanBMS.Models
         public ApplicationUserModel? ApplicationUser { get; set; }
 
         // Leave 
-        public ICollection<LeaveApplicationModel> 
-        LeaveApplications { get; set; } = new List<LeaveApplicationModel>();
+        public ICollection<LeaveApplicationModel>
+        LeaveApplications
+        { get; set; } = new List<LeaveApplicationModel>();
 
         public ICollection<LeaveBalanceModel>
-        LeaveBalances{ get; set; } = new List<LeaveBalanceModel>();
+        LeaveBalances
+        { get; set; } = new List<LeaveBalanceModel>();
 
         // Document Uploads and Records
         public ICollection<EmployeeAcademicModel> AcademicRecords { get; set; }

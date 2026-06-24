@@ -36,7 +36,7 @@ builder.Services.AddScoped<IEmployeeAcademicRepository, EmployeeAcademicReposito
 
 builder.Services.AddScoped<IEmployeeDocumentRepository, EmployeeDocumentRepository>();
 
-
+builder.Services.AddScoped<ILocationRepository, LocationRepository>();
 
 builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
 

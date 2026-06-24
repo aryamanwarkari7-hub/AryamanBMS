@@ -43,6 +43,16 @@
                 </div>
 
                 <div class="form-group">
+                    <label class="form-label">Middle Name</label>
+
+                    <input asp-for="Employee.MiddleName"
+                           class="app-input" />
+
+                    <span asp-validation-for="Employee.MiddleName"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
                     <label class="form-label">Last Name</label>
                     <input asp-for="Employee.LastName" class="app-input" />
                     <span asp-validation-for="Employee.LastName" class="validation-message"></span>
@@ -166,25 +176,91 @@
         <div class="card-body">
             <div class="form-grid-2">
 
-                <div class="form-group">
-                    <label class="form-label">Permanent Address</label>
-                    <textarea asp-for="Employee.PermanentAddress" class="app-textarea"></textarea>
-                </div>
+                <div class="row g-3">
 
-                <div class="form-group">
-                    <label class="form-label">City</label>
-                    <input asp-for="Employee.City" class="app-input" />
-                </div>
+                    <div class="col-md-12">
+                        <label asp-for="Employee.PermanentAddress"
+                               class="form-label">
+                            Permanent Address
+                        </label>
 
-                <div class="form-group">
-                    <label class="form-label">State</label>
-                    <input asp-for="Employee.State" class="app-input" />
-                </div>
+                        <textarea asp-for="Employee.PermanentAddress"
+                                  class="app-input"
+                                  rows="3"></textarea>
 
-                <div class="form-group">
-                    <label class="form-label">Pin Code</label>
-                    <input asp-for="Employee.PinCode" class="app-input" />
-                    <span asp-validation-for="Employee.PinCode" class="validation-message"></span>
+                        <span asp-validation-for="Employee.PermanentAddress"
+                              class="validation-message"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="Employee.State"
+                               class="form-label">
+                            State
+                        </label>
+
+                        <select asp-for="Employee.State"
+                                id="stateDropdown"
+                                class="app-input">
+
+                            <option value="">Select State</option>
+
+                            @foreach (var state in ViewBag.States)
+                            {
+                                <option value="@state.StateName"
+                                        data-state-id="@state.Id">
+                                    @state.StateName
+                                </option>
+                            }
+
+                        </select>
+
+                        <span asp-validation-for="Employee.State"
+                              class="validation-message"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="Employee.City"
+                               class="form-label">
+                            City
+                        </label>
+
+                        <select asp-for="Employee.City"
+                                id="cityDropdown"
+                                class="app-input"
+                                disabled>
+
+                            <option value="">Select City</option>
+
+                        </select>
+
+                        <span asp-validation-for="Employee.City"
+                              class="validation-message"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="Employee.PinCode"
+                               class="form-label">
+                            PIN Code
+                        </label>
+
+                        <input asp-for="Employee.PinCode"
+                               id="pinCodeInput"
+                               list="pinCodeOptions"
+                               class="app-input"
+                               maxlength="6"
+                               inputmode="numeric"
+                               placeholder="Select or type PIN code" />
+
+                        <datalist id="pinCodeOptions"></datalist>
+
+                        <span asp-validation-for="Employee.PinCode"
+                              class="validation-message"></span>
+
+                        <small class="text-muted">
+                            Select a suggested PIN code or enter it manually.
+                        </small>
+                    </div>
+
                 </div>
 
             </div>
@@ -200,12 +276,12 @@
             <div class="form-grid-2">
 
                 <div class="form-group">
-                    <label class="form-label">Emergency Contact</label>
+                    <label class="form-label">Emergency Contact Name</label>
                     <input asp-for="Employee.EmergencyContact" class="app-input" />
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Emergency Phone</label>
+                    <label class="form-label">Emergency Contact Number</label>
                     <input asp-for="Employee.EmergencyPhone" class="app-input" />
                 </div>
 
@@ -237,6 +313,20 @@
                     <label class="form-label">UAN Number</label>
                     <input asp-for="Employee.UanNo" class="app-input" />
                     <span asp-validation-for="Employee.UanNo" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">ESIC Number</label>
+
+                    <input asp-for="Employee.EsicNo"
+                           class="app-input"
+                           maxlength="10"
+                           inputmode="numeric"
+                           pattern="[0-9]{10}"
+                           placeholder="Enter 10-digit ESIC number" />
+
+                    <span asp-validation-for="Employee.EsicNo"
+                          class="validation-message"></span>
                 </div>
 
             </div>
@@ -559,5 +649,123 @@
                 event.target.closest('.academic-item').remove();
             }
         }
+    });
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const stateDropdown =
+            document.getElementById("stateDropdown");
+
+        const cityDropdown =
+            document.getElementById("cityDropdown");
+
+        const pinCodeInput =
+            document.getElementById("pinCodeInput");
+
+        const pinCodeOptions =
+            document.getElementById("pinCodeOptions");
+
+        stateDropdown.addEventListener("change", async function () {
+
+            cityDropdown.innerHTML =
+                '<option value="">Select City</option>';
+
+            pinCodeOptions.innerHTML = "";
+            pinCodeInput.value = "";
+            cityDropdown.disabled = true;
+
+            const selectedOption =
+                stateDropdown.options[
+                    stateDropdown.selectedIndex
+                ];
+
+            const stateId =
+                selectedOption.dataset.stateId;
+
+            if (!stateId) {
+                return;
+            }
+
+            try {
+                const response = await fetch(
+                    `/Location/GetCities?stateId=${stateId}`
+                );
+
+                if (!response.ok) {
+                    throw new Error("Unable to load cities.");
+                }
+
+                const cities = await response.json();
+
+                cities.forEach(city => {
+                    const option =
+                        document.createElement("option");
+
+                    option.value = city.name;
+                    option.textContent = city.name;
+                    option.dataset.cityId = city.id;
+
+                    cityDropdown.appendChild(option);
+                });
+
+                cityDropdown.disabled = false;
+            }
+            catch (error) {
+                console.error(error);
+                alert("Cities could not be loaded.");
+            }
+        });
+
+        cityDropdown.addEventListener("change", async function () {
+
+            pinCodeOptions.innerHTML = "";
+            pinCodeInput.value = "";
+
+            const selectedOption =
+                cityDropdown.options[
+                    cityDropdown.selectedIndex
+                ];
+
+            const cityId =
+                selectedOption.dataset.cityId;
+
+            if (!cityId) {
+                return;
+            }
+
+            try {
+                const response = await fetch(
+                    `/Location/GetPincodes?cityId=${cityId}`
+                );
+
+                if (!response.ok) {
+                    throw new Error("Unable to load PIN codes.");
+                }
+
+                const pincodes = await response.json();
+
+                pincodes.forEach(pin => {
+                    const option =
+                        document.createElement("option");
+
+                    option.value = pin.value;
+                    option.label = pin.text;
+
+                    pinCodeOptions.appendChild(option);
+                });
+            }
+            catch (error) {
+                console.error(error);
+                alert("PIN codes could not be loaded.");
+            }
+        });
+
+        pinCodeInput.addEventListener("input", function () {
+            this.value = this.value
+                .replace(/\D/g, "")
+                .slice(0, 6);
+        });
     });
 </script>

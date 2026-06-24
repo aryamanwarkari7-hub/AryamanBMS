@@ -1,14 +1,13 @@
-﻿using AryamanBMS.Models;
+﻿using AryamanBMS.Data;
+using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
+using AryamanBMS.Services.Interface;
 using AryamanBMS.ViewModels;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
-using AryamanBMS.Data;
-using AryamanBMS.Services.Interface;
 
 namespace AryamanBMS.Controllers
 {
@@ -24,6 +23,7 @@ namespace AryamanBMS.Controllers
         private readonly IEmployeeAcademicRepository _employeeAcademicRepository;
         private readonly IEmployeeDocumentRepository _employeeDocumentRepository;
         private readonly IEmployeeDocumentService _employeeDocumentService;
+        private readonly ILocationRepository _locationRepository;
 
         public EmployeeController(
             IEmployeeRepository employeeRepository,
@@ -33,7 +33,8 @@ namespace AryamanBMS.Controllers
             ApplicationDbContext context,
            IEmployeeAcademicRepository employeeAcademicRepository,
            IEmployeeDocumentRepository employeeDocumentRepository,
-           IEmployeeDocumentService employeeDocumentService)
+           IEmployeeDocumentService employeeDocumentService,
+           ILocationRepository locationRepository)
         {
             _employeeRepository = employeeRepository;
             _departmentRepository = departmentRepository;
@@ -43,6 +44,7 @@ namespace AryamanBMS.Controllers
             _employeeAcademicRepository = employeeAcademicRepository;
             _employeeDocumentRepository = employeeDocumentRepository;
             _employeeDocumentService = employeeDocumentService;
+            _locationRepository = locationRepository;
         }
 
         [Authorize(Roles = "Admin,HR")]
@@ -76,6 +78,11 @@ namespace AryamanBMS.Controllers
 
                     (!string.IsNullOrEmpty(e.FirstName) &&
                      e.FirstName.Contains(
+                         searchText,
+                         StringComparison.OrdinalIgnoreCase)) ||
+
+                    (!string.IsNullOrEmpty(e.MiddleName) &&
+                     e.MiddleName.Contains(
                          searchText,
                          StringComparison.OrdinalIgnoreCase)) ||
 
@@ -155,9 +162,9 @@ namespace AryamanBMS.Controllers
 
         [Authorize(Roles = "Admin,HR")]
         [HttpGet]
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            LoadDropdowns();
+            await LoadDropdownsAsync();
 
             var model = new EmployeeFormViewModel();
 
@@ -209,9 +216,14 @@ namespace AryamanBMS.Controllers
 
             if (!ModelState.IsValid)
             {
-                LoadDropdowns();
+                await LoadDropdownsAsync();
                 return View(model);
             }
+
+            employee.EsicNo =
+    string.IsNullOrWhiteSpace(employee.EsicNo)
+        ? null
+        : employee.EsicNo.Trim();
 
             var storedFiles = new List<string>();
 
@@ -294,7 +306,7 @@ namespace AryamanBMS.Controllers
                     "",
                     $"Employee could not be created: {ex.Message}");
 
-                LoadDropdowns();
+                await LoadDropdownsAsync();
 
                 return View(model);
             }
@@ -348,7 +360,7 @@ namespace AryamanBMS.Controllers
                 Academics = academics
             };
 
-            LoadDropdowns();
+            await LoadDropdownsAsync();
 
             return View(model);
         }
@@ -420,7 +432,7 @@ namespace AryamanBMS.Controllers
             if (!ModelState.IsValid)
             {
                 await ReloadExistingDocumentsAsync(model);
-                LoadDropdowns();
+                await LoadDropdownsAsync();
 
                 return View(model);
             }
@@ -433,6 +445,11 @@ namespace AryamanBMS.Controllers
 
             try
             {
+                inputEmployee.EsicNo =
+                  string.IsNullOrWhiteSpace(inputEmployee.EsicNo)
+                      ? null
+                      : inputEmployee.EsicNo.Trim();
+
                 _context.Entry(existingEmployee)
                     .CurrentValues
                     .SetValues(inputEmployee);
@@ -578,7 +595,7 @@ namespace AryamanBMS.Controllers
                     $"Employee could not be updated: {ex.Message}");
 
                 await ReloadExistingDocumentsAsync(model);
-                LoadDropdowns();
+                await LoadDropdownsAsync();
 
                 return View(model);
             }
@@ -654,22 +671,27 @@ namespace AryamanBMS.Controllers
             return View(employee);
         }
 
-        private void LoadDropdowns()
+        private async Task LoadDropdownsAsync()
         {
             ViewBag.Departments =
                 _departmentRepository.Departments
-                .OrderBy(d => d.DepartmentName)
-                .ToList();
+                    .OrderBy(d => d.DepartmentName)
+                    .ToList();
 
             ViewBag.Designations =
                 _designationRepository.Designations
-                .OrderBy(d => d.DesignationName)
-                .ToList();
+                    .OrderBy(d => d.DesignationName)
+                    .ToList();
 
-            ViewBag.Users = _userManager.Users
-                .Where(x => x.IsActive)
-                .OrderBy(x => x.FullName)
-                .ToList();
+            ViewBag.Users =
+                _userManager.Users
+                    .Where(x => x.IsActive)
+                    .OrderBy(x => x.FullName)
+                    .ToList();
+
+            ViewBag.States =
+                await _locationRepository
+                    .GetActiveStatesAsync();
         }
 
         // Excel Export
@@ -719,7 +741,7 @@ namespace AryamanBMS.Controllers
                     employee.EmployeeCode;
 
                 worksheet.Cell(row, 2).Value =
-                    $"{employee.FirstName} {employee.LastName}";
+                    employee.FullName;
 
                 worksheet.Cell(row, 3).Value =
                     employee.Department?.DepartmentName;

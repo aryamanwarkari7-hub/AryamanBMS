@@ -1,10 +1,24 @@
 ﻿@model EmployeeFormViewModel
+@{
+    string currentState =
+        Model.Employee.State ?? string.Empty;
+
+    string currentCity =
+        Model.Employee.City ?? string.Empty;
+
+    string currentPinCode =
+        Model.Employee.PinCode ?? string.Empty;
+}
 
 <div class="module-header">
     <div>
         <h1 class="module-title">Edit Employee</h1>
         <p class="module-subtitle">Update employee information</p>
     </div>
+    <button type="button"
+            class="btn-app btn-secondary-app">
+           Back
+    </button>
 </div>
 
 <form asp-action="Edit" method="post" enctype="multipart/form-data">
@@ -39,6 +53,16 @@
                     <label class="form-label">First Name</label>
                     <input asp-for="Employee.FirstName" class="app-input" />
                     <span asp-validation-for="Employee.FirstName" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Middle Name</label>
+
+                    <input asp-for="Employee.MiddleName"
+                           class="app-input" />
+
+                    <span asp-validation-for="Employee.MiddleName"
+                          class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
@@ -169,21 +193,50 @@
                     <textarea asp-for="Employee.PermanentAddress" class="app-textarea"></textarea>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">City</label>
-                    <input asp-for="Employee.City" class="app-input" />
-                </div>
+                <select asp-for="Employee.State"
+                        id="stateDropdown"
+                        class="app-input">
 
-                <div class="form-group">
-                    <label class="form-label">State</label>
-                    <input asp-for="Employee.State" class="app-input" />
-                </div>
+                    <option value="">Select State</option>
 
-                <div class="form-group">
-                    <label class="form-label">Pin Code</label>
-                    <input asp-for="Employee.PinCode" class="app-input" />
-                    <span asp-validation-for="Employee.PinCode" class="validation-message"></span>
-                </div>
+                    @foreach (var state in ViewBag.States)
+                    {
+                        if (state.StateName == currentState)
+                        {
+                            <option value="@state.StateName"
+                                    data-state-id="@state.Id"
+                                    selected>
+                                @state.StateName
+                            </option>
+                        }
+                        else
+                        {
+                            <option value="@state.StateName"
+                                    data-state-id="@state.Id">
+                                @state.StateName
+                            </option>
+                        }
+                    }
+
+                </select>
+
+                <select asp-for="Employee.City"
+                        id="cityDropdown"
+                        class="app-input">
+
+                    <option value="">Select City</option>
+
+                </select>
+
+                <input asp-for="Employee.PinCode"
+                       id="pinCodeInput"
+                       list="pinCodeOptions"
+                       class="app-input"
+                       maxlength="6"
+                       inputmode="numeric"
+                       placeholder="Select or type PIN code" />
+
+                <datalist id="pinCodeOptions"></datalist>
 
             </div>
         </div>
@@ -198,12 +251,12 @@
             <div class="form-grid-2">
 
                 <div class="form-group">
-                    <label class="form-label">Emergency Contact</label>
+                    <label class="form-label">Emergency Contact Name</label>
                     <input asp-for="Employee.EmergencyContact" class="app-input" />
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Emergency Phone</label>
+                    <label class="form-label">Emergency Contact Number</label>
                     <input asp-for="Employee.EmergencyPhone" class="app-input" />
                 </div>
 
@@ -235,6 +288,20 @@
                     <label class="form-label">UAN Number</label>
                     <input asp-for="Employee.UanNo" class="app-input" />
                     <span asp-validation-for="Employee.UanNo" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">ESIC Number</label>
+
+                    <input asp-for="Employee.EsicNo"
+                           class="app-input"
+                           maxlength="10"
+                           inputmode="numeric"
+                           pattern="[0-9]{10}"
+                           placeholder="Enter 10-digit ESIC number" />
+
+                    <span asp-validation-for="Employee.EsicNo"
+                          class="validation-message"></span>
                 </div>
 
             </div>
@@ -638,6 +705,170 @@
 
         if (button) {
             button.closest('.academic-item').remove();
+        }
+    });
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", async function () {
+
+        const stateDropdown =
+            document.getElementById("stateDropdown");
+
+        const cityDropdown =
+            document.getElementById("cityDropdown");
+
+        const pinCodeInput =
+            document.getElementById("pinCodeInput");
+
+        const pinCodeOptions =
+            document.getElementById("pinCodeOptions");
+
+        const currentCity =
+            @Html.Raw(
+                System.Text.Json.JsonSerializer.Serialize(
+                        Model.Employee.City ?? ""
+                )
+                        );
+
+        const currentPinCode =
+            @Html.Raw(
+                                System.Text.Json.JsonSerializer.Serialize(
+                                        Model.Employee.PinCode ?? ""
+                                )
+                        );
+
+        async function loadCities(selectedCity = "") {
+
+            cityDropdown.innerHTML =
+                '<option value="">Select City</option>';
+
+            pinCodeOptions.innerHTML = "";
+
+            const selectedStateOption =
+                stateDropdown.options[
+                    stateDropdown.selectedIndex
+                ];
+
+            const stateId =
+                selectedStateOption?.dataset.stateId;
+
+            if (!stateId) {
+                cityDropdown.disabled = true;
+                return;
+            }
+
+            const response = await fetch(
+                `/Location/GetCities?stateId=${stateId}`
+            );
+
+            if (!response.ok) {
+                throw new Error("Unable to load cities.");
+            }
+
+            const cities = await response.json();
+
+            cities.forEach(city => {
+                const option =
+                    document.createElement("option");
+
+                option.value = city.name;
+                option.textContent = city.name;
+                option.dataset.cityId = city.id;
+
+                if (city.name === selectedCity) {
+                    option.selected = true;
+                }
+
+                cityDropdown.appendChild(option);
+            });
+
+            cityDropdown.disabled = false;
+        }
+
+        async function loadPincodes(
+            preservePinCode = ""
+        ) {
+            pinCodeOptions.innerHTML = "";
+
+            const selectedCityOption =
+                cityDropdown.options[
+                    cityDropdown.selectedIndex
+                ];
+
+            const cityId =
+                selectedCityOption?.dataset.cityId;
+
+            if (!cityId) {
+                return;
+            }
+
+            const response = await fetch(
+                `/Location/GetPincodes?cityId=${cityId}`
+            );
+
+            if (!response.ok) {
+                throw new Error("Unable to load PIN codes.");
+            }
+
+            const pincodes = await response.json();
+
+            pincodes.forEach(pin => {
+                const option =
+                    document.createElement("option");
+
+                option.value = pin.value;
+                option.label = pin.text;
+
+                pinCodeOptions.appendChild(option);
+            });
+
+            if (preservePinCode) {
+                pinCodeInput.value = preservePinCode;
+            }
+        }
+
+        stateDropdown.addEventListener(
+            "change",
+            async function () {
+
+                cityDropdown.innerHTML =
+                    '<option value="">Select City</option>';
+
+                pinCodeOptions.innerHTML = "";
+                pinCodeInput.value = "";
+
+                await loadCities();
+            }
+        );
+
+        cityDropdown.addEventListener(
+            "change",
+            async function () {
+
+                pinCodeInput.value = "";
+                await loadPincodes();
+            }
+        );
+
+        pinCodeInput.addEventListener(
+            "input",
+            function () {
+
+                this.value = this.value
+                    .replace(/\D/g, "")
+                    .slice(0, 6);
+            }
+        );
+
+        try {
+            if (stateDropdown.value) {
+                await loadCities(currentCity);
+                await loadPincodes(currentPinCode);
+            }
+        }
+        catch (error) {
+            console.error(error);
         }
     });
 </script>

@@ -16,8 +16,11 @@ namespace AryamanBMS.Data
 
         public DbSet<DesignationModel> Designations { get; set; }
 
+        // Employee
         public DbSet<EmployeeModel> Employees { get; set; }
-
+        public DbSet<StateModel> States { get; set; }
+        public DbSet<CityModel> Cities { get; set; }
+        public DbSet<PincodeModel> Pincodes { get; set; }
         public DbSet<EmployeeAcademicModel> EmployeeAcademics { get; set; }
         public DbSet<EmployeeDocumentModel> EmployeeDocuments { get; set; }
 
@@ -32,7 +35,6 @@ namespace AryamanBMS.Data
         public DbSet<LeaveBalanceModel> LeaveBalances { get; set; }
 
         // Salary
-
         public DbSet<SalaryRecordModel> SalaryRecords { get; set; }
 
         // Letters
@@ -70,6 +72,39 @@ namespace AryamanBMS.Data
             // Employee
             modelBuilder.Entity<EmployeeModel>()
                 .ToTable("TableEmployee");
+
+            modelBuilder.Entity<StateModel>()
+    .ToTable("TableState");
+
+            modelBuilder.Entity<StateModel>()
+                .HasIndex(x => x.StateName)
+                .IsUnique();
+
+            modelBuilder.Entity<CityModel>()
+                .ToTable("TableCity");
+
+            modelBuilder.Entity<CityModel>()
+                .HasIndex(x => new
+                {
+                    x.StateId,
+                    x.CityName
+                })
+                .IsUnique();
+
+            modelBuilder.Entity<CityModel>()
+                .HasOne(x => x.State)
+                .WithMany(x => x.Cities)
+                .HasForeignKey(x => x.StateId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<PincodeModel>()
+                .ToTable("TablePincode");
+
+            modelBuilder.Entity<PincodeModel>()
+                .HasOne(x => x.City)
+                .WithMany(x => x.Pincodes)
+                .HasForeignKey(x => x.CityId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<EmployeeAcademicModel>()
                  .ToTable("TableEmployeeAcademic");
