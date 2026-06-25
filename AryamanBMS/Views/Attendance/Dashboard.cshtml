@@ -95,6 +95,24 @@
             <div class="d-flex gap-3 align-items-end flex-wrap">
 
                 <div class="form-group">
+                    <label class="form-label">Date</label>
+
+                    <select name="day" class="app-input">
+                        @for (int day = 1;
+                                                day <= DateTime.DaysInMonth(
+                                                (int)ViewBag.SelectedYear,
+                                                (int)ViewBag.SelectedMonth);
+                                                day++)
+                        {
+                            <option value="@day"
+                                    selected="@(day == (int)ViewBag.SelectedDay)">
+                                @day
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <div class="form-group">
 
                     <label class="form-label">
                         Month

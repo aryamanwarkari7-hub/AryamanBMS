@@ -43,8 +43,10 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
-        public IActionResult Request()
+        public async Task<IActionResult> Request()
         {
+            await UpdateExpiredCreditsAsync();
+
             var model = new CompOffRequestViewModel
             {
                 WorkedDate = DateTime.Today,
@@ -57,6 +59,8 @@ namespace AryamanBMS.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
+            await UpdateExpiredCreditsAsync();
+
             var query =
                 _compOffCreditRepository.CompOffCredits
                     .AsNoTracking()
@@ -363,6 +367,37 @@ namespace AryamanBMS.Controllers
                    status.Equals(
                        "OnDuty",
                        StringComparison.OrdinalIgnoreCase);
+        }
+
+        private async Task UpdateExpiredCreditsAsync()
+        {
+            var today = DateTime.Today;
+
+            var expiredCredits =
+                await _compOffCreditRepository.CompOffCredits
+                    .Where(x =>
+                        x.ExpiryDate.Date < today &&
+                        (
+                            x.Status == "Pending" ||
+                            x.Status == "Available"
+                        ))
+                    .ToListAsync();
+
+            if (!expiredCredits.Any())
+            {
+                return;
+            }
+
+            foreach (var credit in expiredCredits)
+            {
+                credit.Status = "Expired";
+                credit.UpdatedOn = DateTime.Now;
+
+                await _compOffCreditRepository
+                    .UpdateAsync(credit);
+            }
+
+            await _compOffCreditRepository.SaveAsync();
         }
     }
 }

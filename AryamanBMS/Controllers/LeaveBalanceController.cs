@@ -154,8 +154,18 @@ namespace AryamanBMS.Controllers
                             if (previousYearBalance != null &&
                                 previousYearBalance.BalanceDays > 0)
                             {
+                                decimal availablePreviousBalance =
+                                 previousYearBalance.BalanceDays;
+
+                                int maximumCarryForwardDays =
+                                    leaveType.MaximumCarryForwardDays ?? 0;
+
                                 carryForwardDays =
-                                    previousYearBalance.BalanceDays;
+                                    maximumCarryForwardDays > 0
+                                        ? Math.Min(
+                                            availablePreviousBalance,
+                                            maximumCarryForwardDays)
+                                        : 0;
                             }
                         }
 
@@ -168,9 +178,19 @@ namespace AryamanBMS.Controllers
                             LeaveTypeId = leaveType.Id,
                             LeaveYear = year,
 
-                            AllocatedDays = totalAllocatedDays,
+                            CurrentYearAllocation =
+                            currentYearAllocation,
+
+                            CarryForwardDays =
+                            carryForwardDays,
+
+                            AllocatedDays =
+                            totalAllocatedDays,
+
                             UsedDays = 0,
-                            BalanceDays = totalAllocatedDays
+
+                            BalanceDays =
+                            totalAllocatedDays
                         };
 
                         await _leaveBalanceRepository.AddAsync(balance);

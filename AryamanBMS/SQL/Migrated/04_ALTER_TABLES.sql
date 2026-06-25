@@ -62,3 +62,30 @@
 -- REFERENCES `TableEmployeePreviousEmployment` (`Id`)
 -- ON DELETE CASCADE;
 
+--  LEAVE  APPLICATION CANCELLATION --
+
+-- ALTER TABLE `tableleaveapplications`
+--     ADD COLUMN `CancellationStatus` VARCHAR(20) NULL
+--         AFTER `ApprovalRemarks`,
+
+--     ADD COLUMN `CancellationReason` VARCHAR(500) NULL
+--         AFTER `CancellationStatus`,
+
+--     ADD COLUMN `CancellationRequestedOn` DATETIME NULL
+--         AFTER `CancellationReason`,
+
+--     ADD COLUMN `CancellationRequestedBy` VARCHAR(255) NULL
+--         AFTER `CancellationRequestedOn`,
+
+--     ADD COLUMN `CancellationReviewedOn` DATETIME NULL
+--         AFTER `CancellationRequestedBy`,
+
+--     ADD COLUMN `CancellationReviewedBy` VARCHAR(255) NULL
+--         AFTER `CancellationReviewedOn`,
+
+--     ADD COLUMN `CancellationRemarks` VARCHAR(500) NULL
+--         AFTER `CancellationReviewedBy`;
+
+-- CREATE INDEX `IX_LeaveApplications_CancellationStatus`
+--     ON `tableleaveapplications` (`CancellationStatus`);
+

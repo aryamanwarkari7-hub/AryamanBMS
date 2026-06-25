@@ -26,7 +26,7 @@
 
 </div>
 
-@if (TempData["Success"] != null)
+@* @if (TempData["Success"] != null)
 {
     <div class="app-alert app-alert-success mb-3">
 
@@ -44,7 +44,7 @@
         @TempData["Error"]
 
     </div>
-}
+} *@
 
 <div class="app-card table-card">
 
@@ -87,6 +87,8 @@
 
                             <th>Worked Date</th>
                             <th>Credit Days</th>
+                            <th>Used Days</th>
+                            <th>Remaining</th>
                             <th>Expiry Date</th>
                             <th>Attendance</th>
                             <th>Status</th>
@@ -132,6 +134,14 @@
 
                                 <td>
                                     @item.CreditDays.ToString("0.##")
+                                </td>
+
+                                <td>
+                                    @item.UsedDays.ToString("0.##")
+                                </td>
+
+                                <td>
+                                    @((item.CreditDays - item.UsedDays).ToString("0.##"))
                                 </td>
 
                                 <td>
@@ -202,8 +212,7 @@
                                                             : item.Remarks)
                         </td>
 
-                        @if (User.IsInRole("Admin") ||
-                                                User.IsInRole("HR"))
+                        @if (User.IsInRole("Admin") || User.IsInRole("HR"))
                                 {
                                     <td>
 

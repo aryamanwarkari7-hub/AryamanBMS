@@ -36,6 +36,7 @@ namespace AryamanBMS.Data
 
         public DbSet<LeaveBalanceModel> LeaveBalances { get; set; }
         public DbSet<CompOffCreditModel> CompOffCredits { get; set; }
+        public DbSet<CompOffUsageModel> CompOffUsages { get; set; }
 
         // Salary
         public DbSet<SalaryRecordModel> SalaryRecords { get; set; }
@@ -196,6 +197,35 @@ namespace AryamanBMS.Data
             modelBuilder.Entity<CompOffCreditModel>()
                .Property(x => x.CreditDays)
                .HasPrecision(10, 2);
+
+            modelBuilder.Entity<CompOffCreditModel>()
+               .HasOne(x => x.LeaveApplication)
+               .WithMany()
+               .HasForeignKey(x => x.LeaveApplicationId)
+               .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<CompOffCreditModel>()
+                .Property(x => x.UsedDays)
+                .HasPrecision(10, 2);
+
+            modelBuilder.Entity<CompOffUsageModel>()
+                 .ToTable("tablecompoffusage");
+
+            modelBuilder.Entity<CompOffUsageModel>()
+                .Property(x => x.UsedDays)
+                .HasPrecision(10, 2);
+
+            modelBuilder.Entity<CompOffUsageModel>()
+                .HasOne(x => x.CompOffCredit)
+                .WithMany()
+                .HasForeignKey(x => x.CompOffCreditId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CompOffUsageModel>()
+                .HasOne(x => x.LeaveApplication)
+                .WithMany()
+                .HasForeignKey(x => x.LeaveApplicationId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Salary Record
             modelBuilder.Entity<SalaryRecordModel>()

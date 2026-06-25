@@ -50,9 +50,10 @@
     }
 
     bool isLeaveOpen =
-        currentController == "LeaveType" ||
-        currentController == "LeaveBalance" ||
-        currentController == "LeaveApplication";
+    currentController == "LeaveType" ||
+    currentController == "LeaveBalance" ||
+    currentController == "LeaveApplication" ||
+    currentController == "CompOffCredit";
 
     bool isMasterSetupActive =
     currentController == "User" ||
@@ -63,9 +64,10 @@
     bool isAttendanceActive = currentController == "Attendance";
 
     bool isLeaveActive =
-        currentController == "LeaveApplication" ||
-        currentController == "LeaveBalance" ||
-        currentController == "LeaveType";
+    currentController == "LeaveApplication" ||
+    currentController == "LeaveBalance" ||
+    currentController == "LeaveType" ||
+    currentController == "CompOffCredit";
 
     bool isSalaryActive = currentController == "Salary";
 
@@ -325,6 +327,20 @@
 
                                 <i class="bi bi-calendar-event"></i>
                                 <span>@(isEmployeeOnly ? "My Applications" : "Applications")</span>
+
+                            </a>
+
+                            <a asp-controller="CompOffCredit"
+                               asp-action="Index"
+                               class="submenu-item nested-item @(currentController == "CompOffCredit" ? "active-menu" : "")">
+
+                                <i class="bi bi-arrow-repeat"></i>
+
+                                <span>
+                                    @(isEmployeeOnly
+                                                                        ? "My Comp Off"
+                                                                        : "Comp Off Management")
+                                </span>
 
                             </a>
 

@@ -1,10 +1,8 @@
-﻿using AryamanBMS.Data;
-using AryamanBMS.Extensions;
+﻿using AryamanBMS.Extensions;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.ViewModels;
 using ClosedXML.Excel;
-using DocumentFormat.OpenXml.InkML;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -506,11 +504,35 @@ namespace AryamanBMS.Controllers
         }
 
         [Authorize(Roles = "Admin,HR")]
-        public IActionResult Dashboard(int? month,int? year)
+        public IActionResult Dashboard(int? day, int? month, int? year)
         {
+            var today = DateTime.Today;
+
+            int selectedYear = year ?? today.Year;
+            int selectedMonth = month ?? today.Month;
+
+            int maximumDay =
+                DateTime.DaysInMonth(selectedYear, selectedMonth);
+
+            int selectedDay = day ?? today.Day;
+
+            if (selectedDay > maximumDay)
+            {
+                selectedDay = maximumDay;
+            }
+
+            var selectedDate = new DateTime(
+                selectedYear,
+                selectedMonth,
+                selectedDay);
+
+            ViewBag.SelectedDay = selectedDay;
+            ViewBag.SelectedMonth = selectedMonth;
+            ViewBag.SelectedYear = selectedYear;
+            ViewBag.SelectedDate = selectedDate;
             month ??= DateTime.Today.Month;
             year ??= DateTime.Today.Year;
-            var today = DateTime.Today;
+
 
             int totalDays =
                 DateTime.DaysInMonth(
@@ -530,11 +552,11 @@ namespace AryamanBMS.Controllers
                 .ToList();
 
             var vm = new AttendanceDashboardViewModel
-                {
-                    Month = month.Value,
-                    Year = year.Value,
-                    TotalDays = totalDays
-                };
+            {
+                Month = month.Value,
+                Year = year.Value,
+                TotalDays = totalDays
+            };
 
             foreach (var employee in employees)
             {
@@ -547,7 +569,7 @@ namespace AryamanBMS.Controllers
                           $"{employee.FirstName} {employee.LastName}"
                   };
 
-                for (int day = 1; day <= totalDays; day++)
+                for (int calendarDay = 1; calendarDay <= totalDays; calendarDay++)
                 {
                     var record = attendanceRecords.FirstOrDefault(a =>
                             a.EmployeeId == employee.Id &&
@@ -556,7 +578,7 @@ namespace AryamanBMS.Controllers
                     string status =
                         record?.Status ?? "";
 
-                    employeeAttendanceViewModel.DailyStatus[day] =
+                    employeeAttendanceViewModel.DailyStatus[calendarDay] =
                         status;
 
                     switch (status)
@@ -711,7 +733,7 @@ namespace AryamanBMS.Controllers
             worksheet.Columns().AdjustToContents();
             worksheet.Column(5).Style.DateFormat.Format = "dd-MMM-yyyy";
 
-            worksheet.Column(8).Style.DateFormat.Format ="dd-MMM-yyyy HH:mm";
+            worksheet.Column(8).Style.DateFormat.Format = "dd-MMM-yyyy HH:mm";
 
 
 
@@ -727,7 +749,7 @@ namespace AryamanBMS.Controllers
         }
 
         [Authorize(Roles = "Admin,HR")]
-        public async Task<IActionResult> Summary(int? month,int? year)
+        public async Task<IActionResult> Summary(int? month, int? year)
         {
             month ??= DateTime.Today.Month;
             year ??= DateTime.Today.Year;

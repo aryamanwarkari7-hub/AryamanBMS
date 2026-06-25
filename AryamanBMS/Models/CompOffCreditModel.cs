@@ -16,6 +16,9 @@ namespace AryamanBMS.Models
         [Column(TypeName = "decimal(10,2)")]
         public decimal CreditDays { get; set; } = 1.00m;
 
+        [Column(TypeName = "decimal(10,2)")]
+        public decimal UsedDays { get; set; } = 0.00m;
+
         [Required]
         public DateTime ExpiryDate { get; set; }
 
@@ -24,6 +27,10 @@ namespace AryamanBMS.Models
         public string Status { get; set; } = "Pending";
 
         public int? AttendanceId { get; set; }
+
+        public int? LeaveApplicationId { get; set; }
+
+        public DateTime? UsedOn { get; set; }
 
         public DateTime RequestedOn { get; set; } = DateTime.Now;
 
@@ -52,5 +59,8 @@ namespace AryamanBMS.Models
 
         [ForeignKey(nameof(AttendanceId))]
         public AttendanceModel? Attendance { get; set; }
+
+        [ForeignKey(nameof(LeaveApplicationId))]
+        public LeaveApplicationModel? LeaveApplication { get; set; }
     }
 }

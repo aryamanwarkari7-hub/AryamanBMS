@@ -20,6 +20,7 @@ namespace AryamanBMS.Controllers
         private readonly ILeaveBalanceRepository _leaveBalanceRepository;
         private readonly UserManager<ApplicationUserModel> _userManager;
         private readonly ICompOffCreditRepository _compOffCreditRepository;
+        private readonly ICompOffUsageRepository _compOffUsageRepository;
 
         public LeaveApplicationController(
               ILeaveApplicationRepository leaveApplicationRepository,
@@ -28,7 +29,8 @@ namespace AryamanBMS.Controllers
               IAttendanceRepository attendanceRepository,
               ILeaveBalanceRepository leaveBalanceRepository,
               UserManager<ApplicationUserModel> userManager,
-              ICompOffCreditRepository compOffCreditRepository)
+              ICompOffCreditRepository compOffCreditRepository,
+              ICompOffUsageRepository compOffUsageRepository)
         {
             _leaveApplicationRepository = leaveApplicationRepository;
             _leaveTypeRepository = leaveTypeRepository;
@@ -37,12 +39,13 @@ namespace AryamanBMS.Controllers
             _leaveBalanceRepository = leaveBalanceRepository;
             _userManager = userManager;
             _compOffCreditRepository = compOffCreditRepository;
+            _compOffUsageRepository = compOffUsageRepository;
         }
 
         public async Task<IActionResult> Index(
-    string? searchText,
-    string status = "All",
-    int page = 1)
+           string? searchText,
+           string status = "All",
+           int page = 1)
         {
             const int pageSize = 10;
 
@@ -213,16 +216,60 @@ namespace AryamanBMS.Controllers
                     "Leave already exists for the selected date range.");
             }
 
-            bool leaveTypeActive = await _leaveTypeRepository.LeaveTypes
-                    .AnyAsync(x =>
-                        x.Id == leaveApplication.LeaveTypeId &&
-                        x.IsActive);
+            var selectedLeaveType =
+    await _leaveTypeRepository.LeaveTypes
+        .AsNoTracking()
+        .FirstOrDefaultAsync(x =>
+            x.Id == leaveApplication.LeaveTypeId &&
+            x.IsActive);
 
-            if (!leaveTypeActive)
+            if (selectedLeaveType == null)
             {
                 ModelState.AddModelError(
                     "LeaveTypeId",
-                    "Selected leave type is inactive.");
+                    "Selected leave type is inactive or unavailable.");
+            }
+            else if (string.Equals(
+                         selectedLeaveType.LeaveCode,
+                         "COMP",
+                         StringComparison.OrdinalIgnoreCase) &&
+                     employee != null &&
+                     leaveApplication.NumberOfDays > 0)
+            {
+                decimal availableCreditDays =
+                    await _compOffCreditRepository.CompOffCredits
+                        .AsNoTracking()
+                        .Where(x =>
+                            x.EmployeeId == employee.Id &&
+                            x.Status == "Available" &&
+                            x.ExpiryDate.Date >=
+                                leaveApplication.ToDate.Date)
+                        .SumAsync(x => (decimal?)(x.CreditDays - x.UsedDays))
+                    ?? 0m;
+
+                decimal reservedCreditDays =
+                     await _leaveApplicationRepository
+                         .LeaveApplications
+                         .AsNoTracking()
+                         .Where(x =>
+                             x.EmployeeId == employee.Id &&
+                             x.LeaveTypeId == selectedLeaveType.Id &&
+                             x.Status == "Pending")
+                         .SumAsync(x => (decimal?)x.NumberOfDays)
+                     ?? 0m;
+
+                decimal usableCreditDays =
+                    availableCreditDays - reservedCreditDays;
+
+                if (usableCreditDays <
+                    leaveApplication.NumberOfDays)
+                {
+                    ModelState.AddModelError(
+                        "LeaveTypeId",
+                        $"Insufficient Comp Off credit. " +
+                        $"Available: {Math.Max(usableCreditDays, 0):0.##} day(s), " +
+                        $"Required: {leaveApplication.NumberOfDays:0.##} day(s).");
+                }
             }
 
 
@@ -317,19 +364,87 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            bool isCompOff =
+               string.Equals(
+              leaveType.LeaveCode,
+              "COMP",
+              StringComparison.OrdinalIgnoreCase);
+
             bool requiresBalance =
+                !isCompOff &&
                 leaveType.IsPaidLeave &&
                 leaveType.DaysPerYear > 0;
 
             LeaveBalanceModel? leaveBalance = null;
 
-            if (requiresBalance)
+
+
+            var compOffAllocations =
+                new List<(CompOffCreditModel Credit, decimal DaysToUse)>();
+
+            if (isCompOff)
             {
-                leaveBalance = await _leaveBalanceRepository.LeaveBalances
-                    .FirstOrDefaultAsync(x =>
-                        x.EmployeeId == leaveApplication.EmployeeId &&
-                        x.LeaveTypeId == leaveApplication.LeaveTypeId &&
-                        x.LeaveYear == leaveApplication.FromDate.Year);
+                var availableCredits =
+                    await _compOffCreditRepository.CompOffCredits
+                        .Where(x =>
+                            x.EmployeeId == leaveApplication.EmployeeId &&
+                            x.Status == "Available" &&
+                            x.ExpiryDate.Date >=
+                                leaveApplication.ToDate.Date &&
+                            x.UsedDays < x.CreditDays)
+                        .OrderBy(x => x.ExpiryDate)
+                        .ThenBy(x => x.WorkedDate)
+                        .ThenBy(x => x.Id)
+                        .ToListAsync();
+
+                decimal remainingRequiredDays =
+                    leaveApplication.NumberOfDays;
+
+                foreach (var credit in availableCredits)
+                {
+                    if (remainingRequiredDays <= 0)
+                    {
+                        break;
+                    }
+
+                    decimal remainingCreditDays =
+                        credit.CreditDays - credit.UsedDays;
+
+                    if (remainingCreditDays <= 0)
+                    {
+                        continue;
+                    }
+
+                    decimal daysToUse =
+                        Math.Min(
+                            remainingCreditDays,
+                            remainingRequiredDays);
+
+                    compOffAllocations.Add(
+                        (credit, daysToUse));
+
+                    remainingRequiredDays -= daysToUse;
+                }
+
+                if (remainingRequiredDays > 0)
+                {
+                    TempData["Error"] =
+                        "Insufficient valid Comp Off credit to approve this leave.";
+
+                    return RedirectToAction(nameof(Index));
+                }
+            }
+            else if (requiresBalance)
+            {
+                leaveBalance =
+                    await _leaveBalanceRepository.LeaveBalances
+                        .FirstOrDefaultAsync(x =>
+                            x.EmployeeId ==
+                                leaveApplication.EmployeeId &&
+                            x.LeaveTypeId ==
+                                leaveApplication.LeaveTypeId &&
+                            x.LeaveYear ==
+                                leaveApplication.FromDate.Year);
 
                 if (leaveBalance == null)
                 {
@@ -339,7 +454,8 @@ namespace AryamanBMS.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                if (leaveBalance.BalanceDays < leaveApplication.NumberOfDays)
+                if (leaveBalance.BalanceDays <
+                    leaveApplication.NumberOfDays)
                 {
                     TempData["Error"] =
                         "Insufficient leave balance.";
@@ -378,6 +494,43 @@ namespace AryamanBMS.Controllers
             {
                 leaveBalance.UsedDays += leaveApplication.NumberOfDays;
                 leaveBalance.BalanceDays -= leaveApplication.NumberOfDays;
+            }
+
+            if (isCompOff)
+            {
+                foreach (var allocation in compOffAllocations)
+                {
+                    var credit = allocation.Credit;
+
+                    credit.UsedDays += allocation.DaysToUse;
+                    credit.UpdatedOn = DateTime.Now;
+
+                    if (credit.UsedDays >= credit.CreditDays)
+                    {
+                        credit.UsedDays = credit.CreditDays;
+                        credit.Status = "Used";
+                    }
+                    else
+                    {
+                        credit.Status = "Available";
+                    }
+
+                    await _compOffCreditRepository
+                        .UpdateAsync(credit);
+
+                    var usage =
+                        new CompOffUsageModel
+                        {
+                            CompOffCreditId = credit.Id,
+                            LeaveApplicationId = leaveApplication.Id,
+                            UsedDays = allocation.DaysToUse,
+                            UsedOn = DateTime.Now,
+                            IsReversed = false
+                        };
+
+                    await _compOffUsageRepository
+                        .AddAsync(usage);
+                }
             }
 
             for (var date = leaveApplication.FromDate.Date;
@@ -435,12 +588,19 @@ namespace AryamanBMS.Controllers
                 await _leaveBalanceRepository.SaveAsync();
             }
 
+
+            if (isCompOff)
+            {
+                await _compOffCreditRepository.SaveAsync();
+                await _compOffUsageRepository.SaveAsync();
+            }
+
             await _attendanceRepository.SaveAsync();
 
-            TempData["Success"] =
-                requiresBalance
-                    ? "Leave application approved, balance updated and attendance marked."
-                    : "Leave application approved and attendance marked.";
+            TempData["Success"] = isCompOff ? "Comp Off leave approved, credits consumed and attendance marked."
+        : requiresBalance
+            ? "Leave application approved, balance updated and attendance marked."
+            : "Leave application approved and attendance marked.";
 
             return RedirectToAction(nameof(Index));
         }
@@ -685,7 +845,14 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            bool isCompOff =
+    string.Equals(
+        leaveType.LeaveCode,
+        "COMP",
+        StringComparison.OrdinalIgnoreCase);
+
             bool requiresBalance =
+                !isCompOff &&
                 leaveType.IsPaidLeave &&
                 leaveType.DaysPerYear > 0;
 
@@ -730,6 +897,59 @@ namespace AryamanBMS.Controllers
                 }
             }
 
+            if (isCompOff)
+            {
+                var usages =
+                    await _compOffUsageRepository.CompOffUsages
+                        .Include(x => x.CompOffCredit)
+                        .Where(x =>
+                            x.LeaveApplicationId == leaveApplication.Id &&
+                            !x.IsReversed)
+                        .ToListAsync();
+
+                if (!usages.Any())
+                {
+                    TempData["Error"] =
+                        "Comp Off usage records were not found.";
+
+                    return RedirectToAction(nameof(Index));
+                }
+
+                foreach (var usage in usages)
+                {
+                    var credit = usage.CompOffCredit;
+
+                    if (credit == null)
+                    {
+                        TempData["Error"] =
+                            "A linked Comp Off credit was not found.";
+
+                        return RedirectToAction(nameof(Index));
+                    }
+
+                    credit.UsedDays -= usage.UsedDays;
+
+                    if (credit.UsedDays < 0)
+                    {
+                        credit.UsedDays = 0;
+                    }
+
+                    credit.Status =
+                        credit.ExpiryDate.Date < DateTime.Today
+                            ? "Expired"
+                            : "Available";
+
+                    credit.UpdatedOn = DateTime.Now;
+
+                    usage.IsReversed = true;
+                    usage.ReversedOn = DateTime.Now;
+                    usage.ReversedBy = User.Identity?.Name;
+
+                    await _compOffCreditRepository.UpdateAsync(credit);
+                    await _compOffUsageRepository.UpdateAsync(usage);
+                }
+            }
+
             var attendanceRecords =
                 await _attendanceRepository.Attendances
                     .Where(x =>
@@ -770,6 +990,12 @@ namespace AryamanBMS.Controllers
                     .UpdateAsync(leaveBalance);
             }
 
+            if (isCompOff)
+            {
+                await _compOffCreditRepository.SaveAsync();
+                await _compOffUsageRepository.SaveAsync();
+            }
+
             await _leaveApplicationRepository.SaveAsync();
 
             if (leaveBalance != null)
@@ -780,7 +1006,9 @@ namespace AryamanBMS.Controllers
             await _attendanceRepository.SaveAsync();
 
             TempData["Success"] =
-                "Leave cancellation approved. Balance and attendance updated.";
+    isCompOff
+        ? "Comp Off cancellation approved. Credit restored and attendance updated."
+        : "Leave cancellation approved. Balance and attendance updated.";
 
             return RedirectToAction(nameof(Index));
         }

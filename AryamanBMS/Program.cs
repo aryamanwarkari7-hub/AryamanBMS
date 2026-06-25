@@ -55,6 +55,8 @@ builder.Services.AddScoped<ILeaveBalanceRepository, LeaveBalanceRepository>();
 
 builder.Services.AddScoped<ICompOffCreditRepository, CompOffCreditRepository>();
 
+builder.Services.AddScoped<ICompOffUsageRepository, CompOffUsageRepository>();
+
 // Salary
 builder.Services.AddScoped<ISalaryRecordRepository, SalaryRecordRepository>();
 

@@ -32,6 +32,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Create(
             LeaveTypeModel leaveType)
@@ -45,6 +46,18 @@ namespace AryamanBMS.Controllers
                 ModelState.AddModelError(
                     "LeaveCode",
                     "Leave Code already exists.");
+            }
+
+            if (!leaveType.IsCarryForward)
+            {
+                leaveType.MaximumCarryForwardDays = 0;
+            }
+            else if (!leaveType.MaximumCarryForwardDays.HasValue ||
+                     leaveType.MaximumCarryForwardDays.Value <= 0)
+            {
+                ModelState.AddModelError(
+                    nameof(leaveType.MaximumCarryForwardDays),
+                    "Maximum carry-forward days must be greater than zero.");
             }
 
             if (ModelState.IsValid)
@@ -78,10 +91,22 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Edit(
             LeaveTypeModel leaveType)
         {
+            if (!leaveType.IsCarryForward)
+            {
+                leaveType.MaximumCarryForwardDays = 0;
+            }
+            else if (!leaveType.MaximumCarryForwardDays.HasValue ||
+                     leaveType.MaximumCarryForwardDays.Value <= 0)
+            {
+                ModelState.AddModelError(
+                    nameof(leaveType.MaximumCarryForwardDays),
+                    "Maximum carry-forward days must be greater than zero.");
+            }
             if (ModelState.IsValid)
             {
                 await _leaveTypeRepository

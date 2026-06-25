@@ -15,6 +15,10 @@
 
         public int LeaveYear { get; set; }
 
+        public decimal CurrentYearAllocation { get; set; }
+
+        public decimal CarryForwardDays { get; set; }
+
         public decimal AllocatedDays { get; set; }
 
         public decimal UsedDays { get; set; }

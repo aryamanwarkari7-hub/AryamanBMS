@@ -235,7 +235,9 @@
                             <th>Employee Code</th>
                             <th>Employee</th>
                             <th>Leave Type</th>
-                            <th>Allocated</th>
+                            <th>Current Allocation</th>
+                            <th>Carry Forward</th>
+                            <th>Total Allocated</th>
                             <th>Used</th>
                             <th>Balance</th>
                             <th>Year</th>
@@ -263,16 +265,24 @@
                                 </td>
 
                                 <td>
-                                    @item.AllocatedDays
+                                    @item.CurrentYearAllocation.ToString("0.##")
                                 </td>
 
                                 <td>
-                                    @item.UsedDays
+                                    @item.CarryForwardDays.ToString("0.##")
+                                </td>
+
+                                <td>
+                                    @item.AllocatedDays.ToString("0.##")
+                                </td>
+
+                                <td>
+                                    @item.UsedDays.ToString("0.##")
                                 </td>
 
                                 <td>
                                     <strong>
-                                        @item.BalanceDays
+                                        @item.BalanceDays.ToString("0.##")
                                     </strong>
                                 </td>
 
