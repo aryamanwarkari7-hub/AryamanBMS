@@ -190,8 +190,7 @@ namespace AryamanBMS.Controllers
         [Authorize(Roles = "Admin,HR")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(
-    EmployeeFormViewModel model)
+        public async Task<IActionResult> Create(EmployeeFormViewModel model)
         {
             var employee = model.Employee;
 
@@ -227,13 +226,29 @@ namespace AryamanBMS.Controllers
                     "Only one highest qualification is allowed.");
             }
 
-            ValidateFixedPdfDocuments(
-    model.StatutoryDocuments,
-    "StatutoryDocuments");
+            ValidateFixedPdfDocuments(model.StatutoryDocuments,
+                           "StatutoryDocuments");
 
-            ValidateFixedPdfDocuments(
-                model.JoiningDocuments,
-                "JoiningDocuments");
+            ValidateFixedPdfDocuments(model.JoiningDocuments,
+                             "JoiningDocuments");
+
+            for (int i = 0; i < model.Academics.Count; i++)
+            {
+                var academic = model.Academics[i];
+
+                bool isNewQualification = !academic.Id.HasValue;
+
+                bool hasNewDocument =
+                    academic.Documents != null &&
+                    academic.Documents.Any(x => x != null && x.Length > 0);
+
+                if (isNewQualification && !hasNewDocument)
+                {
+                    ModelState.AddModelError(
+                        $"Academics[{i}].Documents",
+                        "Please upload a document for the new qualification.");
+                }
+            }
 
             if (!ModelState.IsValid)
             {
@@ -252,9 +267,7 @@ namespace AryamanBMS.Controllers
                 return View(model);
             }
 
-            employee.EsicNo =
-    string.IsNullOrWhiteSpace(employee.EsicNo)
-        ? null
+            employee.EsicNo = string.IsNullOrWhiteSpace(employee.EsicNo) ? null
         : employee.EsicNo.Trim();
 
             var storedFiles = new List<string>();
@@ -298,7 +311,7 @@ namespace AryamanBMS.Controllers
 
                 foreach (var pair in academicPairs)
                 {
-                    foreach (var file in pair.Input.Documents)
+                    foreach (var file in pair.Input.Documents ?? new List<IFormFile>())
                     {
                         if (file == null || file.Length == 0)
                         {
@@ -314,7 +327,6 @@ namespace AryamanBMS.Controllers
 
                         document.EmployeeId = employee.Id;
                         document.EmployeeAcademicId = pair.Entity.Id;
-
                         document.DocumentCategory = "Academic";
 
                         storedFiles.Add(document.StoragePath);
@@ -325,18 +337,18 @@ namespace AryamanBMS.Controllers
                 }
 
                 int statutoryUploadCount =
-    await SaveFixedDocumentsAsync(
-        model.StatutoryDocuments,
-        employee,
-        "Statutory",
-        storedFiles);
+                       await SaveFixedDocumentsAsync(
+                           model.StatutoryDocuments,
+                           employee,
+                           "Statutory",
+                           storedFiles);
 
                 int joiningUploadCount =
-    await SaveFixedDocumentsAsync(
-        model.JoiningDocuments,
-        employee,
-        "Joining",
-        storedFiles);
+                        await SaveFixedDocumentsAsync(
+                            model.JoiningDocuments,
+                            employee,
+                            "Joining",
+                            storedFiles);
 
                 await _employeeDocumentRepository.SaveAsync();
                 await transaction.CommitAsync();
@@ -455,6 +467,58 @@ namespace AryamanBMS.Controllers
         {
             var inputEmployee = model.Employee;
 
+            model.Academics ??=
+                new List<EmployeeAcademicInputViewModel>();
+
+            model.RemovedAcademicIds ??=
+                new List<int>();
+
+            var removedAcademicIds =
+                model.RemovedAcademicIds.ToHashSet();
+
+            model.Academics = model.Academics
+                .Where(x =>
+                    !x.Id.HasValue ||
+                    !removedAcademicIds.Contains(x.Id.Value))
+                .ToList();
+
+            model.Academics = model.Academics
+                .Select((academic, index) => new
+                {
+                    Academic = academic,
+                    Index = index
+                })
+                .GroupBy(x =>
+                    x.Academic.Id.HasValue
+                        ? $"Existing-{x.Academic.Id.Value}"
+                        : $"New-{x.Index}")
+                .Select(x => x.First().Academic)
+                .ToList();
+
+            model.StatutoryDocuments ??=
+                new List<EmployeeDocumentInputViewModel>();
+
+            model.JoiningDocuments ??=
+                new List<EmployeeDocumentInputViewModel>();
+
+            for (int i = 0; i < model.Academics.Count; i++)
+            {
+                ModelState.Remove(
+                    $"Academics[{i}].ExistingDocuments");
+            }
+
+            for (int i = 0; i < model.StatutoryDocuments.Count; i++)
+            {
+                ModelState.Remove(
+                    $"StatutoryDocuments[{i}].ExistingDocument");
+            }
+
+            for (int i = 0; i < model.JoiningDocuments.Count; i++)
+            {
+                ModelState.Remove(
+                    $"JoiningDocuments[{i}].ExistingDocument");
+            }
+
             var existingEmployee =
                 await _employeeRepository.GetByIdAsync(inputEmployee.Id);
 
@@ -504,30 +568,38 @@ namespace AryamanBMS.Controllers
                 }
             }
 
-            if (model.Academics.Count(x =>
-                    x.IsHighestQualification) > 1)
+            model.Academics ??= new List<EmployeeAcademicInputViewModel>();
+
+            int highestQualificationCount =
+               model.Academics.Count(x =>
+               x.IsHighestQualification);
+
+            if (highestQualificationCount > 1)
             {
                 ModelState.AddModelError(
-                    "Academics",
+                    string.Empty,
                     "Only one highest qualification is allowed.");
             }
-            ValidateFixedPdfDocuments(
-    model.StatutoryDocuments,
-    "StatutoryDocuments");
+            ValidateFixedPdfDocuments(model.StatutoryDocuments,
+                  "StatutoryDocuments");
 
-            ValidateFixedPdfDocuments(
-                model.JoiningDocuments,
+            ValidateFixedPdfDocuments(model.JoiningDocuments,
                 "JoiningDocuments");
 
             if (!ModelState.IsValid)
             {
+                model.Academics = model.Academics
+                    .Where(x =>
+                        !x.Id.HasValue ||
+                        !removedAcademicIds.Contains(x.Id.Value))
+                    .ToList();
+
                 await ReloadExistingDocumentsAsync(model);
                 await LoadExistingFixedDocumentsAsync(model);
                 await LoadDropdownsAsync();
 
                 return View(model);
             }
-
 
             var newFilePaths = new List<string>();
             var deletedFilePaths = new List<string>();
@@ -553,9 +625,11 @@ namespace AryamanBMS.Controllers
                         .ToListAsync();
 
                 var submittedIds = model.Academics
-                    .Where(x => x.Id.HasValue)
-                    .Select(x => x.Id!.Value)
-                    .ToHashSet();
+                     .Where(x =>
+                         x.Id.HasValue &&
+                         !removedAcademicIds.Contains(x.Id.Value))
+                     .Select(x => x.Id!.Value)
+                     .ToHashSet();
 
                 foreach (var academic in existingAcademics
                     .Where(x => !submittedIds.Contains(x.Id)))
@@ -638,7 +712,13 @@ namespace AryamanBMS.Controllers
 
                 foreach (var pair in academicPairs)
                 {
-                    foreach (var file in pair.Input.Documents)
+
+                    var uploadedFiles =
+                       pair.Input.Documents ??
+                       new List<IFormFile>();
+
+                    foreach (var file in
+                        pair.Input.Documents ?? new List<IFormFile>())
                     {
                         if (file == null || file.Length == 0)
                         {
@@ -653,11 +733,17 @@ namespace AryamanBMS.Controllers
                                 pair.Input.DocumentType,
                                 User.Identity?.Name);
 
-                        document.EmployeeId = existingEmployee.Id;
-                        document.EmployeeAcademicId = pair.Entity.Id;
-                        document.DocumentCategory = "Academic";
+                        document.EmployeeId =
+                            existingEmployee.Id;
 
-                        newFilePaths.Add(document.StoragePath);
+                        document.EmployeeAcademicId =
+                            pair.Entity.Id;
+
+                        document.DocumentCategory =
+                            "Academic";
+
+                        newFilePaths.Add(
+                            document.StoragePath);
 
                         await _employeeDocumentRepository
                             .AddAsync(document);
@@ -681,6 +767,7 @@ namespace AryamanBMS.Controllers
                         deletedFilePaths);
 
                 await _employeeRepository.SaveAsync();
+                await _employeeAcademicRepository.SaveAsync();
                 await _employeeDocumentRepository.SaveAsync();
                 await transaction.CommitAsync();
 
@@ -693,9 +780,9 @@ namespace AryamanBMS.Controllers
                 }
 
                 int academicUploadCount =
-                    academicPairs.Sum(x =>
-                        x.Input.Documents?.Count(file =>
-                            file != null && file.Length > 0) ?? 0);
+                     academicPairs.Sum(x =>
+                         x.Input.Documents?.Count(file =>
+                             file != null && file.Length > 0) ?? 0);
 
                 int totalUploadedDocuments =
                     academicUploadCount +

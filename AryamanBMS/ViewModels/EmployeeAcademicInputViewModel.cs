@@ -1,6 +1,5 @@
-﻿using AryamanBMS.Models;
-using Microsoft.AspNetCore.Http;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
+using AryamanBMS.Models;
 
 namespace AryamanBMS.ViewModels
 {
@@ -31,9 +30,9 @@ namespace AryamanBMS.ViewModels
 
         public string DocumentType { get; set; } = "Academic Document";
 
-        public List<IFormFile> Documents { get; set; } = new();
+        public List<IFormFile>? Documents { get; set; }
 
         public List<EmployeeDocumentModel> ExistingDocuments { get; set; }
             = new();
-        }
+    }
 }
