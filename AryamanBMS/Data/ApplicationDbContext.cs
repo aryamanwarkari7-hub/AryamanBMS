@@ -23,6 +23,8 @@ namespace AryamanBMS.Data
         public DbSet<PincodeModel> Pincodes { get; set; }
         public DbSet<EmployeeAcademicModel> EmployeeAcademics { get; set; }
         public DbSet<EmployeeDocumentModel> EmployeeDocuments { get; set; }
+        public DbSet<EmployeePreviousEmploymentModel> EmployeePreviousEmployments
+        { get; set; }
 
         public DbSet<AttendanceModel> Attendances { get; set; }
 
@@ -33,6 +35,7 @@ namespace AryamanBMS.Data
         public DbSet<LeaveApplicationModel> LeaveApplications { get; set; }
 
         public DbSet<LeaveBalanceModel> LeaveBalances { get; set; }
+        public DbSet<CompOffCreditModel> CompOffCredits { get; set; }
 
         // Salary
         public DbSet<SalaryRecordModel> SalaryRecords { get; set; }
@@ -74,7 +77,7 @@ namespace AryamanBMS.Data
                 .ToTable("TableEmployee");
 
             modelBuilder.Entity<StateModel>()
-    .ToTable("TableState");
+            .ToTable("TableState");
 
             modelBuilder.Entity<StateModel>()
                 .HasIndex(x => x.StateName)
@@ -140,6 +143,21 @@ namespace AryamanBMS.Data
                 .HasForeignKey(e => e.ApplicationUserId)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            modelBuilder.Entity<EmployeePreviousEmploymentModel>()
+               .ToTable("TableEmployeePreviousEmployment");
+
+            modelBuilder.Entity<EmployeePreviousEmploymentModel>()
+                .HasOne(x => x.Employee)
+                .WithMany(x => x.PreviousEmployments)
+                .HasForeignKey(x => x.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<EmployeeDocumentModel>()
+                .HasOne(x => x.PreviousEmployment)
+                .WithMany(x => x.Documents)
+                .HasForeignKey(x => x.EmployeePreviousEmploymentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             // Attendance : Employee relationship
             modelBuilder.Entity<AttendanceModel>()
                 .ToTable("TableAttendance");
@@ -159,6 +177,25 @@ namespace AryamanBMS.Data
 
             modelBuilder.Entity<LeaveBalanceModel>()
                 .ToTable("tableleavebalances");
+
+            modelBuilder.Entity<CompOffCreditModel>()
+                .ToTable("tablecompoffcredit");
+
+            modelBuilder.Entity<CompOffCreditModel>()
+                .HasOne(x => x.Employee)
+                .WithMany()
+                .HasForeignKey(x => x.EmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CompOffCreditModel>()
+                .HasOne(x => x.Attendance)
+                .WithMany()
+                .HasForeignKey(x => x.AttendanceId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<CompOffCreditModel>()
+               .Property(x => x.CreditDays)
+               .HasPrecision(10, 2);
 
             // Salary Record
             modelBuilder.Entity<SalaryRecordModel>()

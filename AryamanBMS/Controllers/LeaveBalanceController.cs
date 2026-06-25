@@ -1,11 +1,10 @@
 ﻿using AryamanBMS.Extensions;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
+using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
-using ClosedXML.Excel;
 
 namespace AryamanBMS.Controllers
 {
@@ -29,9 +28,9 @@ namespace AryamanBMS.Controllers
         [Authorize(Roles = "Admin,HR")]
         [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Index(
-    int? year,
-    int? employeeId,
-    int page = 1)
+              int? year,
+              int? employeeId,
+              int page = 1)
         {
             const int pageSize = 10;
 
@@ -111,22 +110,67 @@ namespace AryamanBMS.Controllers
             {
                 foreach (var leaveType in leaveTypes)
                 {
+                    if (string.Equals(
+                       leaveType.LeaveCode,
+                       "COMP",
+                       StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
                     bool exists = await _leaveBalanceRepository.LeaveBalances
                         .AnyAsync(x =>
                             x.EmployeeId == employee.Id &&
                             x.LeaveTypeId == leaveType.Id &&
                             x.LeaveYear == year);
 
+
+
                     if (!exists)
                     {
+                        decimal currentYearAllocation =
+                            CalculateProratedLeave(
+                                leaveType.DaysPerYear,
+                                employee.JoiningDate,
+                                year);
+
+                        if (currentYearAllocation <= 0)
+                        {
+                            continue;
+                        }
+
+                        decimal carryForwardDays = 0;
+
+                        if (leaveType.IsCarryForward)
+                        {
+                            var previousYearBalance =
+                                await _leaveBalanceRepository.LeaveBalances
+                                    .AsNoTracking()
+                                    .FirstOrDefaultAsync(x =>
+                                        x.EmployeeId == employee.Id &&
+                                        x.LeaveTypeId == leaveType.Id &&
+                                        x.LeaveYear == year - 1);
+
+                            if (previousYearBalance != null &&
+                                previousYearBalance.BalanceDays > 0)
+                            {
+                                carryForwardDays =
+                                    previousYearBalance.BalanceDays;
+                            }
+                        }
+
+                        decimal totalAllocatedDays =
+                            currentYearAllocation + carryForwardDays;
+
                         var balance = new LeaveBalanceModel
                         {
                             EmployeeId = employee.Id,
                             LeaveTypeId = leaveType.Id,
                             LeaveYear = year,
-                            AllocatedDays = leaveType.DaysPerYear,
+
+                            AllocatedDays = totalAllocatedDays,
                             UsedDays = 0,
-                            BalanceDays = leaveType.DaysPerYear
+                            BalanceDays = totalAllocatedDays
                         };
 
                         await _leaveBalanceRepository.AddAsync(balance);
@@ -145,8 +189,8 @@ namespace AryamanBMS.Controllers
 
         [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Export(
-    int? year,
-    int? employeeId)
+        int? year,
+        int? employeeId)
         {
             int selectedYear =
                 year ?? DateTime.Today.Year;
@@ -217,38 +261,35 @@ namespace AryamanBMS.Controllers
         }
 
         private decimal CalculateProratedLeave(
-    decimal annualLeaveDays,
-    DateTime joiningDate,
-    int financialYear)
+          decimal annualLeaveDays,
+          DateTime joiningDate,
+          int leaveYear)
         {
-            var fyStart = new DateTime(financialYear, 4, 1);
-            var fyEnd = new DateTime(financialYear + 1, 3, 31);
+            var leaveYearStart =
+                new DateTime(leaveYear, 1, 1);
 
-            if (joiningDate > fyEnd)
+            var leaveYearEnd =
+                new DateTime(leaveYear, 12, 31);
+
+            if (joiningDate.Date > leaveYearEnd)
             {
                 return 0;
             }
 
-            var effectiveStartDate =
-                joiningDate > fyStart
-                    ? joiningDate
-                    : fyStart;
+            if (joiningDate.Date <= leaveYearStart)
+            {
+                return annualLeaveDays;
+            }
 
             int eligibleMonths =
-                ((fyEnd.Year - effectiveStartDate.Year) * 12)
-                + fyEnd.Month
-                - effectiveStartDate.Month
-                + 1;
-
-            if (eligibleMonths < 0)
-            {
-                eligibleMonths = 0;
-            }
+                12 - joiningDate.Month + 1;
 
             decimal proratedLeave =
                 annualLeaveDays / 12m * eligibleMonths;
 
-            return Math.Round(proratedLeave, 2);
+            return Math.Round(
+             proratedLeave * 2,
+             MidpointRounding.AwayFromZero) / 2;
         }
     }
 }

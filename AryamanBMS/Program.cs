@@ -1,6 +1,7 @@
 using AryamanBMS.Data;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories;
+using AryamanBMS.Repositories.Implementations;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services;
 using AryamanBMS.Services.Interface;
@@ -35,6 +36,7 @@ builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 builder.Services.AddScoped<IEmployeeAcademicRepository, EmployeeAcademicRepository>();
 
 builder.Services.AddScoped<IEmployeeDocumentRepository, EmployeeDocumentRepository>();
+builder.Services.AddScoped<IEmployeePreviousEmploymentRepository, EmployeePreviousEmploymentRepository>();
 
 builder.Services.AddScoped<ILocationRepository, LocationRepository>();
 
@@ -50,6 +52,8 @@ builder.Services.AddScoped<ILeaveTypeRepository, LeaveTypeRepository>();
 builder.Services.AddScoped<ILeaveApplicationRepository, LeaveApplicationRepository>();
 
 builder.Services.AddScoped<ILeaveBalanceRepository, LeaveBalanceRepository>();
+
+builder.Services.AddScoped<ICompOffCreditRepository, CompOffCreditRepository>();
 
 // Salary
 builder.Services.AddScoped<ISalaryRecordRepository, SalaryRecordRepository>();

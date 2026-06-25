@@ -326,6 +326,50 @@ CREATE TABLE `tableemployeedocument` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
+DROP TABLE IF EXISTS `TableEmployeePreviousEmployment`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE IF NOT EXISTS `TableEmployeePreviousEmployment`
+(
+    `Id` INT NOT NULL AUTO_INCREMENT,
+
+    `EmployeeId` INT NOT NULL,
+
+    `CompanyName` VARCHAR(150) NOT NULL,
+    `Designation` VARCHAR(100) NULL,
+    `Department` VARCHAR(100) NULL,
+    `EmploymentType` VARCHAR(50) NULL,
+
+    `StartDate` DATE NOT NULL,
+    `EndDate` DATE NOT NULL,
+
+    `LastSalary` DECIMAL(18,2) NULL,
+    `ReasonForLeaving` VARCHAR(500) NULL,
+
+    `CompanyAddress` VARCHAR(500) NULL,
+    `CompanyCity` VARCHAR(100) NULL,
+    `CompanyState` VARCHAR(100) NULL,
+    `CompanyPinCode` VARCHAR(10) NULL,
+    `CompanyWebsite` VARCHAR(200) NULL,
+
+    `HRContactName` VARCHAR(150) NULL,
+    `HRContactEmail` VARCHAR(150) NULL,
+    `HRContactNumber` VARCHAR(20) NULL,
+
+    `CreatedOn` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `UpdatedOn` DATETIME NULL,
+
+    PRIMARY KEY (`Id`),
+
+    INDEX `IX_PreviousEmployment_EmployeeId`
+        (`EmployeeId`),
+
+    CONSTRAINT `FK_PreviousEmployment_Employee`
+        FOREIGN KEY (`EmployeeId`)
+        REFERENCES `TableEmployee` (`Id`)
+        ON DELETE CASCADE
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 --
 -- Table structure for table `tableleaveapplications`
 --

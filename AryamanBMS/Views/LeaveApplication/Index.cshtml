@@ -168,6 +168,7 @@
                             <th>To</th>
                             <th>Days</th>
                             <th>Status</th>
+                            <th>Cancellation</th>
                             <th>Applied On</th>
                             <th class="text-end">Actions</th>
                         </tr>
@@ -247,6 +248,41 @@
                                     }
 
                                 </td>
+                                <td>
+                                    @if (string.IsNullOrWhiteSpace(item.CancellationStatus))
+                                    {
+                                        <span>-</span>
+                                    }
+                                    else
+                                    {
+                                        switch (item.CancellationStatus)
+                                        {
+                                            case "Pending":
+                                                <span class="badge-warning">
+                                                    Pending
+                                                </span>
+                                                break;
+
+                                            case "Approved":
+                                                <span class="badge-success">
+                                                    Approved
+                                                </span>
+                                                break;
+
+                                            case "Rejected":
+                                                <span class="badge-danger">
+                                                    Rejected
+                                                </span>
+                                                break;
+
+                                            default:
+                                                <span>
+                                                    @item.CancellationStatus
+                                                </span>
+                                                break;
+                                        }
+                                    }
+                                </td>
 
                                 <td>
                                     @(item.AppliedOn.ToString("dd-MMM-yyyy"))
@@ -265,6 +301,23 @@
                                             <i class="bi bi-eye"></i>
 
                                         </a>
+                                        @if (item.Status == "Approved" &&
+                                                                        item.CancellationStatus != "Pending" &&
+                                                                        item.CancellationStatus != "Approved" &&
+                                                                        !User.IsInRole("Admin") &&
+                                                                        !User.IsInRole("HR"))
+                                        {
+                                            <button type="button"
+                                                    class="btn-app btn-secondary-app btn-icon"
+                                                    title="Request cancellation"
+                                                    aria-label="Request cancellation"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#requestCancellationModal-@item.Id">
+
+                                                <i class="bi bi-arrow-counterclockwise"></i>
+
+                                            </button>
+                                        }
 
                                         @if (item.Status == "Pending")
                                         {
@@ -339,6 +392,33 @@
                                             </form>
                                         }
 
+                                        @if ((User.IsInRole("Admin") || User.IsInRole("HR")) &&
+                                                                        item.Status == "Approved" &&
+                                                                        item.CancellationStatus == "Pending")
+                                        {
+                                            <button type="button"
+                                                    class="btn-app btn-success-app btn-icon"
+                                                    title="Approve cancellation"
+                                                    aria-label="Approve cancellation"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#approveCancellationModal-@item.Id">
+
+                                                <i class="bi bi-check-circle"></i>
+
+                                            </button>
+
+                                            <button type="button"
+                                                    class="btn-app btn-danger-app btn-icon"
+                                                    title="Reject cancellation"
+                                                    aria-label="Reject cancellation"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#rejectCancellationModal-@item.Id">
+
+                                                <i class="bi bi-x-circle"></i>
+
+                                            </button>
+                                        }
+
                                     </div>
 
                                 </td>
@@ -349,6 +429,244 @@
                     </tbody>
 
                 </table>
+
+                @foreach (var item in Model.Items)
+                {
+                    @if (item.Status == "Approved" &&
+                                item.CancellationStatus != "Pending" &&
+                                item.CancellationStatus != "Approved" &&
+                                !User.IsInRole("Admin") &&
+                                !User.IsInRole("HR"))
+                    {
+                        <div class="modal fade"
+                             id="requestCancellationModal-@item.Id"
+                             tabindex="-1"
+                             aria-hidden="true">
+
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+
+                                    <form asp-action="RequestCancellation"
+                                          method="post">
+
+                                        @Html.AntiForgeryToken()
+
+                                        <input type="hidden"
+                                               name="id"
+                                               value="@item.Id" />
+
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">
+                                                Request Leave Cancellation
+                                            </h5>
+
+                                            <button type="button"
+                                                    class="btn-close"
+                                                    data-bs-dismiss="modal">
+                                            </button>
+                                        </div>
+
+                                        <div class="modal-body">
+
+                                            <p>
+                                                Request cancellation for
+                                                <strong>
+                                                    @item.ApplicationNumber
+                                                </strong>
+                                            </p>
+
+                                            <label class="form-label">
+                                                Cancellation Reason
+                                            </label>
+
+                                            <textarea name="cancellationReason"
+                                          class="app-input"
+                                          rows="4"
+                                          maxlength="500"
+                                          required></textarea>
+
+                                        </div>
+
+                                        <div class="modal-footer">
+
+                                            <button type="button"
+                                                    class="btn-app btn-secondary-app"
+                                                    data-bs-dismiss="modal">
+                                                Close
+                                            </button>
+
+                                            <button type="submit"
+                                                    class="btn-app btn-primary-app">
+                                                Submit Request
+                                            </button>
+
+                                        </div>
+
+                                    </form>
+
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    @if ((User.IsInRole("Admin") || User.IsInRole("HR")) &&
+                                item.Status == "Approved" &&
+                                item.CancellationStatus == "Pending")
+                    {
+                        <div class="modal fade"
+                             id="approveCancellationModal-@item.Id"
+                             tabindex="-1"
+                             aria-hidden="true">
+
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+
+                                    <form asp-action="ApproveCancellation"
+                                          method="post">
+
+                                        @Html.AntiForgeryToken()
+
+                                        <input type="hidden"
+                                               name="id"
+                                               value="@item.Id" />
+
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">
+                                                Approve Cancellation
+                                            </h5>
+
+                                            <button type="button"
+                                                    class="btn-close"
+                                                    data-bs-dismiss="modal">
+                                            </button>
+                                        </div>
+
+                                        <div class="modal-body">
+
+                                            <p>
+                                                Application:
+                                                <strong>
+                                                    @item.ApplicationNumber
+                                                </strong>
+                                            </p>
+
+                                            <p>
+                                                Employee reason:
+                                                <strong>
+                                                    @(item.CancellationReason ?? "-")
+                                                </strong>
+                                            </p>
+
+                                            <label class="form-label">
+                                                Review Remarks
+                                            </label>
+
+                                            <textarea name="cancellationRemarks"
+                                          class="app-input"
+                                          rows="3"
+                                          maxlength="500"></textarea>
+
+                                        </div>
+
+                                        <div class="modal-footer">
+
+                                            <button type="button"
+                                                    class="btn-app btn-secondary-app"
+                                                    data-bs-dismiss="modal">
+                                                Close
+                                            </button>
+
+                                            <button type="submit"
+                                                    class="btn-app btn-success-app">
+                                                Approve Cancellation
+                                            </button>
+
+                                        </div>
+
+                                    </form>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal fade"
+                             id="rejectCancellationModal-@item.Id"
+                             tabindex="-1"
+                             aria-hidden="true">
+
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+
+                                    <form asp-action="RejectCancellation"
+                                          method="post">
+
+                                        @Html.AntiForgeryToken()
+
+                                        <input type="hidden"
+                                               name="id"
+                                               value="@item.Id" />
+
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">
+                                                Reject Cancellation
+                                            </h5>
+
+                                            <button type="button"
+                                                    class="btn-close"
+                                                    data-bs-dismiss="modal">
+                                            </button>
+                                        </div>
+
+                                        <div class="modal-body">
+
+                                            <p>
+                                                Application:
+                                                <strong>
+                                                    @item.ApplicationNumber
+                                                </strong>
+                                            </p>
+
+                                            <p>
+                                                Employee reason:
+                                                <strong>
+                                                    @(item.CancellationReason ?? "-")
+                                                </strong>
+                                            </p>
+
+                                            <label class="form-label">
+                                                Rejection Remarks
+                                            </label>
+
+                                            <textarea name="cancellationRemarks"
+                                          class="app-input"
+                                          rows="3"
+                                          maxlength="500"
+                                          required></textarea>
+
+                                        </div>
+
+                                        <div class="modal-footer">
+
+                                            <button type="button"
+                                                    class="btn-app btn-secondary-app"
+                                                    data-bs-dismiss="modal">
+                                                Close
+                                            </button>
+
+                                            <button type="submit"
+                                                    class="btn-app btn-danger-app">
+                                                Reject Cancellation
+                                            </button>
+
+                                        </div>
+
+                                    </form>
+
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
 
             </div>
         }

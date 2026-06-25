@@ -1,14 +1,12 @@
 ﻿using AryamanBMS.Extensions;
 using AryamanBMS.Models;
-using AryamanBMS.Repositories;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.ViewModels;
+using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
-using ClosedXML.Excel;
 
 namespace AryamanBMS.Controllers
 {
@@ -21,6 +19,7 @@ namespace AryamanBMS.Controllers
         private readonly IAttendanceRepository _attendanceRepository;
         private readonly ILeaveBalanceRepository _leaveBalanceRepository;
         private readonly UserManager<ApplicationUserModel> _userManager;
+        private readonly ICompOffCreditRepository _compOffCreditRepository;
 
         public LeaveApplicationController(
               ILeaveApplicationRepository leaveApplicationRepository,
@@ -28,7 +27,8 @@ namespace AryamanBMS.Controllers
               IEmployeeRepository employeeRepository,
               IAttendanceRepository attendanceRepository,
               ILeaveBalanceRepository leaveBalanceRepository,
-              UserManager<ApplicationUserModel> userManager)
+              UserManager<ApplicationUserModel> userManager,
+              ICompOffCreditRepository compOffCreditRepository)
         {
             _leaveApplicationRepository = leaveApplicationRepository;
             _leaveTypeRepository = leaveTypeRepository;
@@ -36,6 +36,7 @@ namespace AryamanBMS.Controllers
             _attendanceRepository = attendanceRepository;
             _leaveBalanceRepository = leaveBalanceRepository;
             _userManager = userManager;
+            _compOffCreditRepository = compOffCreditRepository;
         }
 
         public async Task<IActionResult> Index(
@@ -212,17 +213,17 @@ namespace AryamanBMS.Controllers
                     "Leave already exists for the selected date range.");
             }
 
-            bool leaveTypeActive =  await _leaveTypeRepository.LeaveTypes
+            bool leaveTypeActive = await _leaveTypeRepository.LeaveTypes
                     .AnyAsync(x =>
                         x.Id == leaveApplication.LeaveTypeId &&
                         x.IsActive);
-                    
-                     if (!leaveTypeActive)
-                     {
-                         ModelState.AddModelError(
-                             "LeaveTypeId",
-                             "Selected leave type is inactive.");
-                      }
+
+            if (!leaveTypeActive)
+            {
+                ModelState.AddModelError(
+                    "LeaveTypeId",
+                    "Selected leave type is inactive.");
+            }
 
 
             ModelState.Remove("Employee");
@@ -235,11 +236,11 @@ namespace AryamanBMS.Controllers
 
             if (ModelState.IsValid)
             {
-                leaveApplication.ApplicationNumber =  GenerateApplicationNumber();
+                leaveApplication.ApplicationNumber = GenerateApplicationNumber();
 
-                leaveApplication.AppliedOn =  DateTime.Now;
+                leaveApplication.AppliedOn = DateTime.Now;
 
-                leaveApplication.Status ="Pending";
+                leaveApplication.Status = "Pending";
 
                 await _leaveApplicationRepository.AddAsync(leaveApplication);
 
@@ -542,6 +543,296 @@ namespace AryamanBMS.Controllers
 
             TempData["Success"] =
                 "Leave application cancelled successfully.";
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,HR,Employee")]
+        public async Task<IActionResult> RequestCancellation(
+    int id,
+    string cancellationReason)
+        {
+            var leaveApplication =
+                await _leaveApplicationRepository.GetByIdAsync(id);
+
+            if (leaveApplication == null)
+            {
+                return NotFound();
+            }
+
+            // Employee can request cancellation only for their own leave
+            if (!User.IsInRole("Admin") &&
+                !User.IsInRole("HR"))
+            {
+                var user = await _userManager.GetUserAsync(User);
+
+                if (user == null)
+                {
+                    return Forbid();
+                }
+
+                var employee =
+                    await _employeeRepository.Employees
+                        .FirstOrDefaultAsync(x =>
+                            x.ApplicationUserId == user.Id);
+
+                if (employee == null ||
+                    leaveApplication.EmployeeId != employee.Id)
+                {
+                    return Forbid();
+                }
+            }
+
+            if (leaveApplication.Status != "Approved")
+            {
+                TempData["Error"] =
+                    "Only approved leave applications can be requested for cancellation.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (leaveApplication.CancellationStatus == "Pending")
+            {
+                TempData["Error"] =
+                    "A cancellation request is already pending.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (leaveApplication.CancellationStatus == "Approved")
+            {
+                TempData["Error"] =
+                    "This leave application has already been cancelled.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (string.IsNullOrWhiteSpace(cancellationReason))
+            {
+                TempData["Error"] =
+                    "Cancellation reason is required.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            leaveApplication.CancellationStatus = "Pending";
+            leaveApplication.CancellationReason =
+                cancellationReason.Trim();
+
+            leaveApplication.CancellationRequestedOn =
+                DateTime.Now;
+
+            leaveApplication.CancellationRequestedBy =
+                User.Identity?.Name;
+
+            leaveApplication.CancellationReviewedOn = null;
+            leaveApplication.CancellationReviewedBy = null;
+            leaveApplication.CancellationRemarks = null;
+
+            await _leaveApplicationRepository
+                .UpdateAsync(leaveApplication);
+
+            await _leaveApplicationRepository.SaveAsync();
+
+            TempData["Success"] =
+                "Leave cancellation request submitted successfully.";
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,HR")]
+        public async Task<IActionResult> ApproveCancellation(
+    int id,
+    string? cancellationRemarks)
+        {
+            var leaveApplication =
+                await _leaveApplicationRepository.GetByIdAsync(id);
+
+            if (leaveApplication == null)
+            {
+                return NotFound();
+            }
+
+            if (leaveApplication.Status != "Approved")
+            {
+                TempData["Error"] =
+                    "Only approved leave applications can be cancelled.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (leaveApplication.CancellationStatus != "Pending")
+            {
+                TempData["Error"] =
+                    "Only pending cancellation requests can be approved.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            var leaveType =
+                await _leaveTypeRepository.LeaveTypes
+                    .FirstOrDefaultAsync(x =>
+                        x.Id == leaveApplication.LeaveTypeId);
+
+            if (leaveType == null)
+            {
+                TempData["Error"] = "Leave type not found.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            bool requiresBalance =
+                leaveType.IsPaidLeave &&
+                leaveType.DaysPerYear > 0;
+
+            LeaveBalanceModel? leaveBalance = null;
+
+            if (requiresBalance)
+            {
+                leaveBalance =
+                    await _leaveBalanceRepository.LeaveBalances
+                        .FirstOrDefaultAsync(x =>
+                            x.EmployeeId ==
+                                leaveApplication.EmployeeId &&
+                            x.LeaveTypeId ==
+                                leaveApplication.LeaveTypeId &&
+                            x.LeaveYear ==
+                                leaveApplication.FromDate.Year);
+
+                if (leaveBalance == null)
+                {
+                    TempData["Error"] =
+                        "Leave balance record not found.";
+
+                    return RedirectToAction(nameof(Index));
+                }
+
+                leaveBalance.UsedDays -=
+                    leaveApplication.NumberOfDays;
+
+                leaveBalance.BalanceDays +=
+                    leaveApplication.NumberOfDays;
+
+                if (leaveBalance.UsedDays < 0)
+                {
+                    leaveBalance.UsedDays = 0;
+                }
+
+                if (leaveBalance.BalanceDays >
+                    leaveBalance.AllocatedDays)
+                {
+                    leaveBalance.BalanceDays =
+                        leaveBalance.AllocatedDays;
+                }
+            }
+
+            var attendanceRecords =
+                await _attendanceRepository.Attendances
+                    .Where(x =>
+                        x.EmployeeId ==
+                            leaveApplication.EmployeeId &&
+                        x.AttendanceDate.Date >=
+                            leaveApplication.FromDate.Date &&
+                        x.AttendanceDate.Date <=
+                            leaveApplication.ToDate.Date &&
+                        x.Status == "L" &&
+                        x.Remarks != null &&
+                        x.Remarks.Contains(
+                            leaveApplication.ApplicationNumber))
+                    .ToListAsync();
+
+            foreach (var attendance in attendanceRecords)
+            {
+                await _attendanceRepository.DeleteAsync(attendance);
+            }
+
+            leaveApplication.Status = "Cancelled";
+            leaveApplication.CancellationStatus = "Approved";
+            leaveApplication.CancellationReviewedOn =
+                DateTime.Now;
+            leaveApplication.CancellationReviewedBy =
+                User.Identity?.Name;
+            leaveApplication.CancellationRemarks =
+                string.IsNullOrWhiteSpace(cancellationRemarks)
+                    ? null
+                    : cancellationRemarks.Trim();
+
+            await _leaveApplicationRepository
+                .UpdateAsync(leaveApplication);
+
+            if (leaveBalance != null)
+            {
+                await _leaveBalanceRepository
+                    .UpdateAsync(leaveBalance);
+            }
+
+            await _leaveApplicationRepository.SaveAsync();
+
+            if (leaveBalance != null)
+            {
+                await _leaveBalanceRepository.SaveAsync();
+            }
+
+            await _attendanceRepository.SaveAsync();
+
+            TempData["Success"] =
+                "Leave cancellation approved. Balance and attendance updated.";
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,HR")]
+        public async Task<IActionResult> RejectCancellation(
+    int id,
+    string? cancellationRemarks)
+        {
+            var leaveApplication =
+                await _leaveApplicationRepository.GetByIdAsync(id);
+
+            if (leaveApplication == null)
+            {
+                return NotFound();
+            }
+
+            if (leaveApplication.Status != "Approved")
+            {
+                TempData["Error"] =
+                    "Only approved leave applications can have cancellation requests.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (leaveApplication.CancellationStatus != "Pending")
+            {
+                TempData["Error"] =
+                    "Only pending cancellation requests can be rejected.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            leaveApplication.CancellationStatus = "Rejected";
+            leaveApplication.CancellationReviewedOn = DateTime.Now;
+            leaveApplication.CancellationReviewedBy =
+                User.Identity?.Name;
+
+            leaveApplication.CancellationRemarks =
+                string.IsNullOrWhiteSpace(cancellationRemarks)
+                    ? null
+                    : cancellationRemarks.Trim();
+
+            await _leaveApplicationRepository
+                .UpdateAsync(leaveApplication);
+
+            await _leaveApplicationRepository.SaveAsync();
+
+            TempData["Success"] =
+                "Leave cancellation request rejected.";
 
             return RedirectToAction(nameof(Index));
         }

@@ -43,5 +43,11 @@ namespace AryamanBMS.Models
         [Required]
         [StringLength(30)]
         public string DocumentCategory { get; set; } = string.Empty;
+
+        public int? EmployeePreviousEmploymentId { get; set; }
+
+        public EmployeePreviousEmploymentModel?
+            PreviousEmployment
+        { get; set; }
     }
 }

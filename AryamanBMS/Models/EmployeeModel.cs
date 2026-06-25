@@ -143,9 +143,14 @@ namespace AryamanBMS.Models
 
         // Document Uploads and Records
         public ICollection<EmployeeAcademicModel> AcademicRecords { get; set; }
-    = new List<EmployeeAcademicModel>();
+        = new List<EmployeeAcademicModel>();
 
         public ICollection<EmployeeDocumentModel> Documents { get; set; }
             = new List<EmployeeDocumentModel>();
+
+        public ICollection<EmployeePreviousEmploymentModel>
+            PreviousEmployments
+        { get; set; }
+        = new List<EmployeePreviousEmploymentModel>();
     }
 }

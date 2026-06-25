@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Repositories
 {
-    public class LeaveApplicationRepository: ILeaveApplicationRepository
+    public class LeaveApplicationRepository : ILeaveApplicationRepository
     {
         private readonly ApplicationDbContext _context;
 
@@ -18,9 +18,10 @@ namespace AryamanBMS.Repositories
             LeaveApplications =>
             _context.LeaveApplications;
 
-        IQueryable<LeaveApplicationModel> ILeaveApplicationRepository.LeaveApplications { get => LeaveApplications; set => throw new NotImplementedException(); }
+        //IQueryable<LeaveApplicationModel> ILeaveApplicationRepository.LeaveApplications { get => LeaveApplications; set => throw new NotImplementedException(); }
 
-        public async Task<LeaveApplicationModel?>  GetByIdAsync(int id)
+
+        public async Task<LeaveApplicationModel?> GetByIdAsync(int id)
         {
             return await _context.LeaveApplications
                 .Include(x => x.Employee)

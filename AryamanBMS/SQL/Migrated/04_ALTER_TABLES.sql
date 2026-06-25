@@ -47,3 +47,18 @@
 --     `DocumentCategory`
 -- );
 
+-- ALTER TABLE `TableEmployeeDocument`
+-- ADD COLUMN `EmployeePreviousEmploymentId` INT NULL
+-- AFTER `EmployeeAcademicId`;
+
+-- CREATE INDEX `IX_EmployeeDocument_PreviousEmploymentId`
+-- ON `TableEmployeeDocument`
+-- (`EmployeePreviousEmploymentId`);
+
+-- ADD PREVIOUS EMP. DOC --
+-- ALTER TABLE `TableEmployeeDocument`
+-- ADD CONSTRAINT `FK_EmployeeDocument_PreviousEmployment`
+-- FOREIGN KEY (`EmployeePreviousEmploymentId`)
+-- REFERENCES `TableEmployeePreviousEmployment` (`Id`)
+-- ON DELETE CASCADE;
+

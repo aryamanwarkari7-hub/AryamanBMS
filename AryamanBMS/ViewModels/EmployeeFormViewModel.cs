@@ -16,5 +16,10 @@ namespace AryamanBMS.ViewModels
         { get; set; } = new();
 
         public List<int> RemovedAcademicIds { get; set; } = new();
+
+        public List<EmployeePreviousEmploymentInputViewModel> PreviousEmployments
+        { get; set; } = new();
+
+        public List<int> RemovedPreviousEmploymentIds { get; set; } = new();
     }
 }

@@ -1,0 +1,276 @@
+﻿@model IEnumerable<AryamanBMS.Models.CompOffCreditModel>
+
+@{
+    ViewData["Title"] = "Comp Off Requests";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">
+            Comp Off Requests
+        </h1>
+
+        <p class="module-subtitle">
+            View and manage compensatory-off credits
+        </p>
+    </div>
+
+    <a asp-action="Request"
+       class="btn-app btn-primary-app">
+
+        <i class="bi bi-plus-lg"></i>
+        Request Comp Off
+
+    </a>
+
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="app-alert app-alert-success mb-3">
+
+        <i class="bi bi-check-circle"></i>
+        @TempData["Success"]
+
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="app-alert app-alert-danger mb-3">
+
+        <i class="bi bi-exclamation-circle"></i>
+        @TempData["Error"]
+
+    </div>
+}
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+
+        <h5 class="card-title">
+            Comp Off Request List
+        </h5>
+
+    </div>
+
+    <div class="card-body">
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+
+                <i class="bi bi-calendar2-check"></i>
+
+                <p class="mb-0">
+                    No Comp Off requests found.
+                </p>
+
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+
+                <table class="app-table">
+
+                    <thead>
+                        <tr>
+
+                            @if (User.IsInRole("Admin") ||
+                                                    User.IsInRole("HR"))
+                            {
+                                <th>Employee</th>
+                            }
+
+                            <th>Worked Date</th>
+                            <th>Credit Days</th>
+                            <th>Expiry Date</th>
+                            <th>Attendance</th>
+                            <th>Status</th>
+                            <th>Requested On</th>
+                            <th>Remarks</th>
+
+                            @if (User.IsInRole("Admin") ||
+                                                    User.IsInRole("HR"))
+                            {
+                                <th class="text-end">
+                                    Actions
+                                </th>
+                            }
+
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+
+                                @if (User.IsInRole("Admin") ||
+                                                        User.IsInRole("HR"))
+                                {
+                                    <td>
+                                        <strong>
+                                            @(item.Employee?.FullName ?? "-")
+                                        </strong>
+
+                                        <br />
+
+                                        <small>
+                                            @(item.Employee?.EmployeeCode ?? "-")
+                                        </small>
+                                    </td>
+                                }
+
+                                <td>
+                                    @item.WorkedDate.ToString("dd-MMM-yyyy")
+                                </td>
+
+                                <td>
+                                    @item.CreditDays.ToString("0.##")
+                                </td>
+
+                                <td>
+                                    @item.ExpiryDate.ToString("dd-MMM-yyyy")
+                                </td>
+
+                                <td>
+                                    @if (item.Attendance != null)
+                                    {
+                                        <span>
+                                            @item.Attendance.Status
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span>-</span>
+                                    }
+                                </td>
+
+                                <td>
+                                    @switch (item.Status)
+                                    {
+                                        case "Pending":
+                                            <span class="badge-warning">
+                                                Pending
+                                            </span>
+                                            break;
+
+                                        case "Available":
+                                            <span class="badge-success">
+                                                Available
+                                            </span>
+                                            break;
+
+                                        case "Used":
+                                            <span class="badge-secondary">
+                                                Used
+                                            </span>
+                                            break;
+
+                                        case "Expired":
+                                            <span class="badge-danger">
+                                                Expired
+                                            </span>
+                                            break;
+
+                                        case "Rejected":
+                                            <span class="badge-danger">
+                                                Rejected
+                                            </span>
+                                            break;
+
+                                        default:
+                                            <span>
+                                                @item.Status
+                                            </span>
+                                            break;
+                                    }
+                            </td>
+
+                            <td>
+                                @item.RequestedOn.ToString("dd-MMM-yyyy")
+                            </td>
+
+                            <td>
+                                @(string.IsNullOrWhiteSpace(item.Remarks)
+                                                            ? "-"
+                                                            : item.Remarks)
+                        </td>
+
+                        @if (User.IsInRole("Admin") ||
+                                                User.IsInRole("HR"))
+                                {
+                                    <td>
+
+                                        <div class="table-actions justify-content-end">
+
+                                            @if (item.Status == "Pending")
+                                            {
+                                                <form asp-action="Approve"
+                                                      method="post"
+                                                      class="d-inline">
+
+                                                    @Html.AntiForgeryToken()
+
+                                                    <input type="hidden"
+                                                           name="id"
+                                                           value="@item.Id" />
+
+                                                    <button type="submit"
+                                                            class="btn-app btn-success-app btn-icon"
+                                                            title="Approve"
+                                                            aria-label="Approve Comp Off"
+                                                            onclick="return confirm('Approve this Comp Off request?');">
+
+                                                        <i class="bi bi-check-lg"></i>
+
+                                                    </button>
+
+                                                </form>
+
+                                                <form asp-action="Reject"
+                                                      method="post"
+                                                      class="d-inline">
+
+                                                    @Html.AntiForgeryToken()
+
+                                                    <input type="hidden"
+                                                           name="id"
+                                                           value="@item.Id" />
+
+                                                    <button type="submit"
+                                                            class="btn-app btn-danger-app btn-icon"
+                                                            title="Reject"
+                                                            aria-label="Reject Comp Off"
+                                                            onclick="return confirm('Reject this Comp Off request?');">
+
+                                                        <i class="bi bi-x-lg"></i>
+
+                                                    </button>
+
+                                                </form>
+                                            }
+
+                                        </div>
+
+                                    </td>
+                                }
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+    </div>
+
+</div>

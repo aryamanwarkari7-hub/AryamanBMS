@@ -4,7 +4,7 @@ namespace AryamanBMS.Repositories.Interfaces
 {
     public interface ILeaveApplicationRepository
     {
-        IQueryable<LeaveApplicationModel> LeaveApplications { get; set; }
+        IQueryable<LeaveApplicationModel> LeaveApplications { get; }
 
         Task<bool> HasApprovedLeaveTodayAsync(int employeeId);
 

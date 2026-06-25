@@ -1,0 +1,152 @@
+﻿@model AryamanBMS.ViewModels.CompOffRequestViewModel
+
+@{
+    ViewData["Title"] = "Request Comp Off";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">
+            Request Comp Off
+        </h1>
+
+        <p class="module-subtitle">
+            Request Comp Off for work completed on a holiday or week off
+        </p>
+    </div>
+
+    <a asp-controller="Attendance"
+       asp-action="Index"
+       class="btn-app btn-secondary-app">
+
+        <i class="bi bi-arrow-left"></i>
+        Back
+
+    </a>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="app-alert app-alert-danger mb-3">
+        <i class="bi bi-exclamation-circle"></i>
+        @TempData["Error"]
+    </div>
+}
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">
+            Comp Off Request Information
+        </h5>
+    </div>
+
+    <div class="card-body">
+
+        <form asp-action="Request"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <div asp-validation-summary="ModelOnly"
+                 class="text-danger mb-3">
+            </div>
+
+            <div class="row g-3">
+
+                <div class="col-md-6">
+
+                    <label asp-for="WorkedDate"
+                           class="form-label">
+                    </label>
+
+                    <input asp-for="WorkedDate"
+                           type="date"
+                           class="app-input"
+                           max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+
+                    <span asp-validation-for="WorkedDate"
+                          class="text-danger">
+                    </span>
+
+                    <small class="text-muted">
+                        Attendance must exist as Present or On Duty.
+                    </small>
+
+                </div>
+
+                <div class="col-md-6">
+
+                    <label asp-for="CreditDays"
+                           class="form-label">
+                    </label>
+
+                    <select asp-for="CreditDays"
+                            class="app-select">
+
+                        <option value="1.0">
+                            Full Day
+                        </option>
+
+                        <option value="0.5">
+                            Half Day
+                        </option>
+
+                    </select>
+
+                    <span asp-validation-for="CreditDays"
+                          class="text-danger">
+                    </span>
+
+                </div>
+
+                <div class="col-12">
+
+                    <label asp-for="Remarks"
+                           class="form-label">
+                    </label>
+
+                    <textarea asp-for="Remarks"
+                              class="app-input"
+                              rows="4"
+                              maxlength="500"
+                              placeholder="Describe the work performed and why Comp Off is requested">
+                    </textarea>
+
+                    <span asp-validation-for="Remarks"
+                          class="text-danger">
+                    </span>
+
+                </div>
+
+            </div>
+
+            <div class="d-flex gap-2 mt-4">
+
+                <button type="submit"
+                        class="btn-app btn-primary-app">
+
+                    <i class="bi bi-send"></i>
+                    Submit Request
+
+                </button>
+
+                <a asp-controller="Attendance"
+                   asp-action="Index"
+                   class="btn-app btn-secondary-app">
+
+                    Cancel
+
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}
