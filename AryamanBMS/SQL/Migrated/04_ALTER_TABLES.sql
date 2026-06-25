@@ -89,3 +89,10 @@
 -- CREATE INDEX `IX_LeaveApplications_CancellationStatus`
 --     ON `tableleaveapplications` (`CancellationStatus`);
 
+USE `aryamanbms`;
+
+ALTER TABLE `tableleavebalances`
+ADD COLUMN `CurrentYearAllocation` DECIMAL(10,2) NOT NULL DEFAULT 0.00
+AFTER `LeaveYear`,
+ADD COLUMN `CarryForwardDays` DECIMAL(10,2) NOT NULL DEFAULT 0.00
+AFTER `CurrentYearAllocation`;
