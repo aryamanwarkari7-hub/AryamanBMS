@@ -504,138 +504,173 @@ namespace AryamanBMS.Controllers
         }
 
         [Authorize(Roles = "Admin,HR")]
-        public IActionResult Dashboard(int? day, int? month, int? year)
+        public IActionResult Dashboard(
+    int? day,
+    int? month,
+    int? year)
         {
             var today = DateTime.Today;
 
-            int selectedYear = year ?? today.Year;
             int selectedMonth = month ?? today.Month;
-
-            int maximumDay =
-                DateTime.DaysInMonth(selectedYear, selectedMonth);
-
-            int selectedDay = day ?? today.Day;
-
-            if (selectedDay > maximumDay)
-            {
-                selectedDay = maximumDay;
-            }
-
-            var selectedDate = new DateTime(
-                selectedYear,
-                selectedMonth,
-                selectedDay);
-
-            ViewBag.SelectedDay = selectedDay;
-            ViewBag.SelectedMonth = selectedMonth;
-            ViewBag.SelectedYear = selectedYear;
-            ViewBag.SelectedDate = selectedDate;
-            month ??= DateTime.Today.Month;
-            year ??= DateTime.Today.Year;
-
+            int selectedYear = year ?? today.Year;
 
             int totalDays =
                 DateTime.DaysInMonth(
-                    year.Value,
-                    month.Value);
+                    selectedYear,
+                    selectedMonth);
 
-            var employees =
-                _employeeRepository.Employees
+            DateTime? selectedDate = null;
+
+            if (day.HasValue &&
+                day.Value >= 1 &&
+                day.Value <= totalDays)
+            {
+                selectedDate = new DateTime(
+                    selectedYear,
+                    selectedMonth,
+                    day.Value);
+            }
+
+            var employees = _employeeRepository.Employees
                 .Where(e => e.IsActive)
+                .OrderBy(e => e.FirstName)
+                .ThenBy(e => e.LastName)
                 .ToList();
 
             var attendanceRecords =
                 _attendanceRepository.Attendances
+                .Include(a => a.Employee)
                 .Where(a =>
-                    a.AttendanceDate.Month == month &&
-                    a.AttendanceDate.Year == year)
+                    a.AttendanceDate.Month == selectedMonth &&
+                    a.AttendanceDate.Year == selectedYear)
                 .ToList();
 
             var vm = new AttendanceDashboardViewModel
             {
-                Month = month.Value,
-                Year = year.Value,
+                Month = selectedMonth,
+                Year = selectedYear,
                 TotalDays = totalDays
             };
 
             foreach (var employee in employees)
             {
-                var employeeAttendanceViewModel =
-                  new EmployeeAttendanceViewModel
-                  {
-                      EmployeeId = employee.Id,
-                      EmployeeCode = employee.EmployeeCode,
-                      EmployeeName =
-                          $"{employee.FirstName} {employee.LastName}"
-                  };
+                var employeeAttendance =
+                    new EmployeeAttendanceViewModel
+                    {
+                        EmployeeId = employee.Id,
+                        EmployeeCode = employee.EmployeeCode,
+                        EmployeeName =
+                            $"{employee.FirstName} {employee.LastName}"
+                    };
 
-                for (int calendarDay = 1; calendarDay <= totalDays; calendarDay++)
+                for (int calendarDay = 1;
+                     calendarDay <= totalDays;
+                     calendarDay++)
                 {
-                    var record = attendanceRecords.FirstOrDefault(a =>
+                    var record = attendanceRecords
+                        .FirstOrDefault(a =>
                             a.EmployeeId == employee.Id &&
-                            a.AttendanceDate.Day == day);
+                            a.AttendanceDate.Day == calendarDay);
 
-                    string status =
-                        record?.Status ?? "";
+                    string status = record?.Status ?? "";
 
-                    employeeAttendanceViewModel.DailyStatus[calendarDay] =
-                        status;
+                    employeeAttendance
+                        .DailyStatus[calendarDay] = status;
 
                     switch (status)
                     {
                         case "P":
-                            employeeAttendanceViewModel.PresentCount++;
+                            employeeAttendance.PresentCount++;
                             break;
 
                         case "A":
-                            employeeAttendanceViewModel.AbsentCount++;
+                            employeeAttendance.AbsentCount++;
                             break;
 
                         case "L":
-                            employeeAttendanceViewModel.LeaveCount++;
+                            employeeAttendance.LeaveCount++;
                             break;
 
                         case "H":
-                            employeeAttendanceViewModel.HolidayCount++;
+                            employeeAttendance.HolidayCount++;
                             break;
 
                         case "WO":
-                            employeeAttendanceViewModel.WeekOffCount++;
+                            employeeAttendance.WeekOffCount++;
                             break;
 
                         case "OD":
-                            employeeAttendanceViewModel.OnDutyCount++;
+                            employeeAttendance.OnDutyCount++;
                             break;
                     }
                 }
 
-                vm.Employees.Add(employeeAttendanceViewModel);
+                vm.Employees.Add(employeeAttendance);
             }
 
-            int presentToday = _attendanceRepository.Attendances
-                 .Count(a =>
-                 a.AttendanceDate.Date == today &&
-                 a.Status == "P");
+            /*
+             Daily mode:
+             Cards and daily table use the selected date.
 
-            int onLeaveToday = _attendanceRepository.Attendances
-                .Count(a =>
-                    a.AttendanceDate.Date == today &&
+             Monthly mode:
+             Cards continue showing today's status.
+            */
+            DateTime summaryDate =
+                selectedDate ?? today;
+
+            var summaryRecords =
+                attendanceRecords
+                .Where(a =>
+                    a.AttendanceDate.Date ==
+                    summaryDate.Date)
+                .ToList();
+
+            int presentCount =
+                summaryRecords.Count(a =>
+                    a.Status == "P");
+
+            int leaveCount =
+                summaryRecords.Count(a =>
                     a.Status == "L");
 
-            int markedToday = _attendanceRepository.Attendances
-                .Count(a =>
-                    a.AttendanceDate.Date == today);
+            int markedCount =
+                summaryRecords
+                .Select(a => a.EmployeeId)
+                .Distinct()
+                .Count();
 
-            int notMarkedToday = employees.Count - markedToday;
+            int notMarkedCount =
+                Math.Max(
+                    0,
+                    employees.Count - markedCount);
 
-            decimal attendancePercentage = employees.Count > 0
-                ? Math.Round(((decimal)presentToday / employees.Count) * 100, 2)
-                : 0;
+            decimal attendancePercentage =
+                employees.Count > 0
+                    ? Math.Round(
+                        (decimal)presentCount /
+                        employees.Count * 100,
+                        2)
+                    : 0;
 
-            vm.PresentToday = presentToday;
-            vm.OnLeaveToday = onLeaveToday;
-            vm.NotMarkedToday = notMarkedToday;
-            vm.AttendancePercentage = attendancePercentage;
+            vm.PresentToday = presentCount;
+            vm.OnLeaveToday = leaveCount;
+            vm.NotMarkedToday = notMarkedCount;
+            vm.AttendancePercentage =
+                attendancePercentage;
+
+            ViewBag.SelectedDay = day;
+            ViewBag.SelectedMonth = selectedMonth;
+            ViewBag.SelectedYear = selectedYear;
+            ViewBag.SelectedDate = selectedDate;
+            ViewBag.IsDailyView = selectedDate.HasValue;
+
+            ViewBag.DailyAttendance =
+                selectedDate.HasValue
+                    ? summaryRecords
+                        .OrderBy(a => a.Employee.FirstName)
+                        .ThenBy(a => a.Employee.LastName)
+                        .ToList()
+                    : new List<AttendanceModel>();
 
             return View(vm);
         }

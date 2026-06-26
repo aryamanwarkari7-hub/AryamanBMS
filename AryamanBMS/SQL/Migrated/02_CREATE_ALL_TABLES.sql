@@ -596,6 +596,58 @@ COLLATE=utf8mb4_0900_ai_ci;
 SET FOREIGN_KEY_CHECKS = 1;
 SET UNIQUE_CHECKS = 1;
 
+CREATE TABLE IF NOT EXISTS TableProjectTimeline
+(
+    Id INT NOT NULL AUTO_INCREMENT,
+
+    ProjectId INT NOT NULL,
+
+    EventType VARCHAR(50) NOT NULL,
+
+    EventTitle VARCHAR(200) NOT NULL,
+
+    EventDescription VARCHAR(1000) NULL,
+
+    RelatedEntityType VARCHAR(50) NULL,
+
+    RelatedEntityId INT NULL,
+
+    PreviousValue VARCHAR(500) NULL,
+
+    NewValue VARCHAR(500) NULL,
+
+    EventDate DATETIME NOT NULL,
+
+    CreatedByUserId VARCHAR(255) NULL,
+
+    CreatedByName VARCHAR(200) NULL,
+
+    IsSystemGenerated TINYINT(1) NOT NULL DEFAULT 1,
+
+    IsActive TINYINT(1) NOT NULL DEFAULT 1,
+
+    CreatedOn DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (Id),
+
+    CONSTRAINT FK_ProjectTimeline_Project
+        FOREIGN KEY (ProjectId)
+        REFERENCES TableProject(Id)
+        ON DELETE CASCADE,
+
+    INDEX IX_ProjectTimeline_ProjectId
+        (ProjectId),
+
+    INDEX IX_ProjectTimeline_EventType
+        (EventType),
+
+    INDEX IX_ProjectTimeline_EventDate
+        (EventDate),
+
+    INDEX IX_ProjectTimeline_RelatedEntity
+        (RelatedEntityType, RelatedEntityId)
+);
+
 -- ============================================================
 -- TABLE CREATION COMPLETED
 -- ============================================================

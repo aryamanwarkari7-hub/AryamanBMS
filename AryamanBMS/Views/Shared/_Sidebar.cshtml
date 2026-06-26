@@ -106,15 +106,12 @@
         </div>
         
 
-    </div>
-
-    
+    </div> 
 
     <div class="sidebar-fy">
         FY 2025-26 | PUNE,MH
     </div>
     
-
     <div class="sidebar-menu" id="sidebarAccordion">
 
         @*  Dashboard *@
@@ -464,6 +461,15 @@
                                 </a>
 
                                 <a asp-controller="Salary"
+                                   asp-action="AttendanceSummary"
+                                   class="submenu-item nested-item @(currentController == "Salary" && currentAction == "AttendanceSummary" ? "active-menu" : "")">
+
+                                    <i class="bi bi-cash-stack"></i>
+                                    <span>Attendance Count</span>
+
+                                </a>
+
+                                <a asp-controller="Salary"
                                    asp-action="Index"
                                    class="submenu-item nested-item @(currentController == "Salary" && currentAction == "Index" ? "active-menu" : "")">
 
@@ -472,14 +478,7 @@
 
                                 </a>
 
-                                <a asp-controller="Salary"
-                                   asp-action="AttendanceSummary"
-                                   class="submenu-item nested-item @(currentController == "Salary" && currentAction == "AttendanceSummary" ? "active-menu" : "")">
-
-                                    <i class="bi bi-cash-stack"></i>
-                                    <span>Attendance Count</span>
-
-                                </a>
+                                
 
 
                             }

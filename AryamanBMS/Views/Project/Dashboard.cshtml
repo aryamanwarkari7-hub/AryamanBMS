@@ -1,5 +1,7 @@
 ﻿@model AryamanBMS.ViewModels.ProjectDashboardViewModel
 
+@using System.Globalization
+
 @{
     ViewData["Title"] = "Project Dashboard";
 }
@@ -7,12 +9,16 @@
 <div class="module-header">
 
     <div>
-        <h1 class="module-title">Project Dashboard</h1>
+
+        <h1 class="module-title">
+            Project Dashboard
+        </h1>
 
         <p class="module-subtitle">
             @Model.Project.ProjectCode -
             @Model.Project.ProjectName
         </p>
+
     </div>
 
     <div class="d-flex flex-wrap gap-2">
@@ -23,6 +29,16 @@
 
             <i class="bi bi-arrow-left"></i>
             Project Details
+
+        </a>
+
+        <a asp-controller="ProjectTimeline"
+           asp-action="Index"
+           asp-route-projectId="@Model.Project.Id"
+           class="btn-app btn-secondary-app">
+
+            <i class="bi bi-clock-history"></i>
+            View Timeline
 
         </a>
 
@@ -40,45 +56,386 @@
 
 </div>
 
-<div class="row g-3 mb-4">
+<!-- ==========================================
+     PROJECT GANTT CHART
+=========================================== -->
 
-    <div class="col-xl-3 col-md-6">
-        <div class="app-card h-100">
-            <div class="card-body">
-                <div class="text-muted">Active Members</div>
-                <h2 class="mb-0">@Model.ActiveMemberCount</h2>
-            </div>
+<div class="app-card mb-4">
+
+    <div class="card-header">
+
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+
+            <h5 class="card-title">
+                Project Gantt Chart
+            </h5>
+
+            @if (Model.Gantt.Tasks.Any())
+            {
+                <div class="gantt-project-summary">
+
+                    <div>
+                        <strong>Project Manager:</strong>
+                        @Model.Gantt.ProjectManagerName
+                    </div>
+
+                    <div>
+                        <strong>Timeline:</strong>
+
+                        @Model.Gantt.TimelineStart.ToString("dd MMM yyyy")
+                        -
+                        @Model.Gantt.TimelineEnd.ToString("dd MMM yyyy")
+                    </div>
+
+                    <div>
+                        <strong>Tasks:</strong>
+                        @Model.Gantt.Tasks.Count
+                    </div>
+
+                    <div>
+                        <strong>Overall Progress:</strong>
+                        @Model.OverallProgress.ToString("0.##")%
+                    </div>
+
+                </div>
+            }
+
         </div>
+
     </div>
 
-    <div class="col-xl-3 col-md-6">
-        <div class="app-card h-100">
-            <div class="card-body">
-                <div class="text-muted">Total Tasks</div>
-                <h2 class="mb-0">@Model.TotalTaskCount</h2>
-            </div>
-        </div>
-    </div>
+    <div class="card-body">
 
-    <div class="col-xl-3 col-md-6">
-        <div class="app-card h-100">
-            <div class="card-body">
-                <div class="text-muted">Completed Tasks</div>
-                <h2 class="mb-0">@Model.CompletedTaskCount</h2>
-            </div>
-        </div>
-    </div>
+        @if (!Model.Gantt.Tasks.Any())
+        {
+            <div class="empty-state">
 
-    <div class="col-xl-3 col-md-6">
-        <div class="app-card h-100">
-            <div class="card-body">
-                <div class="text-muted">Overdue Tasks</div>
-                <h2 class="mb-0">@Model.OverdueTaskCount</h2>
+                <i class="bi bi-bar-chart-steps"></i>
+
+                <p class="mb-0">
+                    No tasks with valid start and due dates are available.
+                </p>
+
             </div>
-        </div>
+        }
+        else
+        {
+            <!-- Status Legend -->
+
+            <div class="gantt-legend">
+
+                <span class="gantt-legend-item gantt-legend-not-started">
+                    Not Started
+                </span>
+
+                <span class="gantt-legend-item gantt-legend-in-progress">
+                    In Progress
+                </span>
+
+                <span class="gantt-legend-item gantt-legend-completed">
+                    Completed
+                </span>
+
+                <span class="gantt-legend-item gantt-legend-overdue">
+                    Overdue
+                </span>
+
+                <span class="gantt-legend-item gantt-legend-on-hold">
+                    On Hold
+                </span>
+
+            </div>
+
+            <div class="gantt-wrapper">
+
+                <!-- Gantt Header -->
+
+                <div class="gantt-header-row">
+
+                    <div class="gantt-task-column">
+                        Task Details
+                    </div>
+
+                    <div class="gantt-timeline-header">
+
+                        @foreach (var dateItem in Model.Gantt.TimelineDates)
+                        {
+                            string datePosition =
+                            dateItem.PositionPercent.ToString(
+                            "0.##",
+                            CultureInfo.InvariantCulture);
+
+                            <span class="gantt-date-label"
+                                  style="left: @datePosition%;">
+
+                                @dateItem.Date.ToString("dd MMM")
+
+                            </span>
+                        }
+
+                    </div>
+
+                </div>
+
+                
+                <!-- Gantt Rows -->
+                @for (int taskIndex = 0;
+                            taskIndex < Model.Gantt.Tasks.Count;
+                            taskIndex++)
+                {
+                    var task = Model.Gantt.Tasks[taskIndex];
+
+                    string leftPercent =
+                    task.LeftPercent.ToString(
+                    "0.##",
+                    CultureInfo.InvariantCulture);
+
+                    string widthPercent =
+                    task.WidthPercent.ToString(
+                    "0.##",
+                    CultureInfo.InvariantCulture);
+
+                    string taskClass;
+
+                    if (task.IsOverdue)
+                    {
+                        taskClass = "gantt-bar-overdue";
+                    }
+                    else if (string.Equals(
+                    task.Status,
+                    "Completed",
+                    StringComparison.OrdinalIgnoreCase))
+                    {
+                        taskClass = "gantt-bar-completed";
+                    }
+                    else if (string.Equals(
+                    task.Status,
+                    "In Progress",
+                    StringComparison.OrdinalIgnoreCase))
+                    {
+                        taskClass = "gantt-bar-in-progress";
+                    }
+                    else if (string.Equals(
+                    task.Status,
+                    "On Hold",
+                    StringComparison.OrdinalIgnoreCase))
+                    {
+                        taskClass = "gantt-bar-on-hold";
+                    }
+                    else
+                    {
+                        taskClass = "gantt-bar-not-started";
+                    }
+
+                    <div class="gantt-row">
+
+                        <div class="gantt-task-column">
+
+                            <a asp-controller="ProjectTask"
+                               asp-action="Details"
+                               asp-route-id="@task.TaskId"
+                               class="gantt-task-link">
+
+                                @task.TaskTitle
+
+                            </a>
+
+                            <span class="gantt-task-meta">
+
+                                <span>@task.TaskCode</span>
+
+                                <span>•</span>
+
+                                <span>
+                                    @task.StartDate.ToString("dd MMM")
+                                    -
+                                    @task.DueDate.ToString("dd MMM")
+                                </span>
+
+                            </span>
+
+                            <span class="gantt-assignee">
+
+                                <i class="bi bi-person"></i>
+
+                                <span>
+                                    Assigned to:
+                                    <strong>
+                                        @task.AssignedEmployeeName
+                                    </strong>
+                                </span>
+
+                            </span>
+
+                            <div class="d-flex flex-wrap gap-2 align-items-center">
+
+                                <span class="gantt-status">
+                                    @task.Status
+                                </span>
+
+                                @if (task.IsOverdue)
+                                {
+                                    <span class="gantt-overdue-text">
+                                        Overdue by @task.OverdueDays day(s)
+                                    </span>
+                                }
+
+                            </div>
+
+                        </div>
+
+                        <div class="gantt-timeline">
+
+                            @if (Model.Gantt.TodayPositionPercent.HasValue)
+                            {
+                                string todayPosition =
+                                Model.Gantt.TodayPositionPercent.Value
+                                .ToString(
+                                "0.##",
+                                CultureInfo.InvariantCulture);
+
+                                <div class="gantt-today-line"
+                                     style="left: @todayPosition%;">
+
+                                    @if (taskIndex == 0)
+                                    {
+                                        <span>Today</span>
+                                    }
+
+                                </div>
+                            }
+
+                            @if (task.IsMilestone)
+                            {
+                                <div class="gantt-milestone @taskClass"
+                                     title="@task.TaskTitle"
+                                     style="left: @leftPercent%;">
+
+                                    <span>
+                                        @task.DisplayProgressPercent%
+                                    </span>
+
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="gantt-bar @taskClass"
+                                     title="@task.TaskTitle | @task.StartDate.ToString("dd MMM yyyy") - @task.DueDate.ToString("dd MMM yyyy")"
+                                     style="left: @leftPercent%;
+                                        width: @widthPercent%;">
+
+                                    <div class="gantt-progress"
+                                         style="width: @task.DisplayProgressPercent%;">
+                                    </div>
+
+                                    <span class="gantt-label">
+                                        @task.DisplayProgressPercent%
+                                    </span>
+
+                                </div>
+                            }
+
+                        </div>
+
+                    </div>
+                }
+            </div>
+            }
     </div>
 
 </div>
+
+<!-- ==========================================
+     PROJECT SUMMARY CARDS
+=========================================== -->
+
+<div class="row g-3 mb-4">
+
+    <div class="col-xl-3 col-md-6">
+
+        <div class="app-card h-100">
+
+            <div class="card-body">
+
+                <div class="text-muted">
+                    Active Members
+                </div>
+
+                <h2 class="mb-0">
+                    @Model.ActiveMemberCount
+                </h2>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+
+        <div class="app-card h-100">
+
+            <div class="card-body">
+
+                <div class="text-muted">
+                    Total Tasks
+                </div>
+
+                <h2 class="mb-0">
+                    @Model.TotalTaskCount
+                </h2>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+
+        <div class="app-card h-100">
+
+            <div class="card-body">
+
+                <div class="text-muted">
+                    Completed Tasks
+                </div>
+
+                <h2 class="mb-0">
+                    @Model.CompletedTaskCount
+                </h2>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+
+        <div class="app-card h-100">
+
+            <div class="card-body">
+
+                <div class="text-muted">
+                    Overdue Tasks
+                </div>
+
+                <h2 class="mb-0">
+                    @Model.OverdueTaskCount
+                </h2>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ==========================================
+     TASK AND HOURS SUMMARY
+=========================================== -->
 
 <div class="row g-3 mb-4">
 
@@ -87,14 +444,25 @@
         <div class="app-card h-100">
 
             <div class="card-header">
-                <h5 class="card-title">Task Progress</h5>
+
+                <h5 class="card-title">
+                    Task Progress
+                </h5>
+
             </div>
 
             <div class="card-body">
 
                 <div class="mb-2 d-flex justify-content-between">
-                    <span>Overall Progress</span>
-                    <strong>@Model.OverallProgress.ToString("0.##")%</strong>
+
+                    <span>
+                        Overall Progress
+                    </span>
+
+                    <strong>
+                        @Model.OverallProgress.ToString("0.##")%
+                    </strong>
+
                 </div>
 
                 <div class="progress mb-4"
@@ -102,7 +470,7 @@
 
                     <div class="progress-bar"
                          role="progressbar"
-                         style="width: @Model.OverallProgress%;"
+                         style="width: @Model.OverallProgress.ToString("0.##", CultureInfo.InvariantCulture)%;"
                          aria-valuenow="@Model.OverallProgress"
                          aria-valuemin="0"
                          aria-valuemax="100">
@@ -114,6 +482,7 @@
                 </div>
 
                 <table class="app-table">
+
                     <tbody>
 
                         <tr>
@@ -137,6 +506,7 @@
                         </tr>
 
                     </tbody>
+
                 </table>
 
             </div>
@@ -150,26 +520,38 @@
         <div class="app-card h-100">
 
             <div class="card-header">
-                <h5 class="card-title">Hours Summary</h5>
+
+                <h5 class="card-title">
+                    Hours Summary
+                </h5>
+
             </div>
 
             <div class="card-body">
 
                 <table class="app-table">
+
                     <tbody>
 
                         <tr>
                             <th>Estimated Hours</th>
-                            <td>@Model.EstimatedHours.ToString("N2")</td>
+
+                            <td>
+                                @Model.EstimatedHours.ToString("N2")
+                            </td>
                         </tr>
 
                         <tr>
                             <th>Actual Hours</th>
-                            <td>@Model.ActualHours.ToString("N2")</td>
+
+                            <td>
+                                @Model.ActualHours.ToString("N2")
+                            </td>
                         </tr>
 
                         <tr>
                             <th>Variance</th>
+
                             <td>
                                 @{
                                     decimal variance =
@@ -183,15 +565,22 @@
 
                         <tr>
                             <th>Current Flow Stage</th>
-                            <td>@Model.CurrentFlowStage</td>
+
+                            <td>
+                                @Model.CurrentFlowStage
+                            </td>
                         </tr>
 
                         <tr>
                             <th>Flow Status</th>
-                            <td>@Model.CurrentFlowStatus</td>
+
+                            <td>
+                                @Model.CurrentFlowStatus
+                            </td>
                         </tr>
 
                     </tbody>
+
                 </table>
 
             </div>
@@ -202,6 +591,10 @@
 
 </div>
 
+<!-- ==========================================
+     RISK AND MEETING SUMMARY
+=========================================== -->
+
 <div class="row g-3">
 
     <div class="col-lg-6">
@@ -209,12 +602,17 @@
         <div class="app-card h-100">
 
             <div class="card-header">
-                <h5 class="card-title">Risk Summary</h5>
+
+                <h5 class="card-title">
+                    Risk Summary
+                </h5>
+
             </div>
 
             <div class="card-body">
 
                 <table class="app-table">
+
                     <tbody>
 
                         <tr>
@@ -228,9 +626,11 @@
                         </tr>
 
                     </tbody>
+
                 </table>
 
                 <div class="mt-3">
+
                     <a asp-controller="Risk"
                        asp-action="Index"
                        asp-route-projectId="@Model.Project.Id"
@@ -239,6 +639,7 @@
                         View Risk Register
 
                     </a>
+
                 </div>
 
             </div>
@@ -252,23 +653,33 @@
         <div class="app-card h-100">
 
             <div class="card-header">
-                <h5 class="card-title">Meeting Summary</h5>
+
+                <h5 class="card-title">
+                    Meeting Summary
+                </h5>
+
             </div>
 
             <div class="card-body">
 
                 <table class="app-table">
+
                     <tbody>
 
                         <tr>
                             <th>Upcoming Meetings</th>
-                            <td>@Model.UpcomingMeetingCount</td>
+
+                            <td>
+                                @Model.UpcomingMeetingCount
+                            </td>
                         </tr>
 
                     </tbody>
+
                 </table>
 
                 <div class="mt-3">
+
                     <a asp-controller="MOM"
                        asp-action="Index"
                        asp-route-projectId="@Model.Project.Id"
@@ -277,6 +688,7 @@
                         View MOM Tracker
 
                     </a>
+
                 </div>
 
             </div>

@@ -1,10 +1,10 @@
-﻿using AryamanBMS.Models;
+﻿using System.Globalization;
+using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interface;
 using AryamanBMS.ViewModels;
 using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
-using System.Globalization;
 
 namespace AryamanBMS.Services
 {
@@ -76,6 +76,8 @@ namespace AryamanBMS.Services
                     continue;
                 }
 
+
+
                 var employee = await _employeeRepository.Employees
                     .FirstOrDefaultAsync(x => x.EmployeeCode == employeeCode);
 
@@ -94,10 +96,26 @@ namespace AryamanBMS.Services
                         x.Year == year);
 
                 if (existingSalary != null &&
-                    existingSalary.PaymentStatus == "Paid")
+                 string.Equals(
+                     existingSalary.PaymentStatus,
+                     "Paid",
+                     StringComparison.OrdinalIgnoreCase))
+                {
+                    result.SkippedPaidCount++;
+                    continue;
+                }
+
+                var missingFormulaColumns =
+                 GetMissingSalaryFormulaColumns(
+                 worksheet,
+                 row);
+
+                if (missingFormulaColumns.Any())
                 {
                     result.Errors.Add(
-                        $"Row {row}: Salary already paid for employee '{employeeCode}'. Cannot overwrite.");
+                        $"Row {row} ({employeeCode}): Salary formulas are missing in " +
+                        $"{string.Join(", ", missingFormulaColumns)}. " +
+                        "Please drag/copy the formulas into this row and upload again.");
 
                     continue;
                 }
@@ -191,6 +209,46 @@ namespace AryamanBMS.Services
             }
 
             return 0;
+        }
+
+        private List<string> GetMissingSalaryFormulaColumns(
+    IXLWorksheet worksheet,
+    int row)
+        {
+            var requiredFormulaColumns =
+                new Dictionary<int, string>
+                {
+            { 6, "Gross Salary" },
+            { 7, "Basic Salary" },
+            { 8, "HRA" },
+            { 9, "Conveyance" },
+            { 10, "Medical Allowance" },
+            { 11, "Education Allowance" },
+            { 12, "Special Allowance" },
+            { 13, "Total Earnings" },
+            { 14, "Gross Minus Conveyance" },
+            { 15, "PF Employee" },
+            { 16, "ESIC Employee" },
+            { 17, "Professional Tax" },
+            { 19, "Total Payable" },
+            { 21, "Employer PF" },
+            { 22, "Employer ESIC" },
+            { 23, "CTC" }
+                };
+
+            var missingColumns = new List<string>();
+
+            foreach (var item in requiredFormulaColumns)
+            {
+                var cell = worksheet.Cell(row, item.Key);
+
+                if (string.IsNullOrWhiteSpace(cell.FormulaA1))
+                {
+                    missingColumns.Add(item.Value);
+                }
+            }
+
+            return missingColumns;
         }
     }
 }

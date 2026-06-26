@@ -8,16 +8,22 @@
 
         public bool HasErrors => Errors.Any();
 
+        public int SkippedPaidCount { get; set; }
+
         public string Message
         {
             get
             {
-                if (HasErrors)
+                string message =
+                    $"{ImportedCount} salary record(s) imported successfully.";
+
+                if (SkippedPaidCount > 0)
                 {
-                    return $"{ImportedCount} records imported with {Errors.Count} errors.";
+                    message +=
+                        $" {SkippedPaidCount} paid record(s) skipped.";
                 }
 
-                return $"{ImportedCount} salary records imported successfully.";
+                return message;
             }
         }
     }

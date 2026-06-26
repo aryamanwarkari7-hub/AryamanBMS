@@ -1,5 +1,6 @@
 ﻿using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
+using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,12 +12,17 @@ namespace AryamanBMS.Controllers
     {
         private readonly IProjectRiskRepository _riskRepository;
         private readonly IProjectMemberRepository _projectMemberRepository;
+
+        private readonly IProjectTimelineService _projectTimelineService;
+
         public RiskController(
          IProjectRiskRepository riskRepository,
-         IProjectMemberRepository projectMemberRepository)
+         IProjectMemberRepository projectMemberRepository,
+         IProjectTimelineService projectTimelineService)
         {
             _riskRepository = riskRepository;
             _projectMemberRepository = projectMemberRepository;
+            _projectTimelineService = projectTimelineService;
         }
 
         [HttpGet]
@@ -140,6 +146,17 @@ namespace AryamanBMS.Controllers
             await _riskRepository.AddAsync(model);
             await _riskRepository.SaveAsync();
 
+            await _projectTimelineService.AddEventAsync(
+              projectId: model.ProjectId,
+              eventType: "RiskCreated",
+              eventTitle: "Project risk recorded",
+              eventDescription:
+                  $"Risk {model.RiskTitle} was recorded with " +
+                  $"{model.Severity} severity.",
+              relatedEntityType: "Risk",
+              relatedEntityId: model.Id,
+              newValue: model.RiskStatus);
+
             TempData["Success"] =
                 "Project risk created successfully.";
 
@@ -190,10 +207,16 @@ namespace AryamanBMS.Controllers
             }
 
             var existing =
-                await _riskRepository.GetByIdAsync(model.Id);
+              await _riskRepository.GetByIdAsync(model.Id);
 
             if (existing == null)
                 return NotFound();
+
+            string previousStatus =
+                existing.RiskStatus ?? string.Empty;
+
+            string previousSeverity =
+                existing.Severity ?? string.Empty;
 
             existing.ProjectId = model.ProjectId;
             existing.RiskOwnerEmployeeId =
@@ -230,6 +253,92 @@ namespace AryamanBMS.Controllers
 
             await _riskRepository.UpdateAsync(existing);
             await _riskRepository.SaveAsync();
+
+            if (!string.Equals(
+    previousStatus,
+    existing.RiskStatus,
+    StringComparison.OrdinalIgnoreCase))
+            {
+                await _projectTimelineService.AddEventAsync(
+                    projectId: existing.ProjectId,
+                    eventType: "RiskStatusChanged",
+                    eventTitle: "Risk status changed",
+                    eventDescription:
+                        $"Risk {existing.RiskTitle} changed from " +
+                        $"{previousStatus} to {existing.RiskStatus}.",
+                    relatedEntityType: "Risk",
+                    relatedEntityId: existing.Id,
+                    previousValue: previousStatus,
+                    newValue: existing.RiskStatus);
+            }
+            if (!string.Equals(
+    previousSeverity,
+    existing.Severity,
+    StringComparison.OrdinalIgnoreCase))
+            {
+                await _projectTimelineService.AddEventAsync(
+                    projectId: existing.ProjectId,
+                    eventType: "RiskSeverityChanged",
+                    eventTitle: "Risk severity changed",
+                    eventDescription:
+                        $"Risk {existing.RiskTitle} severity changed from " +
+                        $"{previousSeverity} to {existing.Severity}.",
+                    relatedEntityType: "Risk",
+                    relatedEntityId: existing.Id,
+                    previousValue: previousSeverity,
+                    newValue: existing.Severity);
+            }
+            bool wasResolved =
+    string.Equals(
+        previousStatus,
+        "Resolved",
+        StringComparison.OrdinalIgnoreCase);
+
+            bool isResolved =
+                string.Equals(
+                    existing.RiskStatus,
+                    "Resolved",
+                    StringComparison.OrdinalIgnoreCase);
+
+            if (!wasResolved && isResolved)
+            {
+                await _projectTimelineService.AddEventAsync(
+                    projectId: existing.ProjectId,
+                    eventType: "RiskResolved",
+                    eventTitle: "Project risk resolved",
+                    eventDescription:
+                        $"Risk {existing.RiskTitle} was resolved.",
+                    relatedEntityType: "Risk",
+                    relatedEntityId: existing.Id,
+                    previousValue: previousStatus,
+                    newValue: "Resolved");
+            }
+
+            bool wasClosed =
+    string.Equals(
+        previousStatus,
+        "Closed",
+        StringComparison.OrdinalIgnoreCase);
+
+            bool isClosed =
+                string.Equals(
+                    existing.RiskStatus,
+                    "Closed",
+                    StringComparison.OrdinalIgnoreCase);
+
+            if (!wasClosed && isClosed)
+            {
+                await _projectTimelineService.AddEventAsync(
+                    projectId: existing.ProjectId,
+                    eventType: "RiskClosed",
+                    eventTitle: "Project risk closed",
+                    eventDescription:
+                        $"Risk {existing.RiskTitle} was closed.",
+                    relatedEntityType: "Risk",
+                    relatedEntityId: existing.Id,
+                    previousValue: previousStatus,
+                    newValue: "Closed");
+            }
 
             TempData["Success"] =
                 "Project risk updated successfully.";

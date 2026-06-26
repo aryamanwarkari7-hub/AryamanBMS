@@ -1,6 +1,5 @@
 ﻿using AryamanBMS.Extensions;
 using AryamanBMS.Models;
-using AryamanBMS.Repositories;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interface;
 using AryamanBMS.ViewModels;
@@ -44,9 +43,9 @@ namespace AryamanBMS.Controllers
 
         [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Index(
-    int? month,
-    int? year,
-    int page = 1)
+          int? month,
+          int? year,
+          int page = 1)
         {
             const int pageSize = 10;
 
@@ -59,6 +58,30 @@ namespace AryamanBMS.Controllers
 
             int selectedYear =
                 year ?? DateTime.Today.Year;
+            var selectedPeriod =
+                new DateTime(
+                    selectedYear,
+                    selectedMonth,
+                    1);
+
+            var currentPeriod =
+                new DateTime(
+                    DateTime.Today.Year,
+                    DateTime.Today.Month,
+                    1);
+
+            if (selectedPeriod > currentPeriod)
+            {
+                ViewBag.EmptyMessage =
+                    $"Salary records are not available for " +
+                    $"{selectedPeriod:MMMM yyyy} because this is a future payroll period.";
+            }
+            else
+            {
+                ViewBag.EmptyMessage =
+                    $"No salary records found for {selectedPeriod:MMMM yyyy}. " +
+                    "Please export the salary template, complete it, and import the final salary Excel.";
+            }
 
             var query = _salaryRecordRepository.SalaryRecords
                 .AsNoTracking()
@@ -178,41 +201,178 @@ namespace AryamanBMS.Controllers
                 });
         }
 
+
         [Authorize(Roles = "Admin,HR")]
-        public IActionResult Dashboard(int? month,int? year)
+        public async Task<IActionResult> Dashboard(
+         string viewType = "Monthly",
+         int? month = null,
+         int? year = null)
         {
-            month ??= DateTime.Today.Month;
-            year ??= DateTime.Today.Year;
+            int selectedMonth =
+                month.HasValue &&
+                month.Value >= 1 &&
+                month.Value <= 12
+                    ? month.Value
+                    : DateTime.Today.Month;
 
-            var salaries =
-                _salaryRecordRepository.SalaryRecords
-                .Where(x =>
-                    x.Month == month &&
-                    x.Year == year);
+            int selectedYear =
+                year ?? DateTime.Today.Year;
 
-            var model =
-                new SalaryDashboardViewModel
-                {
-                    TotalEmployees =
-                        salaries.Count(),
+            bool isYearly =
+                string.Equals(
+                    viewType,
+                    "Yearly",
+                    StringComparison.OrdinalIgnoreCase);
 
-                    PaidCount =
-                        salaries.Count(x =>
-                            x.PaymentStatus == "Paid"),
+            viewType = isYearly
+                ? "Yearly"
+                : "Monthly";
 
-                    PendingCount =
-                        salaries.Count(x =>
-                            x.PaymentStatus != "Paid"),
+            var yearSalaries =
+                await _salaryRecordRepository.SalaryRecords
+                    .AsNoTracking()
+                    .Where(x => x.Year == selectedYear)
+                    .ToListAsync();
 
-                    TotalGrossSalary =
-                        salaries.Sum(x => x.GrossSalary),
+            var selectedSalaries =
+                isYearly
+                    ? yearSalaries
+                    : yearSalaries
+                        .Where(x => x.Month == selectedMonth)
+                        .ToList();
 
-                    TotalNetSalary =
-                        salaries.Sum(x => x.NetSalary)
-                };
+            int paidCount =
+                selectedSalaries.Count(x =>
+                    string.Equals(
+                        x.PaymentStatus,
+                        "Paid",
+                        StringComparison.OrdinalIgnoreCase));
 
-            ViewBag.Month = month;
-            ViewBag.Year = year;
+            int pendingCount =
+                selectedSalaries.Count - paidCount;
+
+            decimal totalGrossSalary =
+                selectedSalaries.Sum(x => x.GrossSalary);
+
+            decimal totalNetSalary =
+                selectedSalaries.Sum(x => x.NetSalary);
+
+            var model = new SalaryDashboardViewModel
+            {
+                ViewType = viewType,
+                Month = selectedMonth,
+                Year = selectedYear,
+
+                TotalEmployees =
+             selectedSalaries
+                 .Select(x => x.EmployeeId)
+                 .Distinct()
+                 .Count(),
+
+                PaidCount = paidCount,
+
+                PendingCount = pendingCount,
+
+                TotalGrossSalary =
+             selectedSalaries.Sum(x => x.GrossSalary),
+
+                TotalNetSalary =
+             selectedSalaries.Sum(x => x.NetSalary),
+
+                TotalDeductions =
+             selectedSalaries.Sum(x => x.TotalDeductions),
+
+                PayrollCompletionPercentage =
+             selectedSalaries.Count > 0
+                 ? Math.Round(
+                     (decimal)paidCount /
+                     selectedSalaries.Count * 100,
+                     2)
+                 : 0,
+
+                TotalBasic =
+             selectedSalaries.Sum(x => x.BasicSalary),
+
+                TotalHRA =
+             selectedSalaries.Sum(x => x.HRA),
+
+                TotalDA =
+             selectedSalaries.Sum(x => x.DA),
+
+                TotalOtherAllowances =
+             selectedSalaries.Sum(x =>
+                 x.Conveyance +
+                 x.MedicalAllowance +
+                 x.EducationAllowance +
+                 x.SpecialAllowance +
+                 x.OtherAllowances),
+
+                TotalPF =
+             selectedSalaries.Sum(x => x.PfDeduction),
+
+                TotalESIC =
+             selectedSalaries.Sum(x => x.EsicDeduction),
+
+                TotalTDS =
+             selectedSalaries.Sum(x => x.TdsDeduction),
+
+                TotalOtherDeductions =
+             selectedSalaries.Sum(x =>
+                 x.ProfessionalTax +
+                 x.Advance +
+                 x.OtherDeductions)
+            };
+
+            if (isYearly)
+            {
+                model.MonthlySummaries =
+                    yearSalaries
+                        .GroupBy(x => x.Month)
+                        .OrderBy(x => x.Key)
+                        .Select(group =>
+                        {
+                            int monthlyPaid =
+                                group.Count(x =>
+                                    string.Equals(
+                                        x.PaymentStatus,
+                                        "Paid",
+                                        StringComparison.OrdinalIgnoreCase));
+
+                            return new SalaryDashboardViewModel
+                                .MonthlySalarySummaryViewModel
+                            {
+                                Month = group.Key,
+
+                                MonthName =
+                                    new DateTime(
+                                        selectedYear,
+                                        group.Key,
+                                        1)
+                                    .ToString("MMMM"),
+
+                                EmployeeCount =
+                                    group.Select(x => x.EmployeeId)
+                                        .Distinct()
+                                        .Count(),
+
+                                PaidCount = monthlyPaid,
+
+                                PendingCount =
+                                    group.Count() - monthlyPaid,
+
+                                GrossSalary =
+                                    group.Sum(x => x.GrossSalary),
+
+                                NetSalary =
+                                    group.Sum(x => x.NetSalary)
+                            };
+                        })
+                        .ToList();
+            }
+
+            ViewBag.ViewType = viewType;
+            ViewBag.Month = selectedMonth;
+            ViewBag.Year = selectedYear;
 
             return View(model);
         }
@@ -297,6 +457,14 @@ namespace AryamanBMS.Controllers
             int row = startRow;
             int serialNo = 1;
 
+            int[] formulaColumns =
+             {
+                 6, 7, 8, 9, 10, 11, 12,
+                 13, 14, 15, 16, 17,
+                 19,
+                 21, 22, 23
+             };
+
             foreach (var item in attendanceSummary)
             {
                 var employee = employees
@@ -329,6 +497,21 @@ namespace AryamanBMS.Controllers
                 worksheet.Cell(row, 18).Value = 0;
                 worksheet.Cell(row, 20).Value = "";
                 worksheet.Cell(row, 24).Value = employee.Gender ?? "";
+
+                foreach (int formulaColumn in formulaColumns)
+                {
+                    var templateCell =
+                        worksheet.Cell(startRow, formulaColumn);
+
+                    var targetCell =
+                        worksheet.Cell(row, formulaColumn);
+
+                    if (templateCell.HasFormula)
+                    {
+                        targetCell.FormulaR1C1 =
+                            templateCell.FormulaR1C1;
+                    }
+                }
 
                 row++;
                 serialNo++;
@@ -484,7 +667,7 @@ namespace AryamanBMS.Controllers
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> ImportExcel(IFormFile file,
-            int month,int year)
+            int month, int year)
         {
             var result = await _salaryExcelImportService
                 .ImportAsync(file, month, year);

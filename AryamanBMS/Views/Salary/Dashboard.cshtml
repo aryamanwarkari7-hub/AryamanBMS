@@ -1,7 +1,19 @@
 ﻿@model AryamanBMS.ViewModels.SalaryDashboardViewModel
 
+@using System.Globalization
+
 @{
     ViewData["Title"] = "Salary Dashboard";
+
+    bool isYearly =
+        string.Equals(
+            Model.ViewType,
+            "Yearly",
+            StringComparison.OrdinalIgnoreCase);
+
+    string selectedPeriod = isYearly
+        ? Model.Year.ToString()
+        : $"{CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(Model.Month)} {Model.Year}";
 }
 
 <div class="module-header">
@@ -13,16 +25,16 @@
         </h1>
 
         <p class="module-subtitle">
-            Payroll overview
+            Payroll overview for @selectedPeriod
         </p>
 
     </div>
 
-    <div class="d-flex gap-2">
+    <div class="d-flex flex-wrap gap-2">
 
         <a asp-action="Index"
-           asp-route-month="@ViewBag.Month"
-           asp-route-year="@ViewBag.Year"
+           asp-route-month="@Model.Month"
+           asp-route-year="@Model.Year"
            class="btn-app btn-secondary-app">
 
             <i class="bi bi-list"></i>
@@ -30,16 +42,179 @@
 
         </a>
 
+        <a asp-action="ExportExcel"
+           asp-route-month="@Model.Month"
+           asp-route-year="@Model.Year"
+           class="btn-app btn-success-app">
+
+            <i class="bi bi-file-earmark-excel"></i>
+            Export Excel
+
+        </a>
+
+        <a asp-action="AttendanceSummary"
+           asp-route-month="@Model.Month"
+           asp-route-year="@Model.Year"
+           class="btn-app btn-secondary-app">
+
+            <i class="bi bi-calendar-check"></i>
+            Attendance Summary
+
+        </a>
+
     </div>
 
 </div>
+
+<!-- Payroll Filter -->
+
+<div class="app-card mb-3">
+
+    <div class="card-header">
+
+        <h5 class="card-title">
+            Payroll Period
+        </h5>
+
+    </div>
+
+    <div class="card-body">
+
+        <form asp-action="Dashboard"
+              method="get">
+
+            <div class="d-flex flex-wrap gap-3 align-items-end">
+
+                <div>
+
+                    <label class="form-label">
+                        View Type
+                    </label>
+
+                    <select name="viewType"
+                            id="viewType"
+                            class="app-input">
+
+                        @if (!isYearly)
+                        {
+                            <option value="Monthly" selected>
+                                Monthly
+                            </option>
+
+                            <option value="Yearly">
+                                Yearly
+                            </option>
+                        }
+                        else
+                        {
+                            <option value="Monthly">
+                                Monthly
+                            </option>
+
+                            <option value="Yearly" selected>
+                                Yearly
+                            </option>
+                        }
+
+                    </select>
+
+                </div>
+
+                <div id="monthFilter">
+
+                    <label class="form-label">
+                        Month
+                    </label>
+
+                    <select name="month"
+                            class="app-input">
+
+                        @for (int monthNumber = 1;
+                                                monthNumber <= 12;
+                                                monthNumber++)
+                        {
+                            string monthName =
+                            CultureInfo.CurrentCulture
+                            .DateTimeFormat
+                            .GetMonthName(monthNumber);
+
+                            if (monthNumber == Model.Month)
+                            {
+                                <option value="@monthNumber"
+                                        selected>
+                                    @monthName
+                                </option>
+                            }
+                            else
+                            {
+                                <option value="@monthNumber">
+                                    @monthName
+                                </option>
+                            }
+                        }
+
+                    </select>
+
+                </div>
+
+                <div>
+
+                    <label class="form-label">
+                        Year
+                    </label>
+
+                    <select name="year"
+                            class="app-input">
+
+                        @for (int yearValue =
+                                                DateTime.Today.Year - 5;
+                                                yearValue <=
+                                                DateTime.Today.Year + 2;
+                                                yearValue++)
+                        {
+                            if (yearValue == Model.Year)
+                            {
+                                <option value="@yearValue"
+                                        selected>
+                                    @yearValue
+                                </option>
+                            }
+                            else
+                            {
+                                <option value="@yearValue">
+                                    @yearValue
+                                </option>
+                            }
+                        }
+
+                    </select>
+
+                </div>
+
+                <button type="submit"
+                        class="btn-app btn-primary-app">
+
+                    <i class="bi bi-search"></i>
+                    Load
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!-- Dashboard Cards -->
 
 <div class="dashboard-grid">
 
     <div class="stats-card">
 
         <div class="stats-label">
-            Employees
+            Employees Processed
         </div>
 
         <div class="stats-number">
@@ -51,7 +226,7 @@
     <div class="stats-card">
 
         <div class="stats-label">
-            Paid
+            Paid Salaries
         </div>
 
         <div class="stats-number">
@@ -63,7 +238,7 @@
     <div class="stats-card">
 
         <div class="stats-label">
-            Pending
+            Pending Salaries
         </div>
 
         <div class="stats-number">
@@ -75,7 +250,7 @@
     <div class="stats-card">
 
         <div class="stats-label">
-            Gross Salary
+            Gross Payroll
         </div>
 
         <div class="stats-number">
@@ -87,7 +262,7 @@
     <div class="stats-card">
 
         <div class="stats-label">
-            Net Salary
+            Net Payroll
         </div>
 
         <div class="stats-number">
@@ -96,4 +271,404 @@
 
     </div>
 
+    <div class="stats-card">
+
+        <div class="stats-label">
+            Total Deductions
+        </div>
+
+        <div class="stats-number">
+            ₹ @Model.TotalDeductions.ToString("N0")
+        </div>
+
+    </div>
+
 </div>
+
+<!-- Payroll Progress -->
+
+<div class="app-card mb-3">
+
+    <div class="card-header">
+
+        <h5 class="card-title">
+            Payroll Completion
+        </h5>
+
+    </div>
+
+    <div class="card-body">
+
+        <div class="d-flex justify-content-between mb-2">
+
+            <span>
+                @Model.PaidCount of
+                @(Model.PaidCount + Model.PendingCount)
+                salary records paid
+            </span>
+
+            <strong>
+                @Model.PayrollCompletionPercentage.ToString("0.##")%
+            </strong>
+
+        </div>
+
+        <div class="progress"
+             style="height: 12px;">
+
+            <div class="progress-bar"
+                 role="progressbar"
+                 style="width: @Model.PayrollCompletionPercentage.ToString("0.##", CultureInfo.InvariantCulture)%"
+                 aria-valuenow="@Model.PayrollCompletionPercentage"
+                 aria-valuemin="0"
+                 aria-valuemax="100">
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Earnings and Deductions -->
+
+<div class="row g-3 mb-3">
+
+    <div class="col-lg-6">
+
+        <div class="app-card h-100">
+
+            <div class="card-header">
+
+                <h5 class="card-title">
+                    Earnings Breakdown
+                </h5>
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="table-responsive">
+
+                    <table class="app-table">
+
+                        <tbody>
+
+                            <tr>
+                                <th>Basic Salary</th>
+                                <td class="text-end">
+                                    ₹ @Model.TotalBasic.ToString("N0")
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th>HRA</th>
+                                <td class="text-end">
+                                    ₹ @Model.TotalHRA.ToString("N0")
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th>DA</th>
+                                <td class="text-end">
+                                    ₹ @Model.TotalDA.ToString("N0")
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th>Other Allowances</th>
+                                <td class="text-end">
+                                    ₹ @Model.TotalOtherAllowances.ToString("N0")
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th>Total Gross Payroll</th>
+                                <td class="text-end">
+                                    <strong>
+                                        ₹ @Model.TotalGrossSalary.ToString("N0")
+                                    </strong>
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-lg-6">
+
+        <div class="app-card h-100">
+
+            <div class="card-header">
+
+                <h5 class="card-title">
+                    Deductions Breakdown
+                </h5>
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="table-responsive">
+
+                    <table class="app-table">
+
+                        <tbody>
+
+                            <tr>
+                                <th>PF</th>
+                                <td class="text-end">
+                                    ₹ @Model.TotalPF.ToString("N0")
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th>ESIC</th>
+                                <td class="text-end">
+                                    ₹ @Model.TotalESIC.ToString("N0")
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th>TDS</th>
+                                <td class="text-end">
+                                    ₹ @Model.TotalTDS.ToString("N0")
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th>Other Deductions</th>
+                                <td class="text-end">
+                                    ₹ @Model.TotalOtherDeductions.ToString("N0")
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th>Total Deductions</th>
+                                <td class="text-end">
+                                    <strong>
+                                        ₹ @Model.TotalDeductions.ToString("N0")
+                                    </strong>
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Yearly Month-wise Summary -->
+@if (isYearly)
+{
+    <div class="app-card table-card">
+
+        <div class="card-header">
+
+            <h5 class="card-title">
+                Month-wise Payroll Summary - @Model.Year
+            </h5>
+
+        </div>
+
+        <div class="card-body">
+
+            @if (!Model.MonthlySummaries.Any())
+            {
+                <div class="empty-state">
+
+                    <i class="bi bi-cash-stack"></i>
+
+                    <p class="mb-0">
+                        No salary records found for @Model.Year.
+                    </p>
+
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+
+                    <table class="app-table">
+
+                        <thead>
+
+                            <tr>
+                                <th>Month</th>
+                                <th>Employees</th>
+                                <th>Paid</th>
+                                <th>Pending</th>
+                                <th class="text-end">
+                                    Gross Payroll
+                                </th>
+                                <th class="text-end">
+                                    Net Payroll
+                                </th>
+                                <th class="text-end">
+                                    Actions
+                                </th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            @foreach (var item in Model.MonthlySummaries)
+                            {
+                                <tr>
+
+                                    <td>
+                                        <strong>
+                                            @item.MonthName
+                                        </strong>
+                                    </td>
+
+                                    <td>
+                                        @item.EmployeeCount
+                                    </td>
+
+                                    <td>
+                                        <span class="badge-success">
+                                            @item.PaidCount
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        <span class="badge-warning">
+                                            @item.PendingCount
+                                        </span>
+                                    </td>
+
+                                    <td class="text-end">
+                                        ₹ @item.GrossSalary.ToString("N0")
+                                    </td>
+
+                                    <td class="text-end">
+                                        ₹ @item.NetSalary.ToString("N0")
+                                    </td>
+
+                                    <td>
+
+                                        <div class="table-actions justify-content-end">
+
+                                            <a asp-action="Dashboard"
+                                               asp-route-viewType="Monthly"
+                                               asp-route-month="@item.Month"
+                                               asp-route-year="@Model.Year"
+                                               class="btn-app btn-primary-app btn-icon"
+                                               title="View monthly dashboard">
+
+                                                <i class="bi bi-eye"></i>
+
+                                            </a>
+
+                                            <a asp-action="Index"
+                                               asp-route-month="@item.Month"
+                                               asp-route-year="@Model.Year"
+                                               class="btn-app btn-secondary-app btn-icon"
+                                               title="Open salary register">
+
+                                                <i class="bi bi-list"></i>
+
+                                            </a>
+
+                                        </div>
+
+                                    </td>
+
+                                </tr>
+                            }
+
+                        </tbody>
+
+                        <tfoot>
+
+                            <tr>
+
+                                <th>
+                                    Total
+                                </th>
+
+                                <th>
+                                    -
+                                </th>
+
+                                <th>
+                                    @Model.PaidCount
+                                </th>
+
+                                <th>
+                                    @Model.PendingCount
+                                </th>
+
+                                <th class="text-end">
+                                    ₹ @Model.TotalGrossSalary.ToString("N0")
+                                </th>
+
+                                <th class="text-end">
+                                    ₹ @Model.TotalNetSalary.ToString("N0")
+                                </th>
+
+                                <th></th>
+
+                            </tr>
+
+                        </tfoot>
+
+                    </table>
+
+                </div>
+            }
+
+        </div>
+
+    </div>
+}
+
+@section Scripts
+{
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const viewType =
+                document.getElementById("viewType");
+
+            const monthFilter =
+                document.getElementById("monthFilter");
+
+            function toggleMonthFilter() {
+
+                if (!viewType || !monthFilter) {
+                    return;
+                }
+
+                monthFilter.style.display =
+                    viewType.value === "Monthly"
+                        ? "block"
+                        : "none";
+            }
+
+            viewType.addEventListener(
+                "change",
+                toggleMonthFilter);
+
+            toggleMonthFilter();
+        });
+    </script>
+}

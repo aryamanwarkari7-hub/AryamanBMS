@@ -1,5 +1,6 @@
 ﻿using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
+using AryamanBMS.Services.Interfaces;
 using AryamanBMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,6 +19,8 @@ namespace AryamanBMS.Controllers
         private readonly IProjectMeetingRepository _projectMeetingRepository;
         private readonly IProjectFlowRepository _projectFlowRepository;
 
+        private readonly IProjectTimelineService _projectTimelineService;
+
         public ProjectController(
            IProjectRepository projectRepository,
            IEmployeeRepository employeeRepository,
@@ -25,7 +28,9 @@ namespace AryamanBMS.Controllers
            IProjectTaskRepository projectTaskRepository,
            IProjectRiskRepository projectRiskRepository,
            IProjectMeetingRepository projectMeetingRepository,
-           IProjectFlowRepository projectFlowRepository)
+           IProjectFlowRepository projectFlowRepository,
+
+           IProjectTimelineService projectTimelineService)
         {
             _projectRepository = projectRepository;
             _employeeRepository = employeeRepository;
@@ -34,6 +39,8 @@ namespace AryamanBMS.Controllers
             _projectRiskRepository = projectRiskRepository;
             _projectMeetingRepository = projectMeetingRepository;
             _projectFlowRepository = projectFlowRepository;
+
+            _projectTimelineService = projectTimelineService;
         }
 
         public async Task<IActionResult> Index(
@@ -121,6 +128,16 @@ namespace AryamanBMS.Controllers
 
             await _projectRepository.AddAsync(model);
             await _projectRepository.SaveAsync();
+
+            await _projectTimelineService.AddEventAsync(
+             projectId: model.Id,
+             eventType: "ProjectCreated",
+             eventTitle: "Project created",
+             eventDescription:
+                 $"Project {model.ProjectCode} - {model.ProjectName} was created.",
+             relatedEntityType: "Project",
+             relatedEntityId: model.Id,
+             newValue: model.Status);
 
             if (model.ProjectManagerId > 0)
             {
@@ -221,9 +238,278 @@ namespace AryamanBMS.Controllers
                         .FirstOrDefaultAsync();
             }
 
+            var ganttTaskRecords =
+              await tasks
+                  .Include(t => t.AssignedEmployee)
+                  .Where(t =>
+                      t.StartDate.HasValue &&
+                      t.DueDate.HasValue)
+                  .OrderBy(t => t.StartDate)
+                  .ThenBy(t => t.DueDate)
+                  .ToListAsync();
+
+            DateTime timelineStart;
+            DateTime timelineEnd;
+
+            if (ganttTaskRecords.Any())
+            {
+                timelineStart =
+                    ganttTaskRecords
+                        .Min(t => t.StartDate!.Value.Date);
+
+                timelineEnd =
+                    ganttTaskRecords
+                        .Max(t => t.DueDate!.Value.Date);
+            }
+            else
+            {
+                timelineStart = project.StartDate.HasValue
+                    ? project.StartDate.Value.Date
+                    : DateTime.Today;
+
+                timelineEnd = project.EndDate.HasValue
+                    ? project.EndDate.Value.Date
+                    : timelineStart;
+            }
+
+            if (timelineEnd < timelineStart)
+            {
+                timelineEnd = timelineStart;
+            }
+
+            int totalTimelineDays =
+                Math.Max(
+                    1,
+                    (timelineEnd - timelineStart).Days + 1);
+
+            string projectManagerName = "Not Assigned";
+
+            // Primary source: Project.ProjectManagerId
+            if (project.ProjectManagerId > 0)
+            {
+                var managerEmployee =
+                    await _employeeRepository.Employees
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(e =>
+                            e.Id == project.ProjectManagerId);
+
+                if (managerEmployee != null)
+                {
+                    projectManagerName =
+                        managerEmployee.FullName;
+                }
+            }
+
+            // Fallback: Project Member role
+            if (projectManagerName == "Not Assigned")
+            {
+                var managerMember =
+                    await _projectMemberRepository.ProjectMembers
+                        .AsNoTracking()
+                        .Include(pm => pm.Employee)
+                        .Where(pm =>
+                            pm.ProjectId == id &&
+                            pm.IsActive &&
+                            pm.RoleInProject != null)
+                        .ToListAsync();
+
+                var matchedManager =
+                    managerMember.FirstOrDefault(pm =>
+                        pm.RoleInProject!.Equals(
+                            "Project Manager",
+                            StringComparison.OrdinalIgnoreCase));
+
+                projectManagerName =
+                    matchedManager?.Employee?.FullName
+                    ?? "Not Assigned";
+            }
+
+            var ganttModel = new ProjectGanttViewModel
+            {
+                TimelineStart = timelineStart,
+                TimelineEnd = timelineEnd,
+                TotalTimelineDays = totalTimelineDays,
+
+                ProjectManagerName = projectManagerName
+            };
+
+            // Create timeline date labels.
+            int labelInterval =
+                totalTimelineDays <= 14
+                    ? 1
+                    : totalTimelineDays <= 45
+                        ? 5
+                        : 7;
+
+            for (int dayOffset = 0;
+                 dayOffset < totalTimelineDays;
+                 dayOffset += labelInterval)
+            {
+                DateTime labelDate =
+                    timelineStart.AddDays(dayOffset);
+
+                decimal positionPercent =
+                    Math.Round(
+                        (decimal)dayOffset /
+                        totalTimelineDays * 100,
+                        2);
+
+                ganttModel.TimelineDates.Add(
+                    new ProjectGanttDateViewModel
+                    {
+                        Date = labelDate,
+                        PositionPercent = positionPercent
+                    });
+            }
+
+            // Ensure the final timeline date is visible.
+            if (!ganttModel.TimelineDates.Any(x =>
+                    x.Date.Date == timelineEnd.Date))
+            {
+                ganttModel.TimelineDates.Add(
+                    new ProjectGanttDateViewModel
+                    {
+                        Date = timelineEnd,
+                        PositionPercent = 100
+                    });
+            }
+
+            // Calculate today's marker position.
+            // Calculate today's marker position.
+            if (DateTime.Today.Date >= timelineStart.Date &&
+                DateTime.Today.Date <= timelineEnd.Date)
+            {
+                int todayOffset =
+                    (DateTime.Today.Date -
+                     timelineStart.Date).Days;
+
+                int timelineSpanDays =
+                    Math.Max(
+                        1,
+                        (timelineEnd.Date -
+                         timelineStart.Date).Days);
+
+                ganttModel.TodayPositionPercent =
+                    Math.Round(
+                        (decimal)todayOffset /
+                        timelineSpanDays * 100,
+                        2);
+            }
+            else
+            {
+                ganttModel.TodayPositionPercent = null;
+            }
+
+            foreach (var task in ganttTaskRecords)
+            {
+                DateTime taskStart =
+                    task.StartDate!.Value.Date;
+
+                DateTime taskEnd =
+                    task.DueDate!.Value.Date;
+
+                if (taskEnd < taskStart)
+                {
+                    taskEnd = taskStart;
+                }
+
+                int startOffsetDays =
+                    Math.Max(
+                        0,
+                        (taskStart - timelineStart).Days);
+
+                int durationDays =
+                    Math.Max(
+                        1,
+                        (taskEnd - taskStart).Days + 1);
+
+                decimal leftPercent =
+                    Math.Round(
+                        (decimal)startOffsetDays /
+                        totalTimelineDays * 100,
+                        2);
+
+                decimal widthPercent =
+                    Math.Round(
+                        (decimal)durationDays /
+                        totalTimelineDays * 100,
+                        2);
+
+                // Prevent a task bar from crossing the timeline boundary.
+                if (leftPercent + widthPercent > 100)
+                {
+                    widthPercent =
+                        Math.Max(
+                            0,
+                            100 - leftPercent);
+                }
+
+                bool isCompleted = string.Equals(
+                   task.Status,
+                   "Completed",
+                   StringComparison.OrdinalIgnoreCase);
+
+                bool isOverdue =
+                    taskEnd < DateTime.Today &&
+                    !isCompleted;
+
+                int displayProgress =
+                    isCompleted
+                        ? 100
+                        : Math.Clamp(
+                            task.ProgressPercent,
+                            0,
+                            100);
+
+                int overdueDays =
+                    isOverdue
+                        ? (DateTime.Today - taskEnd).Days
+                        : 0;
+
+                ganttModel.Tasks.Add(new ProjectGanttTaskViewModel
+                {
+                    TaskId = task.Id,
+                    TaskCode = task.TaskCode ?? string.Empty,
+                    TaskTitle = task.TaskTitle ?? string.Empty,
+                    AssignedEmployeeId =
+                          task.AssignedEmployeeId,
+
+                    AssignedEmployeeName =
+                          task.AssignedEmployee?.FullName
+                          ?? "Unassigned",
+
+                    StartDate = taskStart,
+                    DueDate = taskEnd,
+
+                    Status = task.Status ?? string.Empty,
+
+                    ProgressPercent =
+                            Math.Clamp(
+                                task.ProgressPercent,
+                                0,
+                                100),
+
+                    StartOffsetDays = startOffsetDays,
+                    DurationDays = durationDays,
+
+                    LeftPercent = leftPercent,
+                    WidthPercent = widthPercent,
+
+                    IsOverdue = isOverdue,
+
+                    IsMilestone = durationDays == 1,
+
+                    DisplayProgressPercent = displayProgress,
+
+                    OverdueDays = overdueDays,
+                });
+            }
+
             var viewModel = new ProjectDashboardViewModel
             {
                 Project = project,
+
+                Gantt = ganttModel,
 
                 ActiveMemberCount =
                     await _projectMemberRepository.ProjectMembers
@@ -341,7 +627,11 @@ namespace AryamanBMS.Controllers
             if (existing == null)
                 return NotFound();
 
-            int previousManagerId = existing.ProjectManagerId;
+            string previousStatus =
+                 existing.Status ?? string.Empty;
+
+            int previousManagerId =
+                existing.ProjectManagerId;
 
             existing.ProjectCode =
                 model.ProjectCode.Trim().ToUpper();
@@ -349,7 +639,7 @@ namespace AryamanBMS.Controllers
             existing.ProjectName =
                 model.ProjectName.Trim();
 
-            existing.ProjectManagerId = model.ProjectManagerId;
+            //existing.ProjectManagerId = model.ProjectManagerId;
 
             existing.ProjectType = model.ProjectType;
             existing.ClientName = model.ClientName;
@@ -367,57 +657,205 @@ namespace AryamanBMS.Controllers
             await _projectRepository.UpdateAsync(existing);
             await _projectRepository.SaveAsync();
 
-            // Ensure the newly selected project manager is an active project member.
-            if (model.ProjectManagerId > 0)
+            // Record project status change.
+            if (!string.Equals(
+                previousStatus,
+                existing.Status,
+                StringComparison.OrdinalIgnoreCase))
             {
-                var newManagerMember =
-                    await _projectMemberRepository
-                        .GetByProjectAndEmployeeAsync(
-                            existing.Id,
-                            model.ProjectManagerId);
-
-                if (newManagerMember == null)
-                {
-                    newManagerMember = new ProjectMemberModel
-                    {
-                        ProjectId = existing.Id,
-                        EmployeeId = model.ProjectManagerId,
-                        RoleInProject = "Project Manager",
-                        AssignedOn = DateTime.Now,
-                        IsActive = true
-                    };
-
-                    await _projectMemberRepository.AddAsync(
-                        newManagerMember);
-                }
-                else
-                {
-                    newManagerMember.RoleInProject =
-                        "Project Manager";
-
-                    newManagerMember.IsActive = true;
-
-                    await _projectMemberRepository.UpdateAsync(
-                        newManagerMember);
-                }
+                await _projectTimelineService.AddEventAsync(
+                    projectId: existing.Id,
+                    eventType: "ProjectStatusChanged",
+                    eventTitle: "Project status changed",
+                    eventDescription:
+                        $"Project status changed from " +
+                        $"{previousStatus} to {existing.Status}.",
+                    relatedEntityType: "Project",
+                    relatedEntityId: existing.Id,
+                    previousValue: previousStatus,
+                    newValue: existing.Status);
             }
 
-            if (previousManagerId > 0 &&
-                 previousManagerId != model.ProjectManagerId)
+            // Record project manager change.
+            if (previousManagerId != existing.ProjectManagerId)
             {
-                var previousManagerMember =
-                    await _projectMemberRepository
-                        .GetByProjectAndEmployeeAsync(
-                            existing.Id,
-                            previousManagerId);
+                string previousManagerName = "Not Assigned";
+                string newManagerName = "Not Assigned";
 
+                if (previousManagerId > 0)
+                {
+                    var previousManager =
+                        await _employeeRepository.Employees
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(e =>
+                                e.Id == previousManagerId);
+
+                    previousManagerName =
+                        previousManager?.FullName
+                        ?? "Not Assigned";
+                }
+
+                if (existing.ProjectManagerId > 0)
+                {
+                    var newManager =
+                        await _employeeRepository.Employees
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(e =>
+                                e.Id == existing.ProjectManagerId);
+
+                    newManagerName =
+                        newManager?.FullName
+                        ?? "Not Assigned";
+                }
+
+                await _projectTimelineService.AddEventAsync(
+                    projectId: existing.Id,
+                    eventType: "ProjectManagerChanged",
+                    eventTitle: "Project manager changed",
+                    eventDescription:
+                        $"Project manager changed from " +
+                        $"{previousManagerName} to {newManagerName}.",
+                    relatedEntityType: "Project",
+                    relatedEntityId: existing.Id,
+                    previousValue: previousManagerName,
+                    newValue: newManagerName);
+            }
+
+
+
+            // Ensure the newly selected project manager is an active project member.
+            // Synchronize project manager with project members.
+            if (previousManagerId != model.ProjectManagerId)
+            {
+                ProjectMemberModel? previousManagerMember = null;
+                ProjectMemberModel? newManagerMember = null;
+
+                string previousManagerRole = "Project Manager";
+                string newManagerPreviousRole = "Not Assigned";
+
+                // Change the previous manager back to Project Member.
+                if (previousManagerId > 0)
+                {
+                    previousManagerMember =
+                        await _projectMemberRepository.ProjectMembers
+                            .FirstOrDefaultAsync(pm =>
+                                pm.ProjectId == existing.Id &&
+                                pm.EmployeeId == previousManagerId);
+
+                    if (previousManagerMember != null)
+                    {
+                        previousManagerRole =
+                            previousManagerMember.RoleInProject
+                            ?? "Project Manager";
+
+                        await _projectMemberRepository.UpdateMemberRoleAsync(
+                            existing.Id,
+                            previousManagerId,
+                            "Project Member");
+                    }
+                }
+
+                // Add or promote the newly selected manager.
+                if (model.ProjectManagerId > 0)
+                {
+                    newManagerMember =
+                        await _projectMemberRepository.ProjectMembers
+                            .FirstOrDefaultAsync(pm =>
+                                pm.ProjectId == existing.Id &&
+                                pm.EmployeeId == model.ProjectManagerId);
+
+                    if (newManagerMember == null)
+                    {
+                        newManagerMember = new ProjectMemberModel
+                        {
+                            ProjectId = existing.Id,
+                            EmployeeId = model.ProjectManagerId,
+                            RoleInProject = "Project Manager",
+                            AssignedOn = DateTime.Now,
+                            IsActive = true
+                        };
+
+                        await _projectMemberRepository.AddAsync(
+                            newManagerMember);
+                    }
+                    else
+                    {
+                        newManagerPreviousRole =
+                            newManagerMember.RoleInProject
+                            ?? "Project Member";
+
+                        await _projectMemberRepository.UpdateMemberRoleAsync(
+                            existing.Id,
+                            model.ProjectManagerId,
+                            "Project Manager");
+                    }
+                }
+
+                // Save all member changes together.
+                await _projectMemberRepository.SaveAsync();
+
+                // Record previous manager role change.
                 if (previousManagerMember != null)
                 {
-                    previousManagerMember.RoleInProject =
-                        "Project Member";
+                    var previousManagerEmployee =
+                        await _employeeRepository.Employees
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(e =>
+                                e.Id == previousManagerId);
 
-                    await _projectMemberRepository.UpdateAsync(
-                        previousManagerMember);
+                    await _projectTimelineService.AddEventAsync(
+                        projectId: existing.Id,
+                        eventType: "MemberRoleChanged",
+                        eventTitle: "Project member role changed",
+                        eventDescription:
+                            $"{previousManagerEmployee?.FullName ?? "Employee"} " +
+                            $"changed from {previousManagerRole} to Project Member.",
+                        relatedEntityType: "Member",
+                        relatedEntityId: previousManagerMember.Id,
+                        previousValue: previousManagerRole,
+                        newValue: "Project Member");
+                }
+
+                // Record new manager member/role change.
+                if (newManagerMember != null)
+                {
+                    var newManagerEmployee =
+                        await _employeeRepository.Employees
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(e =>
+                                e.Id == model.ProjectManagerId);
+
+                    if (newManagerPreviousRole == "Not Assigned")
+                    {
+                        await _projectTimelineService.AddEventAsync(
+                            projectId: existing.Id,
+                            eventType: "MemberAdded",
+                            eventTitle: "Project member added",
+                            eventDescription:
+                                $"{newManagerEmployee?.FullName ?? "Employee"} " +
+                                $"was added as Project Manager.",
+                            relatedEntityType: "Member",
+                            relatedEntityId: newManagerMember.Id,
+                            newValue: "Project Manager");
+                    }
+                    else if (!string.Equals(
+                        newManagerPreviousRole,
+                        "Project Manager",
+                        StringComparison.OrdinalIgnoreCase))
+                    {
+                        await _projectTimelineService.AddEventAsync(
+                            projectId: existing.Id,
+                            eventType: "MemberRoleChanged",
+                            eventTitle: "Project member role changed",
+                            eventDescription:
+                                $"{newManagerEmployee?.FullName ?? "Employee"} " +
+                                $"changed from {newManagerPreviousRole} " +
+                                $"to Project Manager.",
+                            relatedEntityType: "Member",
+                            relatedEntityId: newManagerMember.Id,
+                            previousValue: newManagerPreviousRole,
+                            newValue: "Project Manager");
+                    }
                 }
             }
 

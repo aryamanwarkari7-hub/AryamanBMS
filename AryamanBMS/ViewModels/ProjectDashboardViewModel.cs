@@ -31,5 +31,9 @@ namespace AryamanBMS.ViewModels
         // Flow
         public string CurrentFlowStage { get; set; } = "Not Started";
         public string CurrentFlowStatus { get; set; } = "-";
+
+        // Gantt
+        public ProjectGanttViewModel Gantt { get; set; }
+          = new ProjectGanttViewModel();
     }
 }

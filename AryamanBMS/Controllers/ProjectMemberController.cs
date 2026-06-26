@@ -1,5 +1,6 @@
 ﻿using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
+using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,20 +14,25 @@ namespace AryamanBMS.Controllers
         private readonly IProjectMemberRepository _projectMemberRepository;
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IProjectTaskRepository _projectTaskRepository;
+        private readonly IProjectTimelineService _projectTimelineService;
 
         public ProjectMemberController(
             IProjectRepository projectRepository,
             IProjectMemberRepository projectMemberRepository,
             IEmployeeRepository employeeRepository,
-            IProjectTaskRepository projectTaskRepository)
+            IProjectTaskRepository projectTaskRepository,
+
+            IProjectTimelineService projectTimelineService)
         {
             _projectRepository = projectRepository;
             _projectMemberRepository = projectMemberRepository;
             _employeeRepository = employeeRepository;
             _projectTaskRepository = projectTaskRepository;
+
+            _projectTimelineService = projectTimelineService;
         }
 
-        [HttpGet]
+
         [HttpGet]
         public IActionResult Index(int? projectId)
         {
@@ -91,6 +97,23 @@ namespace AryamanBMS.Controllers
             await _projectMemberRepository.AddAsync(model);
             await _projectMemberRepository.SaveAsync();
 
+            var employee =
+               await _employeeRepository.Employees
+                   .AsNoTracking()
+                   .FirstOrDefaultAsync(e =>
+                       e.Id == model.EmployeeId);
+
+            await _projectTimelineService.AddEventAsync(
+                projectId: model.ProjectId,
+                eventType: "MemberAdded",
+                eventTitle: "Project member added",
+                eventDescription:
+                    $"{employee?.FullName ?? "Employee"} was added as " +
+                    $"{model.RoleInProject}.",
+                relatedEntityType: "Member",
+                relatedEntityId: model.Id,
+                newValue: model.RoleInProject);
+
             TempData["Success"] =
                 "Project member added successfully.";
 
@@ -143,8 +166,31 @@ namespace AryamanBMS.Controllers
 
             int projectId = member.ProjectId;
 
+            var employee =
+               await _employeeRepository.Employees
+                   .AsNoTracking()
+                   .FirstOrDefaultAsync(e =>
+            e.Id == member.EmployeeId);
+
+            //int projectId = member.ProjectId;
+            int memberId = member.Id;
+            string roleName =
+                member.RoleInProject ?? "Project Member";
+            string employeeName =
+                employee?.FullName ?? "Employee";
+
             await _projectMemberRepository.DeleteAsync(member);
             await _projectMemberRepository.SaveAsync();
+
+            await _projectTimelineService.AddEventAsync(
+              projectId: projectId,
+              eventType: "MemberRemoved",
+              eventTitle: "Project member removed",
+              eventDescription:
+                  $"{employeeName} was removed from the project.",
+              relatedEntityType: "Member",
+              relatedEntityId: memberId,
+              previousValue: roleName);
 
             TempData["Success"] =
                 "Project member removed successfully.";

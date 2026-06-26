@@ -50,6 +50,7 @@ namespace AryamanBMS.Data
         public DbSet<ProjectTaskModel> ProjectTasks { get; set; }
         public DbSet<ProjectFlowModel> ProjectFlows { get; set; }
         public DbSet<ProjectTaskProgressModel> ProjectTaskProgresses { get; set; }
+        public DbSet<ProjectTimelineModel> ProjectTimelines { get; set; }
 
         // Meetings
         public DbSet<ProjectMeetingModel> ProjectMeetings { get; set; }
@@ -252,6 +253,19 @@ namespace AryamanBMS.Data
                 .WithMany()
                 .HasForeignKey(p => p.ProjectManagerId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Project Timeline
+            modelBuilder.Entity<ProjectTimelineModel>(entity =>
+            {
+                entity.ToTable("TableProjectTimeline");
+
+                entity.HasKey(x => x.Id);
+
+                entity.HasOne(x => x.Project)
+                    .WithMany()
+                    .HasForeignKey(x => x.ProjectId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
 
             // Project Member
             modelBuilder.Entity<ProjectMemberModel>()

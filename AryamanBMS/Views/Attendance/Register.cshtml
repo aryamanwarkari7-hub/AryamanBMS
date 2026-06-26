@@ -64,24 +64,42 @@
         <form asp-action="Register"
               method="get">
 
-            <div class="d-flex flex-wrap gap-2">
+            <div class="d-flex flex-wrap gap-3 align-items-end">
 
-                <input type="text"
-                       name="searchText"
-                       value="@ViewBag.SearchText"
-                       class="app-input flex-grow-1"
-                       placeholder="Employee Code / Name / Mobile / Email"
-                       autocomplete="off" />
+                <div class="flex-grow-1">
+                    <label class="form-label">
+                        Employee
+                    </label>
 
-                <input type="date"
-                       name="fromDate"
-                       value="@ViewBag.FromDate"
-                       class="app-input" />
+                    <input type="text"
+                           name="searchText"
+                           value="@ViewBag.SearchText"
+                           class="app-input w-100"
+                           placeholder="Employee Code / Name / Mobile / Email"
+                           autocomplete="off" />
+                </div>
 
-                <input type="date"
-                       name="toDate"
-                       value="@ViewBag.ToDate"
-                       class="app-input" />
+                <div>
+                    <label class="form-label">
+                        From
+                    </label>
+
+                    <input type="date"
+                           name="fromDate"
+                           value="@ViewBag.FromDate"
+                           class="app-input" />
+                </div>
+
+                <div>
+                    <label class="form-label">
+                        To
+                    </label>
+
+                    <input type="date"
+                           name="toDate"
+                           value="@ViewBag.ToDate"
+                           class="app-input" />
+                </div>
 
                 <button type="submit"
                         class="btn-app btn-primary-app">

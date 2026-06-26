@@ -1,0 +1,236 @@
+﻿/* ==========================================
+   PROJECT ACTIVITY TIMELINE
+========================================== */
+
+.project-timeline {
+    position: relative;
+}
+
+.timeline-date-group {
+    position: relative;
+    margin-bottom: 28px;
+}
+
+    .timeline-date-group:last-child {
+        margin-bottom: 0;
+    }
+
+.timeline-date-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding: 10px 14px;
+    border: 1px solid #dbe3ec;
+    border-radius: 8px;
+    background-color: #f8fafc;
+}
+
+    .timeline-date-heading span {
+        font-size: 14px;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .timeline-date-heading small {
+        color: #64748b;
+    }
+
+.project-timeline-item {
+    position: relative;
+    margin-left: 24px;
+    padding-left: 44px;
+    padding-bottom: 18px;
+}
+
+    .project-timeline-item::before {
+        content: "";
+        position: absolute;
+        top: 38px;
+        bottom: -2px;
+        left: 16px;
+        width: 2px;
+        background-color: #e2e8f0;
+    }
+
+    .project-timeline-item:last-child::before {
+        display: none;
+    }
+
+.project-timeline-marker {
+    position: absolute;
+    top: 12px;
+    left: 0;
+    width: 34px;
+    height: 34px;
+    border: 3px solid #ffffff;
+    border-radius: 50%;
+    background-color: #2479b8;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 0 1px #cbd5e1;
+    z-index: 2;
+}
+
+    .project-timeline-marker i {
+        font-size: 14px;
+    }
+
+.project-timeline-content {
+    padding: 15px 17px;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    background-color: #ffffff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+    .project-timeline-content:hover {
+        border-color: #93c5fd;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.07);
+    }
+
+.timeline-item-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.timeline-title-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.timeline-event-title {
+    margin: 0;
+    color: #0f172a;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.timeline-type-badge,
+.timeline-event-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.timeline-type-badge {
+    background-color: #eaf3f9;
+    color: #1d6599;
+}
+
+.timeline-event-badge {
+    background-color: #f1f5f9;
+    color: #475569;
+    white-space: nowrap;
+}
+
+.timeline-time {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 5px;
+    color: #64748b;
+    font-size: 12px;
+}
+
+.timeline-description {
+    margin: 12px 0;
+    color: #334155;
+    line-height: 1.55;
+}
+
+.timeline-change-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+    padding: 10px;
+    border-radius: 7px;
+    background-color: #f8fafc;
+}
+
+.timeline-value {
+    padding: 4px 9px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.old-value {
+    background-color: #fee2e2;
+    color: #b91c1c;
+}
+
+.new-value {
+    background-color: #dcfce7;
+    color: #15803d;
+}
+
+.timeline-footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding-top: 10px;
+    border-top: 1px solid #f1f5f9;
+    color: #64748b;
+    font-size: 12px;
+}
+
+    .timeline-footer span {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+/* Timeline category colours */
+
+.timeline-project .project-timeline-marker {
+    background-color: #2479b8;
+}
+
+.timeline-member .project-timeline-marker {
+    background-color: #0891b2;
+}
+
+.timeline-task .project-timeline-marker {
+    background-color: #7c3aed;
+}
+
+.timeline-flow .project-timeline-marker {
+    background-color: #ea580c;
+}
+
+.timeline-risk .project-timeline-marker {
+    background-color: #dc2626;
+}
+
+.timeline-meeting .project-timeline-marker {
+    background-color: #16a34a;
+}
+
+@media (max-width: 768px) {
+    .timeline-item-header {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .project-timeline-item {
+        margin-left: 4px;
+        padding-left: 40px;
+    }
+
+    .timeline-event-badge {
+        white-space: normal;
+    }
+}

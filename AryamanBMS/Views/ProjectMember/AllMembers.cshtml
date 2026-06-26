@@ -55,8 +55,22 @@
                asp-action="Details"
                asp-route-id="@selectedProjectId"
                class="btn-app btn-secondary-app">
+
                 Back to Project
+
             </a>
+        }
+        else
+        {
+            <button type="button"
+                    class="btn-app btn-primary-app"
+                    disabled
+                    title="Select a project first">
+
+                <i class="bi bi-person-plus"></i>
+                Select Project to Add Member
+
+            </button>
         }
 
     </div>

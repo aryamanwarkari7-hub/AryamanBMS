@@ -1,5 +1,6 @@
 ﻿using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
+using AryamanBMS.Services.Interfaces;
 using AryamanBMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,13 +13,16 @@ namespace AryamanBMS.Controllers
     {
         private readonly IProjectMeetingRepository _meetingRepository;
         private readonly IProjectMemberRepository _projectMemberRepository;
+        private readonly IProjectTimelineService _projectTimelineService;
 
         public MOMController(
            IProjectMeetingRepository meetingRepository,
-           IProjectMemberRepository projectMemberRepository)
+           IProjectMemberRepository projectMemberRepository,
+           IProjectTimelineService projectTimelineService)
         {
             _meetingRepository = meetingRepository;
             _projectMemberRepository = projectMemberRepository;
+            _projectTimelineService = projectTimelineService;
         }
 
         [HttpGet]
@@ -109,6 +113,17 @@ namespace AryamanBMS.Controllers
             await _meetingRepository.AddAsync(model);
             await _meetingRepository.SaveAsync();
 
+            await _projectTimelineService.AddEventAsync(
+             projectId: model.ProjectId,
+             eventType: "MeetingCreated",
+             eventTitle: "Project meeting scheduled",
+             eventDescription:
+                 $"Meeting scheduled for " +
+                 $"{model.MeetingDate:dd MMM yyyy hh:mm tt}.",
+             relatedEntityType: "Meeting",
+             relatedEntityId: model.Id,
+             newValue: model.MeetingStatus);
+
             TempData["Success"] =
                 "Meeting created successfully.";
 
@@ -168,6 +183,9 @@ namespace AryamanBMS.Controllers
             if (existing == null)
                 return NotFound();
 
+            string previousMeetingStatus =
+                existing.MeetingStatus ?? string.Empty;
+
             existing.ProjectId = model.ProjectId;
             existing.MeetingTitle = model.MeetingTitle.Trim();
             existing.MeetingDate = model.MeetingDate;
@@ -188,6 +206,52 @@ namespace AryamanBMS.Controllers
 
             await _meetingRepository.UpdateAsync(existing);
             await _meetingRepository.SaveAsync();
+
+            if (!string.Equals(
+              previousMeetingStatus,
+              existing.MeetingStatus,
+              StringComparison.OrdinalIgnoreCase))
+            {
+                await _projectTimelineService.AddEventAsync(
+                    projectId: existing.ProjectId,
+                    eventType: "MeetingStatusChanged",
+                    eventTitle: "Meeting status changed",
+                    eventDescription:
+                        $"Meeting dated " +
+                        $"{existing.MeetingDate:dd MMM yyyy} changed from " +
+                        $"{previousMeetingStatus} to {existing.MeetingStatus}.",
+                    relatedEntityType: "Meeting",
+                    relatedEntityId: existing.Id,
+                    previousValue: previousMeetingStatus,
+                    newValue: existing.MeetingStatus);
+            }
+
+            bool wasCompleted =
+    string.Equals(
+        previousMeetingStatus,
+        "Completed",
+        StringComparison.OrdinalIgnoreCase);
+
+            bool isCompleted =
+                string.Equals(
+                    existing.MeetingStatus,
+                    "Completed",
+                    StringComparison.OrdinalIgnoreCase);
+
+            if (!wasCompleted && isCompleted)
+            {
+                await _projectTimelineService.AddEventAsync(
+                    projectId: existing.ProjectId,
+                    eventType: "MeetingCompleted",
+                    eventTitle: "Project meeting completed",
+                    eventDescription:
+                        $"Meeting dated " +
+                        $"{existing.MeetingDate:dd MMM yyyy} was completed.",
+                    relatedEntityType: "Meeting",
+                    relatedEntityId: existing.Id,
+                    previousValue: previousMeetingStatus,
+                    newValue: "Completed");
+            }
 
             TempData["Success"] =
                 "Meeting updated successfully.";

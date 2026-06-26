@@ -34,7 +34,7 @@
 
         </a>
 
-        <a asp-controller="ProjectMember"
+        @* <a asp-controller="ProjectMember"
            asp-action="AllMembers"
            asp-route-projectId="@Model.Id"
            class="btn-app btn-primary-app">
@@ -42,9 +42,9 @@
             <i class="bi bi-people"></i>
             Project Members
 
-        </a>
+        </a> *@
 
-        <a asp-controller="ProjectTask"
+        @* <a asp-controller="ProjectTask"
            asp-action="Index"
            asp-route-projectId="@Model.Id"
            class="btn-app btn-primary-app">
@@ -52,9 +52,9 @@
             <i class="bi bi-list-task"></i>
             Project Tasks
 
-        </a>
+        </a> *@
 
-        <a asp-controller="ProjectFlow"
+        @* <a asp-controller="ProjectFlow"
            asp-action="Index"
            asp-route-projectId="@Model.Id"
            class="btn-app btn-secondary-app">
@@ -62,9 +62,19 @@
             <i class="bi bi-diagram-3"></i>
             Flow
 
-        </a>
+        </a> *@
 
-        <a asp-controller="TaskTracker"
+        <a asp-controller="ProjectTimeline"
+         asp-action="Index"
+         asp-route-projectId="@Model.Id"
+         class="btn-app btn-secondary-app">
+         
+          <i class="bi bi-clock-history"></i>
+         View Timeline
+
+         </a>
+
+        @* <a asp-controller="TaskTracker"
            asp-action="Index"
            asp-route-projectId="@Model.Id"
            class="btn-app btn-secondary-app">
@@ -72,9 +82,9 @@
             <i class="bi bi-activity"></i>
             Task Tracker
 
-        </a>
+        </a> *@
 
-        <a asp-controller="MOM"
+        @* <a asp-controller="MOM"
            asp-action="Index"
            asp-route-projectId="@Model.Id"
            class="btn-app btn-secondary-app">
@@ -92,7 +102,7 @@
             <i class="bi bi-exclamation-triangle"></i>
             Risks
 
-        </a>
+        </a> *@
 
     </div>
 

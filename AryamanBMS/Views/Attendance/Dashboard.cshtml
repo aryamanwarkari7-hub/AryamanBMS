@@ -2,6 +2,17 @@
 
 @{
     ViewData["Title"] = "Attendance Dashboard";
+
+    bool isDailyView =
+        ViewBag.IsDailyView == true;
+
+    DateTime? selectedDate =
+        ViewBag.SelectedDate as DateTime?;
+
+    var dailyAttendance =
+        ViewBag.DailyAttendance
+        as List<AryamanBMS.Models.AttendanceModel>
+        ?? new List<AryamanBMS.Models.AttendanceModel>();
 }
 
 <div class="module-header">
@@ -53,23 +64,57 @@
 <div class="dashboard-grid">
 
     <div class="stats-card">
-        <div class="stats-label">Present Today</div>
-        <div class="stats-number">@Model.PresentToday</div>
+
+        <div class="stats-label">
+            @(isDailyView
+                        ? $"Present on {selectedDate:dd MMM yyyy}"
+                        : "Present Today")
+        </div>
+
+        <div class="stats-number">
+            @Model.PresentToday
+        </div>
+
     </div>
 
     <div class="stats-card">
-        <div class="stats-label">On Leave Today</div>
-        <div class="stats-number">@Model.OnLeaveToday</div>
+
+        <div class="stats-label">
+            @(isDailyView
+                        ? $"On Leave on {selectedDate:dd MMM yyyy}"
+                        : "On Leave Today")
+        </div>
+
+        <div class="stats-number">
+            @Model.OnLeaveToday
+        </div>
+
     </div>
 
     <div class="stats-card">
-        <div class="stats-label">Not Marked Today</div>
-        <div class="stats-number">@Model.NotMarkedToday</div>
+
+        <div class="stats-label">
+            @(isDailyView
+                        ? $"Not Marked on {selectedDate:dd MMM yyyy}"
+                        : "Not Marked Today")
+        </div>
+
+        <div class="stats-number">
+            @Model.NotMarkedToday
+        </div>
+
     </div>
 
     <div class="stats-card">
-        <div class="stats-label">Attendance %</div>
-        <div class="stats-number">@Model.AttendancePercentage%</div>
+
+        <div class="stats-label">
+            Attendance %
+        </div>
+
+        <div class="stats-number">
+            @Model.AttendancePercentage%
+        </div>
+
     </div>
 
 </div>
@@ -95,21 +140,41 @@
             <div class="d-flex gap-3 align-items-end flex-wrap">
 
                 <div class="form-group">
-                    <label class="form-label">Date</label>
 
-                    <select name="day" class="app-input">
-                        @for (int day = 1;
-                                                day <= DateTime.DaysInMonth(
-                                                (int)ViewBag.SelectedYear,
-                                                (int)ViewBag.SelectedMonth);
-                                                day++)
+                    <label class="form-label">
+                        Day
+                    </label>
+
+                    <select name="day"
+                            class="app-select">
+
+                        <option value="">
+                            All Days
+                        </option>
+
+                        @for (int calendarDay = 1;
+                                                calendarDay <= Model.TotalDays;
+                                                calendarDay++)
                         {
-                            <option value="@day"
-                                    selected="@(day == (int)ViewBag.SelectedDay)">
-                                @day
-                            </option>
+                            if (ViewBag.SelectedDay != null &&
+                            calendarDay ==
+                            (int)ViewBag.SelectedDay)
+                            {
+                                <option value="@calendarDay"
+                                        selected>
+                                    @calendarDay
+                                </option>
+                            }
+                            else
+                            {
+                                <option value="@calendarDay">
+                                    @calendarDay
+                                </option>
+                            }
                         }
+
                     </select>
+
                 </div>
 
                 <div class="form-group">
@@ -227,7 +292,105 @@
 </div>
 
 <!-- Register -->
+@if (isDailyView)
+{
+    <div class="app-card table-card">
 
+        <div class="card-header">
+
+            <h5 class="card-title">
+                Daily Attendance -
+                @selectedDate?.ToString("dd MMMM yyyy")
+            </h5>
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table class="app-table">
+
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Status</th>
+                            <th>Check In</th>
+                            <th>Check Out</th>
+                            <th>Working Hours</th>
+                            <th>Location</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var employee in Model.Employees)
+                        {
+                            var record =
+                            dailyAttendance
+                            .FirstOrDefault(a =>
+                            a.EmployeeId ==
+                            employee.EmployeeId);
+
+                            <tr>
+
+                                <td>
+                                    <strong>
+                                        @employee.EmployeeName
+                                    </strong>
+
+                                    <br />
+
+                                    <small>
+                                        @employee.EmployeeCode
+                                    </small>
+                                </td>
+
+                                <td>
+                                    @(record?.Status ?? "-")
+                                </td>
+
+                                <td>
+                                    @(record?.CheckInTime
+                                                                ?.ToString("hh:mm tt")
+                                                                ?? "-")
+                                                                   </td>
+
+                                <td>
+                                    @(record?.CheckOutTime
+                                                                ?.ToString("hh:mm tt")
+                                                                ?? "-")
+                                                                   </td>
+
+                                <td>
+                                    @(record?.WorkingHours.ToString("0.##")
+                                                                ?? "-")
+                        </td>
+
+                                <td>
+                                    @(record?.LocationType ?? "-")
+                                </td>
+
+                                <td>
+                                    @(record?.Remarks ?? "-")
+                                </td>
+
+                            </tr>
+                                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+@if (!isDailyView){
 <div class="app-card table-card">
 
     <div class="card-header">
@@ -369,3 +532,4 @@
     </div>
 
 </div>
+}

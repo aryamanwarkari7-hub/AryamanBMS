@@ -48,7 +48,13 @@ namespace AryamanBMS.Repositories
 
         public Task UpdateAsync(ProjectMemberModel member)
         {
-            _context.ProjectMembers.Update(member);
+            // Prevent EF Core from attaching navigation objects again.
+            member.Project = null;
+            member.Employee = null;
+
+            _context.Entry(member).State =
+                EntityState.Modified;
+
             return Task.CompletedTask;
         }
 
@@ -61,6 +67,23 @@ namespace AryamanBMS.Repositories
         public async Task SaveAsync()
         {
             await _context.SaveChangesAsync();
+        }
+
+        public async Task UpdateMemberRoleAsync(
+    int projectId,
+    int employeeId,
+    string roleInProject)
+        {
+            var member = await _context.ProjectMembers
+                .FirstOrDefaultAsync(pm =>
+                    pm.ProjectId == projectId &&
+                    pm.EmployeeId == employeeId);
+
+            if (member == null)
+                return;
+
+            member.RoleInProject = roleInProject;
+            member.IsActive = true;
         }
     }
 }

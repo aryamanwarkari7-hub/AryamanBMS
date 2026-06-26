@@ -19,5 +19,10 @@ namespace AryamanBMS.Repositories.Interfaces
         Task DeleteAsync(ProjectMemberModel member);
 
         Task SaveAsync();
+
+        Task UpdateMemberRoleAsync(
+    int projectId,
+    int employeeId,
+    string roleInProject);
     }
 }

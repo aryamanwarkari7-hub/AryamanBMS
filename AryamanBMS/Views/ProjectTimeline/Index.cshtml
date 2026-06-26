@@ -1,0 +1,438 @@
+﻿@model AryamanBMS.ViewModels.ProjectTimelineViewModel
+
+@{
+    ViewData["Title"] = "Project Timeline";
+
+}
+
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">
+            Project Timeline
+        </h1>
+
+        <p class="module-subtitle">
+            @Model.Project.ProjectCode -
+            @Model.Project.ProjectName
+        </p>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2">
+
+        <a asp-controller="Project"
+           asp-action="Details"
+           asp-route-id="@Model.Project.Id"
+           class="btn-app btn-secondary-app">
+
+            <i class="bi bi-arrow-left"></i>
+            Project Details
+
+        </a>
+
+        <a asp-controller="Project"
+           asp-action="Dashboard"
+           asp-route-id="@Model.Project.Id"
+           class="btn-app btn-primary-app">
+
+            <i class="bi bi-speedometer2"></i>
+            Dashboard
+
+        </a>
+
+    </div>
+
+</div>
+
+<div class="app-card mb-4">
+
+    <div class="card-header">
+        <h5 class="card-title">
+            Project Summary
+        </h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="row g-3">
+
+            <div class="col-md-3">
+                <strong>Project Manager</strong>
+                <div>@Model.ProjectManagerName</div>
+            </div>
+
+            <div class="col-md-3">
+                <strong>Status</strong>
+                <div>@Model.Project.Status</div>
+            </div>
+
+            <div class="col-md-3">
+                <strong>Start Date</strong>
+                <div>
+                    @(Model.Project.StartDate?.ToString("dd MMM yyyy")
+                                        ?? "-")
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <strong>End Date</strong>
+                <div>
+                    @(Model.Project.EndDate?.ToString("dd MMM yyyy")
+                                        ?? "-")
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card mb-4">
+
+    <div class="card-header">
+        <h5 class="card-title">
+            Timeline Filters
+        </h5>
+    </div>
+
+    <div class="card-body">
+
+        <form asp-action="Index"
+              method="get"
+              class="row g-3 align-items-end">
+
+            <input type="hidden"
+                   name="projectId"
+                   value="@Model.Project.Id" />
+
+            <div class="col-md-3">
+
+                <label class="form-label">
+                    Event Type
+                </label>
+
+                <select name="eventType"
+                        class="form-select">
+
+                    <option value="">
+                        All Events
+                    </option>
+
+                    @foreach (var eventType
+                                        in Model.EventTypes)
+                    {
+                        <option value="@eventType"
+                                selected="@(Model.SelectedEventType == eventType)">
+                            @eventType
+                        </option>
+                    }
+
+                </select>
+
+            </div>
+
+            <div class="col-md-2">
+
+                <label class="form-label">
+                    From Date
+                </label>
+
+                <input type="date"
+                       name="fromDate"
+                       value="@Model.FromDate?.ToString("yyyy-MM-dd")"
+                       class="form-control" />
+
+            </div>
+
+            <div class="col-md-2">
+
+                <label class="form-label">
+                    To Date
+                </label>
+
+                <input type="date"
+                       name="toDate"
+                       value="@Model.ToDate?.ToString("yyyy-MM-dd")"
+                       class="form-control" />
+
+            </div>
+
+            <div class="col-md-2">
+
+                <label class="form-label">
+                    Order
+                </label>
+
+                <select name="sortOrder"
+                        class="form-select">
+
+                    <option value="oldest"
+                            selected="@(Model.SortOrder == "oldest")">
+                        Oldest First
+                    </option>
+
+                    <option value="newest"
+                            selected="@(Model.SortOrder == "newest")">
+                        Newest First
+                    </option>
+
+                </select>
+
+            </div>
+
+            <div class="col-md-3 d-flex gap-2">
+
+                <button type="submit"
+                        class="btn-app btn-primary-app">
+
+                    <i class="bi bi-funnel"></i>
+                    Apply
+
+                </button>
+
+                <a asp-action="Index"
+                   asp-route-projectId="@Model.Project.Id"
+                   class="btn-app btn-secondary-app">
+
+                    Reset
+
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+
+        <div class="d-flex justify-content-between align-items-center">
+
+            <h5 class="card-title">
+                Project Activity History
+            </h5>
+
+            <span class="text-muted">
+                @Model.Events.Count event(s)
+            </span>
+
+        </div>
+
+    </div>
+
+    <div class="card-body">
+
+        @if (!Model.Events.Any())
+        {
+            <div class="empty-state">
+
+                <i class="bi bi-clock-history"></i>
+
+                <p class="mb-0">
+                    No timeline events are available.
+                </p>
+
+            </div>
+        }
+        else
+        {
+            <div class="project-timeline">
+
+                @foreach (var dateGroup in Model.Events
+                            .GroupBy(x => x.EventDate.Date))
+                {
+                    <div class="timeline-date-group">
+
+                        <div class="timeline-date-heading">
+                            <span>
+                                @dateGroup.Key.ToString("dd MMMM yyyy")
+                            </span>
+
+                            <small>
+                                @dateGroup.Count() event(s)
+                            </small>
+                        </div>
+
+                        @foreach (var item in dateGroup)
+                        {
+                            string eventGroup =
+                            item.EventType.StartsWith(
+                            "Task",
+                            StringComparison.OrdinalIgnoreCase)
+                            ? "task"
+                            : item.EventType.StartsWith(
+                            "Risk",
+                            StringComparison.OrdinalIgnoreCase)
+                            ? "risk"
+                            : item.EventType.StartsWith(
+                            "Meeting",
+                            StringComparison.OrdinalIgnoreCase)
+                            ? "meeting"
+                            : item.EventType.StartsWith(
+                            "Flow",
+                            StringComparison.OrdinalIgnoreCase)
+                            ? "flow"
+                            : item.EventType.StartsWith(
+                            "Member",
+                            StringComparison.OrdinalIgnoreCase)
+                            ? "member"
+                            : "project";
+
+                            string iconClass =
+                            item.EventType switch
+                            {
+                                "ProjectCreated" => "bi-folder-plus",
+                                "ProjectStatusChanged" => "bi-arrow-repeat",
+                                "ProjectManagerChanged" => "bi-person-badge",
+
+                                "MemberAdded" => "bi-person-plus",
+                                "MemberRemoved" => "bi-person-dash",
+                                "MemberRoleChanged" => "bi-person-gear",
+
+                                "TaskCreated" => "bi-list-task",
+                                "TaskStatusChanged" => "bi-arrow-left-right",
+                                "TaskProgressChanged" => "bi-bar-chart",
+                                "TaskReassigned" => "bi-person-check",
+                                "TaskCompleted" => "bi-check-circle",
+
+                                "FlowStageCreated" => "bi-diagram-3",
+                                "FlowStatusChanged" => "bi-arrow-repeat",
+                                "FlowStarted" => "bi-play-circle",
+                                "FlowCompleted" => "bi-check2-circle",
+                                "FlowOnHold" => "bi-pause-circle",
+
+                                "RiskCreated" => "bi-exclamation-triangle",
+                                "RiskStatusChanged" => "bi-arrow-repeat",
+                                "RiskSeverityChanged" => "bi-graph-up-arrow",
+                                "RiskResolved" => "bi-shield-check",
+                                "RiskClosed" => "bi-lock",
+
+                                "MeetingCreated" => "bi-calendar-event",
+                                "MeetingStatusChanged" => "bi-calendar2-event",
+                                "MeetingCompleted" => "bi-calendar-check",
+
+                                _ => "bi-clock-history"
+                            };
+
+                            <div class="project-timeline-item timeline-@eventGroup">
+
+                                <div class="project-timeline-marker">
+                                    <i class="bi @iconClass"></i>
+                                </div>
+
+                                <div class="project-timeline-content">
+
+                                    <div class="timeline-item-header">
+
+                                        <div class="timeline-title-section">
+
+                                            <div class="timeline-title-row">
+
+                                                <h6 class="timeline-event-title">
+                                                    @item.EventTitle
+                                                </h6>
+
+                                                @if (!string.IsNullOrWhiteSpace(
+                                                                                    item.RelatedEntityType))
+                                                {
+                                                    <span class="timeline-type-badge">
+                                                        @item.RelatedEntityType
+                                                    </span>
+                                                }
+
+                                            </div>
+
+                                            <div class="timeline-time">
+                                                <i class="bi bi-clock"></i>
+
+                                                @item.EventDate.ToString(
+                                                "hh:mm tt")
+                                </div>
+
+                            </div>
+
+                            <span class="timeline-event-badge">
+                                @item.EventType
+                            </span>
+
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(
+                                                item.EventDescription))
+                                    {
+                                        <p class="timeline-description">
+                                            @item.EventDescription
+                                        </p>
+                                    }
+
+                                    @if (!string.IsNullOrWhiteSpace(
+                                                            item.PreviousValue) ||
+                                                            !string.IsNullOrWhiteSpace(
+                                                            item.NewValue))
+                                    {
+                                        <div class="timeline-change-row">
+
+                                            @if (!string.IsNullOrWhiteSpace(
+                                                                        item.PreviousValue))
+                                            {
+                                                <span class="timeline-value old-value">
+                                                    @item.PreviousValue
+                                                </span>
+                                            }
+
+                                            @if (!string.IsNullOrWhiteSpace(
+                                                                        item.PreviousValue) &&
+                                                                        !string.IsNullOrWhiteSpace(
+                                                                        item.NewValue))
+                                            {
+                                                <i class="bi bi-arrow-right"></i>
+                                            }
+
+                                            @if (!string.IsNullOrWhiteSpace(
+                                                                        item.NewValue))
+                                            {
+                                                <span class="timeline-value new-value">
+                                                    @item.NewValue
+                                                </span>
+                                            }
+
+                                        </div>
+                                    }
+
+                                <div class="timeline-footer">
+
+                                    <span>
+                                        <i class="bi bi-person"></i>
+                                        @(item.CreatedByName ?? "System")
+                                    </span>
+
+                                    <span>
+                                        <i class="bi bi-gear"></i>
+
+                                        @(item.IsSystemGenerated
+                                                                        ? "System generated"
+                                                                        : "Manual update")
+                            </span>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+                                }
+
+                    </div>
+                }
+
+            </div>
+        }
+
+    </div>
+
+</div>

@@ -1,5 +1,6 @@
 ﻿using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
+using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,15 +13,22 @@ namespace AryamanBMS.Controllers
         private readonly IProjectRepository _projectRepository;
         private readonly IProjectTaskRepository _projectTaskRepository;
         private readonly IProjectMemberRepository _projectMemberRepository;
+        private readonly IProjectTimelineService _projectTimelineService;
+        private readonly IEmployeeRepository _employeeRepository;
 
         public ProjectTaskController(
             IProjectRepository projectRepository,
             IProjectTaskRepository projectTaskRepository,
-            IProjectMemberRepository projectMemberRepository)
+            IProjectMemberRepository projectMemberRepository,
+            IProjectTimelineService projectTimelineService,
+            IEmployeeRepository employeeRepository)
         {
             _projectRepository = projectRepository;
             _projectTaskRepository = projectTaskRepository;
             _projectMemberRepository = projectMemberRepository;
+
+            _projectTimelineService = projectTimelineService;
+            _employeeRepository = employeeRepository;
         }
 
         [HttpGet]
@@ -140,6 +148,23 @@ namespace AryamanBMS.Controllers
                 }
             }
 
+            if (string.Equals(
+               model.Status,
+               "Completed",
+               StringComparison.OrdinalIgnoreCase))
+            {
+                model.ProgressPercent = 100;
+            }
+
+            if (model.ProgressPercent == 100 &&
+              !string.Equals(
+                  model.Status,
+                  "Completed",
+                  StringComparison.OrdinalIgnoreCase))
+            {
+                model.Status = "Completed";
+            }
+
             if (!ModelState.IsValid)
             {
                 await LoadProjectsAsync();
@@ -158,6 +183,16 @@ namespace AryamanBMS.Controllers
 
             TempData["Success"] =
                 "Project task created successfully.";
+
+            await _projectTimelineService.AddEventAsync(
+              projectId: model.ProjectId,
+              eventType: "TaskCreated",
+              eventTitle: "Project task created",
+              eventDescription:
+                  $"Task {model.TaskCode} - {model.TaskTitle} was created.",
+              relatedEntityType: "Task",
+              relatedEntityId: model.Id,
+              newValue: model.Status);
 
             return RedirectToAction(
                 nameof(Index),
@@ -227,6 +262,23 @@ namespace AryamanBMS.Controllers
                 }
             }
 
+            if (string.Equals(
+              model.Status,
+              "Completed",
+              StringComparison.OrdinalIgnoreCase))
+            {
+                model.ProgressPercent = 100;
+            }
+
+            if (model.ProgressPercent == 100 &&
+              !string.Equals(
+                model.Status,
+                "Completed",
+              StringComparison.OrdinalIgnoreCase))
+            {
+                model.Status = "Completed";
+            }
+
             if (!ModelState.IsValid)
             {
                 await LoadProjectsAsync();
@@ -237,6 +289,14 @@ namespace AryamanBMS.Controllers
 
             var existing =
                 await _projectTaskRepository.GetByIdAsync(model.Id);
+
+            string previousStatus = existing.Status ?? string.Empty;
+
+            int previousProgress =
+                existing.ProgressPercent;
+
+            int? previousAssignedEmployeeId =
+                existing.AssignedEmployeeId;
 
             if (existing == null)
                 return NotFound();
@@ -258,6 +318,110 @@ namespace AryamanBMS.Controllers
 
             await _projectTaskRepository.UpdateAsync(existing);
             await _projectTaskRepository.SaveAsync();
+
+            if (!string.Equals(
+               previousStatus,
+               existing.Status,
+               StringComparison.OrdinalIgnoreCase))
+            {
+                await _projectTimelineService.AddEventAsync(
+                    projectId: existing.ProjectId,
+                    eventType: "TaskStatusChanged",
+                    eventTitle: "Task status changed",
+                    eventDescription:
+                        $"Task {existing.TaskCode} - {existing.TaskTitle} changed " +
+                        $"from {previousStatus} to {existing.Status}.",
+                    relatedEntityType: "Task",
+                    relatedEntityId: existing.Id,
+                    previousValue: previousStatus,
+                    newValue: existing.Status);
+            }
+
+            if (previousProgress != existing.ProgressPercent)
+            {
+                await _projectTimelineService.AddEventAsync(
+                    projectId: existing.ProjectId,
+                    eventType: "TaskProgressChanged",
+                    eventTitle: "Task progress updated",
+                    eventDescription:
+                        $"Task {existing.TaskCode} - {existing.TaskTitle} progress " +
+                        $"changed from {previousProgress}% to " +
+                        $"{existing.ProgressPercent}%.",
+                    relatedEntityType: "Task",
+                    relatedEntityId: existing.Id,
+                    previousValue: $"{previousProgress}%",
+                    newValue: $"{existing.ProgressPercent}%");
+            }
+
+            if (previousAssignedEmployeeId !=
+                   existing.AssignedEmployeeId)
+            {
+                string previousEmployeeName = "Unassigned";
+                string newEmployeeName = "Unassigned";
+
+                if (previousAssignedEmployeeId.HasValue)
+                {
+                    var previousEmployee =
+                        await _employeeRepository.Employees
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(e =>
+                                e.Id == previousAssignedEmployeeId.Value);
+
+                    previousEmployeeName =
+                        previousEmployee?.FullName ?? "Unassigned";
+                }
+
+                if (existing.AssignedEmployeeId.HasValue)
+                {
+                    var newEmployee =
+                        await _employeeRepository.Employees
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(e =>
+                                e.Id == existing.AssignedEmployeeId.Value);
+
+                    newEmployeeName =
+                        newEmployee?.FullName ?? "Unassigned";
+                }
+
+                await _projectTimelineService.AddEventAsync(
+                    projectId: existing.ProjectId,
+                    eventType: "TaskReassigned",
+                    eventTitle: "Task assignee changed",
+                    eventDescription:
+                        $"Task {existing.TaskCode} - {existing.TaskTitle} was reassigned " +
+                        $"from {previousEmployeeName} to {newEmployeeName}.",
+                    relatedEntityType: "Task",
+                    relatedEntityId: existing.Id,
+                    previousValue: previousEmployeeName,
+                    newValue: newEmployeeName);
+            }
+
+            bool wasPreviouslyCompleted =
+              string.Equals(
+                 previousStatus,
+                 "Completed",
+                 StringComparison.OrdinalIgnoreCase);
+
+            bool isNowCompleted =
+                string.Equals(
+                    existing.Status,
+                    "Completed",
+                    StringComparison.OrdinalIgnoreCase);
+
+            if (!wasPreviouslyCompleted && isNowCompleted)
+            {
+                await _projectTimelineService.AddEventAsync(
+                    projectId: existing.ProjectId,
+                    eventType: "TaskCompleted",
+                    eventTitle: "Task completed",
+                    eventDescription:
+                        $"Task {existing.TaskCode} - {existing.TaskTitle} was completed.",
+                    relatedEntityType: "Task",
+                    relatedEntityId: existing.Id,
+                    previousValue: previousStatus,
+                    newValue: "Completed");
+            }
+
 
             TempData["Success"] =
                 "Project task updated successfully.";

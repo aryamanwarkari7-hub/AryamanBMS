@@ -1,5 +1,6 @@
 ﻿using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
+using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,13 +12,17 @@ namespace AryamanBMS.Controllers
     {
         private readonly IProjectRepository _projectRepository;
         private readonly IProjectFlowRepository _projectFlowRepository;
+        private readonly IProjectTimelineService
+    _projectTimelineService;
 
         public ProjectFlowController(
             IProjectRepository projectRepository,
-            IProjectFlowRepository projectFlowRepository)
+            IProjectFlowRepository projectFlowRepository,
+            IProjectTimelineService projectTimelineService)
         {
             _projectRepository = projectRepository;
             _projectFlowRepository = projectFlowRepository;
+            _projectTimelineService = projectTimelineService;
         }
 
         [HttpGet]
@@ -78,6 +83,16 @@ namespace AryamanBMS.Controllers
             await _projectFlowRepository.AddAsync(model);
             await _projectFlowRepository.SaveAsync();
 
+            await _projectTimelineService.AddEventAsync(
+              projectId: model.ProjectId,
+              eventType: "FlowStageCreated",
+              eventTitle: "Project flow stage created",
+              eventDescription:
+                  $"Stage {model.StageOrder} - {model.StageName} was created.",
+              relatedEntityType: "Flow",
+              relatedEntityId: model.Id,
+              newValue: model.StageStatus);
+
             TempData["Success"] =
                 "Project flow stage created successfully.";
 
@@ -127,6 +142,9 @@ namespace AryamanBMS.Controllers
             var existing =
                 await _projectFlowRepository.GetByIdAsync(model.Id);
 
+            string previousStageStatus =
+             existing.StageStatus ?? string.Empty;
+
             if (existing == null)
                 return NotFound();
 
@@ -144,6 +162,87 @@ namespace AryamanBMS.Controllers
 
             await _projectFlowRepository.UpdateAsync(existing);
             await _projectFlowRepository.SaveAsync();
+
+            if (!string.Equals(
+             previousStageStatus,
+             existing.StageStatus,
+             StringComparison.OrdinalIgnoreCase))
+            {
+                await _projectTimelineService.AddEventAsync(
+                    projectId: existing.ProjectId,
+                    eventType: "FlowStatusChanged",
+                    eventTitle: "Project flow status changed",
+                    eventDescription:
+                        $"Stage {existing.StageOrder} - {existing.StageName} changed " +
+                        $"from {previousStageStatus} to {existing.StageStatus}.",
+                    relatedEntityType: "Flow",
+                    relatedEntityId: existing.Id,
+                    previousValue: previousStageStatus,
+                    newValue: existing.StageStatus);
+            }
+
+            if (!string.Equals(
+                     previousStageStatus,
+                     "In Progress",
+                     StringComparison.OrdinalIgnoreCase) &&
+                 string.Equals(
+                     existing.StageStatus,
+                     "In Progress",
+                     StringComparison.OrdinalIgnoreCase))
+            {
+                await _projectTimelineService.AddEventAsync(
+                    projectId: existing.ProjectId,
+                    eventType: "FlowStarted",
+                    eventTitle: "Project flow stage started",
+                    eventDescription:
+                        $"Stage {existing.StageOrder} - {existing.StageName} started.",
+                    relatedEntityType: "Flow",
+                    relatedEntityId: existing.Id,
+                    newValue: "In Progress");
+            }
+
+
+            if (!string.Equals(
+               previousStageStatus,
+               "Completed",
+               StringComparison.OrdinalIgnoreCase) &&
+               string.Equals(
+               existing.StageStatus,
+               "Completed",
+               StringComparison.OrdinalIgnoreCase))
+            {
+                await _projectTimelineService.AddEventAsync(
+                    projectId: existing.ProjectId,
+                    eventType: "FlowCompleted",
+                    eventTitle: "Project flow stage completed",
+                    eventDescription:
+                        $"Stage {existing.StageOrder} - {existing.StageName} was completed.",
+                    relatedEntityType: "Flow",
+                    relatedEntityId: existing.Id,
+                    previousValue: previousStageStatus,
+                    newValue: "Completed");
+            }
+
+            if (!string.Equals(
+                previousStageStatus,
+                "On Hold",
+                StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(
+                existing.StageStatus,
+                "On Hold",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                await _projectTimelineService.AddEventAsync(
+                    projectId: existing.ProjectId,
+                    eventType: "FlowOnHold",
+                    eventTitle: "Project flow stage placed on hold",
+                    eventDescription:
+                        $"Stage {existing.StageOrder} - {existing.StageName} was placed on hold.",
+                    relatedEntityType: "Flow",
+                    relatedEntityId: existing.Id,
+                    previousValue: previousStageStatus,
+                    newValue: "On Hold");
+            }
 
             TempData["Success"] =
                 "Project flow stage updated successfully.";

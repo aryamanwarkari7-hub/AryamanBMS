@@ -17,7 +17,7 @@
         public string Subject { get; set; }
             = string.Empty;
 
-        public string Body { get; set; }
+        public string Remark { get; set; }
             = string.Empty;
 
         public string? DocumentPath { get; set; }

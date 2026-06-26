@@ -5,6 +5,7 @@ using AryamanBMS.Repositories.Implementations;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services;
 using AryamanBMS.Services.Interface;
+using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -69,6 +70,7 @@ builder.Services.AddScoped<IProjectMemberRepository, ProjectMemberRepository>();
 builder.Services.AddScoped<IProjectTaskRepository, ProjectTaskRepository>();
 builder.Services.AddScoped<IProjectFlowRepository, ProjectFlowRepository>();
 builder.Services.AddScoped<IProjectTaskProgressRepository, ProjectTaskProgressRepository>();
+builder.Services.AddScoped<IProjectTimelineRepository, ProjectTimelineRepository>();
 
 // Meetings
 builder.Services.AddScoped<IProjectMeetingRepository, ProjectMeetingRepository>();
@@ -82,6 +84,12 @@ builder.Services.AddScoped<ISalaryAttendanceSummaryService, SalaryAttendanceSumm
 
 // EMPLOYEE SERVICE
 builder.Services.AddScoped<IEmployeeDocumentService, EmployeeDocumentService>();
+
+// PROJECT SERVICE
+
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddScoped<IProjectTimelineService, ProjectTimelineService>();
 
 var app = builder.Build();
 
