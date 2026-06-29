@@ -18,9 +18,9 @@ namespace AryamanBMS.Repositories
             _context.ProjectMembers
                 .Include(pm => pm.Project)
                 .Include(pm => pm.Employee)
-                    .ThenInclude(e => e.Department)
+                    .ThenInclude(e => e!.Department)
                 .Include(pm => pm.Employee)
-                    .ThenInclude(e => e.Designation)
+                    .ThenInclude(e => e!.Designation)
                 .AsNoTracking();
 
         public async Task<ProjectMemberModel?> GetByIdAsync(int id)

@@ -16,6 +16,13 @@ namespace AryamanBMS.Controllers
         private readonly UserManager<ApplicationUserModel> _userManager;
         private readonly IWebHostEnvironment _environment;
 
+        // File size check
+        private const long MaximumLetterFileSize = 5 * 1024 * 1024;
+        private static readonly string[] AllowedLetterExtensions =
+        {
+            ".pdf"
+        };
+
         public LetterController(
             ILetterRepository letterRepository,
             IEmployeeRepository employeeRepository,
@@ -77,14 +84,37 @@ namespace AryamanBMS.Controllers
                 letter.IssuedBy =
                     User.Identity?.Name;
 
-                if (documentFile != null &&
-                    documentFile.Length > 0)
+                if (documentFile != null && documentFile.Length > 0)
                 {
+                    if (documentFile.Length > MaximumLetterFileSize)
+                    {
+                        ModelState.AddModelError(
+                            "documentFile",
+                            "Letter document cannot exceed 5 MB.");
+
+                        await LoadDropdowns();
+                        return View(letter);
+                    }
+
+                    string extension =
+                        Path.GetExtension(documentFile.FileName)
+                            .ToLowerInvariant();
+
+                    if (!AllowedLetterExtensions.Contains(extension))
+                    {
+                        ModelState.AddModelError(
+                            "documentFile",
+                            "Only PDF letter documents are allowed.");
+
+                        await LoadDropdowns();
+                        return View(letter);
+                    }
+
                     string uploadFolder =
-                        Path.Combine(
-                            _environment.WebRootPath,
-                            "documents",
-                            "letters");
+                     Path.Combine(
+                         _environment.ContentRootPath,
+                         "App_Data",
+                         "LetterDocuments");
 
                     if (!Directory.Exists(uploadFolder))
                     {
@@ -92,18 +122,18 @@ namespace AryamanBMS.Controllers
                     }
 
                     string fileName =
-                        $"{Guid.NewGuid()}_{documentFile.FileName}";
+                        $"{Guid.NewGuid():N}{extension}";
 
                     string filePath =
                         Path.Combine(uploadFolder, fileName);
 
                     using var stream =
-                        new FileStream(filePath, FileMode.Create);
+                        new FileStream(filePath, FileMode.CreateNew);
 
                     await documentFile.CopyToAsync(stream);
 
                     letter.DocumentPath =
-                        $"/documents/letters/{fileName}";
+                        Path.Combine("LetterDocuments", fileName);
                 }
 
                 await _letterRepository.AddAsync(letter);
@@ -132,6 +162,70 @@ namespace AryamanBMS.Controllers
             }
 
             return View(letter);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DownloadDocument(int id)
+        {
+            var letter =
+                await _letterRepository.GetByIdAsync(id);
+
+            if (letter == null ||
+                string.IsNullOrWhiteSpace(letter.DocumentPath))
+            {
+                return NotFound();
+            }
+
+            string filePath;
+            string allowedRoot;
+
+            if (letter.DocumentPath.StartsWith(
+                "/documents/letters/",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                allowedRoot = Path.GetFullPath(
+                    Path.Combine(
+                        _environment.WebRootPath,
+                        "documents",
+                        "letters"));
+
+                filePath = Path.GetFullPath(
+                    Path.Combine(
+                        _environment.WebRootPath,
+                        letter.DocumentPath.TrimStart('/').Replace(
+                            '/',
+                            Path.DirectorySeparatorChar)));
+            }
+            else
+            {
+                allowedRoot = Path.GetFullPath(
+                    Path.Combine(
+                        _environment.ContentRootPath,
+                        "App_Data",
+                        "LetterDocuments"));
+
+                filePath = Path.GetFullPath(
+                    Path.Combine(
+                        _environment.ContentRootPath,
+                        "App_Data",
+                        letter.DocumentPath));
+            }
+
+            if (!filePath.StartsWith(
+                allowedRoot,
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return NotFound();
+            }
+            if (!System.IO.File.Exists(filePath))
+            {
+                return NotFound();
+            }
+
+            return PhysicalFile(
+                filePath,
+                "application/pdf",
+                $"{letter.LetterNumber}.pdf");
         }
 
         [HttpGet]

@@ -20,6 +20,7 @@ namespace AryamanBMS.Controllers
         private readonly IProjectFlowRepository _projectFlowRepository;
 
         private readonly IProjectTimelineService _projectTimelineService;
+        private readonly IProjectAccessService _projectAccessService;
 
         public ProjectController(
            IProjectRepository projectRepository,
@@ -30,7 +31,8 @@ namespace AryamanBMS.Controllers
            IProjectMeetingRepository projectMeetingRepository,
            IProjectFlowRepository projectFlowRepository,
 
-           IProjectTimelineService projectTimelineService)
+           IProjectTimelineService projectTimelineService,
+           IProjectAccessService projectAccessService)
         {
             _projectRepository = projectRepository;
             _employeeRepository = employeeRepository;
@@ -41,6 +43,7 @@ namespace AryamanBMS.Controllers
             _projectFlowRepository = projectFlowRepository;
 
             _projectTimelineService = projectTimelineService;
+            _projectAccessService = projectAccessService;
         }
 
         public async Task<IActionResult> Index(
@@ -52,6 +55,11 @@ namespace AryamanBMS.Controllers
             const int pageSize = 5;
 
             var projects = _projectRepository.Projects;
+
+            projects =
+             await _projectAccessService.ApplyProjectFilterAsync(
+                 User,
+                 projects);
 
             if (!string.IsNullOrWhiteSpace(searchText))
             {
@@ -93,6 +101,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Create()
         {
             await LoadEmployeesAsync();
@@ -101,6 +110,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Create(ProjectModel model)
         {
             bool codeExists = await _projectRepository.Projects
@@ -176,6 +186,11 @@ namespace AryamanBMS.Controllers
             if (project == null)
                 return NotFound();
 
+            if (!await _projectAccessService.CanAccessProjectAsync(User, id))
+            {
+                return Forbid();
+            }
+
             return View(project);
         }
 
@@ -187,6 +202,11 @@ namespace AryamanBMS.Controllers
 
             if (project == null)
                 return NotFound();
+
+            if (!await _projectAccessService.CanAccessProjectAsync(User, id))
+            {
+                return Forbid();
+            }
 
             var tasks =
                 _projectTaskRepository.ProjectTasks
@@ -584,6 +604,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Edit(int id)
         {
             var project =
@@ -599,6 +620,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Edit(ProjectModel model)
         {
             bool codeExists = await _projectRepository.Projects
@@ -865,6 +887,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Delete(int id)
         {
             var project =
@@ -878,6 +901,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var project =
@@ -903,6 +927,8 @@ namespace AryamanBMS.Controllers
                     .ThenBy(e => e.LastName)
                     .ToListAsync();
         }
+
+
 
         private void ValidateDates(ProjectModel model)
         {

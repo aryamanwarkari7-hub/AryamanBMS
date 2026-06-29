@@ -1,14 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace AryamanBMS.Models
+﻿namespace AryamanBMS.Models
 {
     public class DesignationModel
     {
         public int Id { get; set; }
 
-        public string DesignationName { get; set; }
+        public string DesignationName { get; set; } = string.Empty;
 
-        public string DisplayCode { get; set; }
+        public string DisplayCode { get; set; } = string.Empty;
 
         public int DepartmentId { get; set; }
 

@@ -15,6 +15,7 @@ namespace AryamanBMS.Controllers
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IProjectTaskRepository _projectTaskRepository;
         private readonly IProjectTimelineService _projectTimelineService;
+        private readonly IProjectAccessService _projectAccessService;
 
         public ProjectMemberController(
             IProjectRepository projectRepository,
@@ -22,7 +23,8 @@ namespace AryamanBMS.Controllers
             IEmployeeRepository employeeRepository,
             IProjectTaskRepository projectTaskRepository,
 
-            IProjectTimelineService projectTimelineService)
+            IProjectTimelineService projectTimelineService,
+            IProjectAccessService projectAccessService)
         {
             _projectRepository = projectRepository;
             _projectMemberRepository = projectMemberRepository;
@@ -30,6 +32,7 @@ namespace AryamanBMS.Controllers
             _projectTaskRepository = projectTaskRepository;
 
             _projectTimelineService = projectTimelineService;
+            _projectAccessService = projectAccessService;
         }
 
 
@@ -49,6 +52,13 @@ namespace AryamanBMS.Controllers
             if (project == null)
                 return NotFound();
 
+            if (!await _projectAccessService.CanAccessProjectAsync(
+                   User,
+                   projectId))
+            {
+                return Forbid();
+            }
+
             await LoadAvailableEmployeesAsync(projectId);
 
             ViewBag.Project = project;
@@ -67,6 +77,13 @@ namespace AryamanBMS.Controllers
 
             if (project == null)
                 return NotFound();
+
+            if (!await _projectAccessService.CanAccessProjectAsync(
+              User,
+              model.ProjectId))
+            {
+                return Forbid();
+            }
 
             var existing =
                 await _projectMemberRepository
@@ -138,6 +155,13 @@ namespace AryamanBMS.Controllers
             if (project == null)
                 return NotFound();
 
+            if (!await _projectAccessService.CanAccessProjectAsync(
+               User,
+               member.ProjectId))
+            {
+                return Forbid();
+            }
+
             if (project.ProjectManagerId == member.EmployeeId)
             {
                 TempData["Error"] =
@@ -172,7 +196,7 @@ namespace AryamanBMS.Controllers
                    .FirstOrDefaultAsync(e =>
             e.Id == member.EmployeeId);
 
-            //int projectId = member.ProjectId;
+
             int memberId = member.Id;
             string roleName =
                 member.RoleInProject ?? "Project Member";
@@ -220,18 +244,40 @@ namespace AryamanBMS.Controllers
 
         [HttpGet]
         public async Task<IActionResult> AllMembers(
-    int? projectId,
-    string? searchText,
-    int page = 1)
+                  int? projectId,
+                  string? searchText,
+                  int page = 1)
         {
             const int pageSize = 10;
             page = Math.Max(page, 1);
             var members = _projectMemberRepository.ProjectMembers;
 
+            var accessibleProjects =
+                await _projectAccessService.ApplyProjectFilterAsync(
+                    User,
+                    _projectRepository.Projects.Where(p => p.IsActive));
+
             if (projectId.HasValue)
             {
+                if (!await _projectAccessService.CanAccessProjectAsync(
+                    User,
+                    projectId.Value))
+                {
+                    return Forbid();
+                }
+
                 members = members.Where(pm =>
                     pm.ProjectId == projectId.Value);
+            }
+            else
+            {
+                var accessibleProjectIds =
+                    await accessibleProjects
+                        .Select(p => p.Id)
+                        .ToListAsync();
+
+                members = members.Where(pm =>
+                    accessibleProjectIds.Contains(pm.ProjectId));
             }
 
             if (!string.IsNullOrWhiteSpace(searchText))
@@ -239,14 +285,16 @@ namespace AryamanBMS.Controllers
                 string search = searchText.Trim();
 
                 members = members.Where(pm =>
-                    pm.Employee!.EmployeeCode.Contains(search) ||
-                    pm.Employee.FirstName.Contains(search) ||
-                    (pm.Employee.LastName != null &&
-                     pm.Employee.LastName.Contains(search)) ||
-                    (pm.RoleInProject != null &&
-                     pm.RoleInProject.Contains(search)) ||
-                    pm.Project!.ProjectCode.Contains(search) ||
-                    pm.Project.ProjectName.Contains(search));
+                  (pm.Employee!.EmployeeCode != null &&
+                   pm.Employee!.EmployeeCode.Contains(search)) ||
+                  (pm.Employee!.FirstName != null &&
+                   pm.Employee!.FirstName.Contains(search)) ||
+                  (pm.Employee!.LastName != null &&
+                   pm.Employee!.LastName.Contains(search)) ||
+                  (pm.RoleInProject != null &&
+                   pm.RoleInProject.Contains(search)) ||
+                  pm.Project!.ProjectCode.Contains(search) ||
+                  pm.Project!.ProjectName.Contains(search));
             }
 
             int totalRecords = await members.CountAsync();
@@ -266,10 +314,10 @@ namespace AryamanBMS.Controllers
                 .Take(pageSize)
                 .ToListAsync();
 
-            ViewBag.Projects = await _projectRepository.Projects
-                .Where(p => p.IsActive)
-                .OrderBy(p => p.ProjectName)
-                .ToListAsync();
+            ViewBag.Projects =
+             await accessibleProjects
+                 .OrderBy(p => p.ProjectName)
+                 .ToListAsync();
 
             ViewBag.ProjectId = projectId;
             ViewBag.SearchText = searchText;

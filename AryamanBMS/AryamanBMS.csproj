@@ -31,6 +31,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="App_Data\LetterDocuments\2b93fd68-11cf-4edc-a6b4-3d2431df73e5_Atharwa_Internship_Letter.pdf" />
+    <Content Include="App_Data\LetterDocuments\9cb04f0c-cdd6-4f0e-a394-a49f55787400_Aryaman Offer Letter.pdf" />
+    <Content Include="App_Data\LetterDocuments\a047cd3e-843b-49b0-850c-a98e6978e570_Aryaman Offer Letter.pdf" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="ClosedXML" Version="0.105.0" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.27" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="8.0.27" />
@@ -49,6 +55,10 @@
     <ProjectReference Include="..\AryamanBMS.Models\AryamanBMS.Models.csproj" />
     <ProjectReference Include="..\AryamanBMS.Repositories\AryamanBMS.Repositories.csproj" />
     <ProjectReference Include="..\AryamanBMS.Utilities\AryamanBMS.Utilities.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\documents\letters\" />
   </ItemGroup>
 
   <ProjectExtensions><VisualStudio><UserProperties appsettings_1json__JsonSchema="https://www.schemastore.org/asconfig-schema.json" /></VisualStudio></ProjectExtensions>

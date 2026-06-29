@@ -26,7 +26,6 @@ namespace AryamanBMS.Controllers
         }
 
         [Authorize(Roles = "Admin,HR")]
-        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Index(
               int? year,
               int? employeeId,

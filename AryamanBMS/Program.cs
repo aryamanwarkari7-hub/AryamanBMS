@@ -23,7 +23,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     ));
 
 builder.Services
-    .AddIdentity<ApplicationUserModel, IdentityRole>()
+    .AddIdentity<ApplicationUserModel, IdentityRole>(options =>
+    {
+        options.Lockout.AllowedForNewUsers = true;
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+        options.Lockout.MaxFailedAccessAttempts = 5;
+    })
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 builder.Services.ConfigureApplicationCookie(options =>
@@ -90,6 +95,8 @@ builder.Services.AddScoped<IEmployeeDocumentService, EmployeeDocumentService>();
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddScoped<IProjectTimelineService, ProjectTimelineService>();
+
+builder.Services.AddScoped<IProjectAccessService, ProjectAccessService>();
 
 var app = builder.Build();
 

@@ -26,25 +26,6 @@
 
 </div>
 
-@if (TempData["Success"] != null)
-{
-    <div class="app-alert app-alert-success mb-3">
-
-        <i class="bi bi-check-circle"></i>
-        @TempData["Success"]
-
-    </div>
-}
-
-@if (TempData["Error"] != null)
-{
-    <div class="app-alert app-alert-danger mb-3">
-
-        <i class="bi bi-exclamation-circle"></i>
-        @TempData["Error"]
-
-    </div>
-}
 
 <div class="app-card table-card">
 
@@ -132,7 +113,8 @@
                                     @if (!string.IsNullOrWhiteSpace(
                                         letter.DocumentPath))
                                     {
-                                        <a href="@letter.DocumentPath"
+                                        <a asp-action="DownloadDocument"
+                                           asp-route-id="@letter.Id"
                                            target="_blank"
                                            rel="noopener noreferrer"
                                            class="btn-app btn-secondary-app btn-icon"

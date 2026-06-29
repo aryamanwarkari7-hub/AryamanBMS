@@ -155,6 +155,11 @@ namespace AryamanBMS.Controllers
 
             var user = await _userManager.GetUserAsync(User);
 
+            if (user == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             var employee = await _employeeRepository.Employees
                 .FirstOrDefaultAsync(e => e.ApplicationUserId == user.Id);
 
@@ -234,6 +239,10 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> CheckOut()
         {
             var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
 
             var employee = await _employeeRepository.Employees
                 .FirstOrDefaultAsync(e => e.ApplicationUserId == user.Id);
@@ -285,7 +294,7 @@ namespace AryamanBMS.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        [Authorize(Roles = "Admin,HR")]
+
         [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Register(
     string? searchText,
@@ -310,9 +319,11 @@ namespace AryamanBMS.Controllers
                         (a.Employee.EmployeeCode != null &&
                          a.Employee.EmployeeCode.Contains(searchText)) ||
 
-                        a.Employee.FirstName.Contains(searchText) ||
+                        (a.Employee.FirstName != null &&
+                           a.Employee.FirstName.Contains(searchText)) ||
 
-                        a.Employee.LastName.Contains(searchText) ||
+                        (a.Employee.LastName != null &&
+                           a.Employee.LastName.Contains(searchText)) ||
 
                         (a.Employee.MobileNumber != null &&
                          a.Employee.MobileNumber.Contains(searchText)) ||
@@ -558,9 +569,8 @@ namespace AryamanBMS.Controllers
                     new EmployeeAttendanceViewModel
                     {
                         EmployeeId = employee.Id,
-                        EmployeeCode = employee.EmployeeCode,
-                        EmployeeName =
-                            $"{employee.FirstName} {employee.LastName}"
+                        EmployeeCode = employee.EmployeeCode ?? string.Empty,
+                        EmployeeName = employee.FullName
                     };
 
                 for (int calendarDay = 1;
@@ -667,8 +677,9 @@ namespace AryamanBMS.Controllers
             ViewBag.DailyAttendance =
                 selectedDate.HasValue
                     ? summaryRecords
-                        .OrderBy(a => a.Employee.FirstName)
-                        .ThenBy(a => a.Employee.LastName)
+                        .OrderBy(a => a.Employee!.FirstName)
+                        .ThenBy(a => a.Employee!
+                        .LastName)
                         .ToList()
                     : new List<AttendanceModel>();
 
@@ -687,10 +698,18 @@ namespace AryamanBMS.Controllers
 
             if (!string.IsNullOrWhiteSpace(searchText))
             {
+                searchText = searchText.Trim();
+
                 query = query.Where(a =>
-                    a.Employee.EmployeeCode.Contains(searchText) ||
-                    a.Employee.FirstName.Contains(searchText) ||
-                    a.Employee.LastName.Contains(searchText));
+                    a.Employee != null &&
+                    (
+                        (a.Employee.EmployeeCode != null &&
+                         a.Employee.EmployeeCode.Contains(searchText)) ||
+                        (a.Employee.FirstName != null &&
+                         a.Employee.FirstName.Contains(searchText)) ||
+                        (a.Employee.LastName != null &&
+                         a.Employee.LastName.Contains(searchText))
+                    ));
             }
 
             if (fromDate.HasValue)
@@ -707,9 +726,9 @@ namespace AryamanBMS.Controllers
 
             var attendanceList = await query
                 .Include(a => a.Employee)
-                    .ThenInclude(e => e.Department)
+                    .ThenInclude(e => e!.Department)
                 .Include(a => a.Employee)
-                    .ThenInclude(e => e.Designation)
+                    .ThenInclude(e => e!.Designation)
                 .OrderByDescending(a => a.AttendanceDate)
                 .ToListAsync();
 
@@ -840,10 +859,10 @@ namespace AryamanBMS.Controllers
                             g.First().EmployeeId,
 
                         EmployeeCode =
-                            g.First().Employee.EmployeeCode,
+                            g.First().Employee!.EmployeeCode ?? string.Empty,
 
                         EmployeeName =
-                            $"{g.First().Employee.FirstName} {g.First().Employee.LastName}",
+                            g.First().Employee!.FullName,
 
                         PresentCount = present,
 

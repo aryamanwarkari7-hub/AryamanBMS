@@ -63,12 +63,14 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
+
         public IActionResult Create()
         {
             return View();
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
             DepartmentModel department)
         {
@@ -87,6 +89,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
+
         public async Task<IActionResult> Edit(int id)
         {
             var department =
@@ -101,6 +104,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             DepartmentModel department)
         {
@@ -133,6 +137,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
 
@@ -150,7 +155,7 @@ namespace AryamanBMS.Controllers
 
             var department =
                 await _departmentRepository.GetByIdAsync(id);
-            
+
 
 
             if (department == null)

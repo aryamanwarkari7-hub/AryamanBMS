@@ -12,17 +12,19 @@ namespace AryamanBMS.Controllers
     {
         private readonly IProjectRepository _projectRepository;
         private readonly IProjectFlowRepository _projectFlowRepository;
-        private readonly IProjectTimelineService
-    _projectTimelineService;
+        private readonly IProjectTimelineService _projectTimelineService;
+        private readonly IProjectAccessService _projectAccessService;
 
         public ProjectFlowController(
             IProjectRepository projectRepository,
             IProjectFlowRepository projectFlowRepository,
-            IProjectTimelineService projectTimelineService)
+            IProjectTimelineService projectTimelineService,
+            IProjectAccessService projectAccessService)
         {
             _projectRepository = projectRepository;
             _projectFlowRepository = projectFlowRepository;
             _projectTimelineService = projectTimelineService;
+            _projectAccessService = projectAccessService;
         }
 
         [HttpGet]
@@ -30,10 +32,32 @@ namespace AryamanBMS.Controllers
         {
             var flows = _projectFlowRepository.ProjectFlows;
 
+            var accessibleProjects =
+                await _projectAccessService.ApplyProjectFilterAsync(
+                    User,
+                    _projectRepository.Projects.Where(p => p.IsActive));
+
             if (projectId.HasValue)
             {
+                if (!await _projectAccessService.CanAccessProjectAsync(
+                    User,
+                    projectId.Value))
+                {
+                    return Forbid();
+                }
+
                 flows = flows.Where(pf =>
                     pf.ProjectId == projectId.Value);
+            }
+            else
+            {
+                var accessibleProjectIds =
+                    await accessibleProjects
+                        .Select(p => p.Id)
+                        .ToListAsync();
+
+                flows = flows.Where(pf =>
+                    accessibleProjectIds.Contains(pf.ProjectId));
             }
 
             var data = await flows
@@ -41,10 +65,10 @@ namespace AryamanBMS.Controllers
                 .ThenBy(pf => pf.StageOrder)
                 .ToListAsync();
 
-            ViewBag.Projects = await _projectRepository.Projects
-                .Where(p => p.IsActive)
-                .OrderBy(p => p.ProjectName)
-                .ToListAsync();
+            ViewBag.Projects =
+               await accessibleProjects
+                   .OrderBy(p => p.ProjectName)
+                   .ToListAsync();
 
             ViewBag.ProjectId = projectId;
 
@@ -55,6 +79,14 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> Create(int? projectId)
         {
             await LoadProjectsAsync();
+
+            if (projectId.HasValue &&
+             !await _projectAccessService.CanAccessProjectAsync(
+                 User,
+                 projectId.Value))
+            {
+                return Forbid();
+            }
 
             return View(new ProjectFlowModel
             {
@@ -68,6 +100,13 @@ namespace AryamanBMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ProjectFlowModel model)
         {
+            if (!await _projectAccessService.CanAccessProjectAsync(
+             User,
+             model.ProjectId))
+            {
+                return Forbid();
+            }
+
             await ValidateFlowAsync(model);
 
             if (!ModelState.IsValid)
@@ -110,6 +149,13 @@ namespace AryamanBMS.Controllers
             if (flow == null)
                 return NotFound();
 
+            if (!await _projectAccessService.CanAccessProjectAsync(
+             User,
+             flow.ProjectId))
+            {
+                return Forbid();
+            }
+
             return View(flow);
         }
 
@@ -121,6 +167,12 @@ namespace AryamanBMS.Controllers
 
             if (flow == null)
                 return NotFound();
+            if (!await _projectAccessService.CanAccessProjectAsync(
+              User,
+              flow.ProjectId))
+            {
+                return Forbid();
+            }
 
             await LoadProjectsAsync();
 
@@ -131,6 +183,14 @@ namespace AryamanBMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(ProjectFlowModel model)
         {
+
+            if (!await _projectAccessService.CanAccessProjectAsync(
+              User,
+              model.ProjectId))
+            {
+                return Forbid();
+            }
+
             await ValidateFlowAsync(model);
 
             if (!ModelState.IsValid)
@@ -139,14 +199,20 @@ namespace AryamanBMS.Controllers
                 return View(model);
             }
 
-            var existing =
-                await _projectFlowRepository.GetByIdAsync(model.Id);
-
-            string previousStageStatus =
-             existing.StageStatus ?? string.Empty;
+            var existing = await _projectFlowRepository.GetByIdAsync(model.Id);
 
             if (existing == null)
                 return NotFound();
+
+            if (!await _projectAccessService.CanAccessProjectAsync(
+                User,
+                existing.ProjectId))
+            {
+                return Forbid();
+            }
+
+            string previousStageStatus =
+                existing.StageStatus ?? string.Empty;
 
             existing.ProjectId = model.ProjectId;
             existing.StageName = model.StageName.Trim();
@@ -261,6 +327,13 @@ namespace AryamanBMS.Controllers
             if (flow == null)
                 return NotFound();
 
+            if (!await _projectAccessService.CanAccessProjectAsync(
+               User,
+               flow.ProjectId))
+            {
+                return Forbid();
+            }
+
             return View(flow);
         }
 
@@ -273,6 +346,13 @@ namespace AryamanBMS.Controllers
 
             if (flow == null)
                 return NotFound();
+
+            if (!await _projectAccessService.CanAccessProjectAsync(
+              User,
+              flow.ProjectId))
+            {
+                return Forbid();
+            }
 
             int projectId = flow.ProjectId;
 
@@ -289,10 +369,15 @@ namespace AryamanBMS.Controllers
 
         private async Task LoadProjectsAsync()
         {
-            ViewBag.Projects = await _projectRepository.Projects
-                .Where(p => p.IsActive)
-                .OrderBy(p => p.ProjectName)
-                .ToListAsync();
+            var projects =
+                await _projectAccessService.ApplyProjectFilterAsync(
+                    User,
+                    _projectRepository.Projects.Where(p => p.IsActive));
+
+            ViewBag.Projects =
+                await projects
+                    .OrderBy(p => p.ProjectName)
+                    .ToListAsync();
         }
 
         private async Task<int> GetNextStageOrderAsync(int? projectId)

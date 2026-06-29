@@ -45,7 +45,7 @@
         public class MonthlySalarySummaryViewModel
         {
             public int Month { get; set; }
-            public string MonthName { get; set; }
+            public string MonthName { get; set; } = string.Empty;
             public int EmployeeCount { get; set; }
             public int PaidCount { get; set; }
             public int PendingCount { get; set; }

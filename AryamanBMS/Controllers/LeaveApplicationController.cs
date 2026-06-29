@@ -162,6 +162,10 @@ namespace AryamanBMS.Controllers
             LeaveApplicationModel leaveApplication)
         {
             var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
 
             var employee = await _employeeRepository.Employees
                 .FirstOrDefaultAsync(x =>
@@ -314,20 +318,27 @@ namespace AryamanBMS.Controllers
                 return NotFound();
             }
 
-            if (User.IsInRole("Employee") && !User.IsInRole("Admin") &&
-                     !User.IsInRole("HR"))
+            if (User.IsInRole("Employee") &&
+                !User.IsInRole("Admin") &&
+                !User.IsInRole("HR"))
             {
                 var user = await _userManager.GetUserAsync(User);
 
-                var employee = await _employeeRepository.Employees
-                    .FirstOrDefaultAsync(x => x.ApplicationUserId == user.Id);
+                if (user == null)
+                {
+                    return RedirectToAction("Login", "Account");
+                }
 
-                if (employee == null || leaveApplication.EmployeeId != employee.Id)
+                var employee = await _employeeRepository.Employees
+                    .FirstOrDefaultAsync(x =>
+                        x.ApplicationUserId == user.Id);
+
+                if (employee == null ||
+                    leaveApplication.EmployeeId != employee.Id)
                 {
                     return Forbid();
                 }
             }
-
 
             return View(leaveApplication);
         }
@@ -678,15 +689,23 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            if (User.IsInRole("Employee") && !User.IsInRole("Admin") &&
-                      !User.IsInRole("HR"))
+            if (User.IsInRole("Employee") &&
+              !User.IsInRole("Admin") &&
+              !User.IsInRole("HR"))
             {
                 var user = await _userManager.GetUserAsync(User);
 
-                var employee = await _employeeRepository.Employees
-                    .FirstOrDefaultAsync(x => x.ApplicationUserId == user.Id);
+                if (user == null)
+                {
+                    return RedirectToAction("Login", "Account");
+                }
 
-                if (employee == null || leaveApplication.EmployeeId != employee.Id)
+                var employee = await _employeeRepository.Employees
+                    .FirstOrDefaultAsync(x =>
+                        x.ApplicationUserId == user.Id);
+
+                if (employee == null ||
+                    leaveApplication.EmployeeId != employee.Id)
                 {
                     return Forbid();
                 }

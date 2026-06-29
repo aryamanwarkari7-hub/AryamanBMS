@@ -40,8 +40,6 @@ namespace AryamanBMS.Controllers
         }
 
         [Authorize(Roles = "Admin,HR")]
-
-        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Index(
           int? month,
           int? year,
@@ -114,6 +112,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,HR")]
         public IActionResult Generate(int month, int year)
         {
@@ -142,6 +141,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Edit(SalaryRecordModel salary)
         {
@@ -164,15 +164,13 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin,HR")]
-        [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> MarkPaid(
-    int id,
-    int month,
-    int year,
-    int page = 1)
+                 int id,
+                 int month,
+                 int year,
+                 int page = 1)
         {
             var salary =
                 await _salaryRecordRepository.GetByIdAsync(id);
@@ -607,6 +605,10 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> MyPayslip()
         {
             var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
 
             var employee = _employeeRepository.Employees
                 .FirstOrDefault(x => x.ApplicationUserId == user.Id);
@@ -674,7 +676,7 @@ namespace AryamanBMS.Controllers
 
             if (result.HasErrors)
             {
-                TempData["Error"] = string.Join("<br/>", result.Errors);
+                TempData["Error"] = string.Join(Environment.NewLine, result.Errors);
             }
 
             TempData["Success"] = result.Message;

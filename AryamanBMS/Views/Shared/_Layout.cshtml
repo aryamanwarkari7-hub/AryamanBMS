@@ -44,14 +44,32 @@
 
             @if (TempData["Success"] != null)
             {
-                <div id="successAlert" class="alert-success-app">
+                <div class="alert-message-app alert-success-app">
                     <i class="bi bi-check-circle-fill"></i>
                     @TempData["Success"]
                 </div>
             }
+
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert-message-app alert-error-app">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+
+                    <div>
+                        @foreach (var error in TempData["Error"]?.ToString()?.Split(
+                                            Environment.NewLine,
+                                            StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>())
+                        {
+                            <div>@error</div>
+                        }
+                    </div>
+                </div>
+            }
+
             @RenderBody()
 
         </div>
+        
 
     </div>    
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
@@ -59,19 +77,15 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script>
         setTimeout(function () {
+            document
+                .querySelectorAll(".alert-message-app")
+                .forEach(function (alert) {
+                    alert.classList.add("alert-hide");
 
-        const alert =
-        document.getElementById("successAlert");
-
-        if (alert) {
-
-        alert.classList.add("alert-hide");
-
-        setTimeout(() => {
-        alert.remove();
-        }, 500);
-        }
-
+                    setTimeout(function () {
+                        alert.remove();
+                    }, 500);
+                });
         }, 3000);
     </script>
     @await RenderSectionAsync("Scripts", required: false)

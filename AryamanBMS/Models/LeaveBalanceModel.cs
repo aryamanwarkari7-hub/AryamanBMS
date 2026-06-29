@@ -7,11 +7,11 @@
 
         public int EmployeeId { get; set; }
 
-        public EmployeeModel Employee { get; set; }
+        public EmployeeModel Employee { get; set; } = null!;
 
         public int LeaveTypeId { get; set; }
 
-        public LeaveTypeModel LeaveType { get; set; }
+        public LeaveTypeModel LeaveType { get; set; } = null!;
 
         public int LeaveYear { get; set; }
 

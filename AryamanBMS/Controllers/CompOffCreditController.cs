@@ -43,7 +43,8 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Request()
+        [ActionName("Request")]
+        public async Task<IActionResult> RequestCompOff()
         {
             await UpdateExpiredCreditsAsync();
 
@@ -108,8 +109,9 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Request(
-            CompOffRequestViewModel model)
+        [ActionName("Request")]
+        public async Task<IActionResult> RequestCompOff(
+           CompOffRequestViewModel model)
         {
             var user =
                 await _userManager.GetUserAsync(User);

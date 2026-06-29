@@ -31,9 +31,9 @@ namespace AryamanBMS.Repositories
             return await _context.ProjectTasks
                 .Include(t => t.Project)
                 .Include(t => t.AssignedEmployee)
-                    .ThenInclude(e => e.Department)
+                    .ThenInclude(e => e!.Department)
                 .Include(t => t.AssignedEmployee)
-                    .ThenInclude(e => e.Designation)
+                    .ThenInclude(e => e!.Designation)
                 .FirstOrDefaultAsync(t => t.Id == id);
         }
 

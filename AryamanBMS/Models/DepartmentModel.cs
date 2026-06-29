@@ -1,14 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace AryamanBMS.Models
+﻿namespace AryamanBMS.Models
 {
     public class DepartmentModel
     {
         public int Id { get; set; }
 
-        public string DepartmentName { get; set; }
+        public string DepartmentName { get; set; } = string.Empty;
 
-        public string DisplayCode { get; set; }
+        public string DisplayCode { get; set; } = string.Empty;
 
         public bool IsActive { get; set; }
 

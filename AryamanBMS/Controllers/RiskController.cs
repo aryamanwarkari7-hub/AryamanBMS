@@ -12,17 +12,23 @@ namespace AryamanBMS.Controllers
     {
         private readonly IProjectRiskRepository _riskRepository;
         private readonly IProjectMemberRepository _projectMemberRepository;
+        private readonly IProjectRepository _projectRepository;
 
         private readonly IProjectTimelineService _projectTimelineService;
+        private readonly IProjectAccessService _projectAccessService;
 
         public RiskController(
-         IProjectRiskRepository riskRepository,
-         IProjectMemberRepository projectMemberRepository,
-         IProjectTimelineService projectTimelineService)
+          IProjectRiskRepository riskRepository,
+          IProjectMemberRepository projectMemberRepository,
+          IProjectRepository projectRepository,
+          IProjectTimelineService projectTimelineService,
+          IProjectAccessService projectAccessService)
         {
             _riskRepository = riskRepository;
             _projectMemberRepository = projectMemberRepository;
+            _projectRepository = projectRepository;
             _projectTimelineService = projectTimelineService;
+            _projectAccessService = projectAccessService;
         }
 
         [HttpGet]
@@ -35,10 +41,32 @@ namespace AryamanBMS.Controllers
         {
             var risks = _riskRepository.ProjectRisks;
 
+            var accessibleProjects =
+                await _projectAccessService.ApplyProjectFilterAsync(
+                    User,
+                    _projectRepository.Projects.Where(p => p.IsActive));
+
             if (projectId.HasValue)
             {
+                if (!await _projectAccessService.CanAccessProjectAsync(
+                    User,
+                    projectId.Value))
+                {
+                    return Forbid();
+                }
+
                 risks = risks.Where(r =>
                     r.ProjectId == projectId.Value);
+            }
+            else
+            {
+                var accessibleProjectIds =
+                    await accessibleProjects
+                        .Select(p => p.Id)
+                        .ToListAsync();
+
+                risks = risks.Where(r =>
+                    accessibleProjectIds.Contains(r.ProjectId));
             }
 
             if (!string.IsNullOrWhiteSpace(status))
@@ -91,6 +119,14 @@ namespace AryamanBMS.Controllers
         [HttpGet]
         public async Task<IActionResult> Create(int? projectId)
         {
+            if (projectId.HasValue &&
+            !await _projectAccessService.CanAccessProjectAsync(
+             User,
+             projectId.Value))
+            {
+                return Forbid();
+            }
+
             await LoadDropdownsAsync(projectId);
 
             return View(new ProjectRiskModel
@@ -108,9 +144,15 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(
-            ProjectRiskModel model)
+        public async Task<IActionResult> Create(ProjectRiskModel model)
         {
+            if (model.ProjectId > 0 &&
+               !await _projectAccessService.CanAccessProjectAsync(
+                   User,
+                   model.ProjectId))
+            {
+                return Forbid();
+            }
             CalculateRisk(model);
 
             await ValidateRiskAsync(model);
@@ -174,6 +216,13 @@ namespace AryamanBMS.Controllers
             if (risk == null)
                 return NotFound();
 
+            if (!await _projectAccessService.CanAccessProjectAsync(
+                User,
+                risk.ProjectId))
+            {
+                return Forbid();
+            }
+
             return View(risk);
         }
 
@@ -186,6 +235,13 @@ namespace AryamanBMS.Controllers
             if (risk == null)
                 return NotFound();
 
+            if (!await _projectAccessService.CanAccessProjectAsync(
+              User,
+              risk.ProjectId))
+            {
+                return Forbid();
+            }
+
             await LoadDropdownsAsync(risk.ProjectId);
 
             return View(risk);
@@ -193,9 +249,16 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(
-            ProjectRiskModel model)
+        public async Task<IActionResult> Edit(ProjectRiskModel model)
         {
+            if (model.ProjectId > 0 &&
+              !await _projectAccessService.CanAccessProjectAsync(
+                  User,
+                  model.ProjectId))
+            {
+                return Forbid();
+            }
+
             CalculateRisk(model);
 
             await ValidateRiskAsync(model);
@@ -211,6 +274,13 @@ namespace AryamanBMS.Controllers
 
             if (existing == null)
                 return NotFound();
+
+            if (!await _projectAccessService.CanAccessProjectAsync(
+              User,
+              existing.ProjectId))
+            {
+                return Forbid();
+            }
 
             string previousStatus =
                 existing.RiskStatus ?? string.Empty;
@@ -255,9 +325,9 @@ namespace AryamanBMS.Controllers
             await _riskRepository.SaveAsync();
 
             if (!string.Equals(
-    previousStatus,
-    existing.RiskStatus,
-    StringComparison.OrdinalIgnoreCase))
+              previousStatus,
+              existing.RiskStatus,
+              StringComparison.OrdinalIgnoreCase))
             {
                 await _projectTimelineService.AddEventAsync(
                     projectId: existing.ProjectId,
@@ -272,9 +342,9 @@ namespace AryamanBMS.Controllers
                     newValue: existing.RiskStatus);
             }
             if (!string.Equals(
-    previousSeverity,
-    existing.Severity,
-    StringComparison.OrdinalIgnoreCase))
+                previousSeverity,
+                existing.Severity,
+                StringComparison.OrdinalIgnoreCase))
             {
                 await _projectTimelineService.AddEventAsync(
                     projectId: existing.ProjectId,
@@ -289,10 +359,10 @@ namespace AryamanBMS.Controllers
                     newValue: existing.Severity);
             }
             bool wasResolved =
-    string.Equals(
-        previousStatus,
-        "Resolved",
-        StringComparison.OrdinalIgnoreCase);
+                string.Equals(
+                    previousStatus,
+                    "Resolved",
+                    StringComparison.OrdinalIgnoreCase);
 
             bool isResolved =
                 string.Equals(
@@ -315,10 +385,10 @@ namespace AryamanBMS.Controllers
             }
 
             bool wasClosed =
-    string.Equals(
-        previousStatus,
-        "Closed",
-        StringComparison.OrdinalIgnoreCase);
+                 string.Equals(
+                     previousStatus,
+                     "Closed",
+                     StringComparison.OrdinalIgnoreCase);
 
             bool isClosed =
                 string.Equals(
@@ -357,6 +427,13 @@ namespace AryamanBMS.Controllers
             if (risk == null)
                 return NotFound();
 
+            if (!await _projectAccessService.CanAccessProjectAsync(
+              User,
+              risk.ProjectId))
+            {
+                return Forbid();
+            }
+
             return View(risk);
         }
 
@@ -369,6 +446,13 @@ namespace AryamanBMS.Controllers
 
             if (risk == null)
                 return NotFound();
+
+            if (!await _projectAccessService.CanAccessProjectAsync(
+                User,
+                risk.ProjectId))
+            {
+                return Forbid();
+            }
 
             int projectId = risk.ProjectId;
 
@@ -385,8 +469,15 @@ namespace AryamanBMS.Controllers
 
         private async Task LoadDropdownsAsync(int? projectId = null)
         {
+            var projects =
+            await _projectAccessService.ApplyProjectFilterAsync(
+                User,
+                _projectRepository.Projects.Where(p => p.IsActive));
+
             ViewBag.Projects =
-                await _riskRepository.GetActiveProjectsAsync();
+                await projects
+                    .OrderBy(p => p.ProjectName)
+                    .ToListAsync();
 
             if (projectId.HasValue && projectId.Value > 0)
             {

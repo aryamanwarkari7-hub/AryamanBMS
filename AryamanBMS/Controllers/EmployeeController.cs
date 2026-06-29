@@ -1501,9 +1501,18 @@ namespace AryamanBMS.Controllers
                 return NotFound();
             }
 
-            string filePath =
-                _employeeDocumentService.GetAbsolutePath(
-                    document.StoragePath);
+            string filePath;
+
+            try
+            {
+                filePath =
+                    _employeeDocumentService.GetAbsolutePath(
+                        document.StoragePath);
+            }
+            catch (InvalidOperationException)
+            {
+                return NotFound();
+            }
 
             if (!System.IO.File.Exists(filePath))
             {
@@ -1527,6 +1536,21 @@ namespace AryamanBMS.Controllers
                 .FirstOrDefaultAsync(x => x.Id == id);
 
             if (document == null)
+            {
+                return NotFound();
+            }
+
+            if (document.EmployeeId != employeeId)
+            {
+                return Forbid();
+            }
+
+            try
+            {
+                _employeeDocumentService.GetAbsolutePath(
+                    document.StoragePath);
+            }
+            catch (InvalidOperationException)
             {
                 return NotFound();
             }
@@ -1928,7 +1952,7 @@ long maximumFileSize)
         }
 
         private async Task ReloadExistingPreviousEmploymentDocumentsAsync(
-    EmployeeFormViewModel model)
+          EmployeeFormViewModel model)
         {
             model.PreviousEmployments ??=
                 new List<EmployeePreviousEmploymentInputViewModel>();
@@ -1936,13 +1960,15 @@ long maximumFileSize)
             foreach (var employment in model.PreviousEmployments
                 .Where(x => x.Id.HasValue))
             {
+                int employmentId = employment.Id.GetValueOrDefault();
+
                 var documents =
                     await _employeeDocumentRepository.Documents
                         .AsNoTracking()
                         .Where(x =>
                             x.EmployeeId == model.Employee.Id &&
                             x.EmployeePreviousEmploymentId ==
-                                employment.Id.Value &&
+                                employmentId &&
                             x.DocumentCategory ==
                                 "PreviousEmployment")
                         .ToListAsync();

@@ -14,11 +14,15 @@ namespace AryamanBMS.Data
             var userManager =
                 serviceProvider.GetRequiredService<UserManager<ApplicationUserModel>>();
 
+            var configuration =
+                serviceProvider.GetRequiredService<IConfiguration>();
+
             string[] roles =
             {
                 "Admin",
                 "HR",
-                "Employee"
+                "Employee",
+                "ProjectManager"
             };
 
             foreach (var role in roles)
@@ -30,22 +34,38 @@ namespace AryamanBMS.Data
                 }
             }
 
+            var adminUserName =
+                configuration["SeedAdmin:UserName"];
+
+            var adminEmail =
+                configuration["SeedAdmin:Email"];
+
+            var adminPassword =
+                configuration["SeedAdmin:Password"];
+
+            if (string.IsNullOrWhiteSpace(adminUserName) ||
+                string.IsNullOrWhiteSpace(adminEmail) ||
+                string.IsNullOrWhiteSpace(adminPassword))
+            {
+                return;
+            }
+
             var adminUser =
-                await userManager.FindByNameAsync("admin");
+                await userManager.FindByNameAsync(adminUserName);
 
             if (adminUser == null)
             {
                 adminUser = new ApplicationUserModel
                 {
-                    UserName = "admin",
-                    Email = "admin@aryamanbms.com",
+                    UserName = adminUserName,
+                    Email = adminEmail,
                     FullName = "System Administrator",
                     EmailConfirmed = true
                 };
 
                 var result = await userManager.CreateAsync(
                     adminUser,
-                    "Admin@123");
+                    adminPassword);
 
                 if (result.Succeeded)
                 {

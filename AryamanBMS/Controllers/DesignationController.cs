@@ -1,9 +1,9 @@
 ﻿using AryamanBMS.Extensions;
-using Microsoft.EntityFrameworkCore;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
@@ -73,6 +73,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
             DesignationModel designation)
         {
@@ -109,6 +110,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             DesignationModel designation)
         {

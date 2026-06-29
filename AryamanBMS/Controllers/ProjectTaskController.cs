@@ -14,6 +14,7 @@ namespace AryamanBMS.Controllers
         private readonly IProjectTaskRepository _projectTaskRepository;
         private readonly IProjectMemberRepository _projectMemberRepository;
         private readonly IProjectTimelineService _projectTimelineService;
+        private readonly IProjectAccessService _projectAccessService;
         private readonly IEmployeeRepository _employeeRepository;
 
         public ProjectTaskController(
@@ -21,12 +22,13 @@ namespace AryamanBMS.Controllers
             IProjectTaskRepository projectTaskRepository,
             IProjectMemberRepository projectMemberRepository,
             IProjectTimelineService projectTimelineService,
+            IProjectAccessService projectAccessService,
             IEmployeeRepository employeeRepository)
         {
             _projectRepository = projectRepository;
             _projectTaskRepository = projectTaskRepository;
             _projectMemberRepository = projectMemberRepository;
-
+            _projectAccessService = projectAccessService;
             _projectTimelineService = projectTimelineService;
             _employeeRepository = employeeRepository;
         }
@@ -43,9 +45,31 @@ namespace AryamanBMS.Controllers
 
             var tasks = _projectTaskRepository.ProjectTasks;
 
+            var accessibleProjects =
+                await _projectAccessService.ApplyProjectFilterAsync(
+                    User,
+                    _projectRepository.Projects.Where(p => p.IsActive));
+
             if (projectId.HasValue)
             {
+                if (!await _projectAccessService.CanAccessProjectAsync(
+                    User,
+                    projectId.Value))
+                {
+                    return Forbid();
+                }
+
                 tasks = tasks.Where(t => t.ProjectId == projectId.Value);
+            }
+            else
+            {
+                var accessibleProjectIds =
+                    await accessibleProjects
+                        .Select(p => p.Id)
+                        .ToListAsync();
+
+                tasks = tasks.Where(t =>
+                    accessibleProjectIds.Contains(t.ProjectId));
             }
 
             if (!string.IsNullOrWhiteSpace(searchText))
@@ -77,8 +101,8 @@ namespace AryamanBMS.Controllers
                 .Take(pageSize)
                 .ToListAsync();
 
-            ViewBag.Projects = await _projectRepository.Projects
-                .Where(p => p.IsActive)
+            ViewBag.Projects =
+            await accessibleProjects
                 .OrderBy(p => p.ProjectName)
                 .ToListAsync();
 
@@ -102,6 +126,13 @@ namespace AryamanBMS.Controllers
 
             if (projectId.HasValue)
             {
+                if (!await _projectAccessService.CanAccessProjectAsync(
+                    User,
+                    projectId.Value))
+                {
+                    return Forbid();
+                }
+
                 model.ProjectId = projectId.Value;
                 await LoadProjectMembersAsync(projectId.Value);
             }
@@ -117,6 +148,13 @@ namespace AryamanBMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ProjectTaskModel model)
         {
+            if (!await _projectAccessService.CanAccessProjectAsync(
+              User,
+              model.ProjectId))
+            {
+                return Forbid();
+            }
+
             bool codeExists = await _projectTaskRepository.ProjectTasks
                 .AnyAsync(t =>
                     t.ProjectId == model.ProjectId &&
@@ -208,6 +246,13 @@ namespace AryamanBMS.Controllers
             if (task == null)
                 return NotFound();
 
+            if (!await _projectAccessService.CanAccessProjectAsync(
+              User,
+              task.ProjectId))
+            {
+                return Forbid();
+            }
+
             return View(task);
         }
 
@@ -220,6 +265,13 @@ namespace AryamanBMS.Controllers
             if (task == null)
                 return NotFound();
 
+            if (!await _projectAccessService.CanAccessProjectAsync(
+               User,
+               task.ProjectId))
+            {
+                return Forbid();
+            }
+
             await LoadProjectsAsync();
             await LoadProjectMembersAsync(task.ProjectId);
 
@@ -230,6 +282,14 @@ namespace AryamanBMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(ProjectTaskModel model)
         {
+
+            if (!await _projectAccessService.CanAccessProjectAsync(
+              User,
+              model.ProjectId))
+            {
+                return Forbid();
+            }
+
             bool codeExists = await _projectTaskRepository.ProjectTasks
                 .AnyAsync(t =>
                     t.ProjectId == model.ProjectId &&
@@ -290,6 +350,16 @@ namespace AryamanBMS.Controllers
             var existing =
                 await _projectTaskRepository.GetByIdAsync(model.Id);
 
+            if (existing == null)
+                return NotFound();
+
+            if (!await _projectAccessService.CanAccessProjectAsync(
+                User,
+                existing.ProjectId))
+            {
+                return Forbid();
+            }
+
             string previousStatus = existing.Status ?? string.Empty;
 
             int previousProgress =
@@ -298,8 +368,7 @@ namespace AryamanBMS.Controllers
             int? previousAssignedEmployeeId =
                 existing.AssignedEmployeeId;
 
-            if (existing == null)
-                return NotFound();
+
 
             existing.ProjectId = model.ProjectId;
             existing.AssignedEmployeeId = model.AssignedEmployeeId;
@@ -440,6 +509,13 @@ namespace AryamanBMS.Controllers
             if (task == null)
                 return NotFound();
 
+            if (!await _projectAccessService.CanAccessProjectAsync(
+              User,
+              task.ProjectId))
+            {
+                return Forbid();
+            }
+
             return View(task);
         }
 
@@ -452,6 +528,13 @@ namespace AryamanBMS.Controllers
 
             if (task == null)
                 return NotFound();
+
+            if (!await _projectAccessService.CanAccessProjectAsync(
+               User,
+               task.ProjectId))
+            {
+                return Forbid();
+            }
 
             int projectId = task.ProjectId;
 
@@ -469,6 +552,14 @@ namespace AryamanBMS.Controllers
         [HttpGet]
         public async Task<IActionResult> GetProjectMembers(int projectId)
         {
+
+            if (!await _projectAccessService.CanAccessProjectAsync(
+                 User,
+                 projectId))
+            {
+                return Forbid();
+            }
+
             var members =
                 await _projectMemberRepository.ProjectMembers
                     .Where(pm =>
@@ -491,9 +582,13 @@ namespace AryamanBMS.Controllers
 
         private async Task LoadProjectsAsync()
         {
+            var projects =
+                await _projectAccessService.ApplyProjectFilterAsync(
+                    User,
+                    _projectRepository.Projects.Where(p => p.IsActive));
+
             ViewBag.Projects =
-                await _projectRepository.Projects
-                    .Where(p => p.IsActive)
+                await projects
                     .OrderBy(p => p.ProjectName)
                     .ToListAsync();
         }

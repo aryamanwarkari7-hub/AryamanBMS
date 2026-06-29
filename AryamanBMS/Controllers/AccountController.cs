@@ -50,11 +50,20 @@ namespace AryamanBMS.Controllers
                 return View(model);
             }
 
+            if (!user.IsActive)
+            {
+                ModelState.AddModelError(
+                    "",
+                    "Your account is inactive. Please contact the administrator.");
+
+                return View(model);
+            }
+
             var result = await _signInManager.PasswordSignInAsync(
-                user.UserName,
-                model.Password,
-                model.RememberMe,
-                lockoutOnFailure: false);
+                 user.UserName ?? model.UserName,
+                 model.Password,
+                 model.RememberMe,
+                 lockoutOnFailure: true);
 
             if (result.Succeeded)
             {
@@ -108,6 +117,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ChangePassword(
             ChangePasswordViewModel model)
         {
@@ -118,8 +128,13 @@ namespace AryamanBMS.Controllers
 
             var user = await _userManager.GetUserAsync(User);
 
+            if (user == null)
+            {
+                return RedirectToAction(nameof(Login));
+            }
+
             var result = await _userManager.ChangePasswordAsync(
-                user,
+                user!,
                 model.CurrentPassword,
                 model.NewPassword);
 

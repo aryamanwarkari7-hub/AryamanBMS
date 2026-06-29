@@ -1,4 +1,5 @@
 ﻿using AryamanBMS.Repositories.Interfaces;
+using AryamanBMS.Services.Interfaces;
 using AryamanBMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,14 +19,19 @@ namespace AryamanBMS.Controllers
         private readonly IEmployeeRepository
             _employeeRepository;
 
+        private readonly IProjectAccessService
+            _projectAccessService;
+
         public ProjectTimelineController(
             IProjectRepository projectRepository,
             IProjectTimelineRepository timelineRepository,
-            IEmployeeRepository employeeRepository)
+            IEmployeeRepository employeeRepository,
+            IProjectAccessService projectAccessService)
         {
             _projectRepository = projectRepository;
             _timelineRepository = timelineRepository;
             _employeeRepository = employeeRepository;
+            _projectAccessService = projectAccessService;
         }
 
         [HttpGet]
@@ -41,6 +47,13 @@ namespace AryamanBMS.Controllers
 
             if (project == null)
                 return NotFound();
+
+            if (!await _projectAccessService.CanAccessProjectAsync(
+                User,
+                projectId))
+            {
+                return Forbid();
+            }
 
             var timelineQuery =
                 _timelineRepository.ProjectTimelines
