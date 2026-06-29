@@ -4,6 +4,7 @@ using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interface;
 using AryamanBMS.ViewModels;
 using ClosedXML.Excel;
+using AryamanBMS.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +18,7 @@ namespace AryamanBMS.Controllers
         private readonly ISalaryRecordRepository _salaryRecordRepository;
         private readonly IEmployeeRepository _employeeRepository;
         private readonly UserManager<ApplicationUserModel> _userManager;
+        private readonly ApplicationDbContext _context;
 
         // Service
         private readonly ISalaryExcelImportService _salaryExcelImportService;
@@ -24,12 +26,13 @@ namespace AryamanBMS.Controllers
         private readonly IWebHostEnvironment _webHostEnvironment;
 
         public SalaryController(
-              ISalaryRecordRepository salaryRecordRepository,
-              IEmployeeRepository employeeRepository,
-              UserManager<ApplicationUserModel> userManager,
-              ISalaryExcelImportService salaryExcelImportService,
-              ISalaryAttendanceSummaryService salaryAttendanceSummaryService,
-              IWebHostEnvironment webHostEnvironment)
+      ISalaryRecordRepository salaryRecordRepository,
+      IEmployeeRepository employeeRepository,
+      UserManager<ApplicationUserModel> userManager,
+      ISalaryExcelImportService salaryExcelImportService,
+      ISalaryAttendanceSummaryService salaryAttendanceSummaryService,
+      IWebHostEnvironment webHostEnvironment,
+      ApplicationDbContext context)
         {
             _salaryRecordRepository = salaryRecordRepository;
             _employeeRepository = employeeRepository;
@@ -37,6 +40,7 @@ namespace AryamanBMS.Controllers
             _salaryExcelImportService = salaryExcelImportService;
             _salaryAttendanceSummaryService = salaryAttendanceSummaryService;
             _webHostEnvironment = webHostEnvironment;
+            _context = context;
         }
 
         [Authorize(Roles = "Admin,HR")]
@@ -427,6 +431,16 @@ namespace AryamanBMS.Controllers
             var previousSalaryRecords = await _salaryRecordRepository.SalaryRecords
                 .ToListAsync();
 
+            var selectedPeriod = new DateTime(year, month, 1);
+
+            var salaryStructures =
+                await _context.EmployeeSalaryStructures
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.IsActive &&
+                        x.EffectiveFrom.Date <= selectedPeriod)
+                    .ToListAsync();
+
             using var workbook = new XLWorkbook(templatePath);
 
             var worksheet = workbook.Worksheet("Salary");
@@ -485,7 +499,17 @@ namespace AryamanBMS.Controllers
                     .ThenByDescending(s => s.ImportedOn)
                     .FirstOrDefault();
 
-                decimal actualSalary = latestSalary?.ActualSalary ?? 0;
+                var latestSalaryStructure =
+                 salaryStructures
+                     .Where(x => x.EmployeeId == employee.Id)
+                     .OrderByDescending(x => x.EffectiveFrom)
+                     .ThenByDescending(x => x.Id)
+                     .FirstOrDefault();
+
+                decimal actualSalary =
+                    latestSalaryStructure?.ActualSalary
+                    ?? latestSalary?.ActualSalary
+                    ?? 0;
 
                 worksheet.Cell(row, 1).Value = serialNo;
                 worksheet.Cell(row, 2).Value = employee.EmployeeCode;

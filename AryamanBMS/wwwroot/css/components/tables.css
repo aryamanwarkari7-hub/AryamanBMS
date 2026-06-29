@@ -135,3 +135,36 @@
 .pagination-info {
     font-weight: 600;
 }
+
+/* ==========================================
+   TABLE RESPONSIVENESS
+========================================== */
+
+@media (max-width: 768px) {
+    .table-responsive-app,
+    .table-responsive {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .app-table th,
+    .app-table td {
+        padding: 10px 12px;
+        font-size: var(--font-sm);
+        white-space: nowrap;
+    }
+
+    .table-actions {
+        flex-wrap: nowrap;
+    }
+
+    .empty-state {
+        padding: 24px 16px;
+    }
+}
+
+@media (max-width: 576px) {
+    .pagination-container {
+        flex-direction: column;
+        gap: 10px;
+    }
+}

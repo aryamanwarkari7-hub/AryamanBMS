@@ -17,7 +17,7 @@
 <div class="module-header">
 
     <div>
-        <h1 class="module-title">Project Master</h1>
+        <h1 class="module-title">Projects</h1>
         <p class="module-subtitle">Manage project records</p>
     </div>
 
@@ -44,7 +44,7 @@
             <form asp-action="Index"
                   method="get">
 
-                <div class="d-flex flex-wrap gap-2">
+                <div class="filter-form-row">
 
                     <input type="text"
                            name="searchText"
@@ -91,18 +91,17 @@
                     </select>
                     </div>
 
-                    <div class="d-flex flex-row gap-2">
-                    <button type="submit"
-                            class="btn-app btn-primary-app">
-                        <i class="bi bi-search"></i>
-                        Search
-                    </button>
-                    
+                    <div class="filter-form-actions">
+                        <button type="submit"
+                                class="btn-app btn-primary-app">
+                            <i class="bi bi-search"></i>
+                            Search
+                        </button>
 
-                    <a asp-action="Index"
-                       class="btn-app btn-secondary-app">
-                        Reset
-                    </a>
+                        <a asp-action="Index"
+                           class="btn-app btn-secondary-app">
+                            Reset
+                        </a>
                     </div>
 
                 </div>
@@ -212,10 +211,17 @@
                                 <td>
                                     <div class="table-actions">
 
-                                        <a asp-action="Details"
+                                        <a asp-action="Dashboard"
                                            asp-route-id="@project.Id"
                                            class="btn-app btn-primary-app btn-icon"
-                                           title="View">
+                                           title="Open Workspace">
+                                            <i class="bi bi-kanban"></i>
+                                        </a>
+
+                                        <a asp-action="Details"
+                                           asp-route-id="@project.Id"
+                                           class="btn-app btn-secondary-app btn-icon"
+                                           title="View Details">
                                             <i class="bi bi-eye"></i>
                                         </a>
 
@@ -229,7 +235,7 @@
                                         <a asp-action="Delete"
                                            asp-route-id="@project.Id"
                                            class="btn-app btn-danger-app btn-icon"
-                                           title="Delete">
+                                           title="Deactivate">
                                             <i class="bi bi-trash"></i>
                                         </a>
 

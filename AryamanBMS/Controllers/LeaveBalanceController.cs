@@ -110,9 +110,18 @@ namespace AryamanBMS.Controllers
                 foreach (var leaveType in leaveTypes)
                 {
                     if (string.Equals(
-                       leaveType.LeaveCode,
-                       "COMP",
-                       StringComparison.OrdinalIgnoreCase))
+                     leaveType.LeaveCode,
+                     "COMP",
+                     StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    if (string.Equals(
+                        leaveType.LeaveCode,
+                        "BDL",
+                        StringComparison.OrdinalIgnoreCase) &&
+                    !employee.DateOfBirth.HasValue)
                     {
                         continue;
                     }

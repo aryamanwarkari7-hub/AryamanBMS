@@ -401,64 +401,6 @@
 </form>
 
 @section Scripts {
-
     <partial name="_ValidationScriptsPartial" />
-
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-
-            const probability =
-                document.getElementById("Probability");
-
-            const impact =
-                document.getElementById("Impact");
-
-            const riskScoreDisplay =
-                document.getElementById("RiskScoreDisplay");
-
-            const severityDisplay =
-                document.getElementById("SeverityDisplay");
-
-            function calculateRisk() {
-
-                const probabilityValue =
-                    parseInt(probability.value) || 1;
-
-                const impactValue =
-                    parseInt(impact.value) || 1;
-
-                const score =
-                    probabilityValue * impactValue;
-
-                let severity = "Low";
-
-                if (score <= 4) {
-                    severity = "Low";
-                }
-                else if (score <= 9) {
-                    severity = "Medium";
-                }
-                else if (score <= 16) {
-                    severity = "High";
-                }
-                else {
-                    severity = "Critical";
-                }
-
-                riskScoreDisplay.value = score;
-                severityDisplay.value = severity;
-            }
-
-            probability.addEventListener(
-                "change",
-                calculateRisk);
-
-            impact.addEventListener(
-                "change",
-                calculateRisk);
-
-            calculateRisk();
-        });
-    </script>
-
+    <script src="~/js/risk.js" asp-append-version="true"></script>
 }

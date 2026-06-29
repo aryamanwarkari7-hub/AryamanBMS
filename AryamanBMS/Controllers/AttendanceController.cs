@@ -1,6 +1,7 @@
 ﻿using AryamanBMS.Extensions;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
+using AryamanBMS.Services.Interface;
 using AryamanBMS.ViewModels;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
@@ -18,16 +19,20 @@ namespace AryamanBMS.Controllers
         private readonly UserManager<ApplicationUserModel> _userManager;
         private readonly ILeaveApplicationRepository _leaveApplicationRepository;
 
+        private readonly ISalaryAttendanceSummaryService _salaryAttendanceSummaryService;
+
         public AttendanceController(
-        IAttendanceRepository attendanceRepository,
-        IEmployeeRepository employeeRepository,
-        ILeaveApplicationRepository leaveApplicationRepository,
-        UserManager<ApplicationUserModel> userManager)
+    IAttendanceRepository attendanceRepository,
+    IEmployeeRepository employeeRepository,
+    ILeaveApplicationRepository leaveApplicationRepository,
+    UserManager<ApplicationUserModel> userManager,
+    ISalaryAttendanceSummaryService salaryAttendanceSummaryService)
         {
             _attendanceRepository = attendanceRepository;
             _employeeRepository = employeeRepository;
             _leaveApplicationRepository = leaveApplicationRepository;
             _userManager = userManager;
+            _salaryAttendanceSummaryService = salaryAttendanceSummaryService;
         }
 
         public async Task<IActionResult> Index()
@@ -515,10 +520,7 @@ namespace AryamanBMS.Controllers
         }
 
         [Authorize(Roles = "Admin,HR")]
-        public IActionResult Dashboard(
-    int? day,
-    int? month,
-    int? year)
+        public IActionResult Dashboard(int? day, int? month, int? year)
         {
             var today = DateTime.Today;
 
@@ -805,88 +807,24 @@ namespace AryamanBMS.Controllers
         [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Summary(int? month, int? year)
         {
-            month ??= DateTime.Today.Month;
-            year ??= DateTime.Today.Year;
+            int selectedMonth =
+                month.HasValue &&
+                month.Value >= 1 &&
+                month.Value <= 12
+                    ? month.Value
+                    : DateTime.Today.Month;
 
-            var attendanceRecords =
-                await _attendanceRepository.Attendances
-                .Include(a => a.Employee)
-                .Where(a =>
-                    a.AttendanceDate.Month == month &&
-                    a.AttendanceDate.Year == year)
-                .ToListAsync();
+            int selectedYear =
+                year ?? DateTime.Today.Year;
 
             var summary =
-                attendanceRecords
-                .GroupBy(a => a.EmployeeId)
-                .Select(g =>
-                {
-                    int present =
-                        g.Count(x => x.Status == "P");
+                await _salaryAttendanceSummaryService
+                    .GetMonthlySummaryAsync(
+                        selectedMonth,
+                        selectedYear);
 
-                    int absent =
-                        g.Count(x => x.Status == "A");
-
-                    int leave =
-                        g.Count(x => x.Status == "L");
-
-                    int holiday =
-                        g.Count(x => x.Status == "H");
-
-                    int weekOff =
-                        g.Count(x => x.Status == "WO");
-
-                    int onDuty =
-                        g.Count(x => x.Status == "OD");
-
-                    int totalDays =
-                        g.Count();
-
-                    int workingDays =
-                        totalDays - holiday - weekOff;
-
-                    decimal percentage =
-                        workingDays == 0
-                        ? 0
-                        : Math.Round(
-                            ((decimal)(present + onDuty)
-                            / workingDays) * 100,
-                            2);
-
-                    return new AttendanceSummaryViewModel
-                    {
-                        EmployeeId =
-                            g.First().EmployeeId,
-
-                        EmployeeCode =
-                            g.First().Employee!.EmployeeCode ?? string.Empty,
-
-                        EmployeeName =
-                            g.First().Employee!.FullName,
-
-                        PresentCount = present,
-
-                        AbsentCount = absent,
-
-                        LeaveCount = leave,
-
-                        HolidayCount = holiday,
-
-                        WeekOffCount = weekOff,
-
-                        OnDutyCount = onDuty,
-
-                        TotalDays = totalDays,
-
-                        AttendancePercentage =
-                            percentage
-                    };
-                })
-                .OrderBy(x => x.EmployeeName)
-                .ToList();
-
-            ViewBag.Month = month;
-            ViewBag.Year = year;
+            ViewBag.Month = selectedMonth;
+            ViewBag.Year = selectedYear;
 
             return View(summary);
         }

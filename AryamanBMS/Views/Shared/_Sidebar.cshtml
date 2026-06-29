@@ -460,6 +460,15 @@
 
                                 </a>
 
+                                <a asp-controller="SalaryStructure"
+                                   asp-action="Index"
+                                   class="submenu-item nested-item @(currentController == "SalaryStructure" ? "active-menu" : "")">
+
+                                    <i class="bi bi-wallet2"></i>
+                                    <span>Salary Structure</span>
+
+                                </a>
+
                                 <a asp-controller="Salary"
                                    asp-action="AttendanceSummary"
                                    class="submenu-item nested-item @(currentController == "Salary" && currentAction == "AttendanceSummary" ? "active-menu" : "")">
@@ -531,7 +540,7 @@
         @if (isAdminOrHR)
         {
             @* Sales *@
-            <div class="menu-group">
+            @* <div class="menu-group">
 
                 <button class="menu-group-header"
                         type="button"
@@ -564,7 +573,7 @@
 
                 </div>
 
-            </div>
+            </div> *@
 
             @* Project Management *@
             <div class="menu-group">
@@ -620,7 +629,7 @@
                            class="submenu-item @(currentController == "ProjectTask" ? "active-menu" : "")">
 
                             <i class="bi bi-list-task"></i>
-                            <span>Project Tasks</span>
+                            <span> Tasks</span>
 
                         </a>
                         <a asp-controller="TaskTracker"
@@ -628,7 +637,7 @@
                            class="submenu-item @(currentController == "TaskTracker" ? "active-menu" : "")">
 
                             <i class="bi bi-activity"></i>
-                            <span>Task Tracker</span>
+                            <span>Task Updates</span>
 
                         </a>
                         <a asp-controller="ProjectFlow"
@@ -636,7 +645,7 @@
                            class="submenu-item @(currentController == "ProjectFlow" ? "active-menu" : "")">
 
                             <i class="bi bi-diagram-3"></i>
-                            <span>Project Flow</span>
+                            <span>Milestones</span>
 
                         </a>
                         
@@ -645,7 +654,7 @@
                            class="submenu-item @(currentController == "MOM" ? "active-menu" : "")">
 
                             <i class="bi bi-journal-text"></i>
-                            <span>MOM Tracker</span>
+                            <span>Meetings / MOM</span>
 
                         </a>
                         <a asp-controller="Risk"

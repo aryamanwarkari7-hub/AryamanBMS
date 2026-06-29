@@ -4,6 +4,7 @@ using AryamanBMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
@@ -21,43 +22,155 @@ namespace AryamanBMS.Controllers
             _roleManager = roleManager;
         }
 
-        public async Task<IActionResult> Index(int page = 1)
+        public async Task<IActionResult> Index(
+    string? searchText,
+    string sortBy = "NameAsc",
+    int page = 1)
         {
             const int pageSize = 10;
 
-            var userQuery = _userManager.Users
-                .OrderBy(x => x.FullName)
-                .ThenBy(x => x.UserName);
-
-            var pagedUsers = await userQuery.ToPagedListAsync(
-                page,
-                pageSize);
+            var users = await _userManager.Users
+                .AsNoTracking()
+                .ToListAsync();
 
             var userList = new List<UserListViewModel>();
 
-            foreach (var user in pagedUsers.Items)
+            foreach (var user in users)
             {
                 var roles = await _userManager.GetRolesAsync(user);
 
                 userList.Add(new UserListViewModel
                 {
                     Id = user.Id,
-                    FullName = user.FullName ?? "",
-                    UserName = user.UserName ?? "",
-                    Email = user.Email ?? "",
+                    FullName = user.FullName ?? string.Empty,
+                    UserName = user.UserName ?? string.Empty,
+                    Email = user.Email ?? string.Empty,
                     Role = roles.FirstOrDefault() ?? "Not Assigned",
                     IsActive = user.IsActive
                 });
             }
 
-            var model = new PagedListViewModel<UserListViewModel>
+            // Search
+            if (!string.IsNullOrWhiteSpace(searchText))
             {
-                Items = userList,
-                Pagination = pagedUsers.Pagination
+                searchText = searchText.Trim();
+
+                userList = userList
+                    .Where(user =>
+                        user.FullName.Contains(
+                            searchText,
+                            StringComparison.OrdinalIgnoreCase) ||
+
+                        user.UserName.Contains(
+                            searchText,
+                            StringComparison.OrdinalIgnoreCase) ||
+
+                        user.Email.Contains(
+                            searchText,
+                            StringComparison.OrdinalIgnoreCase) ||
+
+                        user.Role.Contains(
+                            searchText,
+                            StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
+            // Sort
+            userList = sortBy switch
+            {
+                "NameDesc" => userList
+                    .OrderByDescending(user => user.FullName)
+                    .ThenBy(user => user.UserName)
+                    .ToList(),
+
+                "UserNameAsc" => userList
+                    .OrderBy(user => user.UserName)
+                    .ToList(),
+
+                "UserNameDesc" => userList
+                    .OrderByDescending(user => user.UserName)
+                    .ToList(),
+
+                "EmailAsc" => userList
+                    .OrderBy(user => user.Email)
+                    .ToList(),
+
+                "EmailDesc" => userList
+                    .OrderByDescending(user => user.Email)
+                    .ToList(),
+
+                "RoleAsc" => userList
+                    .OrderBy(user => user.Role)
+                    .ThenBy(user => user.FullName)
+                    .ToList(),
+
+                "RoleDesc" => userList
+                    .OrderByDescending(user => user.Role)
+                    .ThenBy(user => user.FullName)
+                    .ToList(),
+
+                "StatusAsc" => userList
+                    .OrderByDescending(user => user.IsActive)
+                    .ThenBy(user => user.FullName)
+                    .ToList(),
+
+                "StatusDesc" => userList
+                    .OrderBy(user => user.IsActive)
+                    .ThenBy(user => user.FullName)
+                    .ToList(),
+
+                _ => userList
+                    .OrderBy(user => user.FullName)
+                    .ThenBy(user => user.UserName)
+                    .ToList()
             };
 
-            model.Pagination.ControllerName = "User";
-            model.Pagination.ActionName = nameof(Index);
+            int totalRecords = userList.Count;
+
+            int totalPages = (int)Math.Ceiling(
+                totalRecords / (double)pageSize);
+
+            page = page < 1 ? 1 : page;
+
+            if (totalPages > 0 && page > totalPages)
+            {
+                page = totalPages;
+            }
+
+            var pagedUsers = userList
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            var routeValues = new Dictionary<string, string>();
+
+            if (!string.IsNullOrWhiteSpace(searchText))
+            {
+                routeValues["searchText"] = searchText;
+            }
+
+            if (!string.IsNullOrWhiteSpace(sortBy))
+            {
+                routeValues["sortBy"] = sortBy;
+            }
+
+            var model = new PagedListViewModel<UserListViewModel>
+            {
+                Items = pagedUsers,
+
+                Pagination = new PaginationViewModel
+                {
+                    CurrentPage = page,
+                    PageSize = pageSize,
+                    TotalRecords = totalRecords,
+                    ControllerName = "User",
+                    ActionName = nameof(Index),
+                    RouteValues = routeValues
+                }
+            };
+
+            ViewBag.SearchText = searchText;
+            ViewBag.SortBy = sortBy;
 
             return View(model);
         }

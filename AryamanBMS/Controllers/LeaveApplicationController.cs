@@ -221,17 +221,60 @@ namespace AryamanBMS.Controllers
             }
 
             var selectedLeaveType =
-    await _leaveTypeRepository.LeaveTypes
-        .AsNoTracking()
-        .FirstOrDefaultAsync(x =>
-            x.Id == leaveApplication.LeaveTypeId &&
-            x.IsActive);
+              await _leaveTypeRepository.LeaveTypes
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.Id == leaveApplication.LeaveTypeId &&
+                    x.IsActive);
 
             if (selectedLeaveType == null)
             {
                 ModelState.AddModelError(
                     "LeaveTypeId",
                     "Selected leave type is inactive or unavailable.");
+            }
+            else if (employee != null &&
+         IsBirthdayLeave(selectedLeaveType))
+            {
+                if (!employee.DateOfBirth.HasValue)
+                {
+                    ModelState.AddModelError(
+                        "LeaveTypeId",
+                        "Birthday Leave cannot be applied because your date of birth is not saved in Employee Details.");
+                }
+                else if (leaveApplication.NumberOfDays != 1)
+                {
+                    ModelState.AddModelError(
+                        "ToDate",
+                        "Birthday Leave can be applied for one day only.");
+                }
+                else if (leaveApplication.FromDate.Year != DateTime.Today.Year)
+                {
+                    ModelState.AddModelError(
+                        "FromDate",
+                        "Birthday Leave can only be applied for the current calendar year.");
+                }
+                else if (!IsWithinBirthdayLeaveWindow(
+                             leaveApplication.FromDate,
+                             employee.DateOfBirth,
+                             leaveApplication.FromDate.Year) ||
+                         !IsWithinBirthdayLeaveWindow(
+                             leaveApplication.ToDate,
+                             employee.DateOfBirth,
+                             leaveApplication.FromDate.Year))
+                {
+                    var birthdayThisYear =
+                        new DateTime(
+                            leaveApplication.FromDate.Year,
+                            employee.DateOfBirth.Value.Month,
+                            employee.DateOfBirth.Value.Day);
+
+                    ModelState.AddModelError(
+                        "FromDate",
+                        $"Birthday Leave can only be applied between " +
+                        $"{birthdayThisYear.AddDays(-3):dd MMM} and " +
+                        $"{birthdayThisYear.AddDays(3):dd MMM}.");
+                }
             }
             else if (string.Equals(
                          selectedLeaveType.LeaveCode,
@@ -1178,9 +1221,8 @@ namespace AryamanBMS.Controllers
                 $"LeaveApplications_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
         }
 
-        private bool IsAttendanceStatus(
-    string? status,
-    params string[] validStatuses)
+        private bool IsAttendanceStatus(string? status,
+               params string[] validStatuses)
         {
             if (string.IsNullOrWhiteSpace(status))
             {
@@ -1192,6 +1234,55 @@ namespace AryamanBMS.Controllers
                     status.Trim(),
                     x,
                     StringComparison.OrdinalIgnoreCase));
+        }
+        private static bool IsBirthdayLeave(LeaveTypeModel leaveType)
+        {
+            return string.Equals(
+                       leaveType.LeaveCode,
+                       "BDL",
+                       StringComparison.OrdinalIgnoreCase) ||
+                   leaveType.LeaveName.Contains(
+                       "Birthday",
+                       StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsWithinBirthdayLeaveWindow(
+    DateTime leaveDate,
+    DateTime? dateOfBirth,
+    int year)
+        {
+            if (!dateOfBirth.HasValue)
+            {
+                return false;
+            }
+
+            var possibleBirthdays = new[]
+            {
+        GetBirthdayForYear(dateOfBirth.Value, year - 1),
+        GetBirthdayForYear(dateOfBirth.Value, year),
+        GetBirthdayForYear(dateOfBirth.Value, year + 1)
+    };
+
+            return possibleBirthdays.Any(birthday =>
+                leaveDate.Date >= birthday.AddDays(-3).Date &&
+                leaveDate.Date <= birthday.AddDays(3).Date);
+        }
+
+        private static DateTime GetBirthdayForYear(
+            DateTime dateOfBirth,
+            int year)
+        {
+            if (dateOfBirth.Month == 2 &&
+                dateOfBirth.Day == 29 &&
+                !DateTime.IsLeapYear(year))
+            {
+                return new DateTime(year, 2, 28);
+            }
+
+            return new DateTime(
+                year,
+                dateOfBirth.Month,
+                dateOfBirth.Day);
         }
     }
 

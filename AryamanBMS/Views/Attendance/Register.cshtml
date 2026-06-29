@@ -64,7 +64,7 @@
         <form asp-action="Register"
               method="get">
 
-            <div class="d-flex flex-wrap gap-3 align-items-end">
+            <div class="filter-form-row">
 
                 <div class="flex-grow-1">
                     <label class="form-label">
@@ -101,21 +101,23 @@
                            class="app-input" />
                 </div>
 
-                <button type="submit"
-                        class="btn-app btn-primary-app">
+                <div class="filter-form-actions">
+                    <button type="submit"
+                            class="btn-app btn-primary-app">
 
-                    <i class="bi bi-search"></i>
-                    Search
+                        <i class="bi bi-search"></i>
+                        Search
 
-                </button>
+                    </button>
 
-                <a asp-action="Register"
-                   class="btn-app btn-secondary-app">
+                    <a asp-action="Register"
+                       class="btn-app btn-secondary-app">
 
-                    <i class="bi bi-arrow-counterclockwise"></i>
-                    Reset
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                        Reset
 
-                </a>
+                    </a>
+                </div>
 
             </div>
 

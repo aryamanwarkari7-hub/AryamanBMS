@@ -92,3 +92,67 @@
     grid-template-columns: repeat(4, 1fr);
     gap: var(--space-lg);
 }
+
+/* ==========================================
+   FILTER FORMS
+========================================== */
+
+.filter-form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: var(--space-sm);
+    align-items: end;
+}
+
+    .filter-form-row .app-input,
+    .filter-form-row .app-select,
+    .filter-form-row .form-group {
+        width: 100%;
+        min-width: 0;
+    }
+
+.filter-form-actions {
+    display: flex;
+    gap: var(--space-sm);
+    align-items: center;
+    justify-content: flex-end;
+    justify-self: end;
+    white-space: nowrap;
+}
+
+@media (max-width: 576px) {
+    .filter-form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .filter-form-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        width: 100%;
+        justify-self: stretch;
+    }
+
+        .filter-form-actions .btn-app,
+        .filter-form-actions .btn {
+            width: 100%;
+            justify-content: center;
+        }
+}
+/* ==========================================
+   FORM RESPONSIVENESS
+========================================== */
+
+@media (max-width: 992px) {
+    .form-grid-3,
+    .form-grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 576px) {
+    .form-grid-2,
+    .form-grid-3,
+    .form-grid-4 {
+        grid-template-columns: 1fr;
+    }
+}

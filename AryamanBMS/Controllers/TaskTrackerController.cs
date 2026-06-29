@@ -32,8 +32,8 @@ namespace AryamanBMS.Controllers
             int? projectId,
             int? projectTaskId)
         {
-            var progressRecords =
-                _progressRepository.ProjectTaskProgresses;
+            var progressRecords = _progressRepository.ProjectTaskProgresses
+                .Where(p => p.IsActive);
 
             var accessibleProjects =
                 await _projectAccessService.ApplyProjectFilterAsync(
@@ -273,7 +273,10 @@ namespace AryamanBMS.Controllers
 
             int projectTaskId = progress.ProjectTaskId;
 
-            await _progressRepository.DeleteAsync(progress);
+            progress.IsActive = false;
+            progress.UpdatedOn = DateTime.Now;
+
+            await _progressRepository.UpdateAsync(progress);
             await _progressRepository.SaveAsync();
 
             await SyncProjectTaskAsync(projectTaskId);
@@ -301,8 +304,8 @@ namespace AryamanBMS.Controllers
             ViewBag.Tasks =
                 await _projectTaskRepository.ProjectTasks
                     .Include(t => t.Project)
-                    .Where(t =>
-                        accessibleProjectIds.Contains(t.ProjectId))
+                    .Where(t => t.IsActive &&
+                          accessibleProjectIds.Contains(t.ProjectId))
                     .OrderBy(t => t.Project!.ProjectName)
                     .ThenBy(t => t.TaskCode)
                     .ToListAsync();

@@ -140,39 +140,9 @@
 
 </form>
 
-@section Scripts
+
+  @section Scripts
 {
     <partial name="_ValidationScriptsPartial" />
-
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-
-            const checkbox =
-                document.getElementById("IsCarryForward");
-
-            const group =
-                document.getElementById("maximumCarryForwardGroup");
-
-            const input =
-                document.getElementById("MaximumCarryForwardDays");
-
-            function toggleMaximumCarryForward() {
-
-                const enabled = checkbox.checked;
-
-                group.style.display =
-                    enabled ? "block" : "none";
-
-                if (!enabled) {
-                    input.value = "0";
-                }
-            }
-
-            checkbox.addEventListener(
-                "change",
-                toggleMaximumCarryForward);
-
-            toggleMaximumCarryForward();
-        });
-    </script>
+    <script src="~/js/leave-type.js" asp-append-version="true"></script>
 }

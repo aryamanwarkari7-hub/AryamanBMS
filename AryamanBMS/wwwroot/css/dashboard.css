@@ -166,10 +166,10 @@
         font-size: 12px;
     }
 
-        .attendance-register th,
-        .attendance-register td {
-            padding: 8px;
-        }
+    .attendance-register th,
+    .attendance-register td {
+        padding: 8px;
+    }
 
     .dashboard-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -181,6 +181,10 @@
 
     .employee-info-grid {
         grid-template-columns: repeat(2,1fr);
+    }
+
+    .dashboard-grid {
+        margin: 0 var(--space-lg) 20px;
     }
 }
 
@@ -197,6 +201,21 @@
 
     .dashboard-grid {
         grid-template-columns: 1fr;
+        margin: 0 var(--space-md) 16px;
+    }
+
+    .stats-card {
+        padding: 18px;
+    }
+
+    .attendance-filter-form {
+        align-items: stretch;
+    }
+
+    .attendance-filter-form .form-group,
+    .attendance-filter-form .btn,
+    .attendance-filter-form .app-btn {
+        width: 100%;
     }
 
     .attendance-summary-grid {

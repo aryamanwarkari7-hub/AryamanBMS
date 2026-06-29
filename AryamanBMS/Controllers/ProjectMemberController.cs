@@ -203,7 +203,10 @@ namespace AryamanBMS.Controllers
             string employeeName =
                 employee?.FullName ?? "Employee";
 
-            await _projectMemberRepository.DeleteAsync(member);
+            member.IsActive = false;
+            //member.UpdatedOn = DateTime.Now;
+
+            await _projectMemberRepository.UpdateAsync(member);
             await _projectMemberRepository.SaveAsync();
 
             await _projectTimelineService.AddEventAsync(
@@ -228,7 +231,7 @@ namespace AryamanBMS.Controllers
         {
             var assignedEmployeeIds =
                 await _projectMemberRepository.ProjectMembers
-                    .Where(pm => pm.ProjectId == projectId)
+                    .Where(pm => pm.ProjectId == projectId && pm.IsActive)
                     .Select(pm => pm.EmployeeId)
                     .ToListAsync();
 
@@ -250,7 +253,8 @@ namespace AryamanBMS.Controllers
         {
             const int pageSize = 10;
             page = Math.Max(page, 1);
-            var members = _projectMemberRepository.ProjectMembers;
+            var members = _projectMemberRepository.ProjectMembers
+                .Where(pm => pm.IsActive);
 
             var accessibleProjects =
                 await _projectAccessService.ApplyProjectFilterAsync(

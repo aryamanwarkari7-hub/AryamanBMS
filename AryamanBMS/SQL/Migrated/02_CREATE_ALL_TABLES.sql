@@ -648,6 +648,30 @@ CREATE TABLE IF NOT EXISTS TableProjectTimeline
         (RelatedEntityType, RelatedEntityId)
 );
 
+CREATE TABLE IF NOT EXISTS TableEmployeeSalaryStructure
+(
+    Id INT NOT NULL AUTO_INCREMENT,
+    EmployeeId INT NOT NULL,
+    EffectiveFrom DATE NOT NULL,
+    ActualSalary DECIMAL(18,2) NOT NULL,
+    IsActive BIT(1) NOT NULL DEFAULT b'1',
+    CreatedOn DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedOn DATETIME NULL,
+
+    PRIMARY KEY (Id),
+
+    INDEX IX_EmployeeSalaryStructure_Employee_EffectiveFrom
+    (
+        EmployeeId,
+        EffectiveFrom
+    ),
+
+    CONSTRAINT FK_EmployeeSalaryStructure_Employee
+        FOREIGN KEY (EmployeeId)
+        REFERENCES tableemployee (Id)
+        ON DELETE RESTRICT
+);
+
 -- ============================================================
 -- TABLE CREATION COMPLETED
 -- ============================================================

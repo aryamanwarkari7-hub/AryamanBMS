@@ -40,6 +40,7 @@ namespace AryamanBMS.Data
 
         // Salary
         public DbSet<SalaryRecordModel> SalaryRecords { get; set; }
+        public DbSet<EmployeeSalaryStructureModel> EmployeeSalaryStructures { get; set; }
 
         // Letters
         public DbSet<LetterModel> Letters { get; set; }
@@ -231,6 +232,25 @@ namespace AryamanBMS.Data
             // Salary Record
             modelBuilder.Entity<SalaryRecordModel>()
                .ToTable("TableSalaryRecord");
+            modelBuilder.Entity<EmployeeSalaryStructureModel>()
+               .ToTable("TableEmployeeSalaryStructure");
+
+            modelBuilder.Entity<EmployeeSalaryStructureModel>()
+                .Property(x => x.ActualSalary)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<EmployeeSalaryStructureModel>()
+                .HasIndex(x => new
+                {
+                    x.EmployeeId,
+                    x.EffectiveFrom
+                });
+
+            modelBuilder.Entity<EmployeeSalaryStructureModel>()
+                .HasOne(x => x.Employee)
+                .WithMany()
+                .HasForeignKey(x => x.EmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Letter
             modelBuilder.Entity<LetterModel>()

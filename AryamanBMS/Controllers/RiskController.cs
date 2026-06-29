@@ -39,7 +39,7 @@ namespace AryamanBMS.Controllers
             int? ownerId,
             string? searchText)
         {
-            var risks = _riskRepository.ProjectRisks;
+            var risks = _riskRepository.ProjectRisks.Where(r => r.IsActive);
 
             var accessibleProjects =
                 await _projectAccessService.ApplyProjectFilterAsync(
@@ -456,11 +456,14 @@ namespace AryamanBMS.Controllers
 
             int projectId = risk.ProjectId;
 
-            await _riskRepository.DeleteAsync(risk);
+            risk.IsActive = false;
+            risk.UpdatedOn = DateTime.Now;
+
+            await _riskRepository.UpdateAsync(risk);
             await _riskRepository.SaveAsync();
 
             TempData["Success"] =
-                "Project risk deleted successfully.";
+                "Project risk deactivated successfully.";
 
             return RedirectToAction(
                 nameof(Index),

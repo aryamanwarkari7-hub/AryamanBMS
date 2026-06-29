@@ -1313,15 +1313,14 @@ namespace AryamanBMS.Controllers
         }
 
         private static List<EmployeeDocumentInputViewModel>
-    GetStatutoryDocumentInputs()
+             GetStatutoryDocumentInputs()
         {
             return new List<EmployeeDocumentInputViewModel>
-    {
-        new() { DocumentType = "Aadhaar Card" },
-        new() { DocumentType = "PAN Card" },
-        new() { DocumentType = "UAN Document" },
-        new() { DocumentType = "ESIC Document" }
-    };
+            {
+               new() { DocumentType = "Aadhaar Card" },
+               new() { DocumentType = "PAN Card" },
+               new() { DocumentType = "ESIC Document" }
+            };
         }
 
         private static List<EmployeeDocumentInputViewModel>

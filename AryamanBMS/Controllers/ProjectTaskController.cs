@@ -43,7 +43,7 @@ namespace AryamanBMS.Controllers
         {
             const int pageSize = 10;
 
-            var tasks = _projectTaskRepository.ProjectTasks;
+            var tasks = _projectTaskRepository.ProjectTasks.Where(t => t.IsActive);
 
             var accessibleProjects =
                 await _projectAccessService.ApplyProjectFilterAsync(

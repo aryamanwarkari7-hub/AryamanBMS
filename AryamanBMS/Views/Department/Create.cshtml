@@ -90,24 +90,7 @@
     </div>
 
 </div>
-<script>
-    document.getElementById("departmentName")
-        .addEventListener("change", function () {
 
-            const codes = {
-                "Human Resources": "HR",
-                "Information Technology": "IT",
-                "Accounts & Finance": "ACC",
-                "Project Management": "PMO",
-                "Administration": "ADM",
-                "Sales": "SAL",
-                "Marketing": "MKT",
-                "Operations": "OPS",
-                "Quality Assurance": "QA",
-                "Customer Support": "SUP"
-            };
-
-            document.getElementById("displayCode").value =
-                codes[this.value] || "";
-        });
-</script>
+@section Scripts {
+    <script src="~/js/master-data.js" asp-append-version="true"></script>
+}

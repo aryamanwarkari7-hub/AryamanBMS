@@ -256,34 +256,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-
-    <script>
-        document.getElementById("projectSelect")
-            .addEventListener("change", async function () {
-
-                const projectId = this.value;
-                const employeeSelect =
-                    document.getElementById("employeeSelect");
-
-                employeeSelect.innerHTML =
-                    '<option value="">Select Project Member</option>';
-
-                if (!projectId) {
-                    return;
-                }
-
-                const response = await fetch(
-                    `/ProjectTask/GetProjectMembers?projectId=${projectId}`
-                );
-
-                const members = await response.json();
-
-                members.forEach(member => {
-                    const option = document.createElement("option");
-                    option.value = member.id;
-                    option.textContent = member.name;
-                    employeeSelect.appendChild(option);
-                });
-            });
-    </script>
+    <script src="~/js/project-task.js" asp-append-version="true"></script>
 }

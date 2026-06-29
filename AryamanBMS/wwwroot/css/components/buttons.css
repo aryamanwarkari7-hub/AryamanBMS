@@ -97,3 +97,26 @@
     color:red;
     padding:var(--space-md);
 }
+
+/* ==========================================
+   BUTTON RESPONSIVENESS
+========================================== */
+
+@media (max-width: 576px) {
+    .btn,
+    .app-btn,
+    .btn-primary,
+    .btn-secondary,
+    .btn-danger,
+    .btn-success,
+    .btn-warning,
+    .btn-info {
+        max-width: 100%;
+        white-space: normal;
+    }
+
+    .table-actions .btn,
+    .table-actions .app-btn {
+        white-space: nowrap;
+    }
+}

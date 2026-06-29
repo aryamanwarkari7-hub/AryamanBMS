@@ -1,0 +1,147 @@
+﻿@model AryamanBMS.Models.EmployeeSalaryStructureModel
+
+@{
+    ViewData["Title"] = "Add Salary Structure";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">
+            Add Salary Structure
+        </h1>
+
+        <p class="module-subtitle">
+            Add employee salary amount from an effective date
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="Index"
+           class="btn-app btn-secondary-app">
+            Back
+        </a>
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">
+            Salary Details
+        </h5>
+    </div>
+
+    <div class="card-body">
+
+        <form asp-action="Create"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <div asp-validation-summary="ModelOnly"
+                 class="text-danger mb-3"></div>
+
+            <div class="form-grid">
+
+                <div class="form-group">
+
+                    <label asp-for="EmployeeId"
+                           class="form-label">
+                        Employee
+                    </label>
+
+                    <select asp-for="EmployeeId"
+                            class="app-select"
+                            required>
+
+                        <option value="">
+                            Select Employee
+                        </option>
+
+                        @foreach (var employee in ViewBag.Employees)
+                        {
+                            <option value="@employee.Id">
+                                @employee.EmployeeCode - @employee.FullName
+                            </option>
+                        }
+
+                    </select>
+
+                    <span asp-validation-for="EmployeeId"
+                          class="text-danger"></span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="EffectiveFrom"
+                           class="form-label">
+                        Effective From
+                    </label>
+
+                    <input asp-for="EffectiveFrom"
+                           type="date"
+                           class="app-input" />
+
+                    <span asp-validation-for="EffectiveFrom"
+                          class="text-danger"></span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="ActualSalary"
+                           class="form-label">
+                        Actual Salary
+                    </label>
+
+                    <input asp-for="ActualSalary"
+                           type="number"
+                           step="0.01"
+                           min="0"
+                           class="app-input" />
+
+                    <span asp-validation-for="ActualSalary"
+                          class="text-danger"></span>
+
+                </div>
+
+                <div class="form-check mt-4">
+
+                    <input asp-for="IsActive"
+                           class="form-check-input" />
+
+                    <label asp-for="IsActive"
+                           class="form-check-label">
+                        Active
+                    </label>
+
+                </div>
+
+            </div>
+
+            <div class="form-actions">
+
+                <button type="submit"
+                        class="btn-app btn-primary-app">
+                    Save
+                </button>
+
+                <a asp-action="Index"
+                   class="btn-app btn-secondary-app">
+                    Cancel
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

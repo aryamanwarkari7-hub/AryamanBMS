@@ -37,7 +37,7 @@
             <form asp-actions="Index"
                 method="get">
 
-                <div class="d-flex flex-wrap gap-2">
+                <div class="filter-form-row">
 
                     <input type="text"
                            name="searchText"
@@ -78,16 +78,18 @@
 
                     </select>
 
-                    <button type="submit"
-                            class="btn-app btn-primary-app">
-                        <i class="bi bi-search"></i>
-                        Search
-                    </button>
+                    <div class="filter-form-actions">
+                        <button type="submit"
+                                class="btn-app btn-primary-app">
+                            <i class="bi bi-search"></i>
+                            Search
+                        </button>
 
-                    <a asp-action="Index"
-                       class="btn-app btn-secondary-app">
-                        Reset
-                    </a>
+                        <a asp-action="Index"
+                           class="btn-app btn-secondary-app">
+                            Reset
+                        </a>
+                    </div>
 
                 </div>
 

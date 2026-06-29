@@ -12,36 +12,22 @@
         </h1>
 
         <p class="module-subtitle">
-            Monthly Attendance Analysis
+            Monthly payable days and attendance analysis
         </p>
     </div>
 
-    <div class="d-flex gap-2">
+    <div class="module-header-actions">
 
         <a asp-action="Dashboard"
            class="btn-app btn-secondary-app">
-
             <i class="bi bi-grid"></i>
             Dashboard
-
         </a>
 
         <a asp-action="Register"
            class="btn-app btn-secondary-app">
-
             <i class="bi bi-table"></i>
             Register
-
-        </a>
-
-        <a asp-action="SummaryExport"
-           asp-route-month="@ViewBag.Month"
-           asp-route-year="@ViewBag.Year"
-           class="btn-app btn-success-app">
-
-            <i class="bi bi-file-earmark-excel"></i>
-            Export Excel
-
         </a>
 
     </div>
@@ -51,75 +37,33 @@
 <div class="dashboard-grid">
 
     <div class="stats-card">
-
-        <div class="stats-label">
-            Employees
-        </div>
-
-        <div class="stats-number">
-            @Model.Count
-        </div>
-
+        <div class="stats-label">Employees</div>
+        <div class="stats-number">@Model.Count</div>
     </div>
 
     <div class="stats-card">
-
-        <div class="stats-label">
-            Present
-        </div>
-
-        <div class="stats-number">
-            @Model.Sum(x => x.PresentCount)
-        </div>
-
+        <div class="stats-label">Present</div>
+        <div class="stats-number">@Model.Sum(x => x.PresentCount)</div>
     </div>
 
     <div class="stats-card">
-
-        <div class="stats-label">
-            Absent
-        </div>
-
-        <div class="stats-number">
-            @Model.Sum(x => x.AbsentCount)
-        </div>
-
+        <div class="stats-label">Pay Days</div>
+        <div class="stats-number">@Model.Sum(x => x.PayDays)</div>
     </div>
 
     <div class="stats-card">
-
-        <div class="stats-label">
-            Leave
-        </div>
-
-        <div class="stats-number">
-            @Model.Sum(x => x.LeaveCount)
-        </div>
-
+        <div class="stats-label">Absent</div>
+        <div class="stats-number">@Model.Sum(x => x.AbsentCount)</div>
     </div>
 
     <div class="stats-card">
-
-        <div class="stats-label">
-            Week Off
-        </div>
-
-        <div class="stats-number">
-            @Model.Sum(x => x.WeekOffCount)
-        </div>
-
+        <div class="stats-label">Missing Days</div>
+        <div class="stats-number">@Model.Sum(x => x.MissingDays)</div>
     </div>
 
     <div class="stats-card">
-
-        <div class="stats-label">
-            On Duty
-        </div>
-
-        <div class="stats-number">
-            @Model.Sum(x => x.OnDutyCount)
-        </div>
-
+        <div class="stats-label">Unpaid Leave</div>
+        <div class="stats-number">@Model.Sum(x => x.UnpaidLeaveCount)</div>
     </div>
 
 </div>
@@ -127,18 +71,16 @@
 <div class="app-card mb-3">
 
     <div class="card-header">
-
         <h5 class="card-title">
             Summary Filter
         </h5>
-
     </div>
 
     <div class="card-body">
 
         <form method="get">
 
-            <div class="d-flex gap-3 align-items-end flex-wrap">
+            <div class="filter-form-row">
 
                 <div class="form-group">
 
@@ -152,8 +94,8 @@
                         @for (int month = 1; month <= 12; month++)
                         {
                             var monthName =
-                                new DateTime(2000, month, 1)
-                                .ToString("MMMM");
+                            new DateTime(2000, month, 1)
+                            .ToString("MMMM");
 
                             if (month == ViewBag.Month)
                             {
@@ -183,8 +125,8 @@
                             class="app-select">
 
                         @for (int year = DateTime.Today.Year - 2;
-                             year <= DateTime.Today.Year + 2;
-                             year++)
+                                                year <= DateTime.Today.Year + 2;
+                                                year++)
                         {
                             if (year == ViewBag.Year)
                             {
@@ -204,13 +146,15 @@
 
                 </div>
 
-                <button type="submit"
-                        class="btn-app btn-primary-app">
+                <div class="filter-form-actions">
 
-                    <i class="bi bi-search"></i>
-                    Load
+                    <button type="submit"
+                            class="btn-app btn-primary-app">
+                        <i class="bi bi-search"></i>
+                        Load
+                    </button>
 
-                </button>
+                </div>
 
             </div>
 
@@ -220,18 +164,16 @@
 
 </div>
 
+<div class="alert alert-info mb-3">
+    Attendance summary uses the same payable-days calculation as payroll.
+</div>
+
 <div class="app-card table-card">
 
     <div class="card-header">
-
         <h5 class="card-title">
-
-            Attendance Summary
-            -
-            @ViewBag.Month/@ViewBag.Year
-
+            Attendance Summary - @ViewBag.Month/@ViewBag.Year
         </h5>
-
     </div>
 
     <div class="card-body">
@@ -239,7 +181,7 @@
         @if (!Model.Any())
         {
             <div class="empty-state">
-                No attendance records found.
+                No attendance summary found.
             </div>
         }
         else
@@ -249,23 +191,22 @@
                 <table class="app-table">
 
                     <thead>
-
                         <tr>
-
                             <th>Code</th>
                             <th>Employee</th>
-                            <th>P</th>
-                            <th>A</th>
-                            <th>L</th>
-                            <th>H</th>
-                            <th>WO</th>
-                            <th>OD</th>
-                            <th>Total</th>
+                            <th>Present</th>
+                            <th>On Duty</th>
+                            <th>Paid Leave</th>
+                            <th>Unpaid Leave</th>
+                            <th>Holiday</th>
+                            <th>Week Off</th>
+                            <th>Marked Absent</th>
+                            <th>Missing Days</th>
+                            <th>Total Absent</th>
+                            <th>Total Days</th>
+                            <th>Pay Days</th>
                             <th>Attendance %</th>
-                            
-
                         </tr>
-
                     </thead>
 
                     <tbody>
@@ -274,12 +215,12 @@
                         {
                             <tr>
 
-                                <td>
-                                    @employee.EmployeeCode
-                                </td>
+                                <td>@employee.EmployeeCode</td>
 
                                 <td>
-                                    @employee.EmployeeName
+                                    <strong>
+                                        @employee.EmployeeName
+                                    </strong>
                                 </td>
 
                                 <td>
@@ -289,14 +230,20 @@
                                 </td>
 
                                 <td>
-                                    <span class="badge-danger">
-                                        @employee.AbsentCount
+                                    <span class="badge-info">
+                                        @employee.OnDutyCount
                                     </span>
                                 </td>
 
                                 <td>
                                     <span class="badge-warning">
-                                        @employee.LeaveCount
+                                        @employee.PaidLeaveCount
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="badge-danger">
+                                        @employee.UnpaidLeaveCount
                                     </span>
                                 </td>
 
@@ -312,10 +259,14 @@
                                     </span>
                                 </td>
 
+                                <td>@employee.MarkedAbsentCount</td>
+
+                                <td>@employee.MissingDays</td>
+
                                 <td>
-                                    <span class="badge-info">
-                                        @employee.OnDutyCount
-                                    </span>
+                                    <strong>
+                                        @employee.AbsentCount
+                                    </strong>
                                 </td>
 
                                 <td>
@@ -325,16 +276,16 @@
                                 </td>
 
                                 <td>
-
                                     <strong>
-                                        @employee.AttendancePercentage%
+                                        @employee.PayDays
                                     </strong>
-
                                 </td>
 
-                                
-
-                               
+                                <td>
+                                    <strong>
+                                        @employee.AttendancePercentage.ToString("N2")%
+                                    </strong>
+                                </td>
 
                             </tr>
                         }

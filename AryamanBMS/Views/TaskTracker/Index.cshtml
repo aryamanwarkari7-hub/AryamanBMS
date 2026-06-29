@@ -3,7 +3,7 @@
 @using AryamanBMS.Models
 
 @{
-    ViewData["Title"] = "Task Tracker";
+    ViewData["Title"] = "Task Updates";
 
     var tasks =
         ViewBag.Tasks as IEnumerable<ProjectTaskModel>
@@ -20,7 +20,7 @@
 <div class="module-header">
 
     <div>
-        <h1 class="module-title">Task Tracker</h1>
+        <h1 class="module-title">Task Updates</h1>
 
         <p class="module-subtitle">
             Record and monitor project task progress
@@ -106,7 +106,7 @@
 
             </div>
 
-            <div class="d-flex gap-2 mt-3">
+            <div class="filter-form-actions mt-3">
 
                 <button type="submit"
                         class="btn-app btn-primary-app">
@@ -238,7 +238,7 @@
 
                                         <a asp-action="Details"
                                            asp-route-id="@progress.Id"
-                                           class="btn-icon btn-primary-app btn-view"
+                                           class="btn-app btn-icon btn-primary-app btn-view"
                                            title="Details">
 
                                             <i class="bi bi-eye"></i>
@@ -247,7 +247,7 @@
 
                                         <a asp-action="Edit"
                                            asp-route-id="@progress.Id"
-                                           class="btn-icon btn-secondary-app btn-edit"
+                                           class="btn-app btn-icon btn-secondary-app btn-edit"
                                            title="Edit">
 
                                             <i class="bi bi-pencil"></i>
@@ -256,8 +256,8 @@
 
                                         <a asp-action="Delete"
                                            asp-route-id="@progress.Id"
-                                           class="btn-icon btn-danger-app btn-delete"
-                                           title="Delete">
+                                           class="btn-app btn-icon btn-danger-app btn-delete"
+                                           title="Remove">
 
                                             <i class="bi bi-trash"></i>
 
@@ -295,47 +295,5 @@
 </div>
 
 @section Scripts {
-
-    <script>
-
-        document.addEventListener("DOMContentLoaded", function () {
-
-            const projectFilter =
-                document.getElementById("projectFilter");
-
-            const taskFilter =
-                document.getElementById("taskFilter");
-
-            const taskOptions =
-                Array.from(taskFilter.options);
-
-            projectFilter.addEventListener("change", function () {
-
-                const selectedProjectId = this.value;
-
-                taskFilter.innerHTML = "";
-
-                taskOptions.forEach(function (option) {
-
-                    const optionProjectId =
-                        option.getAttribute("data-project-id");
-
-                    if (
-                        !option.value ||
-                        !selectedProjectId ||
-                        optionProjectId === selectedProjectId
-                    ) {
-                        taskFilter.appendChild(option);
-                    }
-
-                });
-
-                taskFilter.value = "";
-
-            });
-
-        });
-
-    </script>
-
+    <script src="~/js/task-tracker.js" asp-append-version="true"></script>
 }

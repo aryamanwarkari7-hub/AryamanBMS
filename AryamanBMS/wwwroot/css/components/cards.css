@@ -80,3 +80,26 @@
 .accordion-card {
     margin-bottom: var(--space-lg);
 }
+
+/* ==========================================
+   CARD RESPONSIVENESS
+========================================== */
+
+@media (max-width: 768px) {
+    .app-card {
+        margin: var(--space-md);
+    }
+
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-md);
+        padding: var(--space-md);
+    }
+
+    .card-body,
+    .summary-card,
+    .form-card {
+        padding: var(--space-md);
+    }
+}

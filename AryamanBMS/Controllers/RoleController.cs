@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AryamanBMS.Models;
+using AryamanBMS.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,19 +10,54 @@ namespace AryamanBMS.Controllers
     public class RoleController : Controller
     {
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly UserManager<ApplicationUserModel> _userManager;
 
-        public RoleController(RoleManager<IdentityRole> roleManager)
+        public RoleController(
+            RoleManager<IdentityRole> roleManager,
+            UserManager<ApplicationUserModel> userManager)
         {
             _roleManager = roleManager;
+            _userManager = userManager;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index(string? status)
         {
             var roles = _roleManager.Roles
-                .OrderBy(x => x.Name)
+                .Where(role => role.Name != null)
+                .OrderBy(role => role.Name)
                 .ToList();
 
-            return View(roles);
+            var roleList = new List<RoleListViewModel>();
+
+            foreach (var role in roles)
+            {
+                var usersInRole =
+                    await _userManager.GetUsersInRoleAsync(role.Name!);
+
+                roleList.Add(new RoleListViewModel
+                {
+                    RoleId = role.Id,
+                    RoleName = role.Name ?? string.Empty,
+                    UsersAssigned = usersInRole.Count
+                });
+            }
+
+            if (status == "Active")
+            {
+                roleList = roleList
+                    .Where(role => role.UsersAssigned > 0)
+                    .ToList();
+            }
+            else if (status == "Inactive")
+            {
+                roleList = roleList
+                    .Where(role => role.UsersAssigned == 0)
+                    .ToList();
+            }
+
+            ViewBag.Status = status;
+
+            return View(roleList);
         }
 
         [HttpGet]
@@ -35,21 +72,45 @@ namespace AryamanBMS.Controllers
         {
             if (string.IsNullOrWhiteSpace(roleName))
             {
-                ModelState.AddModelError("", "Role name is required.");
+                ModelState.AddModelError(
+                    "",
+                    "Role name is required.");
+
                 return View();
             }
 
-            bool exists = await _roleManager.RoleExistsAsync(roleName);
+            roleName = roleName.Trim();
+
+            bool exists =
+                await _roleManager.RoleExistsAsync(roleName);
 
             if (exists)
             {
-                ModelState.AddModelError("", "Role already exists.");
+                ModelState.AddModelError(
+                    "",
+                    "Role already exists.");
+
                 return View();
             }
 
-            await _roleManager.CreateAsync(new IdentityRole(roleName));
+            var result =
+                await _roleManager.CreateAsync(
+                    new IdentityRole(roleName));
 
-            TempData["Success"] = "Role created successfully.";
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(
+                        "",
+                        error.Description);
+                }
+
+                return View();
+            }
+
+            TempData["Success"] =
+                "Role created successfully.";
 
             return RedirectToAction(nameof(Index));
         }
@@ -58,7 +119,8 @@ namespace AryamanBMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(string id)
         {
-            var role = await _roleManager.FindByIdAsync(id);
+            var role =
+                await _roleManager.FindByIdAsync(id);
 
             if (role == null)
             {
@@ -67,12 +129,14 @@ namespace AryamanBMS.Controllers
 
             var protectedRoles = new[]
             {
-        "Admin",
-        "HR",
-        "Employee"
-    };
+                "Admin",
+                "HR",
+                "Employee"
+            };
 
-            if (protectedRoles.Contains(role.Name))
+            if (protectedRoles.Contains(
+                role.Name,
+                StringComparer.OrdinalIgnoreCase))
             {
                 TempData["Error"] =
                     "This role is protected and cannot be deleted.";
@@ -80,14 +144,34 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            await _roleManager.DeleteAsync(role);
+            var usersInRole =
+                await _userManager.GetUsersInRoleAsync(
+                    role.Name ?? string.Empty);
+
+            if (usersInRole.Any())
+            {
+                TempData["Error"] =
+                    $"Cannot delete the role because " +
+                    $"{usersInRole.Count} user(s) are assigned to it.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            var result =
+                await _roleManager.DeleteAsync(role);
+
+            if (!result.Succeeded)
+            {
+                TempData["Error"] =
+                    "Role could not be deleted.";
+
+                return RedirectToAction(nameof(Index));
+            }
 
             TempData["Success"] =
                 "Role deleted successfully.";
 
             return RedirectToAction(nameof(Index));
         }
-
-
     }
 }

@@ -310,3 +310,59 @@
     color: var(--text-muted);
     font-size: var(--font-xs);
 }
+
+/* ==========================================
+   MOBILE SIDEBAR
+========================================== */
+
+.sidebar-backdrop {
+    display: none;
+}
+
+.mobile-sidebar-toggle {
+    display: none;
+}
+
+@media (max-width: 992px) {
+    .app-layout {
+        display: block;
+    }
+
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1050;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+    }
+
+        .sidebar.is-open {
+            transform: translateX(0);
+        }
+
+    .sidebar-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 1040;
+        display: none;
+        background: rgba(15, 23, 42, 0.45);
+    }
+
+        .sidebar-backdrop.is-open {
+            display: block;
+        }
+
+    .mobile-sidebar-toggle {
+        width: 40px;
+        height: 40px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        background: var(--card-bg);
+        color: var(--text-dark);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+}

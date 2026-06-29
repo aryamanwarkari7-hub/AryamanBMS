@@ -42,7 +42,7 @@
         <form asp-action="Index"
               method="get">
 
-            <div class="d-flex flex-wrap gap-2">
+            <div class="filter-form-row">
 
                 <input type="text"
                        name="searchText"
@@ -51,21 +51,18 @@
                        placeholder="Search department name or code"
                        autocomplete="off" />
 
-                <button type="submit"
-                        class="btn-app btn-primary-app">
+                <div class="filter-form-actions">
+                    <button type="submit"
+                            class="btn-app btn-primary-app">
+                        <i class="bi bi-search"></i>
+                        Search
+                    </button>
 
-                    <i class="bi bi-search"></i>
-                    Search
-
-                </button>
-
-                <a asp-action="Index"
-                   class="btn-app btn-secondary-app">
-
-                    <i class="bi bi-arrow-counterclockwise"></i>
-                    Reset
-
-                </a>
+                    <a asp-action="Index"
+                       class="btn-app btn-secondary-app">
+                        Reset
+                    </a>
+                </div>
 
             </div>
 

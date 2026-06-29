@@ -3,7 +3,7 @@
 @using System.Globalization
 
 @{
-    ViewData["Title"] = "Project Dashboard";
+    ViewData["Title"] = "Project Workspace";
 }
 
 <div class="module-header">
@@ -11,7 +11,7 @@
     <div>
 
         <h1 class="module-title">
-            Project Dashboard
+            Project Workspace
         </h1>
 
         <p class="module-subtitle">
@@ -21,46 +21,176 @@
 
     </div>
 
-    <div class="d-flex flex-wrap gap-2">
+    <div class="module-header-actions">
 
         <a asp-action="Details"
            asp-route-id="@Model.Project.Id"
            class="btn-app btn-secondary-app">
-
-            <i class="bi bi-arrow-left"></i>
-            Project Details
-
-        </a>
-
-        <a asp-controller="ProjectTimeline"
-           asp-action="Index"
-           asp-route-projectId="@Model.Project.Id"
-           class="btn-app btn-secondary-app">
-
-            <i class="bi bi-clock-history"></i>
-            View Timeline
-
+            <i class="bi bi-eye"></i>
+            Details
         </a>
 
         <a asp-controller="ProjectTask"
            asp-action="Index"
            asp-route-projectId="@Model.Project.Id"
            class="btn-app btn-primary-app">
-
             <i class="bi bi-list-task"></i>
-            View Tasks
-
+            Tasks
         </a>
+
+        <a asp-controller="ProjectMember"
+           asp-action="AllMembers"
+           asp-route-projectId="@Model.Project.Id"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-people"></i>
+            Project Members
+        </a>
+
+        <a asp-controller="ProjectFlow"
+           asp-action="Index"
+           asp-route-projectId="@Model.Project.Id"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-diagram-3"></i>
+            Milestones
+        </a>
+
+        <div class="dropdown">
+            <button type="button"
+                    class="btn-app btn-secondary-app dropdown-toggle"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false">
+                <i class="bi bi-three-dots"></i>
+                More
+            </button>
+
+            <div class="dropdown-menu dropdown-menu-end">
+
+                <a asp-controller="TaskTracker"
+                   asp-action="Index"
+                   asp-route-projectId="@Model.Project.Id"
+                   class="dropdown-item">
+                    <i class="bi bi-activity"></i>
+                    Task Updates
+                </a>
+
+                <a asp-controller="MOM"
+                   asp-action="Index"
+                   asp-route-projectId="@Model.Project.Id"
+                   class="dropdown-item">
+                    <i class="bi bi-journal-text"></i>
+                    Meetings / MOM
+                </a>
+
+                <a asp-controller="Risk"
+                   asp-action="Index"
+                   asp-route-projectId="@Model.Project.Id"
+                   class="dropdown-item">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Risk Register
+                </a>
+
+                <a asp-controller="ProjectTimeline"
+                   asp-action="Index"
+                   asp-route-projectId="@Model.Project.Id"
+                   class="dropdown-item">
+                    <i class="bi bi-clock-history"></i>
+                    Activity Timeline
+                </a>
+
+            </div>
+        </div>
 
     </div>
 
 </div>
 
 <!-- ==========================================
+     PROJECT SUMMARY CARDS
+=========================================== -->
+
+<div class="dashboard-grid">
+
+    <div class="stats-card">
+
+        <div class="stats-label">
+            Health Status
+        </div>
+
+        @{
+            string healthClass =
+            Model.ProjectHealth == "Critical"
+            ? "badge-danger"
+            : Model.ProjectHealth == "Warning"
+            ? "badge-warning"
+            : "badge-success";
+        }
+
+        <div class="stats-number">
+            <span class="@healthClass">
+                @Model.ProjectHealth
+            </span>
+        </div>
+
+        <small class="text-muted d-block mt-2">
+            @Model.ProjectHealthMessage
+        </small>
+
+    </div>
+
+    <div class="stats-card">
+
+        <div class="stats-label">
+            Overall Progress
+        </div>
+
+        <div class="stats-number">
+            @Model.OverallProgress.ToString("0.##")%
+        </div>
+
+    </div>
+
+    <div class="stats-card">
+
+        <div class="stats-label">
+            Active Members
+        </div>
+
+        <div class="stats-number">
+            @Model.ActiveMemberCount
+        </div>
+
+    </div>
+
+    <div class="stats-card">
+
+        <div class="stats-label">
+            Open Risks
+        </div>
+
+        <div class="stats-number">
+            @Model.OpenRiskCount
+        </div>
+
+    </div>
+
+    <div class="stats-card">
+
+        <div class="stats-label">
+            Overdue Tasks
+        </div>
+
+        <div class="stats-number">
+            @Model.OverdueTaskCount
+        </div>
+
+    </div>
+
+</div>
+<!-- ==========================================
      PROJECT GANTT CHART
 =========================================== -->
 
-<div class="app-card mb-4">
+<div class="app-card table-card mb-4">
 
     <div class="card-header">
 
@@ -345,93 +475,7 @@
 
 </div>
 
-<!-- ==========================================
-     PROJECT SUMMARY CARDS
-=========================================== -->
 
-<div class="row g-3 mb-4">
-
-    <div class="col-xl-3 col-md-6">
-
-        <div class="app-card h-100">
-
-            <div class="card-body">
-
-                <div class="text-muted">
-                    Active Members
-                </div>
-
-                <h2 class="mb-0">
-                    @Model.ActiveMemberCount
-                </h2>
-
-            </div>
-
-        </div>
-
-    </div>
-
-    <div class="col-xl-3 col-md-6">
-
-        <div class="app-card h-100">
-
-            <div class="card-body">
-
-                <div class="text-muted">
-                    Total Tasks
-                </div>
-
-                <h2 class="mb-0">
-                    @Model.TotalTaskCount
-                </h2>
-
-            </div>
-
-        </div>
-
-    </div>
-
-    <div class="col-xl-3 col-md-6">
-
-        <div class="app-card h-100">
-
-            <div class="card-body">
-
-                <div class="text-muted">
-                    Completed Tasks
-                </div>
-
-                <h2 class="mb-0">
-                    @Model.CompletedTaskCount
-                </h2>
-
-            </div>
-
-        </div>
-
-    </div>
-
-    <div class="col-xl-3 col-md-6">
-
-        <div class="app-card h-100">
-
-            <div class="card-body">
-
-                <div class="text-muted">
-                    Overdue Tasks
-                </div>
-
-                <h2 class="mb-0">
-                    @Model.OverdueTaskCount
-                </h2>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
 
 <!-- ==========================================
      TASK AND HOURS SUMMARY
@@ -441,7 +485,7 @@
 
     <div class="col-lg-6">
 
-        <div class="app-card h-100">
+        <div class="app-card table-card h-100">
 
             <div class="card-header">
 
@@ -517,7 +561,7 @@
 
     <div class="col-lg-6">
 
-        <div class="app-card h-100">
+        <div class="app-card table-card h-100">
 
             <div class="card-header">
 
@@ -599,7 +643,7 @@
 
     <div class="col-lg-6">
 
-        <div class="app-card h-100">
+        <div class="app-card table-card h-100">
 
             <div class="card-header">
 
@@ -635,9 +679,8 @@
                        asp-action="Index"
                        asp-route-projectId="@Model.Project.Id"
                        class="btn-app btn-secondary-app">
-
-                        View Risk Register
-
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Risk Register
                     </a>
 
                 </div>
@@ -650,7 +693,7 @@
 
     <div class="col-lg-6">
 
-        <div class="app-card h-100">
+        <div class="app-card table-card h-100">
 
             <div class="card-header">
 
@@ -684,9 +727,8 @@
                        asp-action="Index"
                        asp-route-projectId="@Model.Project.Id"
                        class="btn-app btn-secondary-app">
-
-                        View MOM Tracker
-
+                        <i class="bi bi-journal-text"></i>
+                        Meetings / MOM
                     </a>
 
                 </div>

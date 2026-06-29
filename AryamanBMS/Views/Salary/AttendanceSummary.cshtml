@@ -7,115 +7,150 @@
 <div class="module-header">
 
     <div>
-
         <h1 class="module-title">
             Payroll Pay Days Summary
         </h1>
 
         <p class="module-subtitle">
-            Salary Pay Days calculated from Attendance, Leave, Holidays, Week Offs and Missing Days
+            Monthly payable days used for salary processing
         </p>
-
     </div>
 
-    <a asp-action="Index"
-       asp-route-month="@ViewBag.Month"
-       asp-route-year="@ViewBag.Year"
-       class="btn-app btn-secondary-app">
+    <div class="module-header-actions">
+        <a asp-action="Index"
+           asp-route-month="@ViewBag.Month"
+           asp-route-year="@ViewBag.Year"
+           class="btn-app btn-secondary-app">
+            Back
+        </a>
+    </div>
 
-        Back
+</div>
 
-    </a>
+<div class="dashboard-grid">
+
+    <div class="stats-card">
+        <div class="stats-label">Employees</div>
+        <div class="stats-number">@Model.Count</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Present</div>
+        <div class="stats-number">@Model.Sum(x => x.PresentCount)</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Pay Days</div>
+        <div class="stats-number">@Model.Sum(x => x.PayDays)</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Absent</div>
+        <div class="stats-number">@Model.Sum(x => x.AbsentCount)</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Missing Days</div>
+        <div class="stats-number">@Model.Sum(x => x.MissingDays)</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Unpaid Leave</div>
+        <div class="stats-number">@Model.Sum(x => x.UnpaidLeaveCount)</div>
+    </div>
 
 </div>
 
 <div class="app-card mb-3">
 
     <div class="card-header">
-
         <h5 class="card-title">
-            Payroll Pay Days Summary - @ViewBag.Month/@ViewBag.Year
+            Summary Filter
         </h5>
-
     </div>
 
     <div class="card-body">
 
         <form asp-action="AttendanceSummary"
-              method="get"
-              class="d-flex gap-2 align-items-end flex-wrap">
+              method="get">
 
-            <div>
+            <div class="filter-form-row">
 
-                <label class="form-label">
-                    Month
-                </label>
+                <div class="form-group">
 
-                <select name="month"
-                        class="app-select">
+                    <label class="form-label">
+                        Month
+                    </label>
 
-                    @for (int month = 1; month <= 12; month++)
-                    {
-                        var monthName =
+                    <select name="month"
+                            class="app-select">
+
+                        @for (int month = 1; month <= 12; month++)
+                        {
+                            var monthName =
                             new DateTime(2000, month, 1)
                             .ToString("MMMM");
 
-                        if (month == (int)ViewBag.Month)
-                        {
-                            <option value="@month" selected>
-                                @monthName
-                            </option>
+                            if (month == (int)ViewBag.Month)
+                            {
+                                <option value="@month" selected>
+                                    @monthName
+                                </option>
+                            }
+                            else
+                            {
+                                <option value="@month">
+                                    @monthName
+                                </option>
+                            }
                         }
-                        else
-                        {
-                            <option value="@month">
-                                @monthName
-                            </option>
-                        }
-                    }
 
-                </select>
+                    </select>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Year
+                    </label>
+
+                    <select name="year"
+                            class="app-select">
+
+                        @for (int year = DateTime.Today.Year - 2;
+                                                year <= DateTime.Today.Year + 2;
+                                                year++)
+                        {
+                            if (year == (int)ViewBag.Year)
+                            {
+                                <option value="@year" selected>
+                                    @year
+                                </option>
+                            }
+                            else
+                            {
+                                <option value="@year">
+                                    @year
+                                </option>
+                            }
+                        }
+
+                    </select>
+
+                </div>
+
+                <div class="filter-form-actions">
+
+                    <button type="submit"
+                            class="btn-app btn-primary-app">
+                        <i class="bi bi-search"></i>
+                        Load
+                    </button>
+
+                </div>
 
             </div>
-
-            <div>
-
-                <label class="form-label">
-                    Year
-                </label>
-
-                <select name="year"
-                        class="app-select">
-
-                    @for (int year = DateTime.Today.Year - 2;
-                         year <= DateTime.Today.Year + 2;
-                         year++)
-                    {
-                        if (year == (int)ViewBag.Year)
-                        {
-                            <option value="@year" selected>
-                                @year
-                            </option>
-                        }
-                        else
-                        {
-                            <option value="@year">
-                                @year
-                            </option>
-                        }
-                    }
-
-                </select>
-
-            </div>
-
-            <button type="submit"
-                    class="btn-app btn-primary-app">
-
-                <i class="bi bi-search"></i>
-                Load
-
-            </button>
 
         </form>
 
@@ -124,20 +159,15 @@
 </div>
 
 <div class="alert alert-info mb-3">
-
-    This summary is used for salary payroll only.
-    It combines Attendance records, approved Leave applications, Holidays, Week Offs and Missing Days.
-
+    Payroll pay days are calculated from attendance, approved leave, holidays, week offs and missing days.
 </div>
 
 <div class="app-card table-card">
 
     <div class="card-header">
-
         <h5 class="card-title">
             Pay Days Summary - @ViewBag.Month/@ViewBag.Year
         </h5>
-
     </div>
 
     <div class="card-body">
@@ -145,7 +175,7 @@
         @if (!Model.Any())
         {
             <div class="empty-state">
-                No attendance summary found.
+                No payroll attendance summary found.
             </div>
         }
         else
@@ -155,11 +185,11 @@
                 <table class="app-table">
 
                     <thead>
-
                         <tr>
+                            <th>Code</th>
                             <th>Employee</th>
                             <th>Present</th>
-                            <th>OD</th>
+                            <th>On Duty</th>
                             <th>Paid Leave</th>
                             <th>Unpaid Leave</th>
                             <th>Holiday</th>
@@ -171,7 +201,6 @@
                             <th>Pay Days</th>
                             <th>Attendance %</th>
                         </tr>
-
                     </thead>
 
                     <tbody>
@@ -180,31 +209,49 @@
                         {
                             <tr>
 
-                                <td>
+                                <td>@item.EmployeeCode</td>
 
+                                <td>
                                     <strong>
                                         @item.EmployeeName
                                     </strong>
-
-                                    <br />
-
-                                    <small>
-                                        @item.EmployeeCode
-                                    </small>
-
                                 </td>
 
-                                <td>@item.PresentCount</td>
+                                <td>
+                                    <span class="badge-success">
+                                        @item.PresentCount
+                                    </span>
+                                </td>
 
-                                <td>@item.OnDutyCount</td>
+                                <td>
+                                    <span class="badge-info">
+                                        @item.OnDutyCount
+                                    </span>
+                                </td>
 
-                                <td>@item.PaidLeaveCount</td>
+                                <td>
+                                    <span class="badge-warning">
+                                        @item.PaidLeaveCount
+                                    </span>
+                                </td>
 
-                                <td>@item.UnpaidLeaveCount</td>
+                                <td>
+                                    <span class="badge-danger">
+                                        @item.UnpaidLeaveCount
+                                    </span>
+                                </td>
 
-                                <td>@item.HolidayCount</td>
+                                <td>
+                                    <span class="badge-primary">
+                                        @item.HolidayCount
+                                    </span>
+                                </td>
 
-                                <td>@item.WeekOffCount</td>
+                                <td>
+                                    <span class="badge-secondary">
+                                        @item.WeekOffCount
+                                    </span>
+                                </td>
 
                                 <td>@item.MarkedAbsentCount</td>
 
@@ -216,7 +263,11 @@
                                     </strong>
                                 </td>
 
-                                <td>@item.TotalDays</td>
+                                <td>
+                                    <strong>
+                                        @item.TotalDays
+                                    </strong>
+                                </td>
 
                                 <td>
                                     <strong>
@@ -225,7 +276,9 @@
                                 </td>
 
                                 <td>
-                                    @item.AttendancePercentage.ToString("N2")%
+                                    <strong>
+                                        @item.AttendancePercentage.ToString("N2")%
+                                    </strong>
                                 </td>
 
                             </tr>

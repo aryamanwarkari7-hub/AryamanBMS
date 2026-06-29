@@ -110,25 +110,6 @@
 
 </div>
 
-<script>
-    document.getElementById("designationName")
-        .addEventListener("change", function () {
-
-            const codes = {
-                "Software Developer": "SD",
-                "Senior Software Engineer": "SSE",
-                "Team Lead": "TL",
-                "Project Manager": "PM",
-                "Business Analyst": "BA",
-                "QA Engineer": "QA",
-                "HR Executive": "HR",
-                "HR Manager": "HRM",
-                "Accountant": "ACC",
-                "Administrator": "ADM",
-                "System Administrator": "SA"
-            };
-
-            document.getElementById("designationCode").value =
-                codes[this.value] || "";
-        });
-</script>
+@section Scripts {
+    <script src="~/js/master-data.js" asp-append-version="true"></script>
+}

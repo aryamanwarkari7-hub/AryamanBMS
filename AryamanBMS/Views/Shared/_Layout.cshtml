@@ -24,10 +24,11 @@
     <link rel="stylesheet" href="~/css/components/cards.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/components/buttons.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/components/forms.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/components/page-header.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/components/tables.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/components/badges.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/components/alerts.css" asp-append-version="true"/>
-    <link rel="stylesheet" href="~/css/components/print.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/print.css" asp-append-version="true" />
 
 
     <link rel="stylesheet" href="~/AryamanBMS.styles.css" asp-append-version="true" />
@@ -37,6 +38,8 @@
     <div class="app-layout">
 
         <partial name="_Sidebar" />
+        <div class="sidebar-backdrop" data-sidebar-close></div>
+
 
         <div class="main-content">
 
@@ -75,19 +78,7 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-    <script>
-        setTimeout(function () {
-            document
-                .querySelectorAll(".alert-message-app")
-                .forEach(function (alert) {
-                    alert.classList.add("alert-hide");
-
-                    setTimeout(function () {
-                        alert.remove();
-                    }, 500);
-                });
-        }, 3000);
-    </script>
+    
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

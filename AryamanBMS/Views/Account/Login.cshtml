@@ -5,96 +5,151 @@
     ViewData["Title"] = "Login";
 }
 
-<div class="container-fluid auth-page">
+<div class="auth-page corporate-login">
 
-    <div class="row min-vh-100">
+    <section class="login-brand-panel">
 
-        <div class="col-lg-4 d-none d-lg-flex auth-brand-section">
+        <div class="login-brand-content">
 
-            <div class="text-center">
+            <div class="login-logo-wrap">
+                <img src="~/images/aryaman_logo.svg"
+                     asp-append-version="true"
+                     alt="Aryaman Technologies Private Limited"
+                     class="login-logo" />
+            </div>
 
-                <h1 class="auth-logo">
-                    Aryaman BMS
+            <div>
+                <p class="login-eyebrow">
+                    Aryaman Technologies Private Limited
+                </p>
+
+                <h1>
+                    Business Management System
                 </h1>
 
-                <p class="auth-tagline">
-                    Business Management System
+                <p class="login-copy">
+                    Secure access for HR, payroll, attendance, employee records,
+                    projects and business operations.
+                </p>
+            </div>
+
+            <div class="login-highlights">
+
+                <div>
+                    <i class="bi bi-shield-check"></i>
+                    <span>Role-based access</span>
+                </div>
+
+                <div>
+                    <i class="bi bi-people"></i>
+                    <span>Employee lifecycle</span>
+                </div>
+
+                <div>
+                    <i class="bi bi-graph-up-arrow"></i>
+                    <span>Operational visibility</span>
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <section class="login-form-panel">
+
+        <div class="login-card">
+
+            <div class="login-card-header">
+
+                <p class="login-card-kicker">
+                    Secure sign in
+                </p>
+
+                <h2>
+                    Welcome back
+                </h2>
+
+                <p>
+                    Enter your credentials to continue to Aryaman BMS.
                 </p>
 
             </div>
 
-        </div>
+            <form asp-action="Login"
+                  method="post"
+                  class="login-form">
 
-        <div class="col-lg-8 d-flex align-items-center justify-content-center">
+                @Html.AntiForgeryToken()
 
-            <div class="app-card auth-card">
+                <div asp-validation-summary="ModelOnly"
+                     class="app-alert-danger">
+                </div>
 
-                <div class="auth-card-header">
+                <div class="form-group">
 
-                    <h2 class="auth-title">
-                        Welcome Back
-                    </h2>
+                    <label asp-for="UserName"
+                           class="form-label">
+                        Username
+                    </label>
 
-                    <p class="auth-subtitle">
-                        Sign in to continue
-                    </p>
+                    <input asp-for="UserName"
+                           class="app-input"
+                           autocomplete="username"
+                           placeholder="Enter username" />
+
+                    <span asp-validation-for="UserName"
+                          class="validation-message"></span>
 
                 </div>
 
-                <form asp-action="Login" method="post">
+                <div class="form-group">
 
-                    <div asp-validation-summary="ModelOnly"
-                         class="app-alert-danger">
-                    </div>
+                    <label asp-for="Password"
+                           class="form-label">
+                        Password
+                    </label>
 
-                    <div class="form-group mb-3">
+                    <input asp-for="Password"
+                           class="app-input"
+                           autocomplete="current-password"
+                           placeholder="Enter password" />
 
-                        <label asp-for="UserName"
-                               class="form-label">
-                        </label>
+                    <span asp-validation-for="Password"
+                          class="validation-message"></span>
 
-                        <input asp-for="UserName"
-                               class="app-input"
-                               placeholder="Enter username" />
+                </div>
 
-                    </div>
+                <div class="login-form-options">
 
-                    <div class="form-group mb-4">
-
-                        <label asp-for="Password"
-                               class="form-label">
-                        </label>
-
-                        <input asp-for="Password"
-                               class="app-input"
-                               placeholder="Enter password" />
-
-                    </div>
-
-                    <div class="form-check mb-4">
+                    <label class="form-check">
 
                         <input asp-for="RememberMe"
                                class="form-check-input" />
 
-                        <label asp-for="RememberMe"
-                               class="form-check-label">
-                            Remember Me
-                        </label>
+                        <span class="form-check-label">
+                            Remember me
+                        </span>
 
-                    </div>
+                    </label>
 
-                    <button type="submit"
-                            class="btn-app btn-primary-app w-100">
-                        Sign In
-                    </button>
+                </div>
 
-                </form>
+                <button type="submit"
+                        class="btn-app btn-primary-app login-submit">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    Sign in
+                </button>
 
-            </div>
+            </form>
+
+            <p class="login-support">
+                Need access? Contact your system administrator.
+            </p>
 
         </div>
 
-    </div>
+    </section>
 
 </div>
 

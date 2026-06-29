@@ -292,4 +292,20 @@
     .gantt-row {
         grid-template-columns: 220px minmax(650px, 1fr);
     }
+
+    .gantt-container {
+        margin: 0 var(--space-md);
+    }
+
+    .gantt-task-cell {
+        padding: 10px;
+    }
+
+    .gantt-task-title {
+        font-size: var(--font-sm);
+    }
+
+    .gantt-task-meta {
+        font-size: var(--font-xs);
+    }
 }

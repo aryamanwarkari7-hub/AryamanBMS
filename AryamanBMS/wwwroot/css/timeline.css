@@ -233,4 +233,21 @@
     .timeline-event-badge {
         white-space: normal;
     }
+
+    .timeline-date-heading {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .project-timeline-content {
+        padding: 12px;
+    }
+
+    .timeline-change-row {
+        align-items: flex-start;
+    }
+
+    .timeline-footer {
+        gap: 8px;
+    }
 }

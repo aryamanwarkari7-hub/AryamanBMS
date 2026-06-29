@@ -54,7 +54,8 @@ namespace AryamanBMS.Controllers
         {
             const int pageSize = 5;
 
-            var projects = _projectRepository.Projects;
+            var projects = _projectRepository.Projects
+           .Where(p => p.IsActive);
 
             projects =
              await _projectAccessService.ApplyProjectFilterAsync(
@@ -113,6 +114,16 @@ namespace AryamanBMS.Controllers
         [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Create(ProjectModel model)
         {
+
+
+            model.ProjectCode =
+                model.ProjectCode?.Trim().ToUpper()
+                ?? string.Empty;
+
+            model.ProjectName =
+                model.ProjectName?.Trim()
+                ?? string.Empty;
+
             bool codeExists = await _projectRepository.Projects
                 .AnyAsync(p => p.ProjectCode == model.ProjectCode);
 
@@ -525,6 +536,55 @@ namespace AryamanBMS.Controllers
                 });
             }
 
+            int openRiskCount =
+    await _projectRiskRepository.ProjectRisks
+        .CountAsync(r =>
+            r.ProjectId == id &&
+            r.IsActive &&
+            r.RiskStatus != "Resolved" &&
+            r.RiskStatus != "Closed");
+
+            int criticalRiskCount =
+                await _projectRiskRepository.ProjectRisks
+                    .CountAsync(r =>
+                        r.ProjectId == id &&
+                        r.IsActive &&
+                        r.Severity == "Critical" &&
+                        r.RiskStatus != "Resolved" &&
+                        r.RiskStatus != "Closed");
+
+            int overdueTaskCount =
+                await tasks.CountAsync(t =>
+                    t.DueDate.HasValue &&
+                    t.DueDate.Value.Date < DateTime.Today &&
+                    t.Status != "Completed");
+
+            string projectHealth = "Good";
+            string projectHealthMessage = "Project is progressing normally.";
+
+            if (overdueTaskCount > 0 || criticalRiskCount > 0)
+            {
+                projectHealth = "Critical";
+                projectHealthMessage =
+                    "Project needs attention due to overdue tasks or critical risks.";
+            }
+            else if (
+                string.Equals(
+                    project.Status,
+                    "On Hold",
+                    StringComparison.OrdinalIgnoreCase) ||
+                (
+                    string.Equals(
+                        project.Status,
+                        "In Progress",
+                        StringComparison.OrdinalIgnoreCase) &&
+                    overallProgress < 50))
+            {
+                projectHealth = "Warning";
+                projectHealthMessage =
+                    "Project should be monitored closely.";
+            }
+
             var viewModel = new ProjectDashboardViewModel
             {
                 Project = project,
@@ -551,11 +611,7 @@ namespace AryamanBMS.Controllers
                     await tasks.CountAsync(t =>
                         t.Status == "Completed"),
 
-                OverdueTaskCount =
-                    await tasks.CountAsync(t =>
-                        t.DueDate.HasValue &&
-                        t.DueDate.Value.Date < DateTime.Today &&
-                        t.Status != "Completed"),
+                OverdueTaskCount = overdueTaskCount,
 
                 EstimatedHours =
                     await tasks.SumAsync(t =>
@@ -567,23 +623,12 @@ namespace AryamanBMS.Controllers
 
                 OverallProgress =
                     Math.Round(overallProgress, 2),
+                ProjectHealth = projectHealth,
+                ProjectHealthMessage = projectHealthMessage,
 
-                OpenRiskCount =
-                    await _projectRiskRepository.ProjectRisks
-                        .CountAsync(r =>
-                            r.ProjectId == id &&
-                            r.IsActive &&
-                            r.RiskStatus != "Resolved" &&
-                            r.RiskStatus != "Closed"),
+                OpenRiskCount = openRiskCount,
 
-                CriticalRiskCount =
-                    await _projectRiskRepository.ProjectRisks
-                        .CountAsync(r =>
-                            r.ProjectId == id &&
-                            r.IsActive &&
-                            r.Severity == "Critical" &&
-                            r.RiskStatus != "Resolved" &&
-                            r.RiskStatus != "Closed"),
+                CriticalRiskCount = criticalRiskCount,
 
                 UpcomingMeetingCount =
                     await _projectMeetingRepository.Meetings
@@ -597,7 +642,9 @@ namespace AryamanBMS.Controllers
                     currentFlow?.StageName ?? "Not Started",
 
                 CurrentFlowStatus =
-                    currentFlow?.StageStatus ?? "-"
+                    currentFlow?.StageStatus ?? "-",
+
+                
             };
 
             return View(viewModel);
@@ -623,6 +670,15 @@ namespace AryamanBMS.Controllers
         [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Edit(ProjectModel model)
         {
+
+            model.ProjectCode =
+                model.ProjectCode?.Trim().ToUpper()
+                ?? string.Empty;
+
+            model.ProjectName =
+                model.ProjectName?.Trim()
+                ?? string.Empty;
+
             bool codeExists = await _projectRepository.Projects
                 .AnyAsync(p =>
                     p.ProjectCode == model.ProjectCode &&
@@ -910,10 +966,13 @@ namespace AryamanBMS.Controllers
             if (project == null)
                 return NotFound();
 
-            await _projectRepository.DeleteAsync(project);
+            project.IsActive = false;
+            project.UpdatedOn = DateTime.Now;
+
+            await _projectRepository.UpdateAsync(project);
             await _projectRepository.SaveAsync();
 
-            TempData["Success"] = "Project deleted successfully.";
+            TempData["Success"] = "Project deactivated successfully.";
 
             return RedirectToAction(nameof(Index));
         }

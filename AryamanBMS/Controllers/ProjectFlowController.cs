@@ -30,7 +30,7 @@ namespace AryamanBMS.Controllers
         [HttpGet]
         public async Task<IActionResult> Index(int? projectId)
         {
-            var flows = _projectFlowRepository.ProjectFlows;
+            var flows = _projectFlowRepository.ProjectFlows.Where(pf => pf.IsActive);
 
             var accessibleProjects =
                 await _projectAccessService.ApplyProjectFilterAsync(
@@ -356,11 +356,14 @@ namespace AryamanBMS.Controllers
 
             int projectId = flow.ProjectId;
 
-            await _projectFlowRepository.DeleteAsync(flow);
+            flow.IsActive = false;
+            flow.UpdatedOn = DateTime.Now;
+
+            await _projectFlowRepository.UpdateAsync(flow);
             await _projectFlowRepository.SaveAsync();
 
             TempData["Success"] =
-                "Project flow stage deleted successfully.";
+                "Project flow stage deactivated successfully.";
 
             return RedirectToAction(
                 nameof(Index),
@@ -387,7 +390,7 @@ namespace AryamanBMS.Controllers
 
             int highestOrder =
                 await _projectFlowRepository.ProjectFlows
-                    .Where(pf => pf.ProjectId == projectId.Value)
+                    .Where(pf => pf.ProjectId == projectId.Value && pf.IsActive)
                     .Select(pf => (int?)pf.StageOrder)
                     .MaxAsync() ?? 0;
 

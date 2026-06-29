@@ -21,6 +21,12 @@ namespace AryamanBMS.ViewModels
 
         public decimal OverallProgress { get; set; }
 
+        // Health
+        public string ProjectHealth { get; set; } = "Good";
+
+        public string ProjectHealthMessage { get; set; } =
+            "Project is progressing normally.";
+
         // Risks
         public int OpenRiskCount { get; set; }
         public int CriticalRiskCount { get; set; }

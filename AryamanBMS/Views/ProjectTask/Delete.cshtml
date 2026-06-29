@@ -1,13 +1,13 @@
 ﻿@model AryamanBMS.Models.ProjectTaskModel
 
 @{
-    ViewData["Title"] = "Delete Project Task";
+    ViewData["Title"] = "Deactivate Project Task";
 }
 
 <div class="module-header">
     <div>
-        <h1 class="module-title">Delete Project Task</h1>
-        <p class="module-subtitle">Confirm task deletion</p>
+        <h1 class="module-title">Deactivate Project Task</h1>
+        <p class="module-subtitle">Confirm task deactivation</p>
     </div>
 
     <a asp-action="Index"
@@ -25,7 +25,7 @@
     <div class="card-body">
 
         <div class="alert alert-danger">
-            Are you sure you want to permanently delete this task?
+            Are you sure you want to permanently deactivate this task?
         </div>
 
         <table class="app-table">
@@ -87,7 +87,7 @@
             <button type="submit"
                     class="btn-app btn-danger-app">
                 <i class="bi bi-trash"></i>
-                Delete Task
+                Deactivate Task
             </button>
 
             <a asp-action="Details"

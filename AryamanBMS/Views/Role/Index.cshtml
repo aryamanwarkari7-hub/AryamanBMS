@@ -1,4 +1,4 @@
-﻿@model List<Microsoft.AspNetCore.Identity.IdentityRole>
+﻿@model IEnumerable<AryamanBMS.ViewModels.RoleListViewModel>
 
 @{
     ViewData["Title"] = "User Roles";
@@ -8,6 +8,7 @@
 
     <div>
         <h1 class="module-title">User Roles</h1>
+
         <p class="module-subtitle">
             Manage application roles
         </p>
@@ -15,13 +16,78 @@
 
     <a asp-action="Create"
        class="btn-app btn-primary-app">
+
         <i class="bi bi-plus-lg"></i>
         Add Role
+
     </a>
 
 </div>
 
+<div class="app-card">
 
+    <div class="card-header">
+        <h5 class="card-title">Filter Roles</h5>
+    </div>
+
+    <div class="card-body">
+
+        <form asp-action="Index"
+              method="get"
+              class="row g-3 align-items-end">
+
+            <div class="col-md-4">
+
+                <label class="form-label">
+                    Role Status
+                </label>
+
+                <select name="status"
+                        class="form-select">
+
+                    <option value="">
+                        All Roles
+                    </option>
+
+                    <option value="Active"
+                            selected="@(ViewBag.Status == "Active")">
+                        Active
+                    </option>
+
+                    <option value="Inactive"
+                            selected="@(ViewBag.Status == "Inactive")">
+                        Inactive
+                    </option>
+
+                </select>
+
+            </div>
+
+            <div class="col-md-4 d-flex gap-2">
+
+                <button type="submit"
+                        class="btn-app btn-primary-app">
+
+                    <i class="bi bi-funnel"></i>
+                    Apply
+
+                </button>
+
+                <a asp-action="Index"
+                   class="btn-app btn-secondary-app">
+
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                    Reset
+
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
 
 <div class="app-card table-card">
 
@@ -46,7 +112,8 @@
                     <thead>
                         <tr>
                             <th>Role Name</th>
-                            <th>Role Id</th>
+                            <th>Users Assigned</th>
+                            <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -55,36 +122,82 @@
 
                         @foreach (var role in Model)
                         {
+                            bool isProtectedRole =
+                            role.RoleName.Equals(
+                            "Admin",
+                            StringComparison.OrdinalIgnoreCase) ||
+
+                            role.RoleName.Equals(
+                            "HR",
+                            StringComparison.OrdinalIgnoreCase) ||
+
+                            role.RoleName.Equals(
+                            "Employee",
+                            StringComparison.OrdinalIgnoreCase);
+
                             <tr>
 
                                 <td>
-                                    <strong>@role.Name</strong>
+                                    <strong>
+                                        @role.RoleName
+                                    </strong>
                                 </td>
 
                                 <td>
-                                    @role.Id
+                                    @role.UsersAssigned
+                                </td>
+
+                                <td>
+                                    @if (role.UsersAssigned > 0)
+                                    {
+                                        <span class="badge-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-danger">Inactive</span>
+                                    }
                                 </td>
 
                                 <td>
 
-                                    <form asp-action="Delete"
-                                          method="post"
-                                          onsubmit="return confirm('Delete this role?');">
-
-                                        @Html.AntiForgeryToken()
-
-                                        <input type="hidden"
-                                               name="id"
-                                               value="@role.Id" />
-
-                                        <button type="submit"
-                                                class="btn-app btn-danger-app btn-icon">
+                                    @if (isProtectedRole)
+                                    {
+                                        <span class="badge-warning">
+                                            Protected
+                                        </span>
+                                    }
+                                    else if (!role.CanDelete)
+                                    {
+                                        <button type="button"
+                                                class="btn-app btn-danger-app btn-icon"
+                                                disabled
+                                                title="Users are assigned to this role">
 
                                             <i class="bi bi-trash"></i>
 
                                         </button>
+                                    }
+                                    else
+                                    {
+                                        <form asp-action="Delete"
+                                              method="post"
+                                              onsubmit="return confirm('Delete this role?');">
 
-                                    </form>
+                                            @Html.AntiForgeryToken()
+
+                                            <input type="hidden"
+                                                   name="id"
+                                                   value="@role.RoleId" />
+
+                                            <button type="submit"
+                                                    class="btn-app btn-danger-app btn-icon">
+
+                                                <i class="bi bi-trash"></i>
+
+                                            </button>
+
+                                        </form>
+                                    }
 
                                 </td>
 

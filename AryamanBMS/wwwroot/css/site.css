@@ -375,6 +375,111 @@ textarea {
     color: #64748b;
 }
 
+
+/* System state pages */
+
+.state-page {
+    position: relative;
+    overflow: hidden;
+    min-height: calc(100vh - 76px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    background: linear-gradient( 135deg, rgba(15, 23, 42, 0.04), rgba(37, 99, 235, 0.06) ), radial-gradient( circle at 18% 20%, rgba(37, 99, 235, 0.12), transparent 28% ), radial-gradient( circle at 82% 72%, rgba(239, 68, 68, 0.10), transparent 26% ), #f8fafc;
+}
+
+    .state-page::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: linear-gradient( rgba(15, 23, 42, 0.045) 1px, transparent 1px ), linear-gradient( 90deg, rgba(15, 23, 42, 0.045) 1px, transparent 1px );
+        background-size: 42px 42px;
+        mask-image: linear-gradient( to bottom, transparent, black 18%, black 82%, transparent );
+        pointer-events: none;
+    }
+
+.state-card {
+    position: relative;
+    z-index: 1;
+    width: min(100%, 520px);
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid #dbe3ef;
+    border-radius: 8px;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+    padding: 36px;
+    text-align: center;
+}
+
+.state-icon {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+    .state-icon i {
+        font-size: 34px;
+    }
+
+    .state-icon.danger {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .state-icon.warning {
+        background: #fef3c7;
+        color: #b45309;
+    }
+
+    .state-icon.info {
+        background: #dbeafe;
+        color: #1d4ed8;
+    }
+
+    .state-icon.success {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+.state-card h1 {
+    margin-bottom: 10px;
+    font-size: 30px;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.state-card p {
+    margin: 0 auto 24px;
+    color: #475569;
+    line-height: 1.6;
+}
+
+.state-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 576px) {
+    .state-page {
+        min-height: calc(100vh - 64px);
+        padding: 32px 16px;
+    }
+
+    .state-card {
+        padding: 28px 20px;
+    }
+
+        .state-card h1 {
+            font-size: 24px;
+        }
+}
+
 /* Responsive */
 
 @media (max-width: 1200px) {

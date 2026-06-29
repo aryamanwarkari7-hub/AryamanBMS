@@ -1,12 +1,12 @@
 ﻿@model IEnumerable<AryamanBMS.Models.ProjectTaskModel>
 
 @{
-    ViewData["Title"] = "Project Tasks";
+    ViewData["Title"] = "Tasks";
 }
 
 <div class="module-header">
     <div>
-        <h1 class="module-title">Project Tasks</h1>
+        <h1 class="module-title">Tasks</h1>
         <p class="module-subtitle">Manage tasks across projects</p>
     </div>
 
@@ -195,7 +195,7 @@
                                     <a asp-action="Delete"
                                        asp-route-id="@task.Id"
                                        class="btn-app btn-danger-app btn-icon"
-                                       title="Delete">
+                                       title="Deactivate">
                                         <i class="bi bi-trash"></i>
                                     </a>
 

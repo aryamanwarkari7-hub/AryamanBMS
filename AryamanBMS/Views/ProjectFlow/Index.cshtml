@@ -1,12 +1,12 @@
 ﻿@model IEnumerable<AryamanBMS.Models.ProjectFlowModel>
 
 @{
-    ViewData["Title"] = "Project Flow";
+    ViewData["Title"] = "Milestones";
 }
 
 <div class="module-header">
     <div>
-        <h1 class="module-title">Project Flow</h1>
+        <h1 class="module-title">Milestones</h1>
         <p class="module-subtitle">
             Manage project lifecycle stages
         </p>
@@ -75,7 +75,7 @@
 <div class="app-card table-card">
 
     <div class="card-header">
-        <h5 class="card-title">Project Stages</h5>
+        <h5 class="card-title">Milestones</h5>
     </div>
 
     <div class="card-body">
@@ -157,7 +157,7 @@
 
                                     <a asp-action="Details"
                                        asp-route-id="@flow.Id"
-                                       class="btn-icon btn-primary-app btn-view"
+                                       class="btn-app btn-icon btn-primary-app btn-view"
                                        title="Details">
 
                                         <i class="bi bi-eye"></i>
@@ -166,7 +166,7 @@
 
                                     <a asp-action="Edit"
                                        asp-route-id="@flow.Id"
-                                       class="btn-icon btn-secondary-app btn-edit"
+                                       class="btn-app btn-icon btn-secondary-app btn-edit"
                                        title="Edit">
 
                                         <i class="bi bi-pencil"></i>
@@ -175,8 +175,8 @@
 
                                     <a asp-action="Delete"
                                        asp-route-id="@flow.Id"
-                                       class="btn-icon btn-danger-app btn-delete btn-app"
-                                       title="Delete">
+                                       class="btn-app btn-icon btn-danger-app btn-delete btn-app"
+                                       title="Deactivate">
 
                                         <i class="bi bi-trash"></i>
 

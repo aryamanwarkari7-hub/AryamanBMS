@@ -32,6 +32,127 @@
 
 </div>
 
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">
+            Search and Sort
+        </h5>
+    </div>
+
+    <div class="card-body">
+
+        <form asp-action="Index"
+              method="get"
+              class="row g-3 align-items-end">
+
+            <div class="col-lg-5 col-md-6">
+
+                <label class="form-label">
+                    Search
+                </label>
+
+                <input type="text"
+                       name="searchText"
+                       value="@ViewBag.SearchText"
+                       class="form-control"
+                       placeholder="Name, username, email or role" />
+
+            </div>
+
+            <div class="col-lg-4 col-md-6">
+
+                <label class="form-label">
+                    Sort By
+                </label>
+
+                <select name="sortBy"
+                        class="form-select">
+
+                    <option value="NameAsc"
+                            selected="@(ViewBag.SortBy == "NameAsc")">
+                        Name: A to Z
+                    </option>
+
+                    <option value="NameDesc"
+                            selected="@(ViewBag.SortBy == "NameDesc")">
+                        Name: Z to A
+                    </option>
+
+                    <option value="UserNameAsc"
+                            selected="@(ViewBag.SortBy == "UserNameAsc")">
+                        Username: A to Z
+                    </option>
+
+                    <option value="UserNameDesc"
+                            selected="@(ViewBag.SortBy == "UserNameDesc")">
+                        Username: Z to A
+                    </option>
+
+                    <option value="EmailAsc"
+                            selected="@(ViewBag.SortBy == "EmailAsc")">
+                        Email: A to Z
+                    </option>
+
+                    <option value="EmailDesc"
+                            selected="@(ViewBag.SortBy == "EmailDesc")">
+                        Email: Z to A
+                    </option>
+
+                    <option value="RoleAsc"
+                            selected="@(ViewBag.SortBy == "RoleAsc")">
+                        Role: A to Z
+                    </option>
+
+                    <option value="RoleDesc"
+                            selected="@(ViewBag.SortBy == "RoleDesc")">
+                        Role: Z to A
+                    </option>
+
+                    <option value="StatusAsc"
+                            selected="@(ViewBag.SortBy == "StatusAsc")">
+                        Active First
+                    </option>
+
+                    <option value="StatusDesc"
+                            selected="@(ViewBag.SortBy == "StatusDesc")">
+                        Inactive First
+                    </option>
+
+                </select>
+
+            </div>
+
+            <div class="col-lg-3 col-md-12">
+
+                <div class="d-flex gap-2">
+
+                    <button type="submit"
+                            class="btn-app btn-primary-app">
+
+                        <i class="bi bi-search"></i>
+                        Search
+
+                    </button>
+
+                    <a asp-action="Index"
+                       class="btn-app btn-secondary-app">
+
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                        Reset
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
 
 <div class="app-card table-card">
 

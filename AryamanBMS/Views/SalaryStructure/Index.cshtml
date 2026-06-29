@@ -1,0 +1,146 @@
+﻿@model List<AryamanBMS.Models.EmployeeSalaryStructureModel>
+
+@{
+    ViewData["Title"] = "Salary Structure";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">
+            Salary Structure
+        </h1>
+
+        <p class="module-subtitle">
+            Employee salary amounts with effective dates
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="Create"
+           class="btn-app btn-primary-app">
+            <i class="bi bi-plus-lg"></i>
+            Add Salary
+        </a>
+    </div>
+
+</div>
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+        <h5 class="card-title">
+            Salary Structure List
+        </h5>
+    </div>
+
+    <div class="card-body">
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                No salary structures found.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+
+                <table class="app-table">
+
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Effective From</th>
+                            <th>Actual Salary</th>
+                            <th>Status</th>
+                            <th>Updated On</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+
+                                <td>
+                                    <strong>
+                                        @item.Employee?.FullName
+                                    </strong>
+
+                                    <br />
+
+                                    <small>
+                                        @item.Employee?.EmployeeCode
+                                    </small>
+                                </td>
+
+                                <td>
+                                    @item.EffectiveFrom.ToString("dd-MMM-yyyy")
+                                </td>
+
+                                <td>
+                                    <strong>
+                                        @item.ActualSalary.ToString("N2")
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge-success">
+                                            Active
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-danger">
+                                            Inactive
+                                        </span>
+                                    }
+                                </td>
+
+                                <td>
+                                    @(item.UpdatedOn?.ToString("dd-MMM-yyyy HH:mm") ?? "-")
+                                </td>
+
+                                <td class="text-end">
+
+                                    <a asp-action="Edit"
+                                       asp-route-id="@item.Id"
+                                       class="btn-app btn-secondary-app btn-sm-app">
+                                        <i class="bi bi-pencil"></i>
+                                        Edit
+                                    </a>
+
+                                    <form asp-action="ToggleActive"
+                                          asp-route-id="@item.Id"
+                                          method="post"
+                                          class="d-inline">
+
+                                        @Html.AntiForgeryToken()
+
+                                        <button type="submit"
+                                                class="btn-app btn-outline-app btn-sm-app">
+                                            @(item.IsActive ? "Deactivate" : "Activate")
+                                        </button>
+
+                                    </form>
+
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+    </div>
+
+</div>

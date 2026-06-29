@@ -14,7 +14,7 @@
         </p>
     </div>
 
-    <div class="d-flex flex-wrap gap-2">
+    <div class="module-header-actions">
 
         <a asp-action="Edit"
            asp-route-id="@Model.Id"
@@ -29,40 +29,12 @@
            asp-route-id="@Model.Id"
            class="btn-app btn-primary-app">
 
-            <i class="bi bi-speedometer2"></i>
-            Dashboard
+            <i class="bi bi-kanban"></i>
+            Workspace
 
         </a>
 
-        @* <a asp-controller="ProjectMember"
-           asp-action="AllMembers"
-           asp-route-projectId="@Model.Id"
-           class="btn-app btn-primary-app">
-
-            <i class="bi bi-people"></i>
-            Project Members
-
-        </a> *@
-
-        @* <a asp-controller="ProjectTask"
-           asp-action="Index"
-           asp-route-projectId="@Model.Id"
-           class="btn-app btn-primary-app">
-
-            <i class="bi bi-list-task"></i>
-            Project Tasks
-
-        </a> *@
-
-        @* <a asp-controller="ProjectFlow"
-           asp-action="Index"
-           asp-route-projectId="@Model.Id"
-           class="btn-app btn-secondary-app">
-
-            <i class="bi bi-diagram-3"></i>
-            Flow
-
-        </a> *@
+        
 
         <a asp-controller="ProjectTimeline"
          asp-action="Index"
@@ -70,39 +42,11 @@
          class="btn-app btn-secondary-app">
          
           <i class="bi bi-clock-history"></i>
-         View Timeline
+            Activity  Timeline
 
          </a>
 
-        @* <a asp-controller="TaskTracker"
-           asp-action="Index"
-           asp-route-projectId="@Model.Id"
-           class="btn-app btn-secondary-app">
-
-            <i class="bi bi-activity"></i>
-            Task Tracker
-
-        </a> *@
-
-        @* <a asp-controller="MOM"
-           asp-action="Index"
-           asp-route-projectId="@Model.Id"
-           class="btn-app btn-secondary-app">
-
-            <i class="bi bi-journal-text"></i>
-            MOM
-
-        </a>
-
-        <a asp-controller="Risk"
-           asp-action="Index"
-           asp-route-projectId="@Model.Id"
-           class="btn-app btn-secondary-app">
-
-            <i class="bi bi-exclamation-triangle"></i>
-            Risks
-
-        </a> *@
+        
 
     </div>
 
