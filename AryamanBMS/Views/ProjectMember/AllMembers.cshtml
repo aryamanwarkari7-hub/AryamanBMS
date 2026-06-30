@@ -52,11 +52,12 @@
             </a>
 
             <a asp-controller="Project"
-               asp-action="Details"
+               asp-action="Dashboard"
                asp-route-id="@selectedProjectId"
                class="btn-app btn-secondary-app">
 
-                Back to Project
+                <i class="bi bi-kanban"></i>
+                Workspace
 
             </a>
         }
@@ -140,7 +141,8 @@
     </div>
 
     <div class="card-body">
-        <table class="app-table">
+        <div class="table-responsive">
+            <table class="app-table">
             <thead>
                 <tr>
                     <th>Project</th>
@@ -258,6 +260,7 @@
                 }
             </tbody>
         </table>
+        </div>
     </div>
 </div>
 

@@ -23,18 +23,34 @@
         <h1 class="module-title">Task Updates</h1>
 
         <p class="module-subtitle">
-            Record and monitor project task progress
+            Record and monitor project task updates
         </p>
     </div>
 
-    <a asp-action="Create"
-       asp-route-projectTaskId="@ViewBag.ProjectTaskId"
-       class="btn-app btn-primary-app">
+    <div class="module-header-actions">
 
-        <i class="bi bi-plus-lg"></i>
-        Add Progress
+        @if (ViewBag.ProjectId != null)
+        {
+            <a asp-controller="Project"
+               asp-action="Dashboard"
+               asp-route-id="@ViewBag.ProjectId"
+               class="btn-app btn-secondary-app">
+                <i class="bi bi-kanban"></i>
+                Workspace
+            </a>
+        }
 
-    </a>
+        <a asp-action="Create"
+           asp-route-projectId="@ViewBag.ProjectId"
+           asp-route-projectTaskId="@ViewBag.ProjectTaskId"
+           class="btn-app btn-primary-app">
+
+            <i class="bi bi-plus-lg"></i>
+            Add Update
+
+        </a>
+
+    </div>
 
 </div>
 
@@ -134,7 +150,7 @@
 <div class="app-card table-card">
 
     <div class="card-header">
-        <h5 class="card-title">Task Progress Records</h5>
+        <h5 class="card-title">Task Updates</h5>
     </div>
 
     <div class="card-body">
@@ -148,10 +164,10 @@
                     <tr>
                         <th>Project</th>
                         <th>Task</th>
-                        <th>Progress Date</th>
+                        <th>Update Date</th>
                         <th>Hours Worked</th>
-                        <th>Completion</th>
-                        <th>Progress Notes</th>
+                        <th>Task Completion %</th>
+                        <th>Update Notes</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -277,7 +293,7 @@
                             <td colspan="8"
                                 class="text-center text-muted">
 
-                                No task progress records found.
+                                No task updates found.
 
                             </td>
 

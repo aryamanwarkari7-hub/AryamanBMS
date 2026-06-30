@@ -137,30 +137,7 @@
                     </select>
                 </div>
 
-                <div class="form-group">
-                    <label asp-for="Status">Status</label>
-
-                    <select asp-for="Status"
-                            class="app-select">
-
-                        <option value="Not Started">Not Started</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Completed">Completed</option>
-                        <option value="On Hold">On Hold</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label asp-for="ProgressPercent">
-                        Progress Percentage
-                    </label>
-
-                    <input asp-for="ProgressPercent"
-                           type="number"
-                           min="0"
-                           max="100"
-                           class="app-input" />
-                </div>
+                
 
                 <div class="form-group">
                     <label asp-for="EstimatedHours">
@@ -174,17 +151,7 @@
                            class="app-input" />
                 </div>
 
-                <div class="form-group">
-                    <label asp-for="ActualHours">
-                        Actual Hours
-                    </label>
-
-                    <input asp-for="ActualHours"
-                           type="number"
-                           step="0.01"
-                           min="0"
-                           class="app-input" />
-                </div>
+               
 
             </div>
 

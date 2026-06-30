@@ -6,6 +6,11 @@
     var meeting = Model.Meeting;
     var employees = Model.Employees
         ?? Enumerable.Empty<AryamanBMS.Models.EmployeeModel>();
+   
+    var activeActionItems =
+        meeting.ActionItems
+            .Where(a => a.IsActive)
+            .ToList();
 }
 
 <div class="module-header">
@@ -19,14 +24,17 @@
 
     <div class="d-flex gap-2">
 
-        <a asp-action="Edit"
-           asp-route-id="@meeting.Id"
-           class="btn-app btn-primary-app">
+        @if (ViewBag.CanEditMeeting == true)
+        {
+            <a asp-action="Edit"
+               asp-route-id="@meeting.Id"
+               class="btn-app btn-primary-app">
 
-            <i class="bi bi-pencil"></i>
-            Edit
+                <i class="bi bi-pencil"></i>
+                Edit
 
-        </a>
+            </a>
+        }
 
         <a asp-action="Index"
            asp-route-projectId="@meeting.ProjectId"
@@ -421,9 +429,9 @@
 
                 <tbody>
 
-                    @if (meeting.ActionItems.Any())
+                    @if (activeActionItems.Any())
                     {
-                        foreach (var item in meeting.ActionItems)
+                        foreach (var item in activeActionItems)
                         {
                             <tr>
 
@@ -479,7 +487,7 @@
 
                                             <button type="submit"
                                                     class="btn-icon btn-danger-app"
-                                                    title="Delete">
+                                                    title="Deactivate">
 
                                                 <i class="bi bi-trash"></i>
 

@@ -41,30 +41,16 @@
 
             <div class="form-grid-2">
 
+                <input type="hidden" asp-for="ProjectId" />
+
                 <div class="form-group">
 
-                    <label asp-for="ProjectId">Project</label>
+                    <label>Project</label>
 
-                    <select asp-for="ProjectId"
-                            class="app-select">
-
-                        <option value="">Select Project</option>
-
-                        @foreach (var project in ViewBag.Projects)
-                        {
-                            <option value="@project.Id">
-
-                                @project.ProjectCode -
-                                @project.ProjectName
-
-                            </option>
-                        }
-
-                    </select>
-
-                    <span asp-validation-for="ProjectId"
-                          class="validation-message">
-                    </span>
+                    <input type="text"
+                           class="app-input"
+                           value="@Model.Project?.ProjectCode - @Model.Project?.ProjectName"
+                           readonly />
 
                 </div>
 

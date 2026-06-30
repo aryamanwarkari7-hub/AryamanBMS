@@ -1,4 +1,4 @@
-﻿B@model IEnumerable<AryamanBMS.Models.ProjectRiskModel>
+﻿@model IEnumerable<AryamanBMS.Models.ProjectRiskModel>
 
 @using AryamanBMS.Models
 
@@ -23,14 +23,29 @@
         </p>
     </div>
 
-    <a asp-action="Create"
-       asp-route-projectId="@ViewBag.ProjectId"
-       class="btn-app btn-primary-app">
+    <div class="module-header-actions">
 
-        <i class="bi bi-plus-lg"></i>
-        Add Risk
+        @if (ViewBag.ProjectId != null)
+        {
+            <a asp-controller="Project"
+               asp-action="Dashboard"
+               asp-route-id="@ViewBag.ProjectId"
+               class="btn-app btn-secondary-app">
+                <i class="bi bi-kanban"></i>
+                Workspace
+            </a>
+        }
 
-    </a>
+        <a asp-action="Create"
+           asp-route-projectId="@ViewBag.ProjectId"
+           class="btn-app btn-primary-app">
+
+            <i class="bi bi-plus-lg"></i>
+            Add Risk
+
+        </a>
+
+    </div>
 
 </div>
 
@@ -301,9 +316,9 @@
                                         <a asp-action="Delete"
                                            asp-route-id="@risk.Id"
                                            class="btn-app btn-icon btn-danger-app btn-delete"
-                                           title="Delete">
+                                           title="Deactivate">
 
-                                            <i class="bi bi-trash"></i>
+                                            <i class="bi bi-x-circle"></i>
 
                                         </a>
 

@@ -1,7 +1,7 @@
 ﻿@model AryamanBMS.Models.ProjectFlowModel
 
 @{
-    ViewData["Title"] = "Edit Project Stage";
+    ViewData["Title"] = "Edit Milestone";
 }
 
 <div class="module-header">
@@ -9,7 +9,7 @@
     <div>
         <h1 class="module-title">Edit Milestone</h1>
         <p class="module-subtitle">
-            Update lifecycle stage information
+            Update project milestone information
         </p>
     </div>
 
@@ -36,38 +36,27 @@
     <div class="app-card">
 
         <div class="card-header">
-            <h5 class="card-title">Stage Information</h5>
+            <h5 class="card-title">Milestone Information</h5>
         </div>
 
         <div class="card-body">
 
             <div class="form-grid-2">
 
+                <input type="hidden" asp-for="ProjectId" />
+
                 <div class="form-group">
-                    <label asp-for="ProjectId">Project</label>
+                    <label>Project</label>
 
-                    <select asp-for="ProjectId"
-                            class="app-select">
-
-                        <option value="">Select Project</option>
-
-                        @foreach (var project in ViewBag.Projects)
-                        {
-                            <option value="@project.Id">
-                                @project.ProjectCode - @project.ProjectName
-                            </option>
-                        }
-
-                    </select>
-
-                    <span asp-validation-for="ProjectId"
-                          class="validation-message">
-                    </span>
+                    <input type="text"
+                           class="app-input"
+                           value="@Model.Project?.ProjectCode - @Model.Project?.ProjectName"
+                           readonly />
                 </div>
 
                 <div class="form-group">
                     <label asp-for="StageOrder">
-                        Stage Order
+                        Sequence
                     </label>
 
                     <input asp-for="StageOrder"
@@ -82,7 +71,7 @@
 
                 <div class="form-group">
                     <label asp-for="StageName">
-                        Stage Name
+                        Milestone Name
                     </label>
 
                     <input asp-for="StageName"
@@ -95,7 +84,7 @@
 
                 <div class="form-group">
                     <label asp-for="StageStatus">
-                        Stage Status
+                        Milestone Status
                     </label>
 
                     <select asp-for="StageStatus"
@@ -111,6 +100,10 @@
                     <span asp-validation-for="StageStatus"
                           class="validation-message">
                     </span>
+
+                    <small class="text-muted">
+                        Actual dates are adjusted automatically based on milestone status.
+                    </small>
                 </div>
 
                 <div class="form-group">
@@ -142,7 +135,7 @@
 
                 <div class="form-group">
                     <label asp-for="ActualStartDate">
-                        Actual Start Date
+                        Actual Start Date / Started On
                     </label>
 
                     <input asp-for="ActualStartDate"
@@ -152,7 +145,7 @@
 
                 <div class="form-group">
                     <label asp-for="ActualEndDate">
-                        Actual End Date
+                        Actual End Date / Completed On
                     </label>
 
                     <input asp-for="ActualEndDate"
@@ -176,6 +169,7 @@
                         <option value="false">Inactive</option>
 
                     </select>
+
                 </div>
 
             </div>

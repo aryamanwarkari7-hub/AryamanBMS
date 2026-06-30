@@ -186,22 +186,22 @@ namespace AryamanBMS.Controllers
                 }
             }
 
-            if (string.Equals(
-               model.Status,
-               "Completed",
-               StringComparison.OrdinalIgnoreCase))
-            {
-                model.ProgressPercent = 100;
-            }
+            //if (string.Equals(
+            //   model.Status,
+            //   "Completed",
+            //   StringComparison.OrdinalIgnoreCase))
+            //{
+            //    model.ProgressPercent = 100;
+            //}
 
-            if (model.ProgressPercent == 100 &&
-              !string.Equals(
-                  model.Status,
-                  "Completed",
-                  StringComparison.OrdinalIgnoreCase))
-            {
-                model.Status = "Completed";
-            }
+            //if (model.ProgressPercent == 100 &&
+            //  !string.Equals(
+            //      model.Status,
+            //      "Completed",
+            //      StringComparison.OrdinalIgnoreCase))
+            //{
+            //    model.Status = "Completed";
+            //}
 
             if (!ModelState.IsValid)
             {
@@ -213,6 +213,9 @@ namespace AryamanBMS.Controllers
 
             model.TaskCode = model.TaskCode.Trim().ToUpper();
             model.TaskTitle = model.TaskTitle.Trim();
+            model.Status = "Not Started";
+            model.ProgressPercent = 0;
+            model.ActualHours = 0;
             model.CreatedOn = DateTime.Now;
             model.IsActive = true;
 
@@ -322,22 +325,7 @@ namespace AryamanBMS.Controllers
                 }
             }
 
-            if (string.Equals(
-              model.Status,
-              "Completed",
-              StringComparison.OrdinalIgnoreCase))
-            {
-                model.ProgressPercent = 100;
-            }
-
-            if (model.ProgressPercent == 100 &&
-              !string.Equals(
-                model.Status,
-                "Completed",
-              StringComparison.OrdinalIgnoreCase))
-            {
-                model.Status = "Completed";
-            }
+            
 
             if (!ModelState.IsValid)
             {
@@ -369,7 +357,6 @@ namespace AryamanBMS.Controllers
                 existing.AssignedEmployeeId;
 
 
-
             existing.ProjectId = model.ProjectId;
             existing.AssignedEmployeeId = model.AssignedEmployeeId;
             existing.TaskCode = model.TaskCode.Trim().ToUpper();
@@ -378,10 +365,7 @@ namespace AryamanBMS.Controllers
             existing.StartDate = model.StartDate;
             existing.DueDate = model.DueDate;
             existing.Priority = model.Priority;
-            existing.Status = model.Status;
-            existing.ProgressPercent = model.ProgressPercent;
             existing.EstimatedHours = model.EstimatedHours;
-            existing.ActualHours = model.ActualHours;
             existing.IsActive = model.IsActive;
             existing.UpdatedOn = DateTime.Now;
 

@@ -1,7 +1,7 @@
 ﻿@model AryamanBMS.Models.ProjectFlowModel
 
 @{
-    ViewData["Title"] = "Delete Project Stage";
+    ViewData["Title"] = "Deactivate Milestone";
 }
 
 <div class="module-header">
@@ -24,13 +24,13 @@
 <div class="app-card">
 
     <div class="card-header">
-        <h5 class="card-title">Stage Information</h5>
+        <h5 class="card-title">Milestone Information</h5>
     </div>
 
     <div class="card-body">
 
         <div class="alert alert-danger">
-            Are you sure you want to permanently delete this project stage?
+            Are you sure you want to deactivate this milestone?
         </div>
 
         <table class="app-table">
@@ -46,17 +46,17 @@
                 </tr>
 
                 <tr>
-                    <th>Stage Order</th>
+                    <th>Sequence</th>
                     <td>@Model.StageOrder</td>
                 </tr>
 
                 <tr>
-                    <th>Stage Name</th>
+                    <th>Milestone Name</th>
                     <td>@Model.StageName</td>
                 </tr>
 
                 <tr>
-                    <th>Stage Status</th>
+                    <th>Milestone Status</th>
                     <td>@Model.StageStatus</td>
                 </tr>
 

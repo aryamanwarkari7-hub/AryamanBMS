@@ -18,6 +18,14 @@
             Edit Task
         </a>
 
+        <a asp-controller="TaskTracker"
+           asp-action="Index"
+           asp-route-projectTaskId="@Model.Id"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-activity"></i>
+            Task Updates
+        </a>
+
         <a asp-action="Index"
            asp-route-projectId="@Model.ProjectId"
            class="btn-app btn-secondary-app">
@@ -94,7 +102,7 @@
                 </tr>
 
                 <tr>
-                    <th>Progress</th>
+                    <th>Task Completion %</th>
                     <td>@Model.ProgressPercent%</td>
                 </tr>
 
@@ -144,7 +152,7 @@
                 </tr>
 
                 <tr>
-                    <th>Actual Hours</th>
+                    <th>Actual Hours Logged</th>
                     <td>@Model.ActualHours.ToString("0.##")</td>
                 </tr>
 

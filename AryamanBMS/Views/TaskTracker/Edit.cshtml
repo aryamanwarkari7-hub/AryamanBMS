@@ -3,20 +3,23 @@
 @using AryamanBMS.Models
 
 @{
-    ViewData["Title"] = "Edit Task Progress";
+    ViewData["Title"] = "Edit Task Update";
 
     var tasks =
         ViewBag.Tasks as IEnumerable<ProjectTaskModel>
         ?? Enumerable.Empty<ProjectTaskModel>();
+
+    var selectedTask =
+tasks.FirstOrDefault(t => t.Id == Model.ProjectTaskId);
 }
 
 <div class="module-header">
 
     <div>
-        <h1 class="module-title">Edit Task Progress</h1>
+        <h1 class="module-title">Edit Task Update</h1>
 
         <p class="module-subtitle">
-            Update recorded task progress information
+            Update recorded task work information
         </p>
     </div>
 
@@ -35,8 +38,8 @@
 
     @Html.AntiForgeryToken()
 
-    <input type="hidden"
-           asp-for="Id" />
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="ProjectTaskId" />
 
     <div asp-validation-summary="ModelOnly"
          class="validation-message">
@@ -45,7 +48,7 @@
     <div class="app-card">
 
         <div class="card-header">
-            <h5 class="card-title">Progress Information</h5>
+            <h5 class="card-title">Task Update Information</h5>
         </div>
 
         <div class="card-body">
@@ -54,27 +57,14 @@
 
                 <div class="form-group">
 
-                    <label asp-for="ProjectTaskId">
+                    <label>
                         Project Task
                     </label>
 
-                    <select asp-for="ProjectTaskId"
-                            class="app-select">
-
-                        <option value="">Select Project Task</option>
-
-                        @foreach (var task in tasks)
-                        {
-                            <option value="@task.Id">
-
-                                @task.Project?.ProjectCode -
-                                @task.TaskCode -
-                                @task.TaskTitle
-
-                            </option>
-                        }
-
-                    </select>
+                    <input type="text"
+                           class="app-input"
+                           value="@(selectedTask == null ? "-" : $"{selectedTask.Project?.ProjectCode} - {selectedTask.TaskCode} - {selectedTask.TaskTitle}")"
+                           readonly />
 
                     <span asp-validation-for="ProjectTaskId"
                           class="validation-message">
@@ -85,7 +75,7 @@
                 <div class="form-group">
 
                     <label asp-for="ProgressDate">
-                        Progress Date
+                        Update Date
                     </label>
 
                     <input asp-for="ProgressDate"
@@ -121,7 +111,7 @@
                 <div class="form-group">
 
                     <label asp-for="CompletionPercentage">
-                        Completion Percentage
+                        Task Completion %
                     </label>
 
                     <input asp-for="CompletionPercentage"
@@ -161,7 +151,7 @@
             <div class="form-group mt-3">
 
                 <label asp-for="ProgressNotes">
-                    Progress Notes
+                    Update Notes
                 </label>
 
                 <textarea asp-for="ProgressNotes"
@@ -188,7 +178,7 @@
                     class="btn-app btn-primary-app">
 
                 @* <i class="bi bi-check-lg"></i> *@
-                Update Progress
+                 Save Update
 
             </button>
 

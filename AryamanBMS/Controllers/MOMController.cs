@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,HR,ProjectManager")]
+    [Authorize(Roles = "Admin,HR,ProjectManager,Employee")]
     public class MOMController : Controller
     {
         private readonly IProjectMeetingRepository _meetingRepository;
@@ -39,16 +39,11 @@ namespace AryamanBMS.Controllers
         {
             var meetings = _meetingRepository.Meetings;
 
-            var accessibleProjects =
-                await _projectAccessService.ApplyProjectFilterAsync(
-                    User,
-                    _projectRepository.Projects.Where(p => p.IsActive));
+            var accessibleProjects =  await GetAccessibleMomProjectsAsync();
 
             if (projectId.HasValue)
             {
-                if (!await _projectAccessService.CanAccessProjectAsync(
-                    User,
-                    projectId.Value))
+                if (!await CanAccessMomProjectAsync(projectId.Value))
                 {
                     return Forbid();
                 }
@@ -104,9 +99,7 @@ namespace AryamanBMS.Controllers
             await LoadProjectsAsync();
 
             if (projectId.HasValue &&
-             !await _projectAccessService.CanAccessProjectAsync(
-                 User,
-                 projectId.Value))
+             !await CanAccessMomProjectAsync(projectId.Value))
             {
                 return Forbid();
             }
@@ -128,14 +121,20 @@ namespace AryamanBMS.Controllers
         {
 
             if (model.ProjectId > 0 &&
-             !await _projectAccessService.CanAccessProjectAsync(
-                 User,
-                 model.ProjectId))
+             !await CanAccessMomProjectAsync(model.ProjectId))
             {
                 return Forbid();
             }
 
             await ValidateMeetingAsync(model);
+
+            if (!await CanCreateMomAsync(model))
+            {
+                ModelState.AddModelError(
+                    nameof(model.MeetingDate),
+                    "MOM can be created by the project manager or active project members within " +
+                    "24 hours of the meeting. " +  "Contact HR/Admin for late MOM entry.");
+            }
 
             if (!ModelState.IsValid)
             {
@@ -151,6 +150,7 @@ namespace AryamanBMS.Controllers
             model.DecisionsTaken =
                 model.DecisionsTaken?.Trim();
 
+            model.MeetingStatus = "Completed";
             model.CreatedOn = DateTime.Now;
             model.IsActive = true;
 
@@ -185,9 +185,7 @@ namespace AryamanBMS.Controllers
             if (meeting == null)
                 return NotFound();
 
-            if (!await _projectAccessService.CanAccessProjectAsync(
-    User,
-    meeting.ProjectId))
+            if (!await CanAccessMomProjectAsync(meeting.ProjectId))
             {
                 return Forbid();
             }
@@ -198,6 +196,8 @@ namespace AryamanBMS.Controllers
                 Employees = await GetProjectMembersAsync(meeting.ProjectId)
             };
 
+            ViewBag.CanEditMeeting = await CanEditMeetingAsync(meeting);
+
             return View(viewModel);
         }
 
@@ -205,14 +205,17 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> Edit(int id)
         {
             var meeting =
-                await _meetingRepository.GetByIdAsync(id);
-
+             await _meetingRepository.GetDetailsAsync(id);
+ 
             if (meeting == null)
                 return NotFound();
 
-            if (!await _projectAccessService.CanAccessProjectAsync(
-    User,
-    meeting.ProjectId))
+            if(!await CanAccessMomProjectAsync(meeting.ProjectId))
+            {
+                return Forbid();
+            }
+
+            if (!await CanEditMeetingAsync(meeting))
             {
                 return Forbid();
             }
@@ -226,14 +229,6 @@ namespace AryamanBMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(ProjectMeetingModel model)
         {
-            if (model.ProjectId > 0 &&
-               !await _projectAccessService.CanAccessProjectAsync(
-                   User,
-                   model.ProjectId))
-            {
-                return Forbid();
-            }
-
             await ValidateMeetingAsync(model);
 
             if (!ModelState.IsValid)
@@ -248,9 +243,13 @@ namespace AryamanBMS.Controllers
             if (existing == null)
                 return NotFound();
 
-            if (!await _projectAccessService.CanAccessProjectAsync(
-               User,
-               existing.ProjectId))
+            model.ProjectId = existing.ProjectId;
+
+            if (!await CanAccessMomProjectAsync(existing.ProjectId))
+            {
+                return Forbid();
+            }
+            if (!await CanEditMeetingAsync(existing))
             {
                 return Forbid();
             }
@@ -258,7 +257,7 @@ namespace AryamanBMS.Controllers
             string previousMeetingStatus =
                 existing.MeetingStatus ?? string.Empty;
 
-            existing.ProjectId = model.ProjectId;
+            
             existing.MeetingTitle = model.MeetingTitle.Trim();
             existing.MeetingDate = model.MeetingDate;
             existing.StartTime = model.StartTime;
@@ -298,11 +297,10 @@ namespace AryamanBMS.Controllers
                     newValue: existing.MeetingStatus);
             }
 
-            bool wasCompleted =
-    string.Equals(
-        previousMeetingStatus,
-        "Completed",
-        StringComparison.OrdinalIgnoreCase);
+            bool wasCompleted =   string.Equals(
+                 previousMeetingStatus,
+                 "Completed",
+                 StringComparison.OrdinalIgnoreCase);
 
             bool isCompleted =
                 string.Equals(
@@ -342,9 +340,7 @@ namespace AryamanBMS.Controllers
             if (meeting == null)
                 return NotFound();
 
-            if (!await _projectAccessService.CanAccessProjectAsync(
-    User,
-    meeting.ProjectId))
+            if (!await CanAccessMomProjectAsync(meeting.ProjectId))
             {
                 return Forbid();
             }
@@ -362,20 +358,24 @@ namespace AryamanBMS.Controllers
             if (meeting == null)
                 return NotFound();
 
-            if (!await _projectAccessService.CanAccessProjectAsync(
-              User,
-              meeting.ProjectId))
+            if (!await CanAccessMomProjectAsync(meeting.ProjectId))
             {
                 return Forbid();
             }
 
-            await _meetingRepository.DeleteAsync(meeting);
+            int projectId = meeting.ProjectId;
+
+            meeting.IsActive = false;
+            meeting.UpdatedOn = DateTime.Now;
+
+            await _meetingRepository.UpdateAsync(meeting);
             await _meetingRepository.SaveAsync();
 
             TempData["Success"] =
-                "Meeting deleted successfully.";
+                "Meeting deactivated successfully.";
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction
+                (nameof(Index),new { projectId });
         }
 
         [HttpPost]
@@ -392,9 +392,7 @@ namespace AryamanBMS.Controllers
             if (meeting == null)
                 return NotFound();
 
-            if (!await _projectAccessService.CanAccessProjectAsync(
-                User,
-                meeting.ProjectId))
+            if(!await CanAccessMomProjectAsync(meeting.ProjectId))
             {
                 return Forbid();
             }
@@ -465,9 +463,7 @@ namespace AryamanBMS.Controllers
             if (meeting == null)
                 return NotFound();
 
-            if (!await _projectAccessService.CanAccessProjectAsync(
-                User,
-                meeting.ProjectId))
+            if (!await CanAccessMomProjectAsync(meeting.ProjectId))
             {
                 return Forbid();
             }
@@ -496,9 +492,7 @@ namespace AryamanBMS.Controllers
             if (meeting == null)
                 return NotFound();
 
-            if (!await _projectAccessService.CanAccessProjectAsync(
-                User,
-                meeting.ProjectId))
+            if (!await CanAccessMomProjectAsync(meeting.ProjectId))
             {
                 return Forbid();
             }
@@ -552,9 +546,7 @@ namespace AryamanBMS.Controllers
             if (meeting == null)
                 return NotFound();
 
-            if (!await _projectAccessService.CanAccessProjectAsync(
-              User,
-              meeting.ProjectId))
+            if (!await CanAccessMomProjectAsync(meeting.ProjectId))
             {
                 return Forbid();
             }
@@ -584,9 +576,7 @@ namespace AryamanBMS.Controllers
             if (meeting == null)
                 return NotFound();
 
-            if (!await _projectAccessService.CanAccessProjectAsync(
-              User,
-              meeting.ProjectId))
+            if (!await CanAccessMomProjectAsync(meeting.ProjectId))
             {
                 return Forbid();
             }
@@ -644,20 +634,21 @@ namespace AryamanBMS.Controllers
             if (meeting == null)
                 return NotFound();
 
-            if (!await _projectAccessService.CanAccessProjectAsync(
-                User,
-                meeting.ProjectId))
+            if (!await CanAccessMomProjectAsync(meeting.ProjectId))
             {
                 return Forbid();
             }
 
             int meetingId = actionItem.MeetingId;
 
-            await _meetingRepository.DeleteActionItemAsync(actionItem);
+            actionItem.IsActive = false;
+            actionItem.UpdatedOn = DateTime.Now;
+
+            await _meetingRepository.UpdateActionItemAsync(actionItem);
             await _meetingRepository.SaveAsync();
 
             TempData["Success"] =
-                "Meeting action item deleted successfully.";
+                "Meeting action item deactivated successfully.";
 
             return RedirectToAction(
                 nameof(Details),
@@ -666,10 +657,7 @@ namespace AryamanBMS.Controllers
 
         private async Task LoadProjectsAsync()
         {
-            var projects =
-                await _projectAccessService.ApplyProjectFilterAsync(
-                    User,
-                    _projectRepository.Projects.Where(p => p.IsActive));
+            var projects = await GetAccessibleMomProjectsAsync();
 
             ViewBag.Projects =
                 await projects
@@ -725,6 +713,26 @@ namespace AryamanBMS.Controllers
                 ModelState.AddModelError(
                     nameof(model.EndTime),
                     "End time must be after start time.");
+            }
+
+            if (string.Equals(
+               model.MeetingStatus,
+               "Completed",
+               StringComparison.OrdinalIgnoreCase))
+            {
+                if (!model.EndTime.HasValue)
+                {
+                    ModelState.AddModelError(
+                        nameof(model.EndTime),
+                        "End time is required for a completed meeting.");
+                }
+
+                if (string.IsNullOrWhiteSpace(model.DiscussionSummary))
+                {
+                    ModelState.AddModelError(
+                        nameof(model.DiscussionSummary),
+                        "Discussion summary is required for MOM.");
+                }
             }
 
             if (model.NextMeetingDate.HasValue &&
@@ -805,6 +813,114 @@ namespace AryamanBMS.Controllers
                     pm.ProjectId == projectId &&
                     pm.EmployeeId == employeeId &&
                     pm.IsActive);
+        }
+
+        private async Task<bool> CanAccessMomProjectAsync(int projectId)
+        {
+            if (await _projectAccessService.CanAccessProjectAsync(User, projectId))
+            {
+                return true;
+            }
+
+            int? currentEmployeeId =
+                await _projectAccessService.GetCurrentEmployeeIdAsync(User);
+
+            if (!currentEmployeeId.HasValue)
+            {
+                return false;
+            }
+
+            return await IsActiveProjectMemberAsync(
+                projectId,
+                currentEmployeeId.Value);
+        }
+
+        private async Task<IQueryable<ProjectModel>> GetAccessibleMomProjectsAsync()
+        {
+            var activeProjects =
+                _projectRepository.Projects.Where(p => p.IsActive);
+
+            if (User.IsInRole("Admin") || User.IsInRole("HR"))
+            {
+                return activeProjects;
+            }
+
+            int? currentEmployeeId =
+                await _projectAccessService.GetCurrentEmployeeIdAsync(User);
+
+            if (!currentEmployeeId.HasValue)
+            {
+                return activeProjects.Where(p => false);
+            }
+
+            var memberProjectIds =
+                await _projectMemberRepository.ProjectMembers
+                    .Where(pm =>
+                        pm.EmployeeId == currentEmployeeId.Value &&
+                        pm.IsActive)
+                    .Select(pm => pm.ProjectId)
+                    .ToListAsync();
+
+            return activeProjects.Where(p =>
+                p.ProjectManagerId == currentEmployeeId.Value ||
+                memberProjectIds.Contains(p.Id));
+        }
+
+        private async Task<bool> CanEditMeetingAsync(ProjectMeetingModel meeting)
+        {
+            int? currentEmployeeId =
+                await _projectAccessService.GetCurrentEmployeeIdAsync(User);
+
+            if (!currentEmployeeId.HasValue)
+            {
+                return false;
+            }
+
+            var project =
+                await _projectRepository.Projects
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(p => p.Id == meeting.ProjectId);
+
+            return project != null &&
+                   project.ProjectManagerId == currentEmployeeId.Value;
+        }
+
+        private async Task<bool> CanCreateMomAsync(ProjectMeetingModel model)
+        {
+            if (User.IsInRole("Admin") || User.IsInRole("HR"))
+            {
+                return true;
+            }
+
+            DateTime meetingStart =
+                model.MeetingDate.Date.Add(model.StartTime);
+
+            DateTime now = DateTime.Now;
+
+            if (meetingStart > now ||
+                now - meetingStart > TimeSpan.FromHours(24))
+            {
+                return false;
+            }
+
+            if (await _projectAccessService.CanAccessProjectAsync(
+                User,
+                model.ProjectId))
+            {
+                return true;
+            }
+
+            int? currentEmployeeId =
+                await _projectAccessService.GetCurrentEmployeeIdAsync(User);
+
+            if (!currentEmployeeId.HasValue)
+            {
+                return false;
+            }
+
+            return await IsActiveProjectMemberAsync(
+                model.ProjectId,
+                currentEmployeeId.Value);
         }
     }
 }

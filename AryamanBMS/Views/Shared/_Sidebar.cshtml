@@ -33,7 +33,14 @@
         currentUser != null &&
         await UserManager.IsInRoleAsync(currentUser, "Employee");
 
+    var isProjectManager =
+          currentUser != null &&
+          await UserManager.IsInRoleAsync(currentUser, "ProjectManager");
+
     var isAdminOrHR = isAdmin || isHR;
+
+    var canAccessProjectManagement =
+        isAdminOrHR || isProjectManager || isEmployee;
 
     var isEmployeeOnly =
         isEmployee && !isAdmin && !isHR;
@@ -395,6 +402,15 @@
                                     <span>My Attendance</span>
 
                                 </a>
+
+                                <a asp-controller="Attendance"
+                                   asp-action="MyMonthly"
+                                   class="submenu-item nested-item @(currentController == "Attendance" && currentAction == "MyMonthly" ? "active-menu" : "")">
+
+                                    <i class="bi bi-calendar3"></i>
+                                    <span>Monthly Attendance</span>
+
+                                </a>
                             }
 
                             @if (isAdminOrHR)
@@ -538,8 +554,8 @@
 
         
         @if (isAdminOrHR)
-        {
-            @* Sales *@
+        { }
+        @* Sales *@
             @* <div class="menu-group">
 
                 <button class="menu-group-header"
@@ -576,104 +592,123 @@
             </div> *@
 
             @* Project Management *@
-            <div class="menu-group">
+            @if (canAccessProjectManagement)
+            {
+                <div class="menu-group">
 
-                <button class="menu-group-header @(isProjectActive ? "active-menu" : "")"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#projectMenu"
-                        aria-expanded="@isProjectActive.ToString().ToLower()">
+                    <button class="menu-group-header @(isProjectActive ? "active-menu" : "")"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#projectMenu"
+                    aria-expanded="@isProjectActive.ToString().ToLower()">
 
-                    <div class="menu-group-left">
-                        <i class="bi bi-kanban"></i>
-                        <span>Project Management</span>
-                    </div>
-
-                    <i class="bi bi-chevron-down"></i>
-
-                </button>
-
-                <div class="collapse @(isProjectActive ? "show" : "")"
-                     id="projectMenu"
-                     data-bs-parent="#sidebarAccordion">
-
-                    <div class="submenu">
-
-                        @* <a asp-controller="Project"
-                           asp-action="Dashboard"
-                           class="submenu-item @(currentController == "Project" && currentAction == "Dashboard" ? "active-menu" : "")">
-
-                            <i class="bi bi-speedometer2"></i>
-                            <span>Dashboard</span>
-
-                        </a> *@
-
-                        <a asp-controller="Project"
-                           asp-action="Index"
-                           class="submenu-item @(currentController == "Project" ? "active-menu" : "")">
-
+                        <div class="menu-group-left">
                             <i class="bi bi-kanban"></i>
-                            <span>Projects</span>
+                            <span>Project Management</span>
+                        </div>
 
-                        </a>
-                        <a asp-controller="ProjectMember"
-                           asp-action="AllMembers"
-                           class="submenu-item @(currentController == "ProjectMember" ? "active-menu" : "")">
+                        <i class="bi bi-chevron-down"></i>
 
-                            <i class="bi bi-people"></i>
-                            <span>Project Members</span>
+                    </button>
 
-                        </a>
-                        <a asp-controller="ProjectTask"
-                           asp-action="Index"
-                           class="submenu-item @(currentController == "ProjectTask" ? "active-menu" : "")">
+                    <div class="collapse @(isProjectActive ? "show" : "")"
+                    id="projectMenu"
+                    data-bs-parent="#sidebarAccordion">
 
-                            <i class="bi bi-list-task"></i>
-                            <span> Tasks</span>
-
-                        </a>
-                        <a asp-controller="TaskTracker"
-                           asp-action="Index"
-                           class="submenu-item @(currentController == "TaskTracker" ? "active-menu" : "")">
-
-                            <i class="bi bi-activity"></i>
-                            <span>Task Updates</span>
-
-                        </a>
-                        <a asp-controller="ProjectFlow"
-                           asp-action="Index"
-                           class="submenu-item @(currentController == "ProjectFlow" ? "active-menu" : "")">
-
-                            <i class="bi bi-diagram-3"></i>
-                            <span>Milestones</span>
-
-                        </a>
                         
-                        <a asp-controller="MOM"
-                           asp-action="Index"
-                           class="submenu-item @(currentController == "MOM" ? "active-menu" : "")">
+                        <div class="submenu">
 
-                            <i class="bi bi-journal-text"></i>
-                            <span>Meetings / MOM</span>
+                        @if (isAdmin || isHR)
+                        {
+                            <a asp-controller="Project"
+                            asp-action="Index"
+                            class="submenu-item @(currentController == "Project" ? "active-menu" : "")">
 
-                        </a>
-                        <a asp-controller="Risk"
-                           asp-action="Index"
-                           class="submenu-item @(currentController == "Risk" ? "active-menu" : "")">
+                                <i class="bi bi-kanban"></i>
+                                <span>Projects</span>
 
-                            <i class="bi bi-exclamation-triangle"></i>
-                            <span>Risk Register</span>
+                            </a>
+                        }
 
-                        </a>
+                        @if (isAdmin || isHR)
+                        {
+                            <a asp-controller="ProjectTask"
+                            asp-action="Index"
+                            class="submenu-item @(currentController == "ProjectTask" ? "active-menu" : "")">
+
+                                <i class="bi bi-list-task"></i>
+                                <span>Tasks</span>
+
+                            </a>
+                        }
+
+                        @if (isAdmin || isHR)
+                        {
+                            <a asp-controller="ProjectMember"
+                            asp-action="AllMembers"
+                            class="submenu-item @(currentController == "ProjectMember" ? "active-menu" : "")">
+
+                                <i class="bi bi-people"></i>
+                                <span>Members</span>
+
+                            </a>
+                        }
+
+
+                        @if (isAdmin || isHR)
+                        {
+                            <a asp-controller="ProjectFlow"
+                            asp-action="Index"
+                            class="submenu-item @(currentController == "ProjectFlow" ? "active-menu" : "")">
+
+                                <i class="bi bi-diagram-3"></i>
+                                <span>Milestones</span>
+
+                            </a>
+                        }
+
+                        @if (isAdmin || isHR)
+                        {
+                            <a asp-controller="TaskTracker"
+                            asp-action="Index"
+                            class="submenu-item @(currentController == "TaskTracker" ? "active-menu" : "")">
+
+                                <i class="bi bi-activity"></i>
+                                <span>Task Updates</span>
+
+                            </a>
+                        }
+
+                            <a asp-controller="MOM"
+                               asp-action="Index"
+                               class="submenu-item @(currentController == "MOM" ? "active-menu" : "")">
+
+                                <i class="bi bi-journal-text"></i>
+                                <span>Meetings</span>
+
+                            </a>
+
+                        @if (isAdmin || isHR)
+                        {
+                            <a asp-controller="Risk"
+                            asp-action="Index"
+                            class="submenu-item @(currentController == "Risk" ? "active-menu" : "")">
+
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <span>Risks</span>
+
+                            </a>
+                        }
+
+                        </div>                    
 
                     </div>
 
                 </div>
-
-            </div>
+            }
 
             @* Accounts & Finance *@
-            <div class="menu-group">
+            @* <div class="menu-group">
 
                 <button class="menu-group-header"
                         type="button"
@@ -705,8 +740,8 @@
 
                 </div>
 
-            </div>
-        }
+            </div> *@
+        @* } *@
 
     </div>
 

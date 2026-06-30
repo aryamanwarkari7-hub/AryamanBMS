@@ -10,12 +10,27 @@
         <p class="module-subtitle">Manage tasks across projects</p>
     </div>
 
-    <a asp-action="Create"
-       asp-route-projectId="@ViewBag.ProjectId"
-       class="btn-app btn-primary-app">
-        <i class="bi bi-plus-lg"></i>
-        Add Task
-    </a>
+    <div class="module-header-actions">
+
+        @if (ViewBag.ProjectId != null)
+        {
+            <a asp-controller="Project"
+               asp-action="Dashboard"
+               asp-route-id="@ViewBag.ProjectId"
+               class="btn-app btn-secondary-app">
+                <i class="bi bi-kanban"></i>
+                Workspace
+            </a>
+        }
+
+        <a asp-action="Create"
+           asp-route-projectId="@ViewBag.ProjectId"
+           class="btn-app btn-primary-app">
+            <i class="bi bi-plus-lg"></i>
+            Add Task
+        </a>
+
+    </div>
 </div>
 
 
@@ -130,7 +145,8 @@
     </div>
 
     <div class="card-body">
-        <table class="app-table">
+        <div class="table-responsive">
+            <table class="app-table">
             <thead>
                 <tr>
                     <th>Task Code</th>
@@ -139,7 +155,7 @@
                     <th>Assigned To</th>
                     <th>Priority</th>
                     <th>Status</th>
-                    <th>Progress</th>
+                    <th>Task Completion %</th>
                     <th>Due Date</th>
                     <th>Actions</th>
                 </tr>
@@ -192,6 +208,14 @@
                                         <i class="bi bi-pencil"></i>
                                     </a>
 
+                                    <a asp-controller="TaskTracker"
+                                       asp-action="Index"
+                                       asp-route-projectTaskId="@task.Id"
+                                       class="btn-app btn-secondary-app btn-icon"
+                                       title="Task Updates">
+                                        <i class="bi bi-activity"></i>
+                                    </a>
+
                                     <a asp-action="Delete"
                                        asp-route-id="@task.Id"
                                        class="btn-app btn-danger-app btn-icon"
@@ -215,6 +239,7 @@
                 }
             </tbody>
         </table>
+    </div>
     </div>
 </div>
 

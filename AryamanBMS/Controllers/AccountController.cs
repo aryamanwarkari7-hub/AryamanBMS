@@ -1,5 +1,7 @@
 ﻿using AryamanBMS.Models;
 using AryamanBMS.ViewModels;
+using AryamanBMS.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -11,13 +13,19 @@ namespace AryamanBMS.Controllers
     {
         private readonly SignInManager<ApplicationUserModel> _signInManager;
         private readonly UserManager<ApplicationUserModel> _userManager;
+        private readonly IEmployeeRepository _employeeRepository;
+        private readonly IAttendanceRepository _attendanceRepository;
 
         public AccountController(
-            SignInManager<ApplicationUserModel> signInManager,
-            UserManager<ApplicationUserModel> userManager)
+             SignInManager<ApplicationUserModel> signInManager,
+             UserManager<ApplicationUserModel> userManager,
+             IEmployeeRepository employeeRepository,
+             IAttendanceRepository attendanceRepository)
         {
             _signInManager = signInManager;
             _userManager = userManager;
+            _employeeRepository = employeeRepository;
+            _attendanceRepository = attendanceRepository;
         }
 
         [HttpGet]
@@ -73,7 +81,28 @@ namespace AryamanBMS.Controllers
                     !roles.Contains("Admin") &&
                     !roles.Contains("HR"))
                 {
-                    return RedirectToAction("Index", "Attendance");
+                    var employee =
+                        await _employeeRepository.Employees
+                            .FirstOrDefaultAsync(e =>
+                                e.ApplicationUserId == user.Id);
+
+                    if (employee == null)
+                    {
+                        return RedirectToAction("Index", "Attendance");
+                    }
+
+                    bool attendanceMarked =
+                        await _attendanceRepository.Attendances
+                            .AnyAsync(a =>
+                                a.EmployeeId == employee.Id &&
+                                a.AttendanceDate.Date == DateTime.Today);
+
+                    if (!attendanceMarked)
+                    {
+                        return RedirectToAction("Index", "Attendance");
+                    }
+
+                    return RedirectToAction("Profile", "Employee");
                 }
 
                 return RedirectToAction("Index", "Dashboard");

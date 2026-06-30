@@ -1,7 +1,7 @@
 ﻿@model AryamanBMS.Models.ProjectFlowModel
 
 @{
-    ViewData["Title"] = "Project Stage Details";
+    ViewData["Title"] = "Milestone Details";
 }
 
 <div class="module-header">
@@ -9,7 +9,7 @@
     <div>
         <h1 class="module-title">Milestone Details</h1>
         <p class="module-subtitle">
-            View lifecycle stage information
+            View project milestone information
         </p>
     </div>
 
@@ -37,7 +37,7 @@
 <div class="app-card">
 
     <div class="card-header">
-        <h5 class="card-title">Stage Information</h5>
+        <h5 class="card-title">Milestone Information</h5>
     </div>
 
     <div class="card-body">
@@ -55,17 +55,17 @@
                 </tr>
 
                 <tr>
-                    <th>Stage Order</th>
+                    <th>Sequence</th>
                     <td>@Model.StageOrder</td>
                 </tr>
 
                 <tr>
-                    <th>Stage Name</th>
+                    <th>Milestone Name</th>
                     <td>@Model.StageName</td>
                 </tr>
 
                 <tr>
-                    <th>Stage Status</th>
+                    <th>Milestone Status</th>
                     <td>@Model.StageStatus</td>
                 </tr>
 

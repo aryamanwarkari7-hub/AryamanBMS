@@ -173,17 +173,10 @@ namespace AryamanBMS.Controllers
             model.ResolutionRemarks =
                 model.ResolutionRemarks?.Trim();
 
+            model.RiskStatus = "Open";
+            model.ResolvedOn = null;
             model.CreatedOn = DateTime.Now;
             model.IsActive = true;
-
-            if (model.RiskStatus != "Resolved")
-            {
-                model.ResolvedOn = null;
-            }
-            else
-            {
-                model.ResolvedOn ??= DateTime.Today;
-            }
 
             await _riskRepository.AddAsync(model);
             await _riskRepository.SaveAsync();
@@ -230,7 +223,7 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> Edit(int id)
         {
             var risk =
-                await _riskRepository.GetByIdAsync(id);
+                await _riskRepository.GetDetailsAsync(id);
 
             if (risk == null)
                 return NotFound();
@@ -251,10 +244,18 @@ namespace AryamanBMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(ProjectRiskModel model)
         {
-            if (model.ProjectId > 0 &&
-              !await _projectAccessService.CanAccessProjectAsync(
-                  User,
-                  model.ProjectId))
+            var existing =
+              await _riskRepository.GetByIdAsync(model.Id);
+
+            if (existing == null)
+                return NotFound();
+
+            model.ProjectId = existing.ProjectId;
+            model.CreatedOn = existing.CreatedOn;
+
+            if (!await _projectAccessService.CanAccessProjectAsync(
+              User,
+              existing.ProjectId))
             {
                 return Forbid();
             }
@@ -265,21 +266,13 @@ namespace AryamanBMS.Controllers
 
             if (!ModelState.IsValid)
             {
+                model.Project =
+                    await _projectRepository.Projects
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(p => p.Id == existing.ProjectId);
+
                 await LoadDropdownsAsync(model.ProjectId);
                 return View(model);
-            }
-
-            var existing =
-              await _riskRepository.GetByIdAsync(model.Id);
-
-            if (existing == null)
-                return NotFound();
-
-            if (!await _projectAccessService.CanAccessProjectAsync(
-              User,
-              existing.ProjectId))
-            {
-                return Forbid();
             }
 
             string previousStatus =
@@ -288,7 +281,6 @@ namespace AryamanBMS.Controllers
             string previousSeverity =
                 existing.Severity ?? string.Empty;
 
-            existing.ProjectId = model.ProjectId;
             existing.RiskOwnerEmployeeId =
                 model.RiskOwnerEmployeeId;
             existing.RiskTitle = model.RiskTitle.Trim();
@@ -308,10 +300,10 @@ namespace AryamanBMS.Controllers
                 model.TargetResolutionDate;
             existing.ResolutionRemarks =
                 model.ResolutionRemarks?.Trim();
-            existing.IsActive = model.IsActive;
             existing.UpdatedOn = DateTime.Now;
 
-            if (model.RiskStatus == "Resolved")
+            if (model.RiskStatus == "Resolved" ||
+                model.RiskStatus == "Closed")
             {
                 existing.ResolvedOn =
                     model.ResolvedOn ?? DateTime.Today;
@@ -470,6 +462,38 @@ namespace AryamanBMS.Controllers
                 new { projectId });
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetProjectMembers(int projectId)
+        {
+            if (!await _projectAccessService.CanAccessProjectAsync(
+                User,
+                projectId))
+            {
+                return Forbid();
+            }
+
+            var members =
+                await _projectMemberRepository.ProjectMembers
+                    .Where(pm =>
+                        pm.ProjectId == projectId &&
+                        pm.IsActive &&
+                        pm.Employee != null &&
+                        pm.Employee.IsActive)
+                    .OrderBy(pm => pm.Employee!.FirstName)
+                    .ThenBy(pm => pm.Employee!.LastName)
+                    .Select(pm => new
+                    {
+                        id = pm.EmployeeId,
+                        name =
+                            pm.Employee!.EmployeeCode +
+                            " - " +
+                            pm.Employee.FullName
+                    })
+                    .ToListAsync();
+
+            return Json(members);
+        }
+
         private async Task LoadDropdownsAsync(int? projectId = null)
         {
             var projects =
@@ -590,13 +614,14 @@ namespace AryamanBMS.Controllers
                     "Resolved date cannot be before the risk creation date.");
             }
 
-            if (model.RiskStatus == "Resolved" &&
+            if ((model.RiskStatus == "Resolved" ||
+                 model.RiskStatus == "Closed") &&
                 string.IsNullOrWhiteSpace(
                     model.ResolutionRemarks))
             {
                 ModelState.AddModelError(
                     nameof(model.ResolutionRemarks),
-                    "Resolution remarks are required when the risk is resolved.");
+                    "Resolution remarks are required when the risk is resolved or closed.");
             }
         }
 

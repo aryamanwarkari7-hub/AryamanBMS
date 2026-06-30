@@ -8,18 +8,33 @@
     <div>
         <h1 class="module-title">Milestones</h1>
         <p class="module-subtitle">
-            Manage project lifecycle stages
+            Manage project milestones and key delivery checkpoints
         </p>
     </div>
 
-    <a asp-action="Create"
-       asp-route-projectId="@ViewBag.ProjectId"
-       class="btn-app btn-primary-app">
+    <div class="module-header-actions">
 
-        <i class="bi bi-plus-lg"></i>
-        Add Stage
+        @if (ViewBag.ProjectId != null)
+        {
+            <a asp-controller="Project"
+               asp-action="Dashboard"
+               asp-route-id="@ViewBag.ProjectId"
+               class="btn-app btn-secondary-app">
+                <i class="bi bi-kanban"></i>
+                Workspace
+            </a>
+        }
 
-    </a>
+        <a asp-action="Create"
+           asp-route-projectId="@ViewBag.ProjectId"
+           class="btn-app btn-primary-app">
+
+            <i class="bi bi-plus-lg"></i>
+            Add Milestone
+
+        </a>
+
+    </div>
 </div>
 
 
@@ -80,17 +95,16 @@
 
     <div class="card-body">
 
-        <table class="app-table">
+        <div class="table-responsive">
+            <table class="app-table">
 
             <thead>
                 <tr>
                     <th>Project</th>
-                    <th>Order</th>
-                    <th>Stage</th>
+                    <th>Sequence</th>
+                    <th>Milestone</th>
                     <th>Status</th>
-                    <th>Planned Start</th>
                     <th>Planned End</th>
-                    <th>Actual Start</th>
                     <th>Actual End</th>
                     <th>Active</th>
                     <th>Actions</th>
@@ -121,17 +135,13 @@
                                 @flow.StageStatus
                             </td>
 
-                            <td>
-                                @(flow.PlannedStartDate?.ToString("dd-MM-yyyy") ?? "-")
-                            </td>
+                            
 
                             <td>
                                 @(flow.PlannedEndDate?.ToString("dd-MM-yyyy") ?? "-")
                             </td>
 
-                            <td>
-                                @(flow.ActualStartDate?.ToString("dd-MM-yyyy") ?? "-")
-                            </td>
+                            
 
                             <td>
                                 @(flow.ActualEndDate?.ToString("dd-MM-yyyy") ?? "-")
@@ -191,9 +201,9 @@
                 else
                 {
                     <tr>
-                        <td colspan="10"
+                        <td colspan="8"
                             class="text-center text-muted">
-                            No project stages found.
+                            No milestones found.
                         </td>
                     </tr>
                 }
@@ -201,6 +211,6 @@
             </tbody>
 
         </table>
-
+        </div>
     </div>
 </div>

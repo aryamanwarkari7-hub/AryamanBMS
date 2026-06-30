@@ -1,16 +1,16 @@
 ﻿@model AryamanBMS.Models.ProjectTaskProgressModel
 
 @{
-    ViewData["Title"] = "Task Progress Details";
+    ViewData["Title"] = "Task Update Details";
 }
 
 <div class="module-header">
 
     <div>
-        <h1 class="module-title">Task Progress Details</h1>
+        <h1 class="module-title">Task Update Details</h1>
 
         <p class="module-subtitle">
-            View recorded task progress information
+            View recorded task update information
         </p>
     </div>
 
@@ -40,7 +40,7 @@
 <div class="app-card">
 
     <div class="card-header">
-        <h5 class="card-title">Progress Information</h5>
+        <h5 class="card-title">Task Update Information</h5>
     </div>
 
     <div class="card-body">
@@ -66,7 +66,7 @@
                 </tr>
 
                 <tr>
-                    <th>Progress Date</th>
+                    <th>Update Date</th>
                     <td>
                         @Model.ProgressDate.ToString("dd-MM-yyyy")
                     </td>
@@ -80,7 +80,7 @@
                 </tr>
 
                 <tr>
-                    <th>Completion</th>
+                    <th>Task Completion %</th>
                     <td>
                         <strong>
                             @Model.CompletionPercentage%
@@ -144,7 +144,7 @@
 <div class="app-card">
 
     <div class="card-header">
-        <h5 class="card-title">Progress Notes</h5>
+        <h5 class="card-title">Update Notes</h5>
     </div>
 
     <div class="card-body">

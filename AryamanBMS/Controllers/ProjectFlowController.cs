@@ -116,6 +116,9 @@ namespace AryamanBMS.Controllers
             }
 
             model.StageName = model.StageName.Trim();
+            model.StageStatus = "Pending";
+            model.ActualStartDate = null;
+            model.ActualEndDate = null;
             model.CreatedOn = DateTime.Now;
             model.IsActive = true;
 
@@ -123,17 +126,17 @@ namespace AryamanBMS.Controllers
             await _projectFlowRepository.SaveAsync();
 
             await _projectTimelineService.AddEventAsync(
-              projectId: model.ProjectId,
-              eventType: "FlowStageCreated",
-              eventTitle: "Project flow stage created",
-              eventDescription:
-                  $"Stage {model.StageOrder} - {model.StageName} was created.",
-              relatedEntityType: "Flow",
-              relatedEntityId: model.Id,
-              newValue: model.StageStatus);
+                projectId: model.ProjectId,
+                eventType: "MilestoneCreated",
+                eventTitle: "Project milestone created",
+                eventDescription:
+                    $"Milestone {model.StageOrder} - {model.StageName} was created.",
+                relatedEntityType: "Milestone",
+                relatedEntityId: model.Id,
+                newValue: model.StageStatus);
 
             TempData["Success"] =
-                "Project flow stage created successfully.";
+                "Project milestone created successfully.";
 
             return RedirectToAction(
                 nameof(Index),
@@ -163,7 +166,7 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> Edit(int id)
         {
             var flow =
-                await _projectFlowRepository.GetByIdAsync(id);
+             await _projectFlowRepository.GetDetailsAsync(id);
 
             if (flow == null)
                 return NotFound();
@@ -192,6 +195,7 @@ namespace AryamanBMS.Controllers
             }
 
             await ValidateFlowAsync(model);
+            ApplyMilestoneStatusRules(model);
 
             if (!ModelState.IsValid)
             {
@@ -236,12 +240,12 @@ namespace AryamanBMS.Controllers
             {
                 await _projectTimelineService.AddEventAsync(
                     projectId: existing.ProjectId,
-                    eventType: "FlowStatusChanged",
-                    eventTitle: "Project flow status changed",
+                    eventType: "MilestoneStatusChanged",
+                    eventTitle: "Project milestone status changed",
                     eventDescription:
-                        $"Stage {existing.StageOrder} - {existing.StageName} changed " +
+                        $"Milestone {existing.StageOrder} - {existing.StageName} changed " +
                         $"from {previousStageStatus} to {existing.StageStatus}.",
-                    relatedEntityType: "Flow",
+                    relatedEntityType: "Milestone",
                     relatedEntityId: existing.Id,
                     previousValue: previousStageStatus,
                     newValue: existing.StageStatus);
@@ -258,11 +262,11 @@ namespace AryamanBMS.Controllers
             {
                 await _projectTimelineService.AddEventAsync(
                     projectId: existing.ProjectId,
-                    eventType: "FlowStarted",
-                    eventTitle: "Project flow stage started",
+                    eventType: "MilestoneStarted",
+                    eventTitle: "Project milestone started",
                     eventDescription:
-                        $"Stage {existing.StageOrder} - {existing.StageName} started.",
-                    relatedEntityType: "Flow",
+                        $"Milestone {existing.StageOrder} - {existing.StageName} started.",
+                    relatedEntityType: "Milestone",
                     relatedEntityId: existing.Id,
                     newValue: "In Progress");
             }
@@ -279,11 +283,11 @@ namespace AryamanBMS.Controllers
             {
                 await _projectTimelineService.AddEventAsync(
                     projectId: existing.ProjectId,
-                    eventType: "FlowCompleted",
-                    eventTitle: "Project flow stage completed",
+                    eventType: "MilestoneCompleted",
+                    eventTitle: "Project milestone completed",
                     eventDescription:
-                        $"Stage {existing.StageOrder} - {existing.StageName} was completed.",
-                    relatedEntityType: "Flow",
+                        $"Milestone {existing.StageOrder} - {existing.StageName} was completed.",
+                    relatedEntityType: "Milestone",
                     relatedEntityId: existing.Id,
                     previousValue: previousStageStatus,
                     newValue: "Completed");
@@ -300,18 +304,18 @@ namespace AryamanBMS.Controllers
             {
                 await _projectTimelineService.AddEventAsync(
                     projectId: existing.ProjectId,
-                    eventType: "FlowOnHold",
-                    eventTitle: "Project flow stage placed on hold",
+                    eventType: "MilestoneOnHold",
+                    eventTitle: "Project milestone placed on hold",
                     eventDescription:
-                        $"Stage {existing.StageOrder} - {existing.StageName} was placed on hold.",
-                    relatedEntityType: "Flow",
+                        $"Milestone {existing.StageOrder} - {existing.StageName} was placed on hold.",
+                    relatedEntityType: "Milestone",
                     relatedEntityId: existing.Id,
                     previousValue: previousStageStatus,
                     newValue: "On Hold");
             }
 
             TempData["Success"] =
-                "Project flow stage updated successfully.";
+                "Project milestone updated successfully."; ;
 
             return RedirectToAction(
                 nameof(Index),
@@ -363,7 +367,7 @@ namespace AryamanBMS.Controllers
             await _projectFlowRepository.SaveAsync();
 
             TempData["Success"] =
-                "Project flow stage deactivated successfully.";
+                "Project milestone deactivated successfully."; ;
 
             return RedirectToAction(
                 nameof(Index),
@@ -428,6 +432,27 @@ namespace AryamanBMS.Controllers
                     "Invalid stage status selected.");
             }
 
+            if (string.Equals(
+               model.StageStatus,
+               "In Progress",
+               StringComparison.OrdinalIgnoreCase))
+            {
+                bool anotherInProgressMilestone =
+                    await _projectFlowRepository.ProjectFlows
+                        .AnyAsync(pf =>
+                            pf.ProjectId == model.ProjectId &&
+                            pf.Id != model.Id &&
+                            pf.IsActive &&
+                            pf.StageStatus == "In Progress");
+
+                if (anotherInProgressMilestone)
+                {
+                    ModelState.AddModelError(
+                        nameof(model.StageStatus),
+                        "Another milestone is already in progress for this project. Complete or hold it before starting a new milestone.");
+                }
+            }
+
             if (model.PlannedStartDate.HasValue &&
                 model.PlannedEndDate.HasValue &&
                 model.PlannedEndDate < model.PlannedStartDate)
@@ -445,6 +470,64 @@ namespace AryamanBMS.Controllers
                     nameof(model.ActualEndDate),
                     "Actual end date cannot be before actual start date.");
             }
+        }
+
+        private void ApplyMilestoneStatusRules(ProjectFlowModel model)
+        {
+            if (string.Equals(
+                model.StageStatus,
+                "Pending",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                model.ActualStartDate = null;
+                model.ActualEndDate = null;
+                return;
+            }
+
+            if (string.Equals(
+                model.StageStatus,
+                "In Progress",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                model.ActualStartDate ??= DateTime.Today;
+                model.ActualEndDate = null;
+                return;
+            }
+
+            if (string.Equals(
+                model.StageStatus,
+                "Completed",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                model.ActualStartDate ??= DateTime.Today;
+                model.ActualEndDate ??= DateTime.Today;
+                return;
+            }
+
+            if (string.Equals(
+                model.StageStatus,
+                "On Hold",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                model.ActualStartDate ??= DateTime.Today;
+                model.ActualEndDate = null;
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetNextSequence(int projectId)
+        {
+            if (!await _projectAccessService.CanAccessProjectAsync(User, projectId))
+            {
+                return Forbid();
+            }
+
+            int nextSequence = await GetNextStageOrderAsync(projectId);
+
+            return Json(new
+            {
+                sequence = nextSequence
+            });
         }
     }
 }

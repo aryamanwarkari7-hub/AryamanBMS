@@ -89,15 +89,32 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Create(int? projectTaskId)
+        public async Task<IActionResult> Create( int? projectId,int? projectTaskId)
         {
-            await LoadTasksAsync();
+            if (projectTaskId.HasValue)
+            {
+                if (!await CanAccessTaskAsync(projectTaskId.Value))
+                {
+                    return Forbid();
+                }
 
-            if (projectTaskId.HasValue &&
-                !await CanAccessTaskAsync(projectTaskId.Value))
+                var task = await _projectTaskRepository.ProjectTasks
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.Id == projectTaskId.Value);
+
+                projectId = task?.ProjectId;
+            }
+
+            if (projectId.HasValue &&
+                !await _projectAccessService.CanAccessProjectAsync(User, projectId.Value))
             {
                 return Forbid();
             }
+
+            await LoadProjectsAsync();
+            await LoadTasksAsync(projectId);
+
+            ViewBag.ProjectId = projectId;
 
             return View(new ProjectTaskProgressModel
             {
@@ -109,8 +126,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(
-            ProjectTaskProgressModel model)
+        public async Task<IActionResult> Create(int? projectId, ProjectTaskProgressModel model)
         {
             if (model.ProjectTaskId > 0 &&
                 !await CanAccessTaskAsync(model.ProjectTaskId))
@@ -122,7 +138,11 @@ namespace AryamanBMS.Controllers
 
             if (!ModelState.IsValid)
             {
-                await LoadTasksAsync();
+                await LoadProjectsAsync();
+                await LoadTasksAsync(projectId);
+
+                ViewBag.ProjectId = projectId;
+
                 return View(model);
             }
 
@@ -136,7 +156,7 @@ namespace AryamanBMS.Controllers
             await SyncProjectTaskAsync(model.ProjectTaskId);
 
             TempData["Success"] =
-                "Task progress added and project task updated successfully.";
+                "Task update added and project task recalculated successfully.";
 
             return RedirectToAction(
                 nameof(Index),
@@ -184,22 +204,7 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> Edit(
             ProjectTaskProgressModel model)
         {
-            if (model.ProjectTaskId > 0 &&
-                !await CanAccessTaskAsync(model.ProjectTaskId))
-            {
-                return Forbid();
-            }
-
-            await ValidateProgressAsync(model);
-
-            if (!ModelState.IsValid)
-            {
-                await LoadTasksAsync();
-                return View(model);
-            }
-
-            var existing =
-                await _progressRepository.GetByIdAsync(model.Id);
+            var existing = await _progressRepository.GetByIdAsync(model.Id);
 
             if (existing == null)
                 return NotFound();
@@ -209,15 +214,20 @@ namespace AryamanBMS.Controllers
                 return Forbid();
             }
 
-            int previousProjectTaskId = existing.ProjectTaskId;
+            model.ProjectTaskId = existing.ProjectTaskId;
 
-            existing.ProjectTaskId = model.ProjectTaskId;
+            await ValidateProgressAsync(model);
+
+            if (!ModelState.IsValid)
+            {
+                await LoadTasksAsync();
+                return View(model);
+            }
+
             existing.ProgressDate = model.ProgressDate;
             existing.HoursWorked = model.HoursWorked;
-            existing.CompletionPercentage =
-                model.CompletionPercentage;
-            existing.ProgressNotes =
-                model.ProgressNotes.Trim();
+            existing.CompletionPercentage = model.CompletionPercentage;
+            existing.ProgressNotes = model.ProgressNotes.Trim();
             existing.IsActive = model.IsActive;
             existing.UpdatedOn = DateTime.Now;
 
@@ -226,13 +236,8 @@ namespace AryamanBMS.Controllers
 
             await SyncProjectTaskAsync(existing.ProjectTaskId);
 
-            if (previousProjectTaskId != existing.ProjectTaskId)
-            {
-                await SyncProjectTaskAsync(previousProjectTaskId);
-            }
-
             TempData["Success"] =
-                "Task progress and project task updated successfully.";
+                "Task update saved and project task recalculated successfully.";
 
             return RedirectToAction(
                 nameof(Index),
@@ -282,14 +287,37 @@ namespace AryamanBMS.Controllers
             await SyncProjectTaskAsync(projectTaskId);
 
             TempData["Success"] =
-               "Task progress deleted and project task recalculated successfully.";
+               "Task update removed and project task recalculated successfully.";
 
             return RedirectToAction(
                 nameof(Index),
                 new { projectTaskId });
         }
 
-        private async Task LoadTasksAsync()
+        [HttpGet]
+        public async Task<IActionResult> GetProjectTasks(int projectId)
+        {
+            if (!await _projectAccessService.CanAccessProjectAsync(User, projectId))
+            {
+                return Forbid();
+            }
+
+            var tasks =
+                await _projectTaskRepository.ProjectTasks
+                    .AsNoTracking()
+                    .Where(t => t.IsActive && t.ProjectId == projectId)
+                    .OrderBy(t => t.TaskCode)
+                    .Select(t => new
+                    {
+                        id = t.Id,
+                        name = t.TaskCode + " - " + t.TaskTitle
+                    })
+                    .ToListAsync();
+
+            return Json(tasks);
+        }
+
+        private async Task LoadTasksAsync(int? projectId = null)
         {
             var accessibleProjects =
                 await _projectAccessService.ApplyProjectFilterAsync(
@@ -301,11 +329,18 @@ namespace AryamanBMS.Controllers
                     .Select(p => p.Id)
                     .ToListAsync();
 
+            var tasks = _projectTaskRepository.ProjectTasks
+                .Include(t => t.Project)
+                .Where(t => t.IsActive &&
+                      accessibleProjectIds.Contains(t.ProjectId));
+
+            if (projectId.HasValue)
+            {
+                tasks = tasks.Where(t => t.ProjectId == projectId.Value);
+            }
+
             ViewBag.Tasks =
-                await _projectTaskRepository.ProjectTasks
-                    .Include(t => t.Project)
-                    .Where(t => t.IsActive &&
-                          accessibleProjectIds.Contains(t.ProjectId))
+                await tasks
                     .OrderBy(t => t.Project!.ProjectName)
                     .ThenBy(t => t.TaskCode)
                     .ToListAsync();
@@ -390,6 +425,19 @@ namespace AryamanBMS.Controllers
             return await _projectAccessService.CanAccessProjectAsync(
                 User,
                 task.ProjectId);
+        }
+
+        private async Task LoadProjectsAsync()
+        {
+            var accessibleProjects =
+                await _projectAccessService.ApplyProjectFilterAsync(
+                    User,
+                    _projectRepository.Projects.Where(p => p.IsActive));
+
+            ViewBag.Projects =
+                await accessibleProjects
+                    .OrderBy(p => p.ProjectName)
+                    .ToListAsync();
         }
     }
 }

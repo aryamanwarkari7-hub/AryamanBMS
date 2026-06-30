@@ -55,7 +55,8 @@
                     <label asp-for="ProjectId">Project</label>
 
                     <select asp-for="ProjectId"
-                            class="app-select">
+                            class="app-select"
+                            id="RiskProjectId">
 
                         <option value="">Select Project</option>
 
@@ -82,7 +83,8 @@
                     </label>
 
                     <select asp-for="RiskOwnerEmployeeId"
-                            class="app-select">
+                            class="app-select"
+                            id="RiskOwnerEmployeeId">
 
                         <option value="">Not Assigned</option>
 
@@ -189,42 +191,11 @@
 
                 <div class="form-group">
 
-                    <label asp-for="RiskStatus">
-                        Risk Status
-                    </label>
-
-                    <select asp-for="RiskStatus"
-                            class="app-select">
-
-                        <option value="Open">Open</option>
-                        <option value="Monitoring">Monitoring</option>
-                        <option value="Mitigated">Mitigated</option>
-                        <option value="Resolved">Resolved</option>
-                        <option value="Closed">Closed</option>
-
-                    </select>
-
-                </div>
-
-                <div class="form-group">
-
                     <label asp-for="TargetResolutionDate">
                         Target Resolution Date
                     </label>
 
                     <input asp-for="TargetResolutionDate"
-                           type="date"
-                           class="app-input" />
-
-                </div>
-
-                <div class="form-group">
-
-                    <label asp-for="ResolvedOn">
-                        Resolved On
-                    </label>
-
-                    <input asp-for="ResolvedOn"
                            type="date"
                            class="app-input" />
 
@@ -271,23 +242,6 @@
 
             </div>
 
-            <div class="form-group mt-3">
-
-                <label asp-for="ResolutionRemarks">
-                    Resolution Remarks
-                </label>
-
-                <textarea asp-for="ResolutionRemarks"
-                          rows="3"
-                          class="app-textarea">
-                </textarea>
-
-                <span asp-validation-for="ResolutionRemarks"
-                      class="validation-message">
-                </span>
-
-            </div>
-
         </div>
 
     </div>
@@ -318,4 +272,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/risk.js" asp-append-version="true"></script>
 }

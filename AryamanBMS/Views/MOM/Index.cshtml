@@ -18,14 +18,29 @@
         </p>
     </div>
 
-    <a asp-action="Create"
-       asp-route-projectId="@ViewBag.ProjectId"
-       class="btn-app btn-primary-app">
+    <div class="module-header-actions">
 
-        <i class="bi bi-plus-lg"></i>
-        Add Meeting
+        @if (ViewBag.ProjectId != null)
+        {
+            <a asp-controller="Project"
+               asp-action="Dashboard"
+               asp-route-id="@ViewBag.ProjectId"
+               class="btn-app btn-secondary-app">
+                <i class="bi bi-kanban"></i>
+                Workspace
+            </a>
+        }
 
-    </a>
+        <a asp-action="Create"
+           asp-route-projectId="@ViewBag.ProjectId"
+           class="btn-app btn-primary-app">
+
+            <i class="bi bi-plus-lg"></i>
+            Add Meeting
+
+        </a>
+
+    </div>
 
 </div>
 
@@ -201,6 +216,7 @@
 
                                 <td>
                                   @(meeting.ActionItems?.Count(a =>
+                                  a.IsActive &&
                                   a.ActionStatus != "Completed" &&
                                   a.ActionStatus != "Cancelled") ?? 0)
                         </td>

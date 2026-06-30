@@ -3,17 +3,26 @@
 @using AryamanBMS.Models
 
 @{
-    ViewData["Title"] = "Add Task Progress";
+    ViewData["Title"] = "Add Task Update";
 
     var tasks =
         ViewBag.Tasks as IEnumerable<ProjectTaskModel>
         ?? Enumerable.Empty<ProjectTaskModel>();
+
+        var projects =
+    ViewBag.Projects as IEnumerable<ProjectModel>
+    ?? Enumerable.Empty<ProjectModel>();
+
+    int? routeProjectId =
+    ViewBag.ProjectId == null
+        ? null
+        : Convert.ToInt32(ViewBag.ProjectId);
 }
 
 <div class="module-header">
 
     <div>
-        <h1 class="module-title">Add Task Progress</h1>
+        <h1 class="module-title">Add Task Update</h1>
 
         <p class="module-subtitle">
             Record work completed for a project task
@@ -21,7 +30,7 @@
     </div>
 
     <a asp-action="Index"
-       asp-route-projectTaskId="@Model.ProjectTaskId"
+       asp-route-projectId="@routeProjectId"
        class="btn-app btn-secondary-app">
 
         Back
@@ -31,6 +40,7 @@
 </div>
 
 <form asp-action="Create"
+      asp-route-projectId="@routeProjectId"
       method="post">
 
     @Html.AntiForgeryToken()
@@ -42,12 +52,32 @@
     <div class="app-card">
 
         <div class="card-header">
-            <h5 class="card-title">Progress Information</h5>
+            <h5 class="card-title">Task Update Information</h5>
         </div>
 
         <div class="card-body">
 
             <div class="form-grid-2">
+
+                @if (Model.ProjectTaskId == 0)
+                {
+                    <div class="form-group">
+                        <label>Project</label>
+
+                        <select id="taskUpdateProjectSelect"
+                                class="app-select">
+                            <option value="">Select Project</option>
+
+                            @foreach (var project in projects)
+                            {
+                                <option value="@project.Id"
+                                        selected="@(routeProjectId == project.Id)">
+                                    @project.ProjectCode - @project.ProjectName
+                                </option>
+                            }
+                        </select>
+                    </div>
+                }
 
                 <div class="form-group">
 
@@ -56,9 +86,13 @@
                     </label>
 
                     <select asp-for="ProjectTaskId"
-                            class="app-select">
+                            id="taskUpdateTaskSelect"
+                            class="app-select"
+                            disabled="@(Model.ProjectTaskId == 0 && routeProjectId == null)">
 
-                        <option value="">Select Project Task</option>
+                        <option value="">
+                            @(routeProjectId == null ? "Select Project First" : "Select Project Task")
+                        </option>
 
                         @foreach (var task in tasks)
                         {
@@ -82,7 +116,7 @@
                 <div class="form-group">
 
                     <label asp-for="ProgressDate">
-                        Progress Date
+                        Update Date
                     </label>
 
                     <input asp-for="ProgressDate"
@@ -119,7 +153,7 @@
                 <div class="form-group">
 
                     <label asp-for="CompletionPercentage">
-                        Completion Percentage
+                        Task Completion %
                     </label>
 
                     <input asp-for="CompletionPercentage"
@@ -140,7 +174,7 @@
             <div class="form-group mt-3">
 
                 <label asp-for="ProgressNotes">
-                    Progress Notes
+                    Update Notes
                 </label>
 
                 <textarea asp-for="ProgressNotes"
@@ -167,13 +201,13 @@
                     class="btn-app btn-primary-app">
 
                 <i class="bi bi-check-lg"></i>
-                Save Progress
+                Save Update
 
             </button>
 
             <a asp-action="Index"
-               asp-route-projectTaskId="@Model.ProjectTaskId"
-               class="btn-app btn-secondary-app">
+               asp-route-projectId="@routeProjectId"
+               class="btn-app btn-danger-app">
 
                 Cancel
 
@@ -188,5 +222,6 @@
 @section Scripts {
 
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/task-tracker.js" asp-append-version="true"></script>
 
 }

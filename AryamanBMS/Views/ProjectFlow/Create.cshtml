@@ -1,14 +1,14 @@
 ﻿@model AryamanBMS.Models.ProjectFlowModel
 
 @{
-    ViewData["Title"] = "Create Project Stage";
+    ViewData["Title"] = "Add Milestone";
 }
 
 <div class="module-header">
     <div>
         <h1 class="module-title">Add Milestone</h1>
         <p class="module-subtitle">
-            Add a new lifecycle stage
+            Add a new project milestone
         </p>
     </div>
 
@@ -31,7 +31,7 @@
     <div class="app-card">
 
         <div class="card-header">
-            <h5 class="card-title">Stage Information</h5>
+            <h5 class="card-title">Milestone Information</h5>
         </div>
 
         <div class="card-body">
@@ -42,6 +42,7 @@
                     <label asp-for="ProjectId">Project</label>
 
                     <select asp-for="ProjectId"
+                            id="milestoneProjectSelect"
                             class="app-select">
 
                         <option value="">Select Project</option>
@@ -62,10 +63,11 @@
 
                 <div class="form-group">
                     <label asp-for="StageOrder">
-                        Stage Order
+                        Sequence
                     </label>
 
                     <input asp-for="StageOrder"
+                           id="milestoneSequenceInput"
                            type="number"
                            min="1"
                            class="app-input" />
@@ -77,7 +79,7 @@
 
                 <div class="form-group">
                     <label asp-for="StageName">
-                        Stage Name
+                        Milestone Name
                     </label>
 
                     <input asp-for="StageName"
@@ -85,26 +87,6 @@
                            placeholder="Example: Requirement Gathering" />
 
                     <span asp-validation-for="StageName"
-                          class="validation-message">
-                    </span>
-                </div>
-
-                <div class="form-group">
-                    <label asp-for="StageStatus">
-                        Stage Status
-                    </label>
-
-                    <select asp-for="StageStatus"
-                            class="app-select">
-
-                        <option value="Pending">Pending</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Completed">Completed</option>
-                        <option value="On Hold">On Hold</option>
-
-                    </select>
-
-                    <span asp-validation-for="StageStatus"
                           class="validation-message">
                     </span>
                 </div>
@@ -136,31 +118,8 @@
                           class="validation-message">
                     </span>
                 </div>
-
-                <div class="form-group">
-                    <label asp-for="ActualStartDate">
-                        Actual Start Date
-                    </label>
-
-                    <input asp-for="ActualStartDate"
-                           type="date"
-                           class="app-input" />
-                </div>
-
-                <div class="form-group">
-                    <label asp-for="ActualEndDate">
-                        Actual End Date
-                    </label>
-
-                    <input asp-for="ActualEndDate"
-                           type="date"
-                           class="app-input" />
-
-                    <span asp-validation-for="ActualEndDate"
-                          class="validation-message">
-                    </span>
-                </div>
-
+                           
+                                
             </div>
 
             <div class="form-group mt-3">
@@ -190,7 +149,7 @@
                     class="btn-app btn-primary-app">
 
                 <i class="bi bi-check-lg"></i>
-                Create Stage
+                Create Milestone
 
             </button>
 
@@ -207,4 +166,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/project-flow.js" asp-append-version="true"></script>
 }

@@ -75,6 +75,54 @@ namespace AryamanBMS.Controllers
             return View(todayAttendance);
         }
 
+        [Authorize(Roles = "Employee")]
+        public async Task<IActionResult> MyMonthly(int? month, int? year)
+        {
+            var user = await _userManager.GetUserAsync(User);
+
+            if (user == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var employee = await _employeeRepository.Employees
+                .FirstOrDefaultAsync(e =>
+                    e.ApplicationUserId == user.Id);
+
+            if (employee == null)
+            {
+                TempData["Error"] =
+                    "No employee record mapped to this user.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            int selectedMonth =
+                month.HasValue &&
+                month.Value >= 1 &&
+                month.Value <= 12
+                    ? month.Value
+                    : DateTime.Today.Month;
+
+            int selectedYear =
+                year ?? DateTime.Today.Year;
+
+            var attendanceRecords =
+                await _attendanceRepository.Attendances
+                    .Where(a =>
+                        a.EmployeeId == employee.Id &&
+                        a.AttendanceDate.Month == selectedMonth &&
+                        a.AttendanceDate.Year == selectedYear)
+                    .OrderBy(a => a.AttendanceDate)
+                    .ToListAsync();
+
+            ViewBag.Employee = employee;
+            ViewBag.Month = selectedMonth;
+            ViewBag.Year = selectedYear;
+
+            return View(attendanceRecords);
+        }
+
         [Authorize(Roles = "Admin,HR")]
         public IActionResult Create()
         {
