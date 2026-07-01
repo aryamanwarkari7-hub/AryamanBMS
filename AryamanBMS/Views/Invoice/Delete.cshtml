@@ -1,0 +1,64 @@
+﻿@model AryamanBMS.Models.InvoiceModel
+
+@{
+    ViewData["Title"] = "Cancel Invoice";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Cancel Invoice</h1>
+        <p class="module-subtitle">Confirm invoice cancellation</p>
+    </div>
+</div>
+
+<div class="app-card">
+    <div class="card-header">
+        <h5 class="card-title">Invoice Information</h5>
+    </div>
+
+    <div class="card-body">
+        <div class="form-grid-2">
+
+            <div class="form-group">
+                <label class="form-label">Invoice No</label>
+                <input value="@Model.InvoiceNo" class="app-input" readonly />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Client</label>
+                <input value="@Model.Client?.ClientName" class="app-input" readonly />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Invoice Date</label>
+                <input value="@Model.InvoiceDate.ToString("dd-MMM-yyyy")" class="app-input" readonly />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Grand Total</label>
+                <input value="@Model.GrandTotal.ToString("N2")" class="app-input" readonly />
+            </div>
+
+        </div>
+
+        <div class="app-alert app-alert-danger mt-4">
+            This action will cancel this invoice. Invoice details and payment history will remain safe.
+        </div>
+
+        <div class="mt-4">
+            <form asp-action="DeleteConfirmed" method="post">
+                @Html.AntiForgeryToken()
+
+                <input type="hidden" name="id" value="@Model.InvoiceId" />
+
+                <button type="submit" class="btn-app btn-danger-app">
+                    Cancel Invoice
+                </button>
+
+                <a asp-action="Index" class="btn-app btn-secondary-app">
+                    Back
+                </a>
+            </form>
+        </div>
+    </div>
+</div>

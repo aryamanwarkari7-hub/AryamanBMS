@@ -1,0 +1,282 @@
+@model GstDashboardViewModel
+
+@{
+    ViewData["Title"] = $"GST Dashboard - {Model.FinancialYear}";
+
+    string monthName = new System.Globalization.CultureInfo("en-US")
+        .DateTimeFormat
+        .GetMonthName(Model.Month);
+
+    string GstrStatusClass(string status)
+    {
+        return status == "Filed" || status == "Paid"
+            ? "badge-success"
+            : status == "Pending"
+                ? "badge-warning"
+                : "badge-secondary";
+    }
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">GST DASHBOARD</h1>
+        <p class="module-subtitle">
+            @monthName @Model.Year (FY: @Model.FinancialYear)
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="Index"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
+
+</div>
+
+<div class="dashboard-grid">
+
+    <div class="stats-card">
+        <div class="stats-label">Output GST</div>
+        <div class="stats-number">₹ @Model.OutputGST.ToString("N2")</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Input GST</div>
+        <div class="stats-number">₹ @Model.InputGST.ToString("N2")</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Net GST Payable</div>
+        <div class="stats-number">₹ @Model.NetGSTPayable.ToString("N2")</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Sales Taxable</div>
+        <div class="stats-number">₹ @Model.SalesTaxable.ToString("N2")</div>
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">GST Calculation Summary</h2>
+            <p class="card-subtitle">
+                Output GST, input GST and net payable calculation.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-2">
+
+            <div class="app-card">
+
+                <div class="card-header">
+                    <div>
+                        <h2 class="card-title">Sales Summary</h2>
+                        <p class="card-subtitle">
+                            GST collected on sales invoices.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card-body">
+
+                    <div class="form-grid-2">
+
+                        <div class="form-group">
+                            <label class="form-label">Taxable Amount</label>
+                            <strong>₹ @Model.SalesTaxable.ToString("N2")</strong>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Output GST</label>
+                            <strong>₹ @Model.OutputGST.ToString("N2")</strong>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="app-card">
+
+                <div class="card-header">
+                    <div>
+                        <h2 class="card-title">Purchase Summary</h2>
+                        <p class="card-subtitle">
+                            Input tax credit from eligible expenses.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card-body">
+
+                    <div class="form-grid-2">
+
+                        <div class="form-group">
+                            <label class="form-label">Input GST</label>
+                            <strong>₹ @Model.InputGST.ToString("N2")</strong>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Expense Vouchers</label>
+                            <strong>@Model.ExpenseVoucherCount</strong>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Net GST Calculation</h2>
+            <p class="card-subtitle">
+                Final GST payable or refundable for selected period.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-3">
+
+            <div class="form-group">
+                <label class="form-label">Output GST</label>
+                <strong>₹ @Model.OutputGST.ToString("N2")</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Less: Input GST</label>
+                <strong>₹ @Model.InputGST.ToString("N2")</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Net GST Payable</label>
+                <strong>₹ @Model.NetGSTPayable.ToString("N2")</strong>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Compliance Status</h2>
+            <p class="card-subtitle">
+                GST return and challan status for this period.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-3">
+
+            <div class="form-group">
+                <label class="form-label">GSTR-1</label>
+                <span class="@GstrStatusClass(Model.Gstr1Status)">
+                    @Model.Gstr1Status
+                </span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">GSTR-3B</label>
+                <span class="@GstrStatusClass(Model.Gstr3BStatus)">
+                    @Model.Gstr3BStatus
+                </span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Challan</label>
+                <span class="@GstrStatusClass(Model.ChallanStatus)">
+                    @Model.ChallanStatus
+                </span>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Document Statistics</h2>
+            <p class="card-subtitle">
+                Source documents used for GST calculation.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-2">
+
+            <div class="form-group">
+                <label class="form-label">Invoices Created</label>
+                <strong>@Model.InvoiceCount</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Expense Vouchers</label>
+                <strong>@Model.ExpenseVoucherCount</strong>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-body form-actions">
+
+        <form method="post"
+              asp-action="Generate">
+
+            @Html.AntiForgeryToken()
+
+            <input type="hidden"
+                   name="month"
+                   value="@Model.Month" />
+
+            <input type="hidden"
+                   name="year"
+                   value="@Model.Year" />
+
+            <button type="submit"
+                    class="btn-app btn-primary-app">
+                <i class="bi bi-arrow-clockwise"></i>
+                Regenerate Snapshot
+            </button>
+
+        </form>
+
+    </div>
+
+</div>

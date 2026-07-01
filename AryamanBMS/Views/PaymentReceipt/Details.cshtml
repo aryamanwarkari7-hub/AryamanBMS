@@ -1,0 +1,206 @@
+@model AryamanBMS.Models.PaymentReceiptModel
+
+@{
+    ViewData["Title"] = "Payment Receipt Details";
+
+    string statusClass = Model.IsCancelled
+        ? "badge-danger"
+        : Model.IsActive
+            ? "badge-success"
+            : "badge-secondary";
+
+    string statusText = Model.IsCancelled
+        ? "Cancelled"
+        : Model.IsActive
+            ? "Active"
+            : "Inactive";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">PAYMENT RECEIPT DETAILS</h1>
+        <p class="module-subtitle">
+            Receipt information for @Model.ReceiptNo
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+
+        @if (!Model.IsCancelled)
+        {
+            <a asp-action="Edit"
+               asp-route-id="@Model.PaymentReceiptId"
+               class="btn-app btn-primary-app">
+                <i class="bi bi-pencil-square"></i>
+                Edit Receipt
+            </a>
+
+            @* <a asp-action="Delete"
+               asp-route-id="@Model.PaymentReceiptId"
+               class="btn-app btn-danger-app">
+                <i class="bi bi-x-circle"></i>
+                Cancel Receipt
+            </a> *@
+        }
+
+        <a asp-action="Index"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Receipt Information</h2>
+            <p class="card-subtitle">
+                Basic receipt and invoice reference details.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-3">
+
+            <div class="form-group">
+                <label class="form-label">Receipt No</label>
+                <strong>@Model.ReceiptNo</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Receipt Date</label>
+                <strong>@Model.ReceiptDate.ToString("dd-MMM-yyyy")</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                <strong>
+                    <span class="@statusClass">@statusText</span>
+                </strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Client</label>
+                <strong>@(Model.Client?.ClientName ?? "-")</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Invoice</label>
+                <strong>@(Model.Invoice?.InvoiceNo ?? "-")</strong>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Payment Details</h2>
+            <p class="card-subtitle">
+                Amount received and transaction reference.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-3">
+
+            <div class="form-group">
+                <label class="form-label">Amount Received</label>
+                <strong>₹ @Model.AmountReceived.ToString("N2")</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Payment Mode</label>
+                <strong>@(Model.PaymentMode ?? "-")</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Bank Name</label>
+                <strong>@(string.IsNullOrWhiteSpace(Model.BankName) ? "-" : Model.BankName)</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Transaction No</label>
+                <strong>@(string.IsNullOrWhiteSpace(Model.TransactionNo) ? "-" : Model.TransactionNo)</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Reference No</label>
+                <strong>@(string.IsNullOrWhiteSpace(Model.ReferenceNo) ? "-" : Model.ReferenceNo)</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Received By</label>
+                <strong>@(string.IsNullOrWhiteSpace(Model.ReceivedBy) ? "-" : Model.ReceivedBy)</strong>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Remarks</h2>
+            <p class="card-subtitle">
+                Additional notes recorded for this receipt.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <p>
+            @(string.IsNullOrWhiteSpace(Model.Remarks)
+                        ? "No remarks recorded."
+                        : Model.Remarks)
+        </p>
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Audit Information</h2>
+            <p class="card-subtitle">
+                Created and updated timestamps.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-2">
+
+            <div class="form-group">
+                <label class="form-label">Created On</label>
+                <strong>@Model.CreatedOn.ToString("dd-MMM-yyyy hh:mm tt")</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Last Updated</label>
+                <strong>@(Model.UpdatedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")</strong>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

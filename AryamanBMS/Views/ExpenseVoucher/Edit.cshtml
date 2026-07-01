@@ -1,0 +1,9 @@
+@model ExpenseVoucherModel
+
+@{
+    ViewData["Title"] = "Edit Expense Voucher";
+}
+
+@{
+    await Html.RenderPartialAsync("Create", Model);
+}

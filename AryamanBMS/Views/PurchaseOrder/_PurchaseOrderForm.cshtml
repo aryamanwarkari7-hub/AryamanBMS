@@ -1,0 +1,168 @@
+@model AryamanBMS.ViewModels.PurchaseOrderViewModel
+
+<input asp-for="Order.PurchaseOrderId" type="hidden" />
+
+<div class="row">
+
+    <!-- Order Type -->
+    <div class="col-md-3 mb-3">
+        <label asp-for="Order.OrderType" class="form-label">
+            Order Type <span class="validation-message">*</span>
+        </label>
+        <select asp-for="Order.OrderType" asp-items="Model.OrderTypes" class="app-select">
+        </select>
+        <span asp-validation-for="Order.OrderType" class="validation-message"></span>
+    </div>
+
+    <!-- Client -->
+    <div class="col-md-5 mb-3">
+        <label asp-for="Order.ClientId" class="form-label">
+            Client <span class="validation-message">*</span>
+        </label>
+        <select asp-for="Order.ClientId" asp-items="Model.Clients" class="app-select">
+            <option value="">-- Select Client --</option>
+        </select>
+        <span asp-validation-for="Order.ClientId" class="validation-message"></span>
+    </div>
+
+    <!-- Status -->
+    <div class="col-md-4 mb-3">
+        <label asp-for="Order.Status" class="form-label">
+            Status <span class="validation-message">*</span>
+        </label>
+        <select asp-for="Order.Status" asp-items="Model.Statuses" class="app-select">
+        </select>
+        <span asp-validation-for="Order.Status" class="validation-message"></span>
+    </div>
+
+</div>
+
+<div class="row">
+
+    <!-- Order Title -->
+    <div class="col-md-12 mb-3">
+        <label asp-for="Order.OrderTitle" class="form-label">
+            Order Title <span class="validation-message">*</span>
+        </label>
+        <input asp-for="Order.OrderTitle" class="app-input"
+               placeholder="e.g. Software Development Work Order for Phase 2" />
+        <span asp-validation-for="Order.OrderTitle" class="validation-message"></span>
+    </div>
+
+</div>
+
+<div class="row">
+
+    <!-- Order Date -->
+    <div class="col-md-3 mb-3">
+        <label asp-for="Order.OrderDate" class="form-label">
+            Order Date <span class="validation-message">*</span>
+        </label>
+        <input asp-for="Order.OrderDate" type="date" class="app-input" />
+        <span asp-validation-for="Order.OrderDate" class="validation-message"></span>
+    </div>
+
+    <!-- Delivery Due Date -->
+    <div class="col-md-3 mb-3">
+        <label asp-for="Order.DeliveryDueDate" class="form-label">Delivery Due Date</label>
+        <input asp-for="Order.DeliveryDueDate" type="date" class="app-input" />
+        <span asp-validation-for="Order.DeliveryDueDate" class="validation-message"></span>
+    </div>
+
+    <!-- Amount -->
+    <div class="col-md-3 mb-3">
+        <label asp-for="Order.OrderAmount" class="form-label">Amount</label>
+        <input asp-for="Order.OrderAmount" type="number" step="0.01"
+               class="app-input" placeholder="0.00" />
+        <span asp-validation-for="Order.OrderAmount" class="validation-message"></span>
+    </div>
+
+    <!-- Currency -->
+    <div class="col-md-3 mb-3">
+        <label asp-for="Order.Currency" class="form-label">Currency</label>
+        <select asp-for="Order.Currency" class="app-select">
+            <option value="INR">INR ₹</option>
+            <option value="USD">USD $</option>
+            <option value="EUR">EUR €</option>
+            <option value="GBP">GBP £</option>
+        </select>
+        <span asp-validation-for="Order.Currency" class="validation-message"></span>
+    </div>
+
+</div>
+
+<div class="row">
+
+    <!-- Link to Proposal (optional) -->
+    <div class="col-md-6 mb-3">
+        <label asp-for="Order.ProposalId" class="form-label">
+            Link to Proposal <small class="card-subtitle">(optional — Accepted proposals only)</small>
+        </label>
+        <select asp-for="Order.ProposalId" asp-items="Model.AcceptedProposals" class="app-select">
+            <option value="">-- None / Standalone --</option>
+        </select>
+        <span asp-validation-for="Order.ProposalId" class="validation-message"></span>
+    </div>
+
+    <!-- Vendor Reference -->
+    <div class="col-md-6 mb-3">
+        <label asp-for="Order.VendorReference" class="form-label">Vendor / Client Reference No.</label>
+        <input asp-for="Order.VendorReference" class="app-input"
+               placeholder="Client's own PO/WO reference number" />
+        <span asp-validation-for="Order.VendorReference" class="validation-message"></span>
+    </div>
+
+</div>
+
+<div class="row">
+
+    <!-- Remarks -->
+    <div class="col-md-12 mb-3">
+        <label asp-for="Order.Remarks" class="form-label">Remarks</label>
+        <textarea asp-for="Order.Remarks" class="app-input" rows="2"></textarea>
+        <span asp-validation-for="Order.Remarks" class="validation-message"></span>
+    </div>
+
+</div>
+
+<div class="row">
+
+    <!-- File Upload -->
+    <div class="col-md-12 mb-3">
+        <label asp-for="UploadFile" class="form-label">
+            Order Document
+            @if (Model.Order.PurchaseOrderId == 0)
+            {
+                <span class="validation-message">*</span>
+            }
+        </label>
+        <input asp-for="UploadFile" class="app-input"
+               accept=".pdf,.doc,.docx,.xls,.xlsx" />
+        <small class="card-subtitle">Supported: PDF, DOC, DOCX, XLS, XLSX</small>
+        <span asp-validation-for="UploadFile" class="validation-message"></span>
+    </div>
+
+</div>
+
+@if (Model.Order.PurchaseOrderId > 0 && !string.IsNullOrWhiteSpace(Model.Order.FileName))
+{
+    <div class="app-alert-info">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h6 class="mb-1"><i class="bi bi-file-earmark-text"></i> Current Document</h6>
+                <p class="mb-1"><strong>File:</strong> @Model.Order.FileName</p>
+                <p class="mb-0">
+                    <strong>Size:</strong> @(Math.Round(Model.Order.FileSize / 1024.0, 2)) KB
+                </p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a asp-action="Download" asp-route-id="@Model.Order.PurchaseOrderId"
+                   class="btn-app btn-success-app">
+                    <i class="bi bi-download"></i> Download
+                </a>
+            </div>
+        </div>
+        <hr class="mb-1 mt-2" />
+        <small class="card-subtitle">Upload a new file only if you want to replace the current document.</small>
+    </div>
+}

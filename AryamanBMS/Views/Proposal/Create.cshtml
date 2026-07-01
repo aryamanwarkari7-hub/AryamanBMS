@@ -1,0 +1,61 @@
+@model AryamanBMS.ViewModels.ProposalViewModel
+
+@{
+    ViewData["Title"] = "New Proposal";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">New Proposal</h1>
+        <p class="module-subtitle">
+            Create and upload a new client proposal
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="Index"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
+
+</div>
+
+<form asp-action="Create"
+      method="post"
+      enctype="multipart/form-data">
+
+    @Html.AntiForgeryToken()
+
+    <div asp-validation-summary="ModelOnly"
+         class="app-alert-danger">
+    </div>
+
+    <partial name="_ProposalForm" model="Model" />
+
+    <div class="app-card">
+
+        <div class="card-body">
+
+            <button type="submit"
+                    class="btn-app btn-primary-app">
+                <i class="bi bi-check-circle"></i>
+                Save Proposal
+            </button>
+
+            <a asp-action="Index"
+               class="btn-app btn-secondary-app">
+                Cancel
+            </a>
+
+        </div>
+
+    </div>
+
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -37,10 +37,17 @@
           currentUser != null &&
           await UserManager.IsInRoleAsync(currentUser, "ProjectManager");
 
+    var isFinance =
+          currentUser != null &&
+          await UserManager.IsInRoleAsync(currentUser, "Finance");
+
     var isAdminOrHR = isAdmin || isHR;
 
     var canAccessProjectManagement =
         isAdminOrHR || isProjectManager || isEmployee;
+
+    var canAccessAccounts =
+        isAdmin || isFinance;
 
     var isEmployeeOnly =
         isEmployee && !isAdmin && !isHR;
@@ -97,6 +104,25 @@
     currentController == "TaskTracker" ||
     currentController == "MOM" ||
     currentController == "Risk";
+
+    bool isAccountsActive =
+    currentController == "Client" ||
+    currentController == "Proposal" ||
+    currentController == "PurchaseOrder" ||
+    currentController == "Invoice" ||
+    currentController == "PaymentReceipt" ||
+    currentController == "ExpenseCategory" ||
+    currentController == "ExpenseVoucher" ||
+    currentController == "Gst" ||
+    currentController == "CompanyProfile" ||
+    currentController == "CompanyDocument" ||
+    currentController == "CompanyDocumentCategory" ||
+    currentController == "FinancialAuditDocument" ||
+    currentController == "OfficeAsset" ||
+    currentController == "Pf" ||
+    currentController == "Esic" ||
+    currentController == "Pt" ||
+    currentController == "Notice";
 }
 
 <div class="sidebar">
@@ -708,13 +734,15 @@
             }
 
             @* Accounts & Finance *@
-            @* <div class="menu-group">
+            @if (canAccessAccounts)
+            {
+            <div class="menu-group">
 
-                <button class="menu-group-header"
+                <button class="menu-group-header @(isAccountsActive ? "active-menu" : "")"
                         type="button"
                         data-bs-toggle="collapse"
                         data-bs-target="#financeMenu"
-                        aria-expanded="false">
+                        aria-expanded="@isAccountsActive.ToString().ToLower()">
 
                     <div class="menu-group-left">
                         <i class="bi bi-cash-stack"></i>
@@ -725,22 +753,109 @@
 
                 </button>
 
-                <div class="collapse"
+                <div class="collapse @(isAccountsActive ? "show" : "")"
                      id="financeMenu"
                      data-bs-parent="#sidebarAccordion">
 
                     <div class="submenu">
 
-                        <a href="#" class="submenu-item">Sales Register</a>
-                        <a href="#" class="submenu-item">Expenses</a>
-                        <a href="#" class="submenu-item">GST Summary</a>
-                        <a href="#" class="submenu-item">Vendor Register</a>
+                        <a asp-controller="Client"
+                           asp-action="Index"
+                           class="submenu-item @(currentController == "Client" ? "active-menu" : "")">
+                            <i class="bi bi-building"></i>
+                            <span>Clients</span>
+                        </a>
+
+                        <a asp-controller="Proposal"
+                           asp-action="Index"
+                           class="submenu-item @(currentController == "Proposal" ? "active-menu" : "")">
+                            <i class="bi bi-file-text"></i>
+                            <span>Proposals</span>
+                        </a>
+
+                        <a asp-controller="PurchaseOrder"
+                           asp-action="Index"
+                           class="submenu-item @(currentController == "PurchaseOrder" ? "active-menu" : "")">
+                            <i class="bi bi-file-earmark-check"></i>
+                            <span>PO / WO</span>
+                        </a>
+
+                        <a asp-controller="Invoice"
+                           asp-action="Index"
+                           class="submenu-item @(currentController == "Invoice" ? "active-menu" : "")">
+                            <i class="bi bi-receipt"></i>
+                            <span>Invoices</span>
+                        </a>
+
+                        <a asp-controller="PaymentReceipt"
+                           asp-action="Index"
+                           class="submenu-item @(currentController == "PaymentReceipt" ? "active-menu" : "")">
+                            <i class="bi bi-cash-coin"></i>
+                            <span>Receipts</span>
+                        </a>
+
+                        <a asp-controller="ExpenseVoucher"
+                           asp-action="Index"
+                           class="submenu-item @(currentController == "ExpenseVoucher" ? "active-menu" : "")">
+                            <i class="bi bi-receipt-cutoff"></i>
+                            <span>Expense Vouchers</span>
+                        </a>
+
+                        <a asp-controller="ExpenseCategory"
+                           asp-action="Index"
+                           class="submenu-item @(currentController == "ExpenseCategory" ? "active-menu" : "")">
+                            <i class="bi bi-tags"></i>
+                            <span>Expense Categories</span>
+                        </a>
+
+                        <a asp-controller="Gst"
+                           asp-action="Index"
+                           class="submenu-item @(currentController == "Gst" ? "active-menu" : "")">
+                            <i class="bi bi-calculator"></i>
+                            <span>GST</span>
+                        </a>
+
+                        <a asp-controller="CompanyProfile"
+                           asp-action="Index"
+                           class="submenu-item @(currentController == "CompanyProfile" || currentController == "CompanyDocument" || currentController == "CompanyDocumentCategory" ? "active-menu" : "")">
+                            <i class="bi bi-folder2-open"></i>
+                            <span>Company Docs</span>
+                        </a>
+
+                        <a asp-controller="FinancialAuditDocument"
+                           asp-action="Index"
+                           class="submenu-item @(currentController == "FinancialAuditDocument" ? "active-menu" : "")">
+                            <i class="bi bi-bank"></i>
+                            <span>Audit Docs</span>
+                        </a>
+
+                        <a asp-controller="OfficeAsset"
+                           asp-action="Index"
+                           class="submenu-item @(currentController == "OfficeAsset" ? "active-menu" : "")">
+                            <i class="bi bi-box-seam"></i>
+                            <span>Assets</span>
+                        </a>
+
+                        <a asp-controller="Pf"
+                           asp-action="Index"
+                           class="submenu-item @(currentController == "Pf" || currentController == "Esic" || currentController == "Pt" ? "active-menu" : "")">
+                            <i class="bi bi-shield-check"></i>
+                            <span>Statutory</span>
+                        </a>
+
+                        <a asp-controller="Notice"
+                           asp-action="Index"
+                           class="submenu-item @(currentController == "Notice" ? "active-menu" : "")">
+                            <i class="bi bi-bell"></i>
+                            <span>Notices</span>
+                        </a>
 
                     </div>
 
                 </div>
 
-            </div> *@
+            </div>
+            }
         @* } *@
 
     </div>

@@ -1,0 +1,145 @@
+@model IEnumerable<ExpenseCategoryModel>
+
+@{
+    ViewData["Title"] = "Expense Categories";
+    string search = ViewBag.Search as string ?? "";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">EXPENSE CATEGORIES</h1>
+        <p class="module-subtitle">
+            Manage default GST, ITC and GL mappings for expenses
+        </p>
+    </div>
+    <div class="module-header-actions">
+        <a href="@Url.Action("Create")" class="btn-app btn-primary-app">
+            <i class="bi bi-plus-circle"></i> Add Category
+        </a>
+    </div>
+</div>
+
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+
+        <form method="get" class="w-100">
+
+            <div class="form-grid-3">
+
+                <div class="form-group">
+                    <input type="text"
+                           name="search"
+                           value="@search"
+                           class="app-input"
+                           placeholder="Code / Category / Description" />
+                </div>
+
+                <div class="form-group">
+                    <button type="submit"
+                            class="btn-app btn-primary-app w-100">
+                        <i class="bi bi-search"></i>
+                        Search
+                    </button>
+                </div>
+
+                <div class="form-group">
+                    <a asp-action="Index"
+                       class="btn-app btn-secondary-app w-100">
+                        Reset
+                    </a>
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+
+    <div class="card-body">
+    @if (Model.Any())
+    {
+        <div class="table-responsive">
+            <table class="app-table">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Category Name</th>
+                            <th class="text-end amount-column">GST Rate</th>
+                            <th class="text-center">ITC</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var category in Model)
+                    {
+                        <tr>
+                            <td>
+                                <span class="badge-secondary">@category.CategoryCode</span>
+                            </td>
+                            <td>@category.CategoryName</td>
+                                <td class="text-end amount-column">@category.DefaultGSTRate.ToString("N2")%</td>
+                                <td class="text-center">
+                                @if (category.ITCEligible)
+                                {
+                                    <span class="badge-success">Yes</span>
+                                }
+                                else
+                                {
+                                    <span class="badge-secondary">No</span>
+                                }
+                            </td>
+                            <td>@category.GLAccountCode</td>
+                                <td class="text-center">
+                                    @if (category.IsActive)
+                                {
+                                    <span class="badge-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge-secondary">Inactive</span>
+                                }
+                            </td>
+                                <td>
+                                    <div class="table-actions">
+
+                                        <a href="@Url.Action("Edit", new { id = category.ExpenseCategoryId })"
+                                           class="btn-app btn-icon btn-secondary-app"
+                                           title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+
+                                        <a href="@Url.Action("Delete", new { id = category.ExpenseCategoryId })"
+                                           class="btn-app btn-icon btn-danger-app"
+                                           title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+
+                                    </div>
+                                </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+            <div class="empty-state">
+                No expense categories found.
+            </div>
+    }
+    </div>
+</div>
+
+
+<style>
+    .amount-column {
+        width: 140px;
+        min-width: 140px;
+        max-width: 140px;
+        white-space: nowrap;
+    }
+</style>

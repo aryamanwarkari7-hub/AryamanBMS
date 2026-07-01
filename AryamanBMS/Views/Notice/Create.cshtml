@@ -1,0 +1,156 @@
+@model AryamanBMS.Models.NoticeModel
+
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    ViewData["Title"] = "Add Notice";
+
+    var departments = new List<SelectListItem>
+    {
+        new() { Text="GST", Value=FinancialConstants.NoticeDepartment.GST },
+        new() { Text="PF", Value=FinancialConstants.NoticeDepartment.PF },
+        new() { Text="ESIC", Value=FinancialConstants.NoticeDepartment.ESIC },
+        new() { Text="Income Tax", Value=FinancialConstants.NoticeDepartment.IncomeTax },
+        new() { Text="Labour", Value=FinancialConstants.NoticeDepartment.Labour },
+        new() { Text="ROC", Value=FinancialConstants.NoticeDepartment.ROC },
+        new() { Text="Other", Value=FinancialConstants.NoticeDepartment.Other }
+    };
+
+    var statuses = new List<SelectListItem>
+    {
+        new() { Text="Open", Value=FinancialConstants.NoticeStatus.Open },
+        new() { Text="Replied", Value=FinancialConstants.NoticeStatus.Replied },
+        new() { Text="Closed", Value=FinancialConstants.NoticeStatus.Closed },
+        new() { Text="Escalated", Value=FinancialConstants.NoticeStatus.Escalated }
+    };
+}
+
+<div class="module-content">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h3 class="mb-0">
+                <i class="bi bi-plus-circle text-primary"></i>
+                Add Statutory Notice
+            </h3>
+            <small class="card-subtitle">
+                Record a notice received from any statutory authority.
+            </small>
+        </div>
+
+        <a asp-action="Index" class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
+
+    <div class="app-card">
+
+        <div class="card-body">
+
+            <form asp-action="Create" method="post">
+
+                <div asp-validation-summary="All" class="app-alert-danger"></div>
+
+                <div class="row">
+
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Department" class="form-label"></label>
+                        <select asp-for="Department"
+                                asp-items="departments"
+                                class="app-select">
+                        </select>
+                        <span asp-validation-for="Department" class="validation-message"></span>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="NoticeNumber" class="form-label"></label>
+                        <input asp-for="NoticeNumber" class="app-input" />
+                        <span asp-validation-for="NoticeNumber" class="validation-message"></span>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="NoticeDate" class="form-label"></label>
+                        <input asp-for="NoticeDate" type="date" class="app-input" />
+                        <span asp-validation-for="NoticeDate" class="validation-message"></span>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="ReceivedDate" class="form-label"></label>
+                        <input asp-for="ReceivedDate" type="date" class="app-input" />
+                        <span asp-validation-for="ReceivedDate" class="validation-message"></span>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="DueDate" class="form-label"></label>
+                        <input asp-for="DueDate" type="date" class="app-input" />
+                        <span asp-validation-for="DueDate" class="validation-message"></span>
+                    </div>
+
+                    <div class="col-md-12 mb-3">
+                        <label asp-for="Subject" class="form-label"></label>
+                        <input asp-for="Subject" class="app-input" />
+                        <span asp-validation-for="Subject" class="validation-message"></span>
+                    </div>
+
+                    <div class="col-md-12 mb-3">
+                        <label asp-for="Description" class="form-label"></label>
+                        <textarea asp-for="Description"
+                                  class="app-input"
+                                  rows="4"></textarea>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Status" class="form-label"></label>
+                        <select asp-for="Status"
+                                asp-items="statuses"
+                                class="app-select">
+                        </select>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="ReplyDate" class="form-label"></label>
+                        <input asp-for="ReplyDate"
+                               type="date"
+                               class="app-input" />
+                    </div>
+
+                    <div class="col-md-12 mb-3">
+                        <label asp-for="ReplyDetails" class="form-label"></label>
+                        <textarea asp-for="ReplyDetails"
+                                  class="app-input"
+                                  rows="4"></textarea>
+                    </div>
+
+                    <div class="col-md-12 mb-3">
+                        <label asp-for="Remarks" class="form-label"></label>
+                        <textarea asp-for="Remarks"
+                                  class="app-input"
+                                  rows="3"></textarea>
+                    </div>
+
+                </div>
+
+                <hr />
+
+                <button type="submit" class="btn-app btn-primary-app">
+                    <i class="bi bi-check-circle"></i>
+                    Save
+                </button>
+
+                <a asp-action="Index" class="btn-app btn-secondary-app">
+                    Cancel
+                </a>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

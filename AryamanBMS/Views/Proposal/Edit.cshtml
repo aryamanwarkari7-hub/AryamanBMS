@@ -1,0 +1,73 @@
+@model AryamanBMS.ViewModels.ProposalViewModel
+
+@{
+    ViewData["Title"] = "Edit Proposal";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Edit Proposal</h1>
+        <p class="module-subtitle">
+            @Model.Proposal.ProposalNumber
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+
+        <a asp-action="Details"
+           asp-route-id="@Model.Proposal.ProposalId"
+           class="btn-app btn-primary-app">
+            <i class="bi bi-eye"></i>
+            Details
+        </a>
+
+        <a asp-action="Index"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+
+    </div>
+
+</div>
+
+<form asp-action="Edit"
+      asp-route-id="@Model.Proposal.ProposalId"
+      method="post"
+      enctype="multipart/form-data">
+
+    @Html.AntiForgeryToken()
+
+    <div asp-validation-summary="ModelOnly"
+         class="app-alert-danger">
+    </div>
+
+    <partial name="_ProposalForm" model="Model" />
+
+    <div class="app-card">
+
+        <div class="card-body">
+
+            <button type="submit"
+                    class="btn-app btn-primary-app">
+                <i class="bi bi-check-circle"></i>
+                Update Proposal
+            </button>
+
+            <a asp-action="Details"
+               asp-route-id="@Model.Proposal.ProposalId"
+               class="btn-app btn-secondary-app">
+                Cancel
+            </a>
+
+        </div>
+
+    </div>
+
+</form>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

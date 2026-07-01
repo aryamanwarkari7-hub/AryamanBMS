@@ -1,0 +1,187 @@
+@model AryamanBMS.Models.PaymentReceiptModel
+
+<input asp-for="PaymentReceiptId" type="hidden" />
+
+<div class="row">
+
+    <div class="col-md-4 mb-3">
+
+        <label asp-for="ReceiptNo" class="form-label"></label>
+
+        <input asp-for="ReceiptNo"
+               class="app-input"
+               readonly />
+
+        <span asp-validation-for="ReceiptNo" class="validation-message"></span>
+
+    </div>
+
+    <div class="col-md-4 mb-3">
+
+        <label asp-for="ReceiptDate" class="form-label"></label>
+
+        <input asp-for="ReceiptDate"
+               type="date"
+               class="app-input" />
+
+        <span asp-validation-for="ReceiptDate" class="validation-message"></span>
+
+    </div>
+
+    <div class="col-md-4 mb-3">
+
+        <label class="form-label">
+            Client
+        </label>
+
+        <select asp-for="ClientId"
+                asp-items="ViewBag.Clients"
+                class="app-select">
+
+            <option value="">Select Client</option>
+
+        </select>
+
+        <span asp-validation-for="ClientId"
+              class="validation-message"></span>
+
+    </div>
+
+</div>
+
+<div class="row">
+
+    <div class="col-md-6 mb-3">
+
+        <label class="form-label">
+            Invoice
+        </label>
+
+        <select asp-for="InvoiceId"
+                asp-items="ViewBag.Invoices"
+                class="app-select">
+
+            <option value="">Select Invoice</option>
+
+        </select>
+
+        <span asp-validation-for="InvoiceId"
+              class="validation-message"></span>
+
+    </div>
+
+    <div class="col-md-6 mb-3">
+
+        <label asp-for="AmountReceived"
+               class="form-label"></label>
+
+        <input asp-for="AmountReceived"
+               class="app-input" />
+
+        <span asp-validation-for="AmountReceived"
+              class="validation-message"></span>
+
+    </div>
+
+</div>
+
+<div class="row">
+
+    <div class="col-md-4 mb-3">
+
+        <label asp-for="PaymentMode"
+               class="form-label"></label>
+
+        <select asp-for="PaymentMode"
+                class="app-select">
+
+            <option>Cash</option>
+            <option>Cheque</option>
+            <option>Bank Transfer</option>
+            <option>NEFT</option>
+            <option>RTGS</option>
+            <option>IMPS</option>
+            <option>UPI</option>
+
+        </select>
+
+    </div>
+
+    <div class="col-md-4 mb-3">
+
+        <label asp-for="BankName"
+               class="form-label"></label>
+
+        <input asp-for="BankName"
+               class="app-input" />
+
+    </div>
+
+    <div class="col-md-4 mb-3">
+
+        <label asp-for="TransactionNo"
+               class="form-label"></label>
+
+        <input asp-for="TransactionNo"
+               class="app-input" />
+
+    </div>
+
+</div>
+
+<div class="row">
+
+    <div class="col-md-6 mb-3">
+
+        <label asp-for="ReferenceNo"
+               class="form-label"></label>
+
+        <input asp-for="ReferenceNo"
+               class="app-input" />
+
+    </div>
+
+    <div class="col-md-6 mb-3">
+
+        <label asp-for="ReceivedBy"
+               class="form-label"></label>
+
+        <input asp-for="ReceivedBy"
+               class="app-input" />
+
+    </div>
+
+</div>
+
+<div class="row">
+
+    <div class="col-md-12 mb-3">
+
+        <label asp-for="Remarks"
+               class="form-label"></label>
+
+        <textarea asp-for="Remarks"
+                  rows="4"
+                  class="app-input"></textarea>
+
+    </div>
+
+</div>
+
+<div class="row">
+
+    <div class="col-md-12">
+
+        <div class="form-check">
+
+            <input asp-for="IsCancelled"
+                   class="form-check-input" />
+
+            <label asp-for="IsCancelled"
+                   class="form-check-label"></label>
+
+        </div>
+
+    </div>
+
+</div>

@@ -1,0 +1,303 @@
+@model AryamanBMS.Models.CompanyDocumentModel
+
+@{
+    ViewData["Title"] = "Company Document Details";
+}
+
+<div class="module-content">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+
+        <div>
+
+            <h3>
+                <i class="bi bi-file-earmark-text-lines text-primary"></i>
+                Company Document Details
+            </h3>
+
+            <small class="card-subtitle">
+                View Company Document Information
+            </small>
+
+        </div>
+
+        <div>
+
+            <a asp-action="Edit"
+               asp-route-id="@Model.CompanyDocumentId"
+               class="btn-app btn-secondary-app">
+
+                <i class="bi bi-pencil-square"></i>
+
+                Edit
+
+            </a>
+
+            <a asp-action="Index"
+               class="btn-app btn-secondary-app">
+
+                <i class="bi bi-arrow-left"></i>
+
+                Back
+
+            </a>
+
+        </div>
+
+    </div>
+
+    <div class="app-card">
+
+        <div class="card-header">
+
+            <strong>
+
+                Document Information
+
+            </strong>
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+
+                    <label class="fw-bold">
+                        Category
+                    </label>
+
+                    <div>
+                        @Model.Category?.CategoryName
+                    </div>
+
+                </div>
+
+                <div class="col-md-6 mb-3">
+
+                    <label class="fw-bold">
+                        Document Name
+                    </label>
+
+                    <div>
+                        @Model.DocumentName
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+
+                    <label class="fw-bold">
+                        Document Number
+                    </label>
+
+                    <div>
+                        @(string.IsNullOrWhiteSpace(Model.DocumentNumber)
+                            ? "-"
+                            : Model.DocumentNumber)
+                    </div>
+
+                </div>
+
+                <div class="col-md-6 mb-3">
+
+                    <label class="fw-bold">
+                        Issued By
+                    </label>
+
+                    <div>
+                        @(string.IsNullOrWhiteSpace(Model.IssuedBy)
+                            ? "-"
+                            : Model.IssuedBy)
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+
+                    <label class="fw-bold">
+                        Issue Date
+                    </label>
+
+                    <div>
+                        @(Model.IssueDate?.ToString("dd-MMM-yyyy") ?? "-")
+                    </div>
+
+                </div>
+
+                <div class="col-md-6 mb-3">
+
+                    <label class="fw-bold">
+                        Expiry Date
+                    </label>
+
+                    <div>
+
+                        @if (Model.ExpiryDate.HasValue)
+                        {
+                            if (Model.ExpiryDate.Value < DateTime.Today)
+                            {
+                                <span class="badge-danger">
+                                    Expired
+                                </span>
+
+                                <span>
+                                    @Model.ExpiryDate.Value.ToString("dd-MMM-yyyy")
+                                </span>
+                            }
+                            else if (Model.ExpiryDate.Value <= DateTime.Today.AddDays(30))
+                            {
+                                <span class="badge-warning">
+                                    Expiring Soon
+                                </span>
+
+                                <span>
+                                    @Model.ExpiryDate.Value.ToString("dd-MMM-yyyy")
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge-success">
+                                    Valid
+                                </span>
+
+                                <span>
+                                    @Model.ExpiryDate.Value.ToString("dd-MMM-yyyy")
+                                </span>
+                            }
+                        }
+                        else
+                        {
+                            <span>-</span>
+                        }
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+
+                    <label class="fw-bold">
+                        File Name
+                    </label>
+
+                    <div>
+                        @Model.FileName
+                    </div>
+
+                </div>
+
+                <div class="col-md-6 mb-3">
+
+                    <label class="fw-bold">
+                        File Size
+                    </label>
+
+                    <div>
+
+                        @(Math.Round(Model.FileSize / 1024.0, 2)) KB
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+
+                    <label class="fw-bold">
+                        Created On
+                    </label>
+
+                    <div>
+                        @Model.CreatedOn.ToString("dd-MMM-yyyy hh:mm tt")
+                    </div>
+
+                </div>
+
+                <div class="col-md-6 mb-3">
+
+                    <label class="fw-bold">
+                        Last Updated
+                    </label>
+
+                    <div>
+
+                        @(Model.UpdatedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="mb-3">
+
+                <label class="fw-bold">
+                    Remarks
+                </label>
+
+                <div class="border rounded p-3 bg-light">
+
+                    @(string.IsNullOrWhiteSpace(Model.Remarks)
+                        ? "No Remarks"
+                        : Model.Remarks)
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="card-footer bg-white">
+            <a asp-action="Download"
+               asp-route-id="@Model.CompanyDocumentId"
+               class="btn-app btn-success-app">
+
+                <i class="bi bi-download"></i>
+
+                Download
+
+            </a>
+
+            <a asp-action="Edit"
+               asp-route-id="@Model.CompanyDocumentId"
+               class="btn-app btn-secondary-app">
+
+                <i class="bi bi-pencil-square"></i>
+
+                Edit
+
+            </a>
+
+            <a asp-action="Delete"
+               asp-route-id="@Model.CompanyDocumentId"
+               class="btn-app btn-danger-app"
+               onclick="return confirm('Delete this document?');">
+
+                <i class="bi bi-trash"></i>
+
+                Delete
+
+            </a>
+
+        </div>
+
+    </div>
+
+</div>

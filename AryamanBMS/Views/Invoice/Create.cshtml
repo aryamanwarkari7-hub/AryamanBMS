@@ -1,0 +1,447 @@
+@model AryamanBMS.Models.InvoiceModel
+
+@{
+    ViewData["Title"] = "Create Invoice";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Add Invoice</h1>
+        <p class="module-subtitle">Create invoice for client billing</p>
+    </div>
+
+    <a asp-action="Index" class="btn-app btn-secondary-app">
+        <i class="bi bi-arrow-left"></i>
+        Back
+    </a>
+</div>
+
+<form asp-action="Create"
+      method="post"
+      enctype="multipart/form-data">
+
+    @Html.AntiForgeryToken()
+
+    <div class="app-card">
+        <div class="card-header">
+            <h5 class="card-title">Invoice Information</h5>
+        </div>
+
+        <div class="card-body">
+
+            <div asp-validation-summary="ModelOnly"
+                 class="validation-message">
+            </div>
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+                    <label asp-for="InvoiceNo" class="form-label">Invoice No</label>
+                    <input asp-for="InvoiceNo" class="app-input" readonly />
+                    <span asp-validation-for="InvoiceNo" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="InvoiceDate" class="form-label">Invoice Date</label>
+                    <input asp-for="InvoiceDate" type="date" class="app-input" />
+                    <span asp-validation-for="InvoiceDate" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ClientId" class="form-label">Client</label>
+                    <select asp-for="ClientId" class="app-select" id="ClientId">
+                        <option value="">Select Client</option>
+                        @foreach (var client in ViewBag.Clients)
+                        {
+                            <option value="@client.ClientId"
+                                    data-gst="@client.GSTNumber"
+                                    data-address="@client.Address">
+                                @client.ClientName
+                            </option>
+                        }
+                    </select>
+                    <span asp-validation-for="ClientId" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ProjectName" class="form-label">Project Name</label>
+                    <input asp-for="ProjectName" class="app-input" />
+                    <span asp-validation-for="ProjectName" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="GSTNo" class="form-label">GST No</label>
+                    <input asp-for="GSTNo" class="app-input" />
+                    <span asp-validation-for="GSTNo" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="DueDate" class="form-label">Due Date</label>
+                    <input asp-for="DueDate" type="date" class="app-input" />
+                    <span asp-validation-for="DueDate" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="PaymentTerms" class="form-label">Payment Terms</label>
+                    <input asp-for="PaymentTerms"
+                           class="app-input"
+                           placeholder="Ex: 30 Days" />
+                    <span asp-validation-for="PaymentTerms" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="InvoiceStatus" class="form-label">Invoice Status</label>
+                    <select asp-for="InvoiceStatus" class="app-select">
+                        <option>Draft</option>
+                        <option>Generated</option>
+                        <option>Sent</option>
+                    </select>
+                    <span asp-validation-for="InvoiceStatus" class="validation-message"></span>
+                </div>
+
+            </div>
+
+            <div class="form-group mt-3">
+                <label asp-for="BillingAddress" class="form-label">Billing Address</label>
+                <textarea asp-for="BillingAddress"
+                          class="app-input"
+                          rows="3"></textarea>
+                <span asp-validation-for="BillingAddress" class="validation-message"></span>
+            </div>
+
+            <div class="form-group mt-3">
+                <label asp-for="Remarks" class="form-label">Remarks</label>
+                <textarea asp-for="Remarks"
+                          class="app-input"
+                          rows="2"></textarea>
+                <span asp-validation-for="Remarks" class="validation-message"></span>
+            </div>
+
+            <div class="form-group mt-3">
+                <label class="form-label">Attachment</label>
+                <input type="file"
+                       name="Attachment"
+                       class="app-input" />
+            </div>
+
+        </div>
+    </div>
+
+    <div class="app-card table-card">
+        <div class="card-header">
+            <h5 class="card-title">Invoice Items</h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+                <table class="app-table" id="itemTable">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Description</th>
+                            <th>Qty</th>
+                            <th>Unit</th>
+                            <th>Rate</th>
+                            <th>GST %</th>
+                            <th>GST Amt</th>
+                            <th>Amount</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <tr>
+                            <td>
+                                <input name="InvoiceDetails[0].ItemName"
+                                       class="app-input" />
+                            </td>
+
+                            <td>
+                                <input name="InvoiceDetails[0].Description"
+                                       class="app-input" />
+                            </td>
+
+                            <td>
+                                <input name="InvoiceDetails[0].Qty"
+                                       class="app-input qty"
+                                       type="number"
+                                       step="0.01"
+                                       value="1" />
+                            </td>
+
+                            <td>
+                                <select name="InvoiceDetails[0].Unit"
+                                        class="app-select">
+                                    <option value="Service">Service</option>
+                                    <option value="Hour">Hour</option>
+                                    <option value="Day">Day</option>
+                                    <option value="Month">Month</option>
+                                    <option value="Project">Project</option>
+                                    <option value="Job">Job</option>
+                                    <option value="User">User</option>
+                                    <option value="License">License</option>
+                                    <option value="Milestone">Milestone</option>
+                                </select>
+                            </td>
+
+                            <td>
+                                <input name="InvoiceDetails[0].Rate"
+                                       class="app-input rate"
+                                       type="number"
+                                       step="0.01"
+                                       value="0" />
+                            </td>
+
+                            <td>
+                                <input name="InvoiceDetails[0].GSTPercent"
+                                       class="app-input gst"
+                                       type="number"
+                                       step="0.01"
+                                       value="18" />
+                            </td>
+
+                            <td>
+                                <input name="InvoiceDetails[0].GSTAmount"
+                                       class="app-input gstAmount"
+                                       readonly />
+                            </td>
+
+                            <td>
+                                <input name="InvoiceDetails[0].Amount"
+                                       class="app-input amount"
+                                       readonly />
+                            </td>
+
+                            <td>
+                                <button type="button"
+                                        class="btn-app btn-icon btn-danger-app removeRow">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-3">
+                <button type="button"
+                        id="btnAddRow"
+                        class="btn-app btn-success-app">
+                    <i class="bi bi-plus-circle"></i>
+                    Add Item
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="app-card">
+        <div class="card-header">
+            <h5 class="card-title">Invoice Summary</h5>
+        </div>
+
+        <div class="card-body">
+            <table class="app-table">
+                <tbody>
+                    <tr>
+                        <th>Sub Total</th>
+                        <td>
+                            <input asp-for="SubTotal"
+                                   id="SubTotal"
+                                   class="app-input"
+                                   readonly />
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Discount</th>
+                        <td>
+                            <input asp-for="Discount"
+                                   id="Discount"
+                                   class="app-input"
+                                   value="0" />
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>GST</th>
+                        <td>
+                            <input asp-for="GSTAmount"
+                                   id="GSTAmount"
+                                   class="app-input"
+                                   readonly />
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Grand Total</th>
+                        <td>
+                            <input asp-for="GrandTotal"
+                                   id="GrandTotal"
+                                   class="app-input"
+                                   readonly />
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="app-card">
+        <div class="card-body">
+            <button type="submit"
+                    class="btn-app btn-primary-app">
+                <i class="bi bi-check-circle"></i>
+                Save Invoice
+            </button>
+
+            <button type="submit"
+                    name="action"
+                    value="SavePrint"
+                    class="btn-app btn-success-app">
+                <i class="bi bi-printer"></i>
+                Save & Print
+            </button>
+
+            <button type="reset"
+                    class="btn-app btn-secondary-app">
+                <i class="bi bi-arrow-counterclockwise"></i>
+                Reset
+            </button>
+
+            <a asp-action="Index"
+               class="btn-app btn-secondary-app">
+                <i class="bi bi-x-circle"></i>
+                Cancel
+            </a>
+        </div>
+    </div>
+
+</form>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        $(function () {
+
+                    $("#ClientId").change(function () {
+            var selectedOption = $(this).find("option:selected");
+
+            var gstNo = selectedOption.data("gst") || "";
+            var billingAddress = selectedOption.data("address") || "";
+
+            $("#GSTNo").val(gstNo);
+            $("#BillingAddress").val(billingAddress);
+        });
+
+            var rowIndex = $("#itemTable tbody tr").length;
+
+            $("#btnAddRow").click(function () {
+                var html = `
+                    <tr>
+                        <td>
+                            <input name="InvoiceDetails[` + rowIndex + `].ItemName" class="app-input" />
+                        </td>
+                        <td>
+                            <input name="InvoiceDetails[` + rowIndex + `].Description" class="app-input" />
+                        </td>
+                        <td>
+                            <input name="InvoiceDetails[` + rowIndex + `].Qty" class="app-input qty" type="number" step="0.01" value="1" />
+                        </td>
+                        <td>
+                                    <select name="InvoiceDetails[` + rowIndex + `].Unit" class="app-select">
+                                      <option value="Service">Service</option>
+                                      <option value="Hour">Hour</option>
+                                      <option value="Day">Day</option>
+                                      <option value="Month">Month</option>
+                                      <option value="Project">Project</option>
+                                      <option value="Job">Job</option>
+                                      <option value="User">User</option>
+                                      <option value="License">License</option>
+                                      <option value="Milestone">Milestone</option>
+                                     </select>
+                        </td>
+                        <td>
+                            <input name="InvoiceDetails[` + rowIndex + `].Rate" class="app-input rate" type="number" step="0.01" value="0" />
+                        </td>
+                        <td>
+                            <input name="InvoiceDetails[` + rowIndex + `].GSTPercent" class="app-input gst" type="number" step="0.01" value="18" />
+                        </td>
+                        <td>
+                            <input name="InvoiceDetails[` + rowIndex + `].GSTAmount" class="app-input gstAmount" readonly />
+                        </td>
+                        <td>
+                            <input name="InvoiceDetails[` + rowIndex + `].Amount" class="app-input amount" readonly />
+                        </td>
+                        <td>
+                            <button type="button" class="btn-app btn-icon btn-danger-app removeRow">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+
+                $("#itemTable tbody").append(html);
+                rowIndex++;
+            });
+
+            $(document).on("click", ".removeRow", function () {
+                if ($("#itemTable tbody tr").length > 1) {
+                    $(this).closest("tr").remove();
+                    calculateTotals();
+                    reIndex();
+                }
+            });
+
+            $(document).on("keyup change", ".qty,.rate,.gst,#Discount", function () {
+                calculateTotals();
+            });
+
+            function reIndex() {
+                $("#itemTable tbody tr").each(function (i) {
+                    $(this).find("input").each(function () {
+                        var name = $(this).attr("name");
+
+                        if (name) {
+                            name = name.replace(/InvoiceDetails\[\d+\]/, "InvoiceDetails[" + i + "]");
+                            $(this).attr("name", name);
+                        }
+                    });
+                });
+
+                rowIndex = $("#itemTable tbody tr").length;
+            }
+
+            function calculateTotals() {
+                var subTotal = 0;
+                var gstTotal = 0;
+
+                $("#itemTable tbody tr").each(function () {
+                    var qty = parseFloat($(this).find(".qty").val()) || 0;
+                    var rate = parseFloat($(this).find(".rate").val()) || 0;
+                    var gst = parseFloat($(this).find(".gst").val()) || 0;
+
+                    var lineAmount = qty * rate;
+                    var gstAmount = lineAmount * gst / 100;
+
+                    $(this).find(".gstAmount").val(gstAmount.toFixed(2));
+                    $(this).find(".amount").val((lineAmount + gstAmount).toFixed(2));
+
+                    subTotal += lineAmount;
+                    gstTotal += gstAmount;
+                });
+
+                var discount = parseFloat($("#Discount").val()) || 0;
+                var grandTotal = subTotal - discount + gstTotal;
+
+                $("#SubTotal").val(subTotal.toFixed(2));
+                $("#GSTAmount").val(gstTotal.toFixed(2));
+                $("#GrandTotal").val(grandTotal.toFixed(2));
+            }
+
+            calculateTotals();
+        });
+    </script>
+}

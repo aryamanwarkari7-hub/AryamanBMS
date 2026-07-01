@@ -1,0 +1,345 @@
+@model IEnumerable<AryamanBMS.Models.NoticeModel>
+
+@{
+    ViewData["Title"] = "Statutory Notices";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Statutory Notices</h1>
+        <p class="module-subtitle">
+            Track notices from GST, PF, ESIC, Income Tax, Labour, ROC and other authorities
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="Create" class="btn-app btn-primary-app">
+            <i class="bi bi-plus-circle"></i>
+            Add Notice
+        </a>
+    </div>
+</div>
+
+<div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="app-alert-success">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="app-alert-danger">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="app-card">
+
+        <div class="card-header">
+            <h5 class="card-title">Filters</h5>
+        </div>
+
+        <div class="card-body">
+
+            <form method="get" asp-action="Index">
+
+                <div class="form-grid-3">
+
+                    <div class="form-group">
+
+                        <label class="form-label">Department</label>
+
+                        <select name="department" class="app-select">
+
+                            <option value="">All Departments</option>
+
+                            <option value="@FinancialConstants.NoticeDepartment.GST"
+                                    selected="@(ViewBag.Department == FinancialConstants.NoticeDepartment.GST)">
+                                GST
+                            </option>
+
+                            <option value="@FinancialConstants.NoticeDepartment.PF"
+                                    selected="@(ViewBag.Department == FinancialConstants.NoticeDepartment.PF)">
+                                PF
+                            </option>
+
+                            <option value="@FinancialConstants.NoticeDepartment.ESIC"
+                                    selected="@(ViewBag.Department == FinancialConstants.NoticeDepartment.ESIC)">
+                                ESIC
+                            </option>
+
+                            <option value="@FinancialConstants.NoticeDepartment.IncomeTax"
+                                    selected="@(ViewBag.Department == FinancialConstants.NoticeDepartment.IncomeTax)">
+                                Income Tax
+                            </option>
+
+                            <option value="@FinancialConstants.NoticeDepartment.Labour"
+                                    selected="@(ViewBag.Department == FinancialConstants.NoticeDepartment.Labour)">
+                                Labour
+                            </option>
+
+                            <option value="@FinancialConstants.NoticeDepartment.ROC"
+                                    selected="@(ViewBag.Department == FinancialConstants.NoticeDepartment.ROC)">
+                                ROC
+                            </option>
+
+                            <option value="@FinancialConstants.NoticeDepartment.Other"
+                                    selected="@(ViewBag.Department == FinancialConstants.NoticeDepartment.Other)">
+                                Other
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label class="form-label">Status</label>
+
+                        <select name="status" class="app-select">
+
+                            <option value="">All Status</option>
+
+                            <option value="@FinancialConstants.NoticeStatus.Open"
+                                    selected="@(ViewBag.Status == FinancialConstants.NoticeStatus.Open)">
+                                Open
+                            </option>
+
+                            <option value="@FinancialConstants.NoticeStatus.Replied"
+                                    selected="@(ViewBag.Status == FinancialConstants.NoticeStatus.Replied)">
+                                Replied
+                            </option>
+
+                            <option value="@FinancialConstants.NoticeStatus.Closed"
+                                    selected="@(ViewBag.Status == FinancialConstants.NoticeStatus.Closed)">
+                                Closed
+                            </option>
+
+                            <option value="@FinancialConstants.NoticeStatus.Escalated"
+                                    selected="@(ViewBag.Status == FinancialConstants.NoticeStatus.Escalated)">
+                                Escalated
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                    <div class="form-group d-flex flex-row align-items-end gap-2">
+
+                        <button type="submit" class="btn-app btn-primary-app">
+                            <i class="bi bi-funnel"></i>
+                            Filter
+                        </button>
+
+                        <a asp-action="Index" class="btn-app btn-secondary-app">
+                            Reset
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <div class="app-card table-card">
+
+        <div class="card-header">
+            <h5 class="card-title">Notice Register</h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table class="app-table">
+
+                    <thead >
+
+                        <tr>
+
+                            <th>Notice No.</th>
+
+                            <th>Department</th>
+
+                            <th>Subject</th>
+
+                            <th>Notice Date</th>
+
+                            <th>Due Date</th>
+
+                            <th>Status</th>
+
+                            <th class="text-center">Documents</th>
+
+                            <th class="text-center">
+                                Actions
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        @if (Model.Any())
+                        {
+                            foreach (var item in Model)
+                            {
+                                var statusBadge = item.Status switch
+                                {
+                                    "Open" => "badge-warning",
+                                    "Replied" => "badge-info",
+                                    "Closed" => "badge-success",
+                                    "Escalated" => "badge-danger",
+                                    _ => "badge-secondary"
+                                };
+
+                                var deptBadge = item.Department switch
+                                {
+                                    "GST" => "badge-success",
+                                    "PF" => "badge-primary",
+                                    "ESIC" => "badge-info",
+                                    "IncomeTax" => "bg-dark",
+                                    "Labour" => "badge-warning",
+                                    "ROC" => "badge-secondary",
+                                    _ => "bg-light text-dark"
+                                };
+
+                                <tr>
+
+                                    <td>
+                                        @item.NoticeNumber
+                                    </td>
+
+                                    <td>
+                                        <span class="@deptBadge">
+                                            @item.Department
+                                        </span>
+                                    </td>
+
+                                    <td>
+
+                                        <strong>@item.Subject</strong>
+
+                                        @if (!string.IsNullOrWhiteSpace(item.Description))
+                                        {
+                                            <br />
+
+                                            <small class="card-subtitle">
+                                                @(item.Description.Length > 80
+                                                    ? item.Description.Substring(0, 80) + "..."
+                                                    : item.Description)
+                                            </small>
+                                        }
+
+                                    </td>
+
+                                    <td>
+                                        @item.NoticeDate.ToString("dd-MMM-yyyy")
+                                    </td>
+
+                                    <td>
+
+                                        @if (item.DueDate.HasValue)
+                                        {
+                                            @item.DueDate.Value.ToString("dd-MMM-yyyy")
+                                        }
+                                        else
+                                        {
+                                            <span class="card-subtitle">-</span>
+                                        }
+
+                                    </td>
+
+                                    <td>
+
+                                        <span class="@statusBadge">
+                                            @item.Status
+                                        </span>
+
+                                    </td>
+
+                                    <td class="text-center">
+
+                                        <span class="badge-secondary">
+                                            @(item.Documents?.Count ?? 0)
+                                        </span>
+
+                                    </td>
+
+                                    <td class="text-center">
+
+                                        <a asp-action="Details"
+                                           asp-route-id="@item.NoticeId"
+                                           class="btn-app btn-icon btn-primary-app"
+                                           title="Details">
+
+                                            <i class="bi bi-eye"></i>
+
+                                        </a>
+
+                                        <a asp-action="Edit"
+                                           asp-route-id="@item.NoticeId"
+                                           class="btn-app btn-icon btn-secondary-app"
+                                           title="Edit">
+
+                                            <i class="bi bi-pencil-square"></i>
+
+                                        </a>
+
+                                        <a asp-action="Delete"
+                                           asp-route-id="@item.NoticeId"
+                                           class="btn-app btn-icon btn-danger-app"
+                                           onclick="return confirm('Are you sure you want to delete this notice?');"
+                                           title="Delete">
+
+                                            <i class="bi bi-trash"></i>
+
+                                        </a>
+
+                                    </td>
+
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+
+                                <td colspan="8" class="text-center py-5 text-muted">
+
+                                    <i class="bi bi-inbox fs-2 mb-2 d-block"></i>
+
+                                    No statutory notices found.
+
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts {
+
+    <partial name="_ValidationScriptsPartial" />
+
+}

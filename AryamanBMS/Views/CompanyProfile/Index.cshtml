@@ -1,0 +1,76 @@
+@model AryamanBMS.Models.CompanyProfileModel
+
+@{
+    ViewData["Title"] = "Company Profile";
+}
+
+<h2>Company Profile</h2>
+
+@if (TempData["Success"] != null)
+{
+    <div class="app-alert-success">
+        @TempData["Success"]
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="app-alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
+<form asp-action="Index" method="post">
+
+    <input type="hidden"
+           asp-for="CompanyProfileId" />
+
+    <div class="mb-3">
+        <label asp-for="CompanyName"></label>
+        <input asp-for="CompanyName"
+               class="app-input" />
+        <span asp-validation-for="CompanyName"
+              class="validation-message"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="GSTIN"></label>
+        <input asp-for="GSTIN"
+               class="app-input" />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="PAN"></label>
+        <input asp-for="PAN"
+               class="app-input" />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Address"></label>
+        <textarea asp-for="Address"
+                  class="app-input"></textarea>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Email"></label>
+        <input asp-for="Email"
+               class="app-input" />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Phone"></label>
+        <input asp-for="Phone"
+               class="app-input" />
+    </div>
+
+    <button type="submit"
+            class="btn-app btn-primary-app">
+        Save
+    </button>
+
+</form>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

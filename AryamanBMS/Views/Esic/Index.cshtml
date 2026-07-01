@@ -1,0 +1,104 @@
+@model List<AryamanBMS.Models.EsicMonthlySnapshotModel>
+
+@{
+    ViewData["Title"] = "ESIC Records";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">ESIC Records</h1>
+        <p class="module-subtitle">
+            Monthly Employee State Insurance liability and challan tracking
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="Generate" class="btn-app btn-primary-app">
+            <i class="bi bi-plus-circle"></i>
+            Generate Snapshot
+        </a>
+    </div>
+</div>
+
+<div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="app-alert-success">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="app-alert-danger">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="app-card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="app-table">
+                    <thead >
+                        <tr>
+                            <th>Period</th>
+                            <th>Financial Year</th>
+                            <th class="text-end">Employee Count</th>
+                            <th class="text-end">Employee Deduction</th>
+                            <th class="text-end">Employer Contribution</th>
+                            <th class="text-end">Total Payable</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Any())
+                        {
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(item.Month) @item.Year</td>
+                                    <td>@item.FinancialYear</td>
+                                    <td class="text-end">@item.EmployeeCount</td>
+                                    <td class="text-end">@item.EmployeeDeductionTotal.ToString("N2")</td>
+                                    <td class="text-end">@item.EmployerContributionTotal.ToString("N2")</td>
+                                    <td class="text-end fw-bold">@item.TotalPayable.ToString("N2")</td>
+                                    <td class="text-center">
+                                        @{
+                                            var badgeClass = item.Status switch
+                                            {
+                                                "Paid" => "badge-success",
+                                                "Filed" => "badge-info",
+                                                _ => "badge-warning"
+                                            };
+                                        }
+                                        <span class="@badgeClass">@item.Status</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <a asp-action="Details" asp-route-id="@item.EsicSnapshotId"
+                                           class="btn-app btn-icon btn-primary-app" title="Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox fs-2 mb-2 d-block"></i>
+                                    No ESIC snapshots generated yet.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>

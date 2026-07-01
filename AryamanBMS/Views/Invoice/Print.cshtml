@@ -1,0 +1,228 @@
+@model AryamanBMS.Models.InvoiceModel
+
+@{
+    ViewData["Title"] = "Invoice";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Invoice</h1>
+        <p class="module-subtitle">
+            @Model.InvoiceNo
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+
+        <button onclick="window.print()"
+                class="btn-app btn-primary-app">
+            <i class="bi bi-printer"></i>
+            Print
+        </button>
+
+        <a asp-action="Details"
+           asp-route-id="@Model.InvoiceId"
+           class="btn-app btn-secondary-app">
+            Back
+        </a>
+
+    </div>
+
+</div>
+
+<div class="invoice-print">
+
+    <div class="invoice-document">
+
+        <div class="invoice-header">
+
+            <div>
+                <h2>Aryaman BMS</h2>
+                <p>Management System</p>
+            </div>
+
+            <div class="invoice-title">
+                <h3>INVOICE</h3>
+                <p>@Model.InvoiceNo</p>
+            </div>
+
+        </div>
+
+        <div class="invoice-section">
+
+            <h4>Invoice Details</h4>
+
+            <div class="invoice-info-grid">
+
+                <div>
+                    <span>Invoice No</span>
+                    <strong>@Model.InvoiceNo</strong>
+                </div>
+
+                <div>
+                    <span>Invoice Date</span>
+                    <strong>@Model.InvoiceDate.ToString("dd-MMM-yyyy")</strong>
+                </div>
+
+                <div>
+                    <span>Due Date</span>
+                    <strong>@(Model.DueDate?.ToString("dd-MMM-yyyy") ?? "-")</strong>
+                </div>
+
+                <div>
+                    <span>Status</span>
+                    <strong>@Model.InvoiceStatus</strong>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="invoice-section">
+
+            <h4>Billing Details</h4>
+
+            <div class="invoice-info-grid">
+
+                <div>
+                    <span>Client</span>
+                    <strong>@(Model.Client?.ClientName ?? "-")</strong>
+                </div>
+
+                <div>
+                    <span>GSTIN</span>
+                    <strong>@(Model.GSTNo ?? "-")</strong>
+                </div>
+
+                <div>
+                    <span>Project</span>
+                    <strong>@(Model.ProjectName ?? "-")</strong>
+                </div>
+
+                <div>
+                    <span>Payment Terms</span>
+                    <strong>@(Model.PaymentTerms ?? "-")</strong>
+                </div>
+
+            </div>
+
+            <div class="invoice-address">
+                <span>Billing Address</span>
+                <strong>@(string.IsNullOrWhiteSpace(Model.BillingAddress) ? "-" : Model.BillingAddress)</strong>
+            </div>
+
+        </div>
+
+        <div class="invoice-section">
+
+            <h4>Invoice Items</h4>
+
+            <div class="table-responsive">
+                <table class="invoice-table">
+
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Item</th>
+                            <th>Description</th>
+                            <th class="text-end">Qty</th>
+                            <th>Unit</th>
+                            <th class="text-end">Rate</th>
+                            <th class="text-end">GST %</th>
+                            <th class="text-end">GST Amt</th>
+                            <th class="text-end">Amount</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @{
+                            int sr = 1;
+                        }
+
+                        @foreach (var item in Model.InvoiceDetails)
+                        {
+                            <tr>
+                                <td>@sr</td>
+                                <td>@item.ItemName</td>
+                                <td>@item.Description</td>
+                                <td class="text-end">@item.Qty.ToString("N2")</td>
+                                <td>@item.Unit</td>
+                                <td class="text-end">@item.Rate.ToString("N2")</td>
+                                <td class="text-end">@item.GSTPercent.ToString("N2")</td>
+                                <td class="text-end">@item.GSTAmount.ToString("N2")</td>
+                                <td class="text-end">@item.Amount.ToString("N2")</td>
+                            </tr>
+
+                            sr++;
+                        }
+                    </tbody>
+
+                </table>
+            </div>
+
+        </div>
+
+        <div class="invoice-summary-wrap">
+
+            <div class="invoice-section invoice-notes">
+
+                <h4>Notes</h4>
+
+                <div class="invoice-address">
+                    <span>Remarks</span>
+                    <strong>@(string.IsNullOrWhiteSpace(Model.Remarks) ? "-" : Model.Remarks)</strong>
+                </div>
+
+            </div>
+
+            <div class="invoice-section invoice-summary">
+
+                <h4>Summary</h4>
+
+                <div class="invoice-row">
+                    <span>Sub Total</span>
+                    <strong>@Model.SubTotal.ToString("N2")</strong>
+                </div>
+
+                <div class="invoice-row">
+                    <span>Discount</span>
+                    <strong>@Model.Discount.ToString("N2")</strong>
+                </div>
+
+                <div class="invoice-row">
+                    <span>GST</span>
+                    <strong>@Model.GSTAmount.ToString("N2")</strong>
+                </div>
+
+                <div class="invoice-row invoice-total">
+                    <span>Grand Total</span>
+                    <strong>@Model.GrandTotal.ToString("N2")</strong>
+                </div>
+
+                <div class="invoice-row">
+                    <span>Paid</span>
+                    <strong>@Model.PaidAmount.ToString("N2")</strong>
+                </div>
+
+                <div class="invoice-row invoice-total">
+                    <span>Balance</span>
+                    <strong>@Model.BalanceAmount.ToString("N2")</strong>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="invoice-net">
+            <span>Amount Payable</span>
+            <strong>₹ @Model.BalanceAmount.ToString("N2")</strong>
+        </div>
+
+        <div class="invoice-footer">
+            <p>This is a system-generated invoice.</p>
+        </div>
+
+    </div>
+
+</div>

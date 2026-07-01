@@ -1,0 +1,265 @@
+@model List<AryamanBMS.Models.GstMonthlySnapshotModel>
+
+@{
+    ViewData["Title"] = "GST Management";
+
+    int currentMonth = ViewBag.SelectedMonth ?? DateTime.Now.Month;
+    int currentYear = ViewBag.SelectedYear ?? DateTime.Now.Year;
+    var selectedSnapshot = ViewBag.SelectedSnapshot as AryamanBMS.Models.GstMonthlySnapshotModel;
+
+    int fyStart = currentMonth < 4
+    ? currentYear - 1
+    : currentYear;
+
+    int fyEnd = fyStart + 1;
+
+    var currentSnapshot = selectedSnapshot;
+    bool hasSelectedPeriod = ViewBag.HasSelectedPeriod == true;
+
+    var visibleSnapshots = currentSnapshot != null
+        ? new List<AryamanBMS.Models.GstMonthlySnapshotModel> { currentSnapshot }
+        : hasSelectedPeriod
+            ? new List<AryamanBMS.Models.GstMonthlySnapshotModel>()
+            : Model;
+
+    string StatusClass(string status)
+    {
+        return status == "Filed" || status == "Locked"
+            ? "badge-success"
+            : status == "Calculated" || status == "Verified"
+                ? "badge-info"
+                : "badge-warning";
+    }
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">GST MANAGEMENT</h1>
+        <p class="module-subtitle">
+            Monitor GST snapshots, output GST, input GST and filing status.
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="Dashboard"
+           asp-route-month="@currentMonth"
+           asp-route-year="@currentYear"
+           class="btn-app btn-primary-app">
+            <i class="bi bi-speedometer2"></i>
+            Dashboard
+        </a>
+    </div>
+
+</div>
+
+<div class="app-card form-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Select Period</h2>
+            <p class="card-subtitle">
+                Choose month and year to load GST details.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        <form method="get"
+              asp-action="Index">
+
+            <div class="form-grid-3">
+
+                <div class="form-group">
+                    <label class="form-label">Month</label>
+
+                    <select name="month"
+                            class="app-select"
+                            required>
+                        <option value="">Select Month</option>
+
+                        @for (int month = 1; month <= 12; month++)
+                        {
+                            <option value="@month"
+                                    selected="@(month == currentMonth)">
+                                @(System.Globalization.CultureInfo
+                                .CurrentCulture.DateTimeFormat
+                                .GetMonthName(month))
+                            </option>
+                        }
+                    </select>
+                </div>
+
+
+                <div class="form-group">
+                    <label class="form-label">Year</label>
+
+                    <select name="year"
+                            class="app-select"
+                            required>
+                        <option value="">Select Year</option>
+
+                        @for (int year = currentYear - 2; year <= currentYear + 1; year++)
+                        {
+                            <option value="@year"
+                                    selected="@(year == currentYear)">
+                                @year
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">&nbsp;</label>
+
+                    <button type="submit"
+                            class="btn-app btn-primary-app w-100">
+                        <i class="bi bi-search"></i>
+                        Load
+                    </button>
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<div class="dashboard-grid">
+
+    <div class="stats-card">
+        <div class="stats-label">Selected Month</div>
+        <div class="stats-number">
+            @(System.Globalization.CultureInfo.CurrentCulture
+            .DateTimeFormat.GetAbbreviatedMonthName(currentMonth))
+            @currentYear
+        </div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Financial Year</div>
+        <div class="stats-number">FY @fyStart-@(fyEnd.ToString().Substring(2))</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Snapshot Status</div>
+        <div class="stats-number">@(currentSnapshot?.Status ?? "Pending")</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Filing Lock</div>
+        <div class="stats-number">
+            @(currentSnapshot?.Status == "Filed" || currentSnapshot?.Status == "Locked" ? "Locked" : "Open")
+        </div>
+    </div>
+
+</div>
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">GST Snapshots</h2>
+            <p class="card-subtitle">
+                Select a period above to view detailed GST calculation.
+            </p>
+        </div>
+    </div>
+
+  
+
+    <div class="card-body">
+
+        <div class="table-responsive">
+
+            <table class="app-table">
+
+                <thead>
+                    <tr>
+                        <th>Month-Year</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-end amount-column">Output GST</th>
+                        <th class="text-end amount-column">Input GST</th>
+                        <th class="text-end amount-column">Net Payable</th>
+                        <th class="text-center">Documents</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+
+                
+
+                <tbody>
+                    
+                        @if (visibleSnapshots != null && visibleSnapshots.Any())
+                        {
+                            foreach (var snapshot in visibleSnapshots)
+                        {
+                            <tr>
+                                <td>
+                                    @System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(snapshot.Month)
+                                    @snapshot.Year
+                                </td>
+
+                                <td class="text-center">
+                                    <span class="@StatusClass(snapshot.Status)">
+                                        @snapshot.Status
+                                    </span>
+                                </td>
+
+                                <td class="text-end amount-column">
+                                    ₹ @snapshot.TotalOutputGST.ToString("N2")
+                                </td>
+
+                                <td class="text-end amount-column">
+                                    ₹ @snapshot.TotalInputGST.ToString("N2")
+                                </td>
+
+                                <td class="text-end amount-column">
+                                    ₹ @snapshot.NetGSTPayable.ToString("N2")
+                                </td>
+
+                                <td class="text-center">
+                                    @snapshot.Documents.Count
+                                </td>
+
+                                <td class="text-center">
+                                    <div class="table-actions">
+                                        <a asp-action="Dashboard"
+                                           asp-route-month="@snapshot.Month"
+                                           asp-route-year="@snapshot.Year"
+                                           class="btn-app btn-icon btn-primary-app"
+                                           title="View GST Dashboard">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="empty-state">
+                                @if (hasSelectedPeriod)
+                                {
+                                    <span>No GST snapshot found for the selected month. Open dashboard and generate snapshot.</span>
+                                }
+                                else
+                                {
+                                    <span>No GST snapshots generated yet. Select a period above and load.</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>

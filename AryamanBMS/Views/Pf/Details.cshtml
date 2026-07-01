@@ -1,0 +1,252 @@
+@model AryamanBMS.Models.PfMonthlySnapshotModel
+
+@{
+    ViewData["Title"] = "PF Snapshot Details";
+    var monthName = System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(Model.Month);
+}
+
+<div class="module-content">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h3 class="mb-0">
+                <i class="bi bi-shield-check text-primary"></i>
+                PF Snapshot — @monthName @Model.Year
+            </h3>
+            <small class="card-subtitle">FY @Model.FinancialYear</small>
+        </div>
+        <a asp-action="Index" class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="app-alert-success">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="app-alert-danger">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Summary Card -->
+    <div class="app-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <strong>Liability Summary</strong>
+            @{
+                var badgeClass = Model.Status switch
+                {
+                    "Paid" => "badge-success",
+                    "Filed" => "badge-info",
+                    _ => "badge-warning"
+                };
+            }
+            <span class="@badgeClass">@Model.Status</span>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label class="text-muted small">Employee Count</label>
+                    <p class="fw-bold mb-0">@Model.EmployeeCount</p>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="text-muted small">Employee Deduction</label>
+                    <p class="fw-bold mb-0">₹ @Model.EmployeeDeductionTotal.ToString("N2")</p>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="text-muted small">Employer Contribution</label>
+                    <p class="fw-bold mb-0">₹ @Model.EmployerContributionTotal.ToString("N2")</p>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="text-muted small">Total Payable</label>
+                    <p class="fw-bold mb-0 text-danger">₹ @Model.TotalPayable.ToString("N2")</p>
+                </div>
+            </div>
+
+            @if (Model.Status == "Pending")
+            {
+                <form asp-action="MarkFiled" asp-route-id="@Model.PfSnapshotId" method="post" class="d-inline">
+                    <button type="submit" class="btn-app btn-icon btn-primary-app">
+                        <i class="bi bi-flag"></i> Mark as Filed
+                    </button>
+                </form>
+            }
+            @if (Model.Status == "Filed")
+            {
+                <form asp-action="MarkPaid" asp-route-id="@Model.PfSnapshotId" method="post" class="d-inline">
+                    <button type="submit" class="btn-app btn-icon btn-success-app">
+                        <i class="bi bi-check-circle"></i> Mark as Paid
+                    </button>
+                </form>
+            }
+        </div>
+    </div>
+
+    <div class="row">
+
+        <!-- Challan Section -->
+        <div class="col-lg-6 mb-4">
+            <div class="app-card">
+                <div class="card-header">
+                    <strong>Challan Details</strong>
+                </div>
+                <div class="card-body">
+
+                    @if (Model.Challans.Any())
+                    {
+                        <table class="app-table">
+                            <thead >
+                                <tr>
+                                    <th>TRRN</th>
+                                    <th>Payment Date</th>
+                                    <th class="text-end">Amount Paid</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var c in Model.Challans)
+                                {
+                                    <tr>
+                                        <td>@(c.TRRN ?? "-")</td>
+                                        <td>@(c.PaymentDate?.ToString("dd-MMM-yyyy") ?? "-")</td>
+                                        <td class="text-end">@c.AmountPaid.ToString("N2")</td>
+                                        <td>@c.Status</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <p class="text-muted text-center py-3 mb-0">No challan recorded yet.</p>
+                    }
+
+                    <hr />
+
+                    <h6 class="text-muted small text-uppercase">Add Challan</h6>
+                    <form asp-action="AddChallan" method="post">
+                        <input type="hidden" name="PfSnapshotId" value="@Model.PfSnapshotId" />
+
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label small">TRRN</label>
+                                <input type="text" name="TRRN" class="app-input" />
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label small">Payment Date</label>
+                                <input type="date" name="PaymentDate" class="app-input" />
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label small">Bank Name</label>
+                                <input type="text" name="BankName" class="app-input" />
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label small">Payment Mode</label>
+                                <input type="text" name="PaymentMode" class="app-input" placeholder="NEFT / Online" />
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <label class="form-label small">Amount Paid</label>
+                                <input type="number" step="0.01" name="AmountPaid" class="app-input" />
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <label class="form-label small">Interest</label>
+                                <input type="number" step="0.01" name="InterestAmount" class="app-input" value="0" />
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <label class="form-label small">Late Fee</label>
+                                <input type="number" step="0.01" name="LateFee" class="app-input" value="0" />
+                            </div>
+                            <div class="col-12 mb-2">
+                                <label class="form-label small">Remarks</label>
+                                <input type="text" name="Remarks" class="app-input" />
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-app btn-primary-app">
+                            <i class="bi bi-plus-circle"></i> Add Challan
+                        </button>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Documents Section -->
+        <div class="col-lg-6 mb-4">
+            <div class="app-card">
+                <div class="card-header">
+                    <strong>Documents</strong>
+                </div>
+                <div class="card-body">
+
+                    @if (Model.Documents.Any())
+                    {
+                        <ul class="list-group mb-3">
+                            @foreach (var doc in Model.Documents)
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="badge-secondary">@doc.DocumentType</span>
+                                        <a href="@Url.Content("~/" + doc.FilePath)" target="_blank">@doc.FileName</a>
+                                    </div>
+                                    <form asp-action="DeleteDocument" method="post" class="d-inline">
+                                        <input type="hidden" name="id" value="@doc.PfDocumentId" />
+                                        <input type="hidden" name="snapshotId" value="@Model.PfSnapshotId" />
+                                        <button type="submit" class="btn-app btn-icon btn-danger-app"
+                                                onclick="return confirm('Delete this document?');">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="text-muted text-center py-3">No documents uploaded yet.</p>
+                    }
+
+                    <hr />
+
+                    <h6 class="text-muted small text-uppercase">Upload Document</h6>
+                    <form asp-action="UploadDocument" method="post" enctype="multipart/form-data">
+                        <input type="hidden" name="snapshotId" value="@Model.PfSnapshotId" />
+
+                        <div class="mb-2">
+                            <label class="form-label small">Document Type</label>
+                            <select name="documentType" class="app-select">
+                                <option value="ECR">ECR</option>
+                                <option value="Challan">Challan</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label small">File</label>
+                            <input type="file" name="file" class="app-input" required />
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label small">Remarks</label>
+                            <input type="text" name="remarks" class="app-input" />
+                        </div>
+
+                        <button type="submit" class="btn-app btn-icon btn-primary-app">
+                            <i class="bi bi-upload"></i> Upload
+                        </button>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>

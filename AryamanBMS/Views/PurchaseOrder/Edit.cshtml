@@ -1,0 +1,61 @@
+@model AryamanBMS.ViewModels.PurchaseOrderViewModel
+
+@{
+    ViewData["Title"] = "Edit Order";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Edit PO / WO</h1>
+        <p class="module-subtitle">@Model.Order.OrderNumber</p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="Details"
+           asp-route-id="@Model.Order.PurchaseOrderId"
+           class="btn-app btn-primary-app">
+            <i class="bi bi-eye"></i>
+            Details
+        </a>
+
+        <a asp-action="Index" class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
+</div>
+
+    <div class="app-card">
+
+        <div class="card-header">
+            <strong>Order Details</strong>
+        </div>
+
+        <div class="card-body">
+            <form asp-action="Edit" asp-route-id="@Model.Order.PurchaseOrderId"
+                  method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly" class="app-alert-danger"></div>
+
+                <partial name="_PurchaseOrderForm" model="Model" />
+
+                <hr />
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn-app btn-primary-app">
+                        <i class="bi bi-check-circle"></i> 
+                        Update Order
+                    </button>
+                    <a asp-action="Index" class="btn-app btn-secondary-app">Cancel</a>
+                </div>
+
+            </form>
+        </div>
+
+    </div>
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

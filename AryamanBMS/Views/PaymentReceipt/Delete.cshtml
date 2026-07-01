@@ -1,0 +1,121 @@
+﻿@model AryamanBMS.Models.PaymentReceiptModel
+
+@{
+    ViewData["Title"] = "Cancel Payment Receipt";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">CANCEL PAYMENT RECEIPT</h1>
+        <p class="module-subtitle">
+            Confirm receipt cancellation for @Model.ReceiptNo
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="Details"
+           asp-route-id="@Model.PaymentReceiptId"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Receipt Information</h2>
+            <p class="card-subtitle">
+                Review this receipt before cancelling it.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-3">
+
+            <div class="form-group">
+                <label class="form-label">Receipt No</label>
+                <strong>@Model.ReceiptNo</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Receipt Date</label>
+                <strong>@Model.ReceiptDate.ToString("dd-MMM-yyyy")</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Amount Received</label>
+                <strong>₹ @Model.AmountReceived.ToString("N2")</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Client</label>
+                <strong>@(Model.Client?.ClientName ?? "-")</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Invoice</label>
+                <strong>@(Model.Invoice?.InvoiceNo ?? "-")</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Payment Mode</label>
+                <strong>@(Model.PaymentMode ?? "-")</strong>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Cancellation Confirmation</h2>
+            <p class="card-subtitle">
+                This will mark the receipt as cancelled. The receipt record will remain available for audit.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        <div class="app-alert-danger">
+            Are you sure you want to cancel this payment receipt?
+        </div>
+
+        <form asp-action="DeleteConfirmed"
+              asp-route-id="@Model.PaymentReceiptId"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <div class="form-actions">
+
+                <button type="submit"
+                        class="btn-app btn-danger-app">
+                    <i class="bi bi-x-circle"></i>
+                    Cancel Receipt
+                </button>
+
+                <a asp-action="Details"
+                   asp-route-id="@Model.PaymentReceiptId"
+                   class="btn-app btn-secondary-app">
+                    Keep Receipt
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>

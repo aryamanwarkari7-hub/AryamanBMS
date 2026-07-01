@@ -1,0 +1,241 @@
+@model AryamanBMS.ViewModels.ProposalViewModel
+
+<input asp-for="Proposal.ProposalId" type="hidden" />
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Client & Project</h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-2">
+
+            <div class="form-group">
+                <label asp-for="Proposal.ClientId" class="form-label">
+                    Client
+                </label>
+
+                <select asp-for="Proposal.ClientId"
+                        asp-items="Model.Clients"
+                        class="app-select">
+                    <option value="">Select Client</option>
+                </select>
+
+                <span asp-validation-for="Proposal.ClientId"
+                      class="validation-message"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Proposal.ProjectId" class="form-label">
+                    Linked Project
+                </label>
+
+                <select asp-for="Proposal.ProjectId"
+                        asp-items="Model.Projects"
+                        class="app-select">
+                    <option value="">None</option>
+                </select>
+
+                <span asp-validation-for="Proposal.ProjectId"
+                      class="validation-message"></span>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Proposal Information</h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-2">
+
+            <div class="form-group">
+                <label asp-for="Proposal.ProposalTitle" class="form-label">
+                    Proposal Title
+                </label>
+
+                <input asp-for="Proposal.ProposalTitle"
+                       class="app-input" />
+
+                <span asp-validation-for="Proposal.ProposalTitle"
+                      class="validation-message"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Proposal.Status" class="form-label">
+                    Status
+                </label>
+
+                <select asp-for="Proposal.Status"
+                        asp-items="Model.Statuses"
+                        class="app-select">
+                </select>
+
+                <span asp-validation-for="Proposal.Status"
+                      class="validation-message"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Proposal.ProposalDate" class="form-label">
+                    Proposal Date
+                </label>
+
+                <input asp-for="Proposal.ProposalDate"
+                       type="date"
+                       class="app-input" />
+
+                <span asp-validation-for="Proposal.ProposalDate"
+                      class="validation-message"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Proposal.ValidUntil" class="form-label">
+                    Valid Until
+                </label>
+
+                <input asp-for="Proposal.ValidUntil"
+                       type="date"
+                       class="app-input" />
+
+                <span asp-validation-for="Proposal.ValidUntil"
+                      class="validation-message"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Proposal.ProposalAmount" class="form-label">
+                    Amount
+                </label>
+
+                <input asp-for="Proposal.ProposalAmount"
+                       type="number"
+                       step="0.01"
+                       class="app-input" />
+
+                <span asp-validation-for="Proposal.ProposalAmount"
+                      class="validation-message"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Proposal.Currency" class="form-label">
+                    Currency
+                </label>
+
+                <select asp-for="Proposal.Currency"
+                        class="app-select">
+                    <option value="INR">INR</option>
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                    <option value="GBP">GBP</option>
+                </select>
+
+                <span asp-validation-for="Proposal.Currency"
+                      class="validation-message"></span>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Scope & Terms</h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-2">
+
+            <div class="form-group">
+                <label asp-for="Proposal.Scope" class="form-label">
+                    Scope of Work
+                </label>
+
+                <textarea asp-for="Proposal.Scope"
+                          class="app-textarea"></textarea>
+
+                <span asp-validation-for="Proposal.Scope"
+                      class="validation-message"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Proposal.Terms" class="form-label">
+                    Terms & Conditions
+                </label>
+
+                <textarea asp-for="Proposal.Terms"
+                          class="app-textarea"></textarea>
+
+                <span asp-validation-for="Proposal.Terms"
+                      class="validation-message"></span>
+            </div>
+
+        </div>
+
+        <div class="form-group mt-3">
+            <label asp-for="Proposal.Remarks" class="form-label">
+                Remarks
+            </label>
+
+            <textarea asp-for="Proposal.Remarks"
+                      class="app-textarea"></textarea>
+
+            <span asp-validation-for="Proposal.Remarks"
+                  class="validation-message"></span>
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Proposal Document</h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-group">
+            <label asp-for="UploadFile" class="form-label">
+                Document
+            </label>
+
+            <input asp-for="UploadFile"
+                   class="app-input"
+                   accept=".pdf,.doc,.docx,.xls,.xlsx" />
+
+            <span asp-validation-for="UploadFile"
+                  class="validation-message"></span>
+        </div>
+
+        @if (Model.Proposal.ProposalId > 0 &&
+                !string.IsNullOrWhiteSpace(Model.Proposal.FileName))
+        {
+            <div class="app-alert-info mt-3">
+                <strong>Current File:</strong>
+                @Model.Proposal.FileName
+
+                <a asp-action="Download"
+                   asp-route-id="@Model.Proposal.ProposalId"
+                   class="btn-app btn-secondary-app">
+                    <i class="bi bi-download"></i>
+                    Download
+                </a>
+            </div>
+        }
+
+    </div>
+
+</div>

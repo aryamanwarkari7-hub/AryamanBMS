@@ -1,0 +1,407 @@
+@model AryamanBMS.Models.NoticeModel
+
+@{
+    ViewData["Title"] = "Notice Details";
+}
+
+<div class="module-content">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+
+        <div>
+            <h3 class="mb-0">
+                <i class="bi bi-file-earmark-text-circle-exclamation text-danger"></i>
+                Notice Details
+            </h3>
+            <small class="card-subtitle">
+                Statutory Notice Tracking
+            </small>
+        </div>
+
+        <div>
+
+            <a asp-action="Edit"
+               asp-route-id="@Model.NoticeId"
+               class="btn-app btn-secondary-app">
+                <i class="bi bi-pencil-square"></i>
+                Edit
+            </a>
+
+            <a asp-action="Index"
+               class="btn-app btn-secondary-app">
+                <i class="bi bi-arrow-left"></i>
+                Back
+            </a>
+
+        </div>
+
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="app-alert-success">
+            @TempData["Success"]
+            <button class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="app-alert-danger">
+            @TempData["Error"]
+            <button class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row">
+
+        <!-- Summary -->
+
+        <div class="col-lg-4">
+
+            <div class="app-card">
+
+                <div class="card-header">
+                    <strong>Summary</strong>
+                </div>
+
+                <div class="card-body">
+
+                    @{
+                        var badge = Model.Status switch
+                        {
+                            "Open" => "badge-warning",
+                            "Replied" => "badge-info",
+                            "Closed" => "badge-success",
+                            "Escalated" => "badge-danger",
+                            _ => "badge-secondary"
+                        };
+                    }
+
+                    <table class="app-table">
+
+                        <tr>
+                            <th>Department</th>
+                            <td>@Model.Department</td>
+                        </tr>
+
+                        <tr>
+                            <th>Status</th>
+                            <td>
+                                <span class="@badge">
+                                    @Model.Status
+                                </span>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Notice No.</th>
+                            <td>@Model.NoticeNumber</td>
+                        </tr>
+
+                        <tr>
+                            <th>Notice Date</th>
+                            <td>@Model.NoticeDate.ToString("dd-MMM-yyyy")</td>
+                        </tr>
+
+                        <tr>
+                            <th>Received</th>
+                            <td>@Model.ReceivedDate.ToString("dd-MMM-yyyy")</td>
+                        </tr>
+
+                        <tr>
+                            <th>Due Date</th>
+                            <td>
+                                @(Model.DueDate?.ToString("dd-MMM-yyyy") ?? "-")
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Reply Date</th>
+                            <td>
+                                @(Model.ReplyDate?.ToString("dd-MMM-yyyy") ?? "-")
+                            </td>
+                        </tr>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Details -->
+
+        <div class="col-lg-8">
+
+            <div class="app-card">
+
+                <div class="card-header">
+                    <strong>Notice Information</strong>
+                </div>
+
+                <div class="card-body">
+
+                    <div class="mb-3">
+
+                        <label class="fw-bold">
+                            Subject
+                        </label>
+
+                        <div>
+                            @Model.Subject
+                        </div>
+
+                    </div>
+
+                    <div class="mb-3">
+
+                        <label class="fw-bold">
+                            Description
+                        </label>
+
+                        <div class="border rounded p-3 bg-light">
+
+                            @(string.IsNullOrWhiteSpace(Model.Description)
+                                ? "No description."
+                                : Model.Description)
+
+                        </div>
+
+                    </div>
+
+                    <div class="mb-3">
+
+                        <label class="fw-bold">
+                            Reply Details
+                        </label>
+
+                        <div class="border rounded p-3 bg-light">
+
+                            @(string.IsNullOrWhiteSpace(Model.ReplyDetails)
+                                ? "No reply recorded."
+                                : Model.ReplyDetails)
+
+                        </div>
+
+                    </div>
+
+                    <div>
+
+                        <label class="fw-bold">
+                            Remarks
+                        </label>
+
+                        <div class="border rounded p-3 bg-light">
+
+                            @(string.IsNullOrWhiteSpace(Model.Remarks)
+                                ? "-"
+                                : Model.Remarks)
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Upload -->
+
+    <div class="app-card">
+
+        <div class="card-header">
+            <strong>Upload Document</strong>
+        </div>
+
+        <div class="card-body">
+
+            <form asp-action="UploadDocument"
+                  method="post"
+                  enctype="multipart/form-data">
+
+                <input type="hidden"
+                       name="noticeId"
+                       value="@Model.NoticeId" />
+
+                <div class="row">
+
+                    <div class="col-md-3">
+
+                        <label class="form-label">
+                            Document Type
+                        </label>
+
+                        <select name="documentType"
+                                class="app-select">
+
+                            <option>NoticeCopy</option>
+                            <option>ReplyCopy</option>
+                            <option>SupportingEvidence</option>
+                            <option>Other</option>
+
+                        </select>
+
+                    </div>
+
+                    <div class="col-md-4">
+
+                        <label class="form-label">
+                            File
+                        </label>
+
+                        <input type="file"
+                               name="file"
+                               class="app-input"
+                               required />
+
+                    </div>
+
+                    <div class="col-md-3">
+
+                        <label class="form-label">
+                            Remarks
+                        </label>
+
+                        <input type="text"
+                               name="remarks"
+                               class="app-input" />
+
+                    </div>
+
+                    <div class="col-md-2 d-flex align-items-end">
+
+                        <button class="btn-app btn-primary-app w-100">
+
+                            <i class="bi bi-upload"></i>
+
+                            Upload
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <!-- Documents -->
+
+    <div class="app-card">
+
+        <div class="card-header">
+            <strong>Documents</strong>
+        </div>
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table class="app-table">
+
+                    <thead >
+
+                        <tr>
+
+                            <th>Type</th>
+                            <th>File</th>
+                            <th>Uploaded</th>
+                            <th>Remarks</th>
+                            <th width="120">Action</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        @if (Model.Documents.Any())
+                        {
+                            foreach (var doc in Model.Documents)
+                            {
+                                <tr>
+
+                                    <td>@doc.DocumentType</td>
+
+                                    <td>
+
+                                        <a href="~/@doc.FilePath"
+                                           target="_blank">
+
+                                            @doc.FileName
+
+                                        </a>
+
+                                    </td>
+
+                                    <td>
+                                        @doc.UploadedOn.ToString("dd-MMM-yyyy")
+                                    </td>
+
+                                    <td>
+                                        @doc.Remarks
+                                    </td>
+
+                                    <td>
+
+                                        <form asp-action="DeleteDocument"
+                                              method="post">
+
+                                            @Html.AntiForgeryToken()
+
+                                            <input type="hidden"
+                                                   name="id"
+                                                   value="@doc.NoticeDocumentId" />
+
+                                            <input type="hidden"
+                                                   name="noticeId"
+                                                   value="@Model.NoticeId" />
+
+                                            <button class="btn-app btn-icon btn-danger-app"
+                                                    onclick="return confirm('Delete this document?')">
+
+                                                <i class="bi bi-trash"></i>
+
+                                            </button>
+
+                                        </form>
+
+                                    </td>
+
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+
+                                <td colspan="5"
+                                    class="text-center text-muted">
+
+                                    No documents uploaded.
+
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

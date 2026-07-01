@@ -1,0 +1,212 @@
+@model IEnumerable<AryamanBMS.Models.ProposalModel>
+
+@{
+    ViewData["Title"] = "Proposals";
+    var filterStatus = ViewBag.FilterStatus as string;
+
+    string BadgeClass(string status) => status switch {
+        "Draft"       => "badge-secondary",
+        "Sent"        => "badge-info",
+        "UnderReview" => "badge-info",
+        "Accepted"    => "badge-success",
+        "Rejected"    => "badge-danger",
+        "Expired"     => "badge-warning",
+        _             => "badge-secondary"
+    };
+
+    string BadgeLabel(string status) => status switch {
+        "UnderReview" => "Under Review",
+        _             => status
+    };
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Proposals</h1>
+        <p class="module-subtitle">
+            Track proposals sent to clients
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="Create" class="btn-app btn-primary-app">
+            <i class="bi bi-plus-circle"></i> New Proposal
+        </a>
+    </div>
+</div>
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Proposal Register</h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="module-header-actions justify-content-start mb-3">
+
+            <a class="btn-app @(string.IsNullOrEmpty(filterStatus) ? "btn-primary-app" : "btn-secondary-app")"
+               asp-action="Index">
+                All
+            </a>
+
+            @foreach (var s in new[] { "Draft", "Sent", "UnderReview", "Accepted", "Rejected", "Expired" })
+            {
+                <a class="btn-app @(filterStatus == s ? "btn-primary-app" : "btn-secondary-app")"
+                   asp-action="Index"
+                   asp-route-status="@s">
+                    @BadgeLabel(s)
+                </a>
+            }
+
+        </div>
+
+        <div class="table-responsive">
+
+                <table class="app-table" id="proposalTable">
+
+                    <thead >
+                        <tr>
+                            <th>Proposal No.</th>
+                            <th>Client</th>
+                            <th>Title</th>
+                            <th>Date</th>
+                            <th>Valid Until</th>
+                            <th class="text-end">Amount</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Converted</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @if (Model.Any())
+                        {
+                            @foreach (var item in Model)
+                            {
+                                var expired = item.ValidUntil.HasValue && item.ValidUntil.Value < DateTime.Today
+                                              && item.Status == "Sent";
+                                <tr class="@(expired ? "table-warning" : "")">
+
+                                    <td>
+                                        <strong class="text-primary">@item.ProposalNumber</strong>
+                                    </td>
+
+                                    <td>@item.Client?.ClientName</td>
+
+                                    <td>
+                                        @item.ProposalTitle
+                                        @if (item.Project != null)
+                                        {
+                                            <br />
+                                            <small class="card-subtitle">
+                                                <i class="bi bi-diagram-3"></i>
+                                                @item.Project.ProjectName
+                                            </small>
+                                        }
+                                    </td>
+
+                                    <td>@item.ProposalDate.ToString("dd-MMM-yyyy")</td>
+
+                                    <td>
+                                        @if (item.ValidUntil.HasValue)
+                                        {
+                                            if (expired)
+                                            {
+                                                <span class="validation-message">
+                                                    @item.ValidUntil.Value.ToString("dd-MMM-yyyy")
+                                                    <i class="bi bi-exclamation-triangle"></i>
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                @item.ValidUntil.Value.ToString("dd-MMM-yyyy")
+                                            }
+                                        }
+                                        else { <span class="card-subtitle">-</span> }
+                                    </td>
+
+                                    <td class="text-end">
+                                        @if (item.ProposalAmount.HasValue)
+                                        {
+                                            <strong>@item.Currency @item.ProposalAmount.Value.ToString("N0")</strong>
+                                        }
+                                        else { <span class="card-subtitle">-</span> }
+                                    </td>
+
+                                    <td class="text-center">
+                                        <span class="@BadgeClass(item.Status)">
+                                            @BadgeLabel(item.Status)
+                                        </span>
+                                    </td>
+
+                                    <td class="text-center">
+                                        @if (item.IsConverted)
+                                        {
+                                            <span class="badge-success">
+                                                <i class="bi bi-check-circle"></i> PO/WO Raised
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge-secondary">Pending</span>
+                                        }
+                                    </td>
+
+                                    <td class="text-center">
+
+                                        <a asp-action="Details" asp-route-id="@item.ProposalId"
+                                           class="btn-app btn-icon btn-primary-app" title="Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+
+                                        <a asp-action="Edit" asp-route-id="@item.ProposalId"
+                                           class="btn-app btn-icon btn-secondary-app" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+
+                                        <a asp-action="Download" asp-route-id="@item.ProposalId"
+                                           class="btn-app btn-icon btn-success-app" title="Download">
+                                            <i class="bi bi-download"></i>
+                                        </a>
+
+                                        @if (item.Status == "Accepted" && !item.IsConverted)
+                                        {
+                                            <a asp-action="ConvertToOrder" asp-route-id="@item.ProposalId"
+                                               class="btn-app btn-icon btn-primary-app" title="Convert to PO/WO">
+                                                <i class="bi bi-arrow-left-right"></i>
+                                            </a>
+                                        }
+
+                                        <a asp-action="Delete"
+                                           asp-route-id="@item.ProposalId"
+                                           class="btn-app btn-icon @(item.IsActive ? "btn-danger-app" : "btn-success-app")"
+                                           title="@(item.IsActive ? "Deactivate" : "Activate")">
+                                            <i class="bi bi-power"></i>
+                                        </a>
+
+                                    </td>
+
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="9" class="text-center text-muted py-4">
+                                    <i class="bi bi-file-earmark-text-contract fs-2 mb-2 d-block"></i>
+                                    No proposals found.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

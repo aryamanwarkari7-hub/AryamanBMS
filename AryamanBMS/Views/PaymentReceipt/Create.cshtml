@@ -1,0 +1,380 @@
+@model AryamanBMS.Models.PaymentReceiptModel
+
+@{
+    ViewData["Title"] = "Create Payment Receipt";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">CREATE PAYMENT RECEIPT</h1>
+        <p class="module-subtitle">
+            Record payment received against a client invoice
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="Index"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
+
+</div>
+
+<form asp-action="Create"
+      method="post"
+      id="paymentReceiptForm">
+
+    @Html.AntiForgeryToken()
+
+    <div asp-validation-summary="ModelOnly"
+         class="app-alert-danger">
+    </div>
+
+    <div class="app-card form-card">
+
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Receipt Information</h2>
+                <p class="card-subtitle">
+                    Select the client and invoice before entering receipt details.
+                </p>
+            </div>
+        </div>
+
+        <div class="card-body">
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+                    <label asp-for="ReceiptNo"
+                           class="form-label">
+                        Receipt No
+                    </label>
+
+                    <input asp-for="ReceiptNo"
+                           class="app-input"
+                           readonly />
+
+                    <span asp-validation-for="ReceiptNo"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ReceiptDate"
+                           class="form-label">
+                        Receipt Date
+                    </label>
+
+                    <input asp-for="ReceiptDate"
+                           type="date"
+                           class="app-input" />
+
+                    <span asp-validation-for="ReceiptDate"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ClientId"
+                           class="form-label">
+                        Client
+                    </label>
+
+                    <select asp-for="ClientId"
+                            asp-items="ViewBag.Clients"
+                            id="clientSelect"
+                            class="app-select">
+                        <option value="">Select Client</option>
+                    </select>
+
+                    <span asp-validation-for="ClientId"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="InvoiceId"
+                           class="form-label">
+                        Invoice
+                    </label>
+
+                    <select asp-for="InvoiceId"
+                            id="invoiceSelect"
+                            class="app-select">
+                        <option value="">Select Client First</option>
+                    </select>
+
+                    <span asp-validation-for="InvoiceId"
+                          class="validation-message"></span>
+                </div>
+
+            </div>
+
+            <div id="invoiceDetails"
+                 class="app-alert-info"
+                 style="display:none;">
+
+                <div class="form-grid-3">
+
+                    <div>
+                        <strong>Invoice Amount</strong>
+                        <p>₹ <span id="invoiceAmount">0.00</span></p>
+                    </div>
+
+                    <div>
+                        <strong>Already Paid</strong>
+                        <p>₹ <span id="invoicePaid">0.00</span></p>
+                    </div>
+
+                    <div>
+                        <strong>Balance</strong>
+                        <p>₹ <span id="invoiceBalance">0.00</span></p>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="app-card form-card">
+
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Payment Details</h2>
+                <p class="card-subtitle">
+                    Enter the amount received and reference information.
+                </p>
+            </div>
+        </div>
+
+        <div class="card-body">
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+                    <label asp-for="AmountReceived"
+                           class="form-label">
+                        Amount Received
+                    </label>
+
+                    <input asp-for="AmountReceived"
+                           id="amountReceived"
+                           type="number"
+                           min="0"
+                           step="0.01"
+                           class="app-input"
+                           placeholder="0.00" />
+
+                    <span asp-validation-for="AmountReceived"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="PaymentMode"
+                           class="form-label">
+                        Payment Mode
+                    </label>
+
+                    <select asp-for="PaymentMode"
+                            class="app-select">
+                        <option value="Cash">Cash</option>
+                        <option value="Cheque">Cheque</option>
+                        <option value="NEFT">NEFT</option>
+                        <option value="RTGS">RTGS</option>
+                        <option value="UPI">UPI</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                    </select>
+
+                    <span asp-validation-for="PaymentMode"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="BankName"
+                           class="form-label">
+                        Bank Name
+                    </label>
+
+                    <input asp-for="BankName"
+                           class="app-input"
+                           placeholder="Enter bank name" />
+
+                    <span asp-validation-for="BankName"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="TransactionNo"
+                           class="form-label">
+                        Transaction No
+                    </label>
+
+                    <input asp-for="TransactionNo"
+                           class="app-input"
+                           placeholder="Cheque / UTR / transaction number" />
+
+                    <span asp-validation-for="TransactionNo"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ReferenceNo"
+                           class="form-label">
+                        Reference No
+                    </label>
+
+                    <input asp-for="ReferenceNo"
+                           class="app-input"
+                           placeholder="Optional reference number" />
+
+                    <span asp-validation-for="ReferenceNo"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ReceivedBy"
+                           class="form-label">
+                        Received By
+                    </label>
+
+                    <input asp-for="ReceivedBy"
+                           class="app-input"
+                           placeholder="Name of receiver" />
+
+                    <span asp-validation-for="ReceivedBy"
+                          class="validation-message"></span>
+                </div>
+
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Remarks"
+                       class="form-label">
+                    Remarks
+                </label>
+
+                <textarea asp-for="Remarks"
+                          class="app-input"
+                          rows="4"
+                          placeholder="Additional remarks or notes"></textarea>
+
+                <span asp-validation-for="Remarks"
+                      class="validation-message"></span>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="app-card">
+
+        <div class="card-body form-actions">
+
+            <button type="submit"
+                    class="btn-app btn-primary-app">
+                <i class="bi bi-check-circle"></i>
+                Save Receipt
+            </button>
+
+            <a asp-action="Index"
+               class="btn-app btn-secondary-app">
+                Cancel
+            </a>
+
+        </div>
+
+    </div>
+
+</form>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const clientSelect = document.getElementById("clientSelect");
+            const invoiceSelect = document.getElementById("invoiceSelect");
+            const invoiceDetails = document.getElementById("invoiceDetails");
+            const invoiceAmount = document.getElementById("invoiceAmount");
+            const invoiceBalance = document.getElementById("invoiceBalance");
+            const invoicePaid = document.getElementById("invoicePaid");
+            const amountReceived = document.getElementById("amountReceived");
+
+            clientSelect.addEventListener("change", function () {
+                loadInvoices(this.value);
+            });
+
+            async function loadInvoices(clientId) {
+                invoiceDetails.style.display = "none";
+                amountReceived.value = "";
+                invoiceSelect.innerHTML = "<option value=''>Loading...</option>";
+
+                if (!clientId) {
+                    invoiceSelect.innerHTML = "<option value=''>Select Client First</option>";
+                    return;
+                }
+
+                try {
+                    const url = '@Url.Action("GetInvoicesByClient", "PaymentReceipt")'
+                        + '?clientId=' + encodeURIComponent(clientId);
+
+                    const response = await fetch(url);
+
+                    if (!response.ok) {
+                        throw new Error("Unable to load invoices.");
+                    }
+
+                    const invoices = await response.json();
+
+                    invoiceSelect.innerHTML = "<option value=''>Select Invoice</option>";
+
+                    if (invoices.length === 0) {
+                        invoiceSelect.innerHTML = "<option value=''>No pending invoice</option>";
+                        return;
+                    }
+
+                    invoices.forEach(function (invoice) {
+                        const option = document.createElement("option");
+
+                        option.value = invoice.value;
+                        option.text = invoice.text;
+                        option.dataset.amount = invoice.amount;
+                        option.dataset.balance = invoice.balance;
+
+                        invoiceSelect.appendChild(option);
+                    });
+                }
+                catch (error) {
+                    console.error(error);
+                    invoiceSelect.innerHTML = "<option value=''>Error loading invoices</option>";
+                }
+            }
+
+            invoiceSelect.addEventListener("change", function () {
+                if (this.selectedIndex <= 0) {
+                    invoiceDetails.style.display = "none";
+                    amountReceived.value = "";
+                    return;
+                }
+
+                const selected = this.options[this.selectedIndex];
+                const amount = parseFloat(selected.dataset.amount || "0");
+                const balance = parseFloat(selected.dataset.balance || "0");
+
+                invoiceAmount.textContent = amount.toFixed(2);
+                invoiceBalance.textContent = balance.toFixed(2);
+                invoicePaid.textContent = (amount - balance).toFixed(2);
+
+                amountReceived.value = balance.toFixed(2);
+                amountReceived.max = balance.toFixed(2);
+
+                invoiceDetails.style.display = "block";
+            });
+        });
+    </script>
+}

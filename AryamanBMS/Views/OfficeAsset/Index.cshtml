@@ -1,0 +1,161 @@
+@model IEnumerable<AryamanBMS.Models.OfficeAssetModel>
+
+@{
+    ViewData["Title"] = "Office Asset Records";
+    var filterFY = ViewBag.FilterFinancialYear as string;
+    var filterCategory = ViewBag.FilterCategory as string;
+    var filterStatus = ViewBag.FilterStatus as string;
+
+    string StatusBadge(string status) => status switch
+    {
+        "InUse" => "badge-success",
+        "Idle" => "badge-secondary",
+        "UnderRepair" => "badge-warning",
+        "Disposed" => "badge-danger",
+        _ => "badge-secondary"
+    };
+
+    string StatusLabel(string status) => status switch
+    {
+        "UnderRepair" => "Under Repair",
+        _ => status
+    };
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Office Asset Records</h1>
+        <p class="module-subtitle">
+            Laptops, furniture, equipment and other office assets
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="Create" class="btn-app btn-primary-app">
+            <i class="bi bi-plus-circle"></i> Add Asset
+        </a>
+    </div>
+</div>
+
+<div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="app-alert-success">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="app-alert-danger">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Status filter tabs -->
+    <ul class="nav nav-pills mb-3 flex-wrap gap-1">
+        <li class="nav-item">
+            <a class="nav-link @(string.IsNullOrEmpty(filterStatus) ? "active" : "")"
+               asp-action="Index">All</a>
+        </li>
+        @foreach (var s in new[] { "InUse", "Idle", "UnderRepair", "Disposed" })
+        {
+            <li class="nav-item">
+                <a class="nav-link @(filterStatus == s ? "active" : "")"
+                   asp-action="Index" asp-route-status="@s">
+                    @StatusLabel(s)
+                </a>
+            </li>
+        }
+    </ul>
+
+    <div class="app-card">
+        <div class="card-body">
+            <div class="table-responsive">
+
+                <table class="app-table" id="officeAssetTable">
+
+                    <thead >
+                        <tr>
+                            <th>Asset Name</th>
+                            <th>Category</th>
+                            <th>Asset Code</th>
+                            <th>Purchase Date</th>
+                            <th class="text-end">Value</th>
+                            <th>Assigned To</th>
+                            <th>FY</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td><strong>@item.AssetName</strong></td>
+                                <td>@item.AssetCategory</td>
+                                <td>@(item.AssetCode ?? "-")</td>
+                                <td>@item.PurchaseDate.ToString("dd-MMM-yyyy")</td>
+                                <td class="text-end">₹ @item.PurchaseValue.ToString("N0")</td>
+                                <td>@(item.AssignedTo ?? "-")</td>
+                                <td>@item.FinancialYear</td>
+                                <td class="text-center">
+                                    <span class="@StatusBadge(item.Status)">
+                                        @StatusLabel(item.Status)
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <a asp-action="Details" asp-route-id="@item.OfficeAssetId"
+                                       class="btn-app btn-icon btn-primary-app" title="Details">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@item.OfficeAssetId"
+                                       class="btn-app btn-icon btn-secondary-app" title="Edit">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                    <button class="btn-app btn-icon btn-danger-app"
+                                            onclick="deleteAsset(@item.OfficeAssetId, '@item.AssetName')"
+                                            title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                            
+
+                </table>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        function deleteAsset(id, name) {
+            Swal.fire({
+                title: 'Delete Asset?',
+                text: `"${name}" will be permanently deleted.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Delete',
+                confirmButtonColor: '#dc3545',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    var form = $('<form/>', { action: '/OfficeAsset/Delete', method: 'post' });
+                    form.append('@Html.AntiForgeryToken()');
+                    form.append($('<input/>', { type: 'hidden', name: 'id', value: id }));
+                    $('body').append(form);
+                    form.submit();
+                }
+            });
+        }
+    </script>
+}

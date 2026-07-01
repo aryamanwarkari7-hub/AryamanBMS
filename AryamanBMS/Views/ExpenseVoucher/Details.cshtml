@@ -1,0 +1,269 @@
+@model ExpenseVoucherModel
+
+@{
+    ViewData["Title"] = $"Expense Voucher {Model.VoucherNumber}";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">EXPENSE VOUCHER DETAILS</h1>
+        <p class="module-subtitle">
+            Voucher information for @Model.VoucherNumber
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+
+        @if (Model.Status == "Draft")
+        {
+            <a asp-action="Edit"
+               asp-route-id="@Model.ExpenseVoucherId"
+               class="btn-app btn-secondary-app">
+                <i class="bi bi-pencil-square"></i>
+                Edit
+            </a>
+
+            @if (User.IsInRole("Admin") || User.IsInRole("Finance"))
+            {
+                <form method="post"
+                      asp-action="Approve"
+                      class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.ExpenseVoucherId" />
+
+                    <button type="submit"
+                            class="btn-app btn-success-app"
+                            onclick="return confirm('Approve this voucher?')">
+                        <i class="bi bi-check-circle"></i>
+                        Approve
+                    </button>
+                </form>
+            }
+
+            <a asp-action="Delete"
+               asp-route-id="@Model.ExpenseVoucherId"
+               class="btn-app btn-danger-app">
+                <i class="bi bi-trash"></i>
+                Delete
+            </a>
+        }
+
+        <a asp-action="Index"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Voucher Information</h2>
+            <p class="card-subtitle">
+                Basic voucher, category and status details.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-3">
+
+            <div class="form-group">
+                <label class="form-label">Voucher Number</label>
+                <strong>@Model.VoucherNumber</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Voucher Date</label>
+                <strong>@Model.VoucherDate.ToString("dd MMM yyyy")</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Financial Year</label>
+                <strong>@Model.FinancialYear</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Category</label>
+                <strong>@(Model.Category?.CategoryName ?? "-")</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                @if (Model.Status == "Draft")
+                {
+                    <span class="badge-warning">Draft</span>
+                }
+                else if (Model.Status == "Posted")
+                {
+                    <span class="badge-success">Posted</span>
+                }
+                else if (Model.Status == "Cancelled")
+                {
+                    <span class="badge-danger">Cancelled</span>
+                }
+            </div>
+
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Description</label>
+            <strong>@(string.IsNullOrWhiteSpace(Model.Description) ? "-" : Model.Description)</strong>
+        </div>
+
+    </div>
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Amount Details</h2>
+            <p class="card-subtitle">
+                GST breakup and total voucher amount.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-4">
+
+            <div class="form-group">
+                <label class="form-label">Amount Before GST</label>
+                <strong>₹ @Model.Amount.ToString("N2")</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">GST Rate</label>
+                <strong>@Model.GSTRate.ToString("N2")%</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">CGST</label>
+                <strong>₹ @Model.CGSTAmount.ToString("N2")</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">SGST</label>
+                <strong>₹ @Model.SGSTAmount.ToString("N2")</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">IGST</label>
+                <strong>₹ @Model.IGSTAmount.ToString("N2")</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Total GST</label>
+                <strong>₹ @Model.TotalGSTAmount.ToString("N2")</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Total Amount</label>
+                <strong>₹ @Model.TotalAmount.ToString("N2")</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">ITC Eligible</label>
+                @if (Model.ITCEligible)
+                {
+                    <span class="badge-success">Yes</span>
+                }
+                else
+                {
+                    <span class="badge-secondary">No</span>
+                }
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Vendor Information</h2>
+            <p class="card-subtitle">
+                Vendor bill, GSTIN and remarks.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-3">
+
+            <div class="form-group">
+                <label class="form-label">Vendor Name</label>
+                <strong>@(string.IsNullOrWhiteSpace(Model.VendorName) ? "-" : Model.VendorName)</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Vendor GSTIN</label>
+                <strong>@(string.IsNullOrWhiteSpace(Model.VendorGSTIN) ? "-" : Model.VendorGSTIN)</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Vendor Invoice Number</label>
+                <strong>@(string.IsNullOrWhiteSpace(Model.InvoiceNumber) ? "-" : Model.InvoiceNumber)</strong>
+            </div>
+
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Remarks</label>
+            <strong>@(string.IsNullOrWhiteSpace(Model.Remarks) ? "-" : Model.Remarks)</strong>
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Audit Information</h2>
+            <p class="card-subtitle">
+                Created, updated and approval timestamps.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-3">
+
+            <div class="form-group">
+                <label class="form-label">Created On</label>
+                <strong>@Model.CreatedOn.ToString("dd MMM yyyy HH:mm")</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Updated On</label>
+                <strong>@(Model.UpdatedOn?.ToString("dd MMM yyyy HH:mm") ?? "-")</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Approved On</label>
+                <strong>@(Model.ApprovedOn?.ToString("dd MMM yyyy HH:mm") ?? "-")</strong>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+    
+
+    
+</div>

@@ -1,0 +1,141 @@
+﻿@model AryamanBMS.Models.ProposalModel
+
+@{
+    var actionText = Model.IsActive ? "Deactivate" : "Activate";
+    ViewData["Title"] = actionText + " Proposal";
+
+    string badgeClass = Model.Status switch
+    {
+        "Draft" => "badge-secondary",
+        "Sent" => "badge-info",
+        "UnderReview" => "badge-info",
+        "Accepted" => "badge-success",
+        "Rejected" => "badge-danger",
+        "Expired" => "badge-warning",
+        _ => "badge-secondary"
+    };
+
+    string badgeLabel = Model.Status == "UnderReview"
+        ? "Under Review"
+        : Model.Status;
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">@actionText Proposal</h1>
+        <p class="module-subtitle">
+            Confirm proposal status change
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="Index"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
+
+</div>
+
+@if (Model.IsConverted && Model.IsActive)
+{
+    <div class="app-alert-danger">
+        This proposal has already been converted to a PO/WO and cannot be deactivated.
+    </div>
+}
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Proposal Information</h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-2">
+
+            <div class="form-group">
+                <label class="form-label">Proposal No.</label>
+                <div>@Model.ProposalNumber</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Client</label>
+                <div>@(Model.Client?.ClientName ?? "-")</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Title</label>
+                <div>@Model.ProposalTitle</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Proposal Status</label>
+                <div>
+                    <span class="@badgeClass">@badgeLabel</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Current Record Status</label>
+                <div>
+                    @if (Model.IsActive)
+                    {
+                        <span class="badge-success">Active</span>
+                    }
+                    else
+                    {
+                        <span class="badge-danger">Inactive</span>
+                    }
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Converted</label>
+                <div>
+                    @if (Model.IsConverted)
+                    {
+                        <span class="badge-success">PO/WO Raised</span>
+                    }
+                    else
+                    {
+                        <span class="badge-secondary">Pending</span>
+                    }
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-body">
+
+        <form asp-action="DeleteConfirmed"
+              asp-route-id="@Model.ProposalId"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <button type="submit"
+                    class="btn-app @(Model.IsActive ? "btn-danger-app" : "btn-success-app")"
+                    disabled="@(Model.IsConverted && Model.IsActive)">
+                <i class="bi bi-power"></i>
+                @actionText Proposal
+            </button>
+
+            <a asp-action="Index"
+               class="btn-app btn-secondary-app">
+                Cancel
+            </a>
+
+        </form>
+
+    </div>
+
+</div>

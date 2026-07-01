@@ -1,5 +1,93 @@
-﻿@media print {
+﻿
+.print-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-sm);
+    margin: var(--space-lg);
+}
 
+.print-document {
+    max-width: 900px;
+    margin: var(--space-lg) auto;
+    padding: var(--space-xl);
+    background: #ffffff;
+    color: #000000;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.print-document-header {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-xl);
+    margin-bottom: var(--space-xl);
+    padding-bottom: var(--space-md);
+    border-bottom: 2px solid #000000;
+}
+
+.print-title {
+    margin: 0 0 var(--space-sm);
+    font-size: 28px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.print-section {
+    margin-top: var(--space-lg);
+}
+
+.print-section-title {
+    margin: 0 0 var(--space-sm);
+    font-size: var(--font-lg);
+    font-weight: 700;
+}
+
+.print-meta {
+    line-height: 1.7;
+}
+
+.print-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: var(--space-sm);
+}
+
+.print-table th,
+.print-table td {
+    border: 1px solid #000000;
+    padding: 8px;
+    color: #000000;
+    vertical-align: top;
+}
+
+.print-table th {
+    background: #f2f2f2;
+    font-weight: 700;
+}
+
+.print-summary {
+    width: 320px;
+    margin-left: auto;
+}
+
+    .print-summary th,
+    .print-summary td {
+        text-align: right;
+    }
+
+.print-grand-total th,
+.print-grand-total td {
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.text-right {
+    text-align: right;
+}
+
+@media print {
+
+    .print-toolbar,
     .sidebar,
     .top-navbar,
     .module-header,
@@ -56,5 +144,18 @@
     @page {
         size: A4;
         margin: 15mm;
+    }
+
+    .print-document {
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .print-table th,
+    .print-table td {
+        border: 1px solid #000000 !important;
     }
 }

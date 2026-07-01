@@ -1,0 +1,229 @@
+@model AryamanBMS.ViewModels.ClientViewModel
+
+@{
+    ViewData["Title"] = "Add Client";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Add Client</h1>
+        <p class="module-subtitle">
+            Create a client master record for accounts and finance documents
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="Index"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
+
+</div>
+
+<form asp-action="Create" method="post">
+
+    @Html.AntiForgeryToken()
+
+    <div asp-validation-summary="ModelOnly"
+         class="app-alert-danger">
+    </div>
+
+    <div class="app-card">
+
+        <div class="card-header">
+            <h5 class="card-title">Basic Information</h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+                    <label asp-for="Client.ClientName" class="form-label">
+                        Client Name
+                    </label>
+                    <input asp-for="Client.ClientName" class="app-input" />
+                    <span asp-validation-for="Client.ClientName"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Client.ClientType" class="form-label">
+                        Client Type
+                    </label>
+                    <select asp-for="Client.ClientType" class="app-select">
+                        <option value="">Select Type</option>
+                        <option value="Private">Private</option>
+                        <option value="Government">Government</option>
+                        <option value="NGO">NGO</option>
+                        <option value="Individual">Individual</option>
+                    </select>
+                    <span asp-validation-for="Client.ClientType"
+                          class="validation-message"></span>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="app-card">
+
+        <div class="card-header">
+            <h5 class="card-title">Contact Information</h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+                    <label asp-for="Client.ContactPerson" class="form-label">
+                        Contact Person
+                    </label>
+                    <input asp-for="Client.ContactPerson" class="app-input" />
+                    <span asp-validation-for="Client.ContactPerson"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Client.Phone" class="form-label">
+                        Phone
+                    </label>
+                    <input asp-for="Client.Phone" class="app-input" />
+                    <span asp-validation-for="Client.Phone"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Client.Email" class="form-label">
+                        Email
+                    </label>
+                    <input asp-for="Client.Email" class="app-input" />
+                    <span asp-validation-for="Client.Email"
+                          class="validation-message"></span>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="app-card">
+
+        <div class="card-header">
+            <h5 class="card-title">Tax Information</h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+                    <label asp-for="Client.GSTNumber" class="form-label">
+                        GST Number
+                    </label>
+                    <input asp-for="Client.GSTNumber" class="app-input" />
+                    <span asp-validation-for="Client.GSTNumber"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Client.PANNumber" class="form-label">
+                        PAN Number
+                    </label>
+                    <input asp-for="Client.PANNumber" class="app-input" />
+                    <span asp-validation-for="Client.PANNumber"
+                          class="validation-message"></span>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="app-card">
+
+        <div class="card-header">
+            <h5 class="card-title">Address & Remarks</h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+                    <label asp-for="Client.City" class="form-label">
+                        City
+                    </label>
+                    <input asp-for="Client.City" class="app-input" />
+                    <span asp-validation-for="Client.City"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Client.State" class="form-label">
+                        State
+                    </label>
+                    <input asp-for="Client.State" class="app-input" />
+                    <span asp-validation-for="Client.State"
+                          class="validation-message"></span>
+                </div>
+
+            </div>
+
+            <div class="form-group mt-3">
+                <label asp-for="Client.Address" class="form-label">
+                    Address
+                </label>
+                <textarea asp-for="Client.Address"
+                          class="app-textarea"></textarea>
+                <span asp-validation-for="Client.Address"
+                      class="validation-message"></span>
+            </div>
+
+            <div class="form-group mt-3">
+                <label asp-for="Client.Remarks" class="form-label">
+                    Remarks
+                </label>
+                <textarea asp-for="Client.Remarks"
+                          class="app-textarea"></textarea>
+                <span asp-validation-for="Client.Remarks"
+                      class="validation-message"></span>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="app-card">
+
+        <div class="card-body">
+
+            <button type="submit"
+                    class="btn-app btn-primary-app">
+                <i class="bi bi-check-circle"></i>
+                Save Client
+            </button>
+
+            <a asp-action="Index"
+               class="btn-app btn-secondary-app">
+                Cancel
+            </a>
+
+        </div>
+
+    </div>
+
+</form>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,77 @@
+﻿@model AryamanBMS.Models.PurchaseOrderModel
+
+@{
+    ViewData["Title"] = Model.IsActive ? "Deactivate Order" : "Activate Order";
+    string actionText = Model.IsActive ? "Deactivate" : "Activate";
+    string alertClass = Model.IsActive ? "app-alert-danger" : "app-alert-success";
+    string buttonClass = Model.IsActive ? "btn-danger-app" : "btn-success-app";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">@actionText PO / WO</h1>
+        <p class="module-subtitle">Confirm order status change</p>
+    </div>
+</div>
+
+<div class="app-card">
+    <div class="card-header">
+        <h5 class="card-title">Order Information</h5>
+    </div>
+
+    <div class="card-body">
+        <div class="form-grid-2">
+
+            <div class="form-group">
+                <label class="form-label">Order Number</label>
+                <input value="@Model.OrderNumber" class="app-input" readonly />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Order Type</label>
+                <input value="@Model.OrderType" class="app-input" readonly />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Client</label>
+                <input value="@Model.Client?.ClientName" class="app-input" readonly />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Order Title</label>
+                <input value="@Model.OrderTitle" class="app-input" readonly />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Order Date</label>
+                <input value="@Model.OrderDate.ToString("dd-MMM-yyyy")" class="app-input" readonly />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                <input value="@(Model.IsActive ? "Active" : "Inactive")" class="app-input" readonly />
+            </div>
+
+        </div>
+
+        <div class="app-alert @alertClass mt-4">
+            This action will @actionText.ToLower() this PO / WO. Existing proposal link, invoice references and uploaded document will remain safe.
+        </div>
+
+        <div class="mt-4">
+            <form asp-action="DeleteConfirmed" method="post">
+                @Html.AntiForgeryToken()
+
+                <input type="hidden" name="id" value="@Model.PurchaseOrderId" />
+
+                <button type="submit" class="btn-app @buttonClass">
+                    @actionText PO / WO
+                </button>
+
+                <a asp-action="Index" class="btn-app btn-secondary-app">
+                    Cancel
+                </a>
+            </form>
+        </div>
+    </div>
+</div>

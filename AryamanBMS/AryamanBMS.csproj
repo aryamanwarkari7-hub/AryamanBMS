@@ -58,6 +58,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="wwwroot\css\modules\" />
     <Folder Include="wwwroot\documents\letters\" />
   </ItemGroup>
 

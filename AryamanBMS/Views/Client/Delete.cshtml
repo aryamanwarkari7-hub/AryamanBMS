@@ -1,0 +1,100 @@
+﻿@model AryamanBMS.Models.ClientModel
+
+@{
+    var actionText = Model.IsActive ? "Deactivate" : "Activate";
+    ViewData["Title"] = actionText + " Client";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">@actionText Client</h1>
+        <p class="module-subtitle">
+            Confirm client status change
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="Index"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">
+            Client Information
+        </h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-2">
+
+            <div class="form-group">
+                <label class="form-label">Client Code</label>
+                <div>@Model.ClientCode</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Client Name</label>
+                <div>@Model.ClientName</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Contact Person</label>
+                <div>@(Model.ContactPerson ?? "-")</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Current Status</label>
+
+                <div>
+                    @if (Model.IsActive)
+                    {
+                        <span class="badge-success">Active</span>
+                    }
+                    else
+                    {
+                        <span class="badge-danger">Inactive</span>
+                    }
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-body">
+
+        <form asp-action="DeleteConfirmed"
+              asp-route-id="@Model.ClientId"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <button type="submit"
+                    class="btn-app @(Model.IsActive ? "btn-danger-app" : "btn-success-app")">
+                <i class="bi bi-power"></i>
+                @actionText Client
+            </button>
+
+            <a asp-action="Index"
+               class="btn-app btn-secondary-app">
+                Cancel
+            </a>
+
+        </form>
+
+    </div>
+
+</div>

@@ -1,0 +1,48 @@
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+
+namespace AryamanBMS.Models
+{
+    /// <summary>
+    /// Monthly aggregate ESIC liability snapshot, computed from SalaryRecordModel.
+    /// </summary>
+    public class EsicMonthlySnapshotModel
+    {
+        [Key]
+        public int EsicSnapshotId { get; set; }
+
+        [Required]
+        public int Month { get; set; }
+
+        [Required]
+        public int Year { get; set; }
+
+        [Required]
+        [StringLength(10)]
+        public string FinancialYear { get; set; } = string.Empty;
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal EmployeeDeductionTotal { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal EmployerContributionTotal { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal TotalPayable { get; set; }
+
+        public int EmployeeCount { get; set; }
+
+        [Required]
+        [StringLength(20)]
+        public string Status { get; set; } = FinancialConstants.StatutoryStatus.Pending;
+
+        public DateTime GeneratedOn { get; set; } = DateTime.Now;
+
+        [ValidateNever]
+        public virtual ICollection<EsicChallanModel> Challans { get; set; } = new List<EsicChallanModel>();
+
+        [ValidateNever]
+        public virtual ICollection<EsicDocumentModel> Documents { get; set; } = new List<EsicDocumentModel>();
+    }
+}

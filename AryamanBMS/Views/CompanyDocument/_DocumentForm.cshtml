@@ -1,0 +1,242 @@
+@model AryamanBMS.ViewModels.CompanyDocumentViewModel
+
+<input asp-for="Document.CompanyDocumentId" type="hidden" />
+
+<div class="row">
+
+    <!-- Category -->
+    <div class="col-md-6 mb-3">
+        <label asp-for="Document.DocumentCategoryId" class="form-label">
+            Document Category <span class="validation-message">*</span>
+        </label>
+
+        <select asp-for="Document.DocumentCategoryId"
+                asp-items="Model.Categories"
+                class="app-select">
+            <option value="">-- Select Category --</option>
+        </select>
+
+        <span asp-validation-for="Document.DocumentCategoryId"
+              class="validation-message"></span>
+    </div>
+
+    <!-- Document Name -->
+    <div class="col-md-6 mb-3">
+        <label asp-for="Document.DocumentName" class="form-label">
+            Document Name <span class="validation-message">*</span>
+        </label>
+
+        <input asp-for="Document.DocumentName"
+               class="app-input" />
+
+        <span asp-validation-for="Document.DocumentName"
+              class="validation-message"></span>
+    </div>
+
+</div>
+
+<div class="row">
+
+    <!-- Document Number -->
+    <div class="col-md-6 mb-3">
+        <label asp-for="Document.DocumentNumber" class="form-label">
+            Document Number
+        </label>
+
+        <input asp-for="Document.DocumentNumber"
+               class="app-input" />
+
+        <span asp-validation-for="Document.DocumentNumber"
+              class="validation-message"></span>
+    </div>
+
+    <!-- Issued By -->
+    <div class="col-md-6 mb-3">
+        <label asp-for="Document.IssuedBy" class="form-label">
+            Issued By
+        </label>
+
+        <input asp-for="Document.IssuedBy"
+               class="app-input" />
+
+        <span asp-validation-for="Document.IssuedBy"
+              class="validation-message"></span>
+    </div>
+
+</div>
+
+<div class="row">
+
+    <!-- Issue Date -->
+    <div class="col-md-6 mb-3">
+        <label asp-for="Document.IssueDate" class="form-label">
+            Issue Date
+        </label>
+
+        <input asp-for="Document.IssueDate"
+               type="date"
+               class="app-input" />
+
+        <span asp-validation-for="Document.IssueDate"
+              class="validation-message"></span>
+    </div>
+
+    <!-- Expiry Date -->
+    <div class="col-md-6 mb-3">
+        <label asp-for="Document.ExpiryDate" class="form-label">
+            Expiry Date
+        </label>
+
+        <input asp-for="Document.ExpiryDate"
+               type="date"
+               class="app-input" />
+
+        <span asp-validation-for="Document.ExpiryDate"
+              class="validation-message"></span>
+    </div>
+
+</div>
+
+<div class="row">
+
+    <!-- Upload -->
+    <div class="col-md-12 mb-3">
+
+        <label asp-for="UploadFile" class="form-label">
+
+            Upload Document
+
+        </label>
+
+        <input asp-for="UploadFile"
+               class="app-input"
+               accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" />
+
+        <small class="card-subtitle">
+
+            Supported Formats :
+            PDF, DOC, DOCX, XLS, XLSX, JPG, JPEG, PNG
+
+        </small>
+
+        <span asp-validation-for="UploadFile"
+              class="validation-message"></span>
+
+    </div>
+
+</div>
+
+@if (Model.Document.CompanyDocumentId > 0 &&
+    !string.IsNullOrWhiteSpace(Model.Document.FileName))
+{
+    <div class="row">
+
+        <div class="col-md-12">
+
+            <div class="app-alert-info">
+
+                <div class="row align-items-center">
+
+                    <div class="col-md-8">
+
+                        <h6 class="mb-2">
+
+                            <i class="bi bi-file-earmark-text"></i>
+
+                            Current Uploaded File
+
+                        </h6>
+
+                        <p class="mb-1">
+
+                            <strong>File Name :</strong>
+
+                            @Model.Document.FileName
+
+                        </p>
+
+                        <p class="mb-1">
+
+                            <strong>File Size :</strong>
+
+                            @(Math.Round(Model.Document.FileSize / 1024.0, 2)) KB
+
+                        </p>
+
+                        @if (Model.Document.UpdatedOn.HasValue)
+                        {
+                            <p class="mb-0">
+
+                                <strong>Last Updated :</strong>
+
+                                @Model.Document.UpdatedOn.Value.ToString("dd-MMM-yyyy hh:mm tt")
+
+                            </p>
+                        }
+                        else
+                        {
+                            <p class="mb-0">
+
+                                <strong>Uploaded On :</strong>
+
+                                @Model.Document.CreatedOn.ToString("dd-MMM-yyyy hh:mm tt")
+
+                            </p>
+                        }
+
+                    </div>
+
+                    <div class="col-md-4 text-end">
+
+                        <a asp-action="Download"
+                           asp-route-id="@Model.Document.CompanyDocumentId"
+                           class="btn-app btn-success-app">
+
+                            <i class="bi bi-download"></i>
+
+                            Download
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+                <hr />
+
+                <small class="card-subtitle">
+
+                    Choose another file above only if you want to replace the existing document.
+
+                </small>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+<div class="row">
+
+    <!-- Remarks -->
+    <div class="col-md-12 mb-3">
+
+        <label asp-for="Document.Remarks"
+               class="form-label">
+
+            Remarks
+
+        </label>
+
+        <textarea asp-for="Document.Remarks"
+                  rows="4"
+                  class="app-input">
+        </textarea>
+
+        <span asp-validation-for="Document.Remarks"
+              class="validation-message"></span>
+
+    </div>
+
+</div>

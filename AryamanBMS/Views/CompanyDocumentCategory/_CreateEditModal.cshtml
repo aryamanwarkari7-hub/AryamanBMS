@@ -1,0 +1,253 @@
+@model AryamanBMS.Models.CompanyDocumentCategoryModel
+
+<form asp-action="Save"
+      asp-controller="CompanyDocumentCategory"
+      method="post"
+      id="categoryForm">
+
+    @Html.AntiForgeryToken()
+
+    <input asp-for="DocumentCategoryId" type="hidden" />
+
+    <div class="modal-header bg-primary text-white">
+
+        <h5 class="modal-title" id="modalTitle">
+            Company Document Category
+        </h5>
+
+        <button type="button"
+                class="btn-close btn-close-white"
+                data-bs-dismiss="modal">
+        </button>
+
+    </div>
+
+    <div class="modal-body">
+
+        <div asp-validation-summary="ModelOnly"
+             class="app-alert-danger">
+        </div>
+
+        <div class="row">
+
+            <!-- Category Code -->
+
+            <div class="col-md-4 mb-3">
+
+                <label asp-for="CategoryCode"
+                       class="form-label">
+                </label>
+
+                <input asp-for="CategoryCode"
+                       class="app-input"
+                       maxlength="20"
+                       placeholder="GST" />
+
+                <span asp-validation-for="CategoryCode"
+                      class="validation-message">
+                </span>
+
+            </div>
+
+            <!-- Category Name -->
+
+            <div class="col-md-8 mb-3">
+
+                <label asp-for="CategoryName"
+                       class="form-label">
+                </label>
+
+                <input asp-for="CategoryName"
+                       class="app-input"
+                       placeholder="GST Registration" />
+
+                <span asp-validation-for="CategoryName"
+                      class="validation-message">
+                </span>
+
+            </div>
+
+        </div>
+
+        <!-- Description -->
+
+        <div class="mb-3">
+
+            <label asp-for="Description"
+                   class="form-label">
+            </label>
+
+            <textarea asp-for="Description"
+                      class="app-input"
+                      rows="3">
+            </textarea>
+
+        </div>
+
+        <div class="row">
+
+            <!-- Display Order -->
+
+            <div class="col-md-4 mb-3">
+
+                <label asp-for="DisplayOrder"
+                       class="form-label">
+                </label>
+
+                <input asp-for="DisplayOrder"
+                       class="app-input" />
+
+            </div>
+
+            <!-- Reminder -->
+
+            <div class="col-md-4 mb-3">
+
+                <label asp-for="ExpiryReminderDays"
+                       class="form-label">
+                </label>
+
+                <input asp-for="ExpiryReminderDays"
+                       class="app-input" />
+
+            </div>
+
+            <!-- File Size -->
+
+            <div class="col-md-4 mb-3">
+
+                <label asp-for="MaxFileSizeMB"
+                       class="form-label">
+                </label>
+
+                <input asp-for="MaxFileSizeMB"
+                       class="app-input"
+                       placeholder="20" />
+
+            </div>
+
+        </div>
+
+        <!-- Extensions -->
+
+        <div class="mb-3">
+
+            <label asp-for="AllowedExtensions"
+                   class="form-label">
+            </label>
+
+            <input asp-for="AllowedExtensions"
+                   class="app-input"
+                   placeholder="pdf,jpg,jpeg,png" />
+
+        </div>
+
+        <hr />
+
+        <div class="row">
+
+            <div class="col-md-4">
+
+                <div class="form-check mb-2">
+
+                    <input asp-for="IsMandatory"
+                           class="form-check-input" />
+
+                    <label asp-for="IsMandatory"
+                           class="form-check-label">
+                    </label>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-4">
+
+                <div class="form-check mb-2">
+
+                    <input asp-for="HasExpiry"
+                           class="form-check-input" />
+
+                    <label asp-for="HasExpiry"
+                           class="form-check-label">
+                    </label>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-4">
+
+                <div class="form-check mb-2">
+
+                    <input asp-for="RequireDocumentNumber"
+                           class="form-check-input" />
+
+                    <label asp-for="RequireDocumentNumber"
+                           class="form-check-label">
+                    </label>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="row">
+
+            <div class="col-md-6">
+
+                <div class="form-check mb-2">
+
+                    <input asp-for="AllowMultipleDocuments"
+                           class="form-check-input" />
+
+                    <label asp-for="AllowMultipleDocuments"
+                           class="form-check-label">
+                    </label>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-6">
+
+                <div class="form-check mb-2">
+
+                    <input asp-for="IsActive"
+                           class="form-check-input" />
+
+                    <label asp-for="IsActive"
+                           class="form-check-label">
+                    </label>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="modal-footer">
+
+        <button type="submit"
+                class="btn-app btn-success-app">
+
+            <i class="bi bi-check-circle"></i>
+
+            Save
+
+        </button>
+
+        <button type="button"
+                class="btn-app btn-secondary-app"
+                data-bs-dismiss="modal">
+
+            Cancel
+
+        </button>
+
+    </div>
+
+</form>

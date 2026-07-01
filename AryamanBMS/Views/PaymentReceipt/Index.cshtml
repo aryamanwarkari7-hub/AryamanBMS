@@ -1,0 +1,292 @@
+@model AryamanBMS.ViewModels.PaymentReceiptTrackerViewModel
+
+@{
+    ViewData["Title"] = "Payment Receipts";
+
+    string currentSearch = Context.Request.Query["search"];
+    string currentClientId = Context.Request.Query["clientId"];
+    string currentStatus = Context.Request.Query["status"];
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">PAYMENT RECEIPTS</h1>
+        <p class="module-subtitle">
+            Track client payments received against invoices
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+
+        <a asp-action="Create"
+           class="btn-app btn-primary-app">
+            <i class="bi bi-plus-circle"></i>
+            New Receipt
+        </a>
+
+    </div>
+
+</div>
+
+<div class="dashboard-grid">
+
+    <div class="stats-card">
+        <div class="stats-label">
+            Total Receipts
+        </div>
+        <div class="stats-number">
+            @Model.Summary.TotalReceipts
+        </div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">
+            Total Received
+        </div>
+        <div class="stats-number">
+            ₹ @Model.Summary.TotalReceived.ToString("N2")
+        </div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">
+            Active Receipts
+        </div>
+        <div class="stats-number">
+            @Model.Summary.CompletedCount
+        </div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">
+            Cancelled Receipts
+        </div>
+        <div class="stats-number">
+            @Model.Summary.CancelledCount
+        </div>
+    </div>
+
+</div>
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+
+        <form method="get">
+
+            <div class="form-grid-4">
+
+                <div class="form-group">
+                    <input type="text"
+                           name="search"
+                           value="@currentSearch"
+                           class="app-input"
+                           placeholder="Receipt / Client / Invoice" />
+                </div>
+
+                <div class="form-group">
+                    <select name="clientId"
+                            class="app-select">
+                        <option value="">All Clients</option>
+
+                        @foreach (var client in Model.Clients)
+                        {
+                            <option value="@client.ClientId"
+                                    selected="@(currentClientId == client.ClientId.ToString())">
+                                @client.ClientName
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <button type="submit"
+                            class="btn-app btn-primary-app w-100">
+                        <i class="bi bi-search"></i>
+                        Search
+                    </button>
+                </div>
+
+                <div class="form-group">
+                    <a asp-action="Index"
+                       class="btn-app btn-secondary-app w-100">
+                        Reset
+                    </a>
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+
+    <div class="card-body">
+
+        <div class="module-header-actions justify-content-start mb-3">
+
+            <a asp-action="Index"
+               asp-route-search="@currentSearch"
+               asp-route-clientId="@currentClientId"
+               class="btn-app @(string.IsNullOrWhiteSpace(currentStatus) ? "btn-primary-app" : "btn-secondary-app")">
+                All
+            </a>
+
+            <a asp-action="Index"
+               asp-route-search="@currentSearch"
+               asp-route-clientId="@currentClientId"
+               asp-route-status="Active"
+               class="btn-app @(currentStatus == "Active" ? "btn-primary-app" : "btn-secondary-app")">
+                Active
+            </a>
+
+            <a asp-action="Index"
+               asp-route-search="@currentSearch"
+               asp-route-clientId="@currentClientId"
+               asp-route-status="Cancelled"
+               class="btn-app @(currentStatus == "Cancelled" ? "btn-primary-app" : "btn-secondary-app")">
+                Cancelled
+            </a>
+
+        </div>
+
+        <div class="table-responsive">
+
+            <table class="app-table">
+
+                <thead>
+                    <tr>
+                        <th>Receipt No.</th>
+                        <th>Date</th>
+                        <th>Client</th>
+                        <th>Invoice</th>
+                        <th>Mode</th>
+                        <th class="text-end amount-column">Amount</th>
+                        <th>Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @if (Model.PaymentReceipts.Any())
+                    {
+                        foreach (var item in Model.PaymentReceipts)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@item.ReceiptNo</strong>
+                                </td>
+
+                                <td>
+                                    @item.ReceiptDate.ToString("dd-MMM-yyyy")
+                                </td>
+
+                                <td>
+                                    @item.Client?.ClientName
+                                </td>
+
+                                <td>
+                                    @item.Invoice?.InvoiceNo
+                                </td>
+
+                                <td>
+                                    @item.PaymentMode
+                                </td>
+
+                                <td class="text-end amount-column">
+                                    <strong>₹ @item.AmountReceived.ToString("N2")</strong>
+                                </td>
+
+                                <td>
+                                    @if (item.IsCancelled)
+                                    {
+                                        <span class="badge-danger">Cancelled</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-success">Active</span>
+                                    }
+                                </td>
+
+                                <td>
+                                    <div class="table-actions">
+
+                                        <a asp-action="Details"
+                                           asp-route-id="@item.PaymentReceiptId"
+                                           class="btn-app btn-icon btn-primary-app"
+                                           title="Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+
+                                        @if (!item.IsCancelled)
+                                        {
+                                            <a asp-action="Edit"
+                                               asp-route-id="@item.PaymentReceiptId"
+                                               class="btn-app btn-icon btn-secondary-app"
+                                               title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+
+                                            <a asp-action="Delete"
+                                               asp-route-id="@item.PaymentReceiptId"
+                                               class="btn-app btn-icon btn-danger-app"
+                                               title="Cancel Receipt">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        }
+
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8"
+                                class="text-center text-muted">
+                                No payment receipts found.
+                            </td>
+                        </tr>
+                    }
+
+                </tbody>
+
+                @if (Model.PaymentReceipts.Any())
+                {
+                    <tfoot>
+                        <tr>
+                            <th colspan="5"
+                                class="text-end">
+                                Total Active Amount
+                            </th>
+
+                            <th class="text-end amount-column">
+                                ₹ @(Model.PaymentReceipts
+                                                            .Where(x => !x.IsCancelled)
+                                                            .Sum(x => x.AmountReceived)
+                                                            .ToString("N2"))
+                            </th>
+
+                            <th colspan="2"></th>
+                        </tr>
+                    </tfoot>
+                }
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+<style>
+    .amount-column {
+        width: 140px;
+        min-width: 140px;
+        max-width: 140px;
+        white-space: nowrap;
+    }
+</style>

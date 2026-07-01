@@ -1,0 +1,362 @@
+@model AryamanBMS.Models.InvoiceTrackerViewModel
+
+@{
+    ViewData["Title"] = "Invoice Tracker";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Invoice Tracker</h1>
+        <p class="module-subtitle">
+            Manage invoice generation, payment status and balances
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="Create" class="btn-app btn-primary-app">
+            <i class="bi bi-plus-circle"></i>
+            New Invoice
+        </a>
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Filters</h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-3">
+
+            <div class="form-group">
+                <input type="text"
+                       id="txtSearch"
+                       class="app-input"
+                       placeholder="Search Invoice..." />
+            </div>
+
+            <div class="form-group">
+                <select id="ddlClient" class="app-select">
+
+                    <option value="">
+                        All Clients
+                    </option>
+
+
+                    @foreach (var client in Model.Clients)
+                    {
+                        <option value="@client.ClientName">
+                            @client.ClientName
+                        </option>
+                    }
+
+                </select>
+
+            </div>
+
+            <div class="form-group">
+                <select id="ddlStatus" class="app-select">
+
+                    <option value="">
+                        All Status
+                    </option>
+
+                    <option>Draft</option>
+                    <option>Generated</option>
+                    <option>Sent</option>
+                    <option>Partially Paid</option>
+                    <option>Paid</option>
+                    <option>Cancelled</option>
+
+                </select>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card table-card">
+    <div class="card-header">
+        <h5 class="card-title">Invoices</h5>
+    </div>
+    <div class="card-body table-responsive">
+
+
+        <table class="app-table"
+               id="invoiceTable">
+
+
+            <thead>
+
+                <tr>
+
+                    <th>Invoice No</th>
+
+                    <th>Date</th>
+
+                    <th>Client</th>
+
+                    <th>Project</th>
+
+                    <th>Amount</th>
+
+                    <th>Paid</th>
+
+                    <th>Balance</th>
+
+                    <th>Status</th>
+
+                    <th>Action</th>
+
+                </tr>
+
+            </thead>
+
+
+
+
+
+
+            <tbody>
+
+
+                @foreach (var item in Model.Invoices)
+                {
+
+                    <tr>
+
+
+                        <td>
+                            @item.InvoiceNo
+                        </td>
+
+
+                        <td>
+                            @item.InvoiceDate.ToString("dd-MMM-yyyy")
+                        </td>
+
+
+
+                        <td>
+                            @(item.Client?.ClientName ?? "-")
+                        </td>
+
+
+
+
+                        <td>
+                            @item.ProjectName
+                        </td>
+
+
+
+                        <td>
+                            @item.GrandTotal.ToString("N2")
+                        </td>
+
+
+
+                        <td>
+                            @item.PaidAmount.ToString("N2")
+                        </td>
+
+
+
+                        <td>
+                            @item.BalanceAmount.ToString("N2")
+                        </td>
+
+
+
+
+
+                        <td>
+
+                            @item.InvoiceStatus
+
+                        </td>
+
+
+
+
+
+                        <td>
+
+                            <div class="table-actions">
+                            <a asp-action="Details"
+                               asp-route-id="@item.InvoiceId"
+                               class="btn-app btn-icon btn-primary-app">
+
+                                <i class="bi bi-eye"></i>
+
+                            </a>
+
+                            <a asp-action="Edit"
+                               asp-route-id="@item.InvoiceId"
+                               class="btn-app btn-icon btn-secondary-app">
+
+                                <i class="bi bi-pencil"></i>
+
+                            </a>
+
+                            <a asp-action="Delete"
+                               asp-route-id="@item.InvoiceId"
+                               class="btn-app btn-icon btn-danger-app"
+                               title="Cancel Invoice">
+                                <i class="bi bi-trash"></i>
+                            </a>
+
+
+
+                            <a asp-action="Print"
+                               asp-route-id="@item.InvoiceId"
+                               class="btn-app btn-icon btn-success-app">
+
+                                <i class="bi bi-printer"></i>
+
+                            </a>
+                            </div>
+
+
+                        </td>
+
+
+                    </tr>
+
+                }
+
+
+            </tbody>
+
+
+        </table>
+
+
+    </div>
+
+
+</div>
+
+
+
+
+
+
+@section Scripts
+{
+
+    <script>
+
+
+        $("#txtSearch").keyup(function(){
+
+        var value=$(this).val().toLowerCase();
+
+
+        $("#invoiceTable tbody tr").filter(function(){
+
+        $(this).toggle(
+        $(this).text().toLowerCase().indexOf(value)>-1
+        );
+
+
+        });
+
+
+        });
+
+
+
+
+
+        $("#ddlClient").change(function(){
+
+
+        var value=$(this).val().toLowerCase();
+
+
+        $("#invoiceTable tbody tr").filter(function(){
+
+
+        if(value=="")
+        {
+
+        $(this).show();
+
+        }
+
+        else
+        {
+
+        $(this).toggle(
+
+        $(this).find("td:eq(2)")
+        .text()
+        .toLowerCase()
+        .indexOf(value)>-1
+
+        );
+
+
+        }
+
+
+        });
+
+
+        });
+
+
+
+
+
+        $("#ddlStatus").change(function(){
+
+
+        var value=$(this).val().toLowerCase();
+
+
+        $("#invoiceTable tbody tr").filter(function(){
+
+
+        if(value=="")
+        {
+
+        $(this).show();
+
+        }
+
+        else
+        {
+
+
+        $(this).toggle(
+
+        $(this).find("td:eq(7)")
+        .text()
+        .toLowerCase()
+        .indexOf(value)>-1
+
+        );
+
+
+        }
+
+
+        });
+
+
+        });
+
+
+
+    </script>
+
+}

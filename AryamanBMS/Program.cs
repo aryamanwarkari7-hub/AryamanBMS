@@ -83,6 +83,29 @@ builder.Services.AddScoped<IProjectMeetingRepository, ProjectMeetingRepository>(
 //Risk
 builder.Services.AddScoped<IProjectRiskRepository, ProjectRiskRepository>();
 
+// Accounts
+builder.Services.AddScoped<IClientRepository, ClientRepository>();
+builder.Services.AddScoped<ICompanyProfileRepository, CompanyProfileRepository>();
+builder.Services.AddScoped<ICompanyDocumentCategoryRepository, CompanyDocumentCategoryRepository>();
+builder.Services.AddScoped<ICompanyDocumentRepository, CompanyDocumentRepository>();
+builder.Services.AddScoped<IProposalRepository, ProposalRepository>();
+builder.Services.AddScoped<IPurchaseOrderRepository, PurchaseOrderRepository>();
+builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+builder.Services.AddScoped<IPaymentReceiptRepository, PaymentRepository>();
+builder.Services.AddScoped<IExpenseCategoryRepository, ExpenseCategoryRepository>();
+builder.Services.AddScoped<IExpenseVoucherRepository, ExpenseVoucherRepository>();
+builder.Services.AddScoped<IGstSnapshotRepository, GstSnapshotRepository>();
+builder.Services.AddScoped<IGstReturnRepository, GstReturnRepository>();
+builder.Services.AddScoped<IGstChallanRepository, GstChallanRepository>();
+builder.Services.AddScoped<IGstItcRepository, GstItcRepository>();
+builder.Services.AddScoped<IGstDocumentRepository, GstDocumentRepository>();
+builder.Services.AddScoped<IFinancialAuditDocumentRepository, FinancialAuditDocumentRepository>();
+builder.Services.AddScoped<IOfficeAssetRepository, OfficeAssetRepository>();
+builder.Services.AddScoped<IPfRepository, PfRepository>();
+builder.Services.AddScoped<IEsicRepository, EsicRepository>();
+builder.Services.AddScoped<IPtRepository, PtRepository>();
+builder.Services.AddScoped<INoticeRepository, NoticeRepository>();
+
 // SALARY SERVICE
 builder.Services.AddScoped<ISalaryExcelImportService, SalaryExcelImportService>();
 builder.Services.AddScoped<ISalaryAttendanceSummaryService, SalaryAttendanceSummaryService>();
@@ -97,6 +120,12 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IProjectTimelineService, ProjectTimelineService>();
 
 builder.Services.AddScoped<IProjectAccessService, ProjectAccessService>();
+
+// ACCOUNTS SERVICE
+builder.Services.AddScoped<IFileStorageService, FileStorageService>();
+builder.Services.AddScoped<IFinancialYearService, FinancialYearService>();
+builder.Services.AddScoped<IGstCalculationService, GstCalculationService>();
+builder.Services.AddScoped<IGstDashboardService, GstDashboardService>();
 
 var app = builder.Build();
 

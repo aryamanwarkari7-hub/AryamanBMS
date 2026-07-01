@@ -1,0 +1,221 @@
+@model IEnumerable<AryamanBMS.Models.PurchaseOrderModel>
+
+@{
+    ViewData["Title"] = "Purchase Orders / Work Orders";
+    var filterType = ViewBag.FilterType as string;
+    var filterStatus = ViewBag.FilterStatus as string;
+
+    string StatusBadge(string status) => status switch
+    {
+        "Open" => "badge-info",
+        "Acknowledged" => "badge-info",
+        "InProgress" => "badge-warning",
+        "Delivered" => "badge-success",
+        "Closed" => "badge-secondary",
+        "Cancelled" => "badge-danger",
+        _ => "badge-secondary"
+    };
+
+    string StatusLabel(string status) => status switch
+    {
+        "InProgress" => "In Progress",
+        _ => status
+    };
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Purchase Orders / Work Orders</h1>
+        <p class="module-subtitle">
+            Track all PO and WO records
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="Create" class="btn-app btn-primary-app">
+            <i class="bi bi-plus-circle"></i> New PO / WO
+        </a>
+    </div>
+</div>
+
+<div>
+
+  
+
+    <!-- Type filter tabs -->
+    
+
+    <div class="app-card table-card">
+
+        <div class="card-header">
+            <h5 class="card-title">PO / WO Register</h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="module-header-actions justify-content-start mb-3">
+
+                <a class="btn-app @(string.IsNullOrEmpty(filterType) ? "btn-primary-app" : "btn-secondary-app")"
+                   asp-action="Index">
+                    All
+                </a>
+
+                <a class="btn-app @(filterType == "PO" ? "btn-primary-app" : "btn-secondary-app")"
+                   asp-action="Index"
+                   asp-route-type="PO">
+                    Purchase Orders
+                </a>
+
+                <a class="btn-app @(filterType == "WO" ? "btn-primary-app" : "btn-secondary-app")"
+                   asp-action="Index"
+                   asp-route-type="WO">
+                    Work Orders
+                </a>
+
+            </div>
+
+            <div class="table-responsive">
+
+                <table class="app-table" id="orderTable">
+
+                    <thead >
+                        <tr>
+                            <th>Order No.</th>
+                            <th>Type</th>
+                            <th>Client</th>
+                            <th>Title</th>
+                            <th>Order Date</th>
+                            <th>Due Date</th>
+                            <th class="text-end">Amount</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @if (Model.Any())
+                        {
+                            @foreach (var item in Model)
+                            {
+                                var overdue = item.DeliveryDueDate.HasValue
+                                              && item.DeliveryDueDate.Value < DateTime.Today
+                                              && item.Status != "Delivered"
+                                              && item.Status != "Closed"
+                                              && item.Status != "Cancelled";
+                                <tr class="@(overdue ? "table-warning" : "")">
+
+                                    <td>
+                                        <strong class="text-success">@item.OrderNumber</strong>
+                                    </td>
+
+                                    <td>
+                                        @if (item.OrderType == "PO")
+                                        {
+                                            <span class="badge-info">PO</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge-secondary">WO</span>
+                                        }
+                                    </td>
+
+                                    <td>@item.Client?.ClientName</td>
+
+                                    <td>
+                                        @item.OrderTitle
+                                        @if (item.Proposal != null)
+                                        {
+                                            <br />
+                                            <small class="card-subtitle">
+                                                <i class="bi bi-file-earmark-text-contract"></i>
+                                                @item.Proposal.ProposalNumber
+                                            </small>
+                                        }
+                                    </td>
+
+                                    <td>@item.OrderDate.ToString("dd-MMM-yyyy")</td>
+
+                                    <td>
+                                        @if (item.DeliveryDueDate.HasValue)
+                                        {
+                                            if (overdue)
+                                            {
+                                                <span class="text-danger fw-bold">
+                                                    @item.DeliveryDueDate.Value.ToString("dd-MMM-yyyy")
+                                                    <i class="bi bi-exclamation-triangle"></i>
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                @item.DeliveryDueDate.Value.ToString("dd-MMM-yyyy")
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="card-subtitle">-</span>
+                                        }
+                                    </td>
+
+                                    <td class="text-end">
+                                        @if (item.OrderAmount.HasValue)
+                                        {
+                                            <strong>@item.Currency @item.OrderAmount.Value.ToString("N0")</strong>
+                                        }
+                                        else
+                                        {
+                                            <span class="card-subtitle">-</span>
+                                        }
+                                    </td>
+
+                                    <td class="text-center">
+                                        <span class="@StatusBadge(item.Status)">
+                                            @StatusLabel(item.Status)
+                                        </span>
+                                    </td>
+
+                                    <td class="text-center">
+
+                                        <a asp-action="Details" asp-route-id="@item.PurchaseOrderId"
+                                           class="btn-app btn-icon btn-primary-app" title="Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+
+                                        <a asp-action="Edit" asp-route-id="@item.PurchaseOrderId"
+                                           class="btn-app btn-icon btn-secondary-app" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+
+                                        <a asp-action="Download" asp-route-id="@item.PurchaseOrderId"
+                                           class="btn-app btn-icon btn-success-app" title="Download">
+                                            <i class="bi bi-download"></i>
+                                        </a>
+
+                                        <a asp-action="Delete"
+                                           asp-route-id="@item.PurchaseOrderId"
+                                           class="btn-app btn-icon btn-danger-app"
+                                           title="Deactivate">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+
+                                    </td>
+
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="9" class="text-center text-muted py-4">
+                                    <i class="bi bi-file-earmark-text-invoice fs-2 mb-2 d-block"></i>
+                                    No orders found.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>

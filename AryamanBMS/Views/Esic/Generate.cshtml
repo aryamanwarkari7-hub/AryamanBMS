@@ -1,0 +1,65 @@
+@model AryamanBMS.Models.GenerateEsicSnapshotInput
+
+@{
+    ViewData["Title"] = "Generate ESIC Snapshot";
+}
+
+<div class="module-content">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0">
+            <i class="bi bi-hospital text-primary"></i>
+            Generate ESIC Snapshot
+        </h3>
+        <a asp-action="Index" class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
+    </div>
+
+    <div class="app-card" style="max-width:500px;">
+        <div class="card-body">
+
+            <form asp-action="Generate" method="post">
+
+                <div asp-validation-summary="All" class="validation-message"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Month" class="form-label"></label>
+                    <select asp-for="Month" class="app-select">
+                        @for (int m = 1; m <= 12; m++)
+                        {
+                            <option value="@m" selected="@(m == Model.Month ? "selected" : null)">
+                                @System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(m)
+                            </option>
+                        }
+                    </select>
+                    <span asp-validation-for="Month" class="validation-message"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Year" class="form-label"></label>
+                    <select asp-for="Year" class="app-select">
+                        @for (int y = DateTime.Now.Year - 2; y <= DateTime.Now.Year + 1; y++)
+                        {
+                            <option value="@y" selected="@(y == Model.Year ? "selected" : null)">@y</option>
+                        }
+                    </select>
+                    <span asp-validation-for="Year" class="validation-message"></span>
+                </div>
+
+                <p class="text-muted small">
+                    <i class="bi bi-info-circle"></i>
+                    This will aggregate ESIC deductions and employer contributions from all salary records for the selected period. Re-running for a <strong>Pending</strong> snapshot recalculates totals; <strong>Filed</strong> or <strong>Paid</strong> snapshots are locked.
+                </p>
+
+                <button type="submit" class="btn-app btn-primary-app">
+                    <i class="bi bi-lightning-charge"></i> Generate
+                </button>
+                <a asp-action="Index" class="btn-app btn-secondary-app">Cancel</a>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>

@@ -1,0 +1,138 @@
+@model ExpenseCategoryModel
+
+@{
+    ViewData["Title"] = "Delete Expense Category";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">DELETE EXPENSE CATEGORY</h1>
+        <p class="module-subtitle">
+            Confirm deletion for @Model.CategoryName
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="Index"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Category Information</h2>
+            <p class="card-subtitle">
+                Review this category before deleting it.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-3">
+
+            <div class="form-group">
+                <label class="form-label">Category Code</label>
+                <strong>@Model.CategoryCode</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Category Name</label>
+                <strong>@Model.CategoryName</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Default GST Rate</label>
+                <strong>@Model.DefaultGSTRate.ToString("N2")%</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">ITC Eligible</label>
+                @if (Model.ITCEligible)
+                {
+                    <span class="badge-success">Yes</span>
+                }
+                else
+                {
+                    <span class="badge-secondary">No</span>
+                }
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">GL Account Code</label>
+                <strong>@(string.IsNullOrWhiteSpace(Model.GLAccountCode) ? "-" : Model.GLAccountCode)</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                @if (Model.IsActive)
+                {
+                    <span class="badge-success">Active</span>
+                }
+                else
+                {
+                    <span class="badge-secondary">Inactive</span>
+                }
+            </div>
+
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Description</label>
+            <strong>@(string.IsNullOrWhiteSpace(Model.Description) ? "-" : Model.Description)</strong>
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Delete Confirmation</h2>
+            <p class="card-subtitle">
+                This category will be removed from active category lists.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        <div class="app-alert-danger">
+            Are you sure you want to delete this expense category?
+        </div>
+
+        <form asp-action="DeleteConfirmed"
+              asp-route-id="@Model.ExpenseCategoryId"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <div class="form-actions">
+
+                <button type="submit"
+                        class="btn-app btn-danger-app">
+                    <i class="bi bi-trash"></i>
+                    Delete Category
+                </button>
+
+                <a asp-action="Index"
+                   class="btn-app btn-secondary-app">
+                    Keep Category
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>

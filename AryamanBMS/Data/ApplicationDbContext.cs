@@ -63,6 +63,53 @@ namespace AryamanBMS.Data
         // Risk
         public DbSet<ProjectRiskModel> ProjectRisks { get; set; }
 
+        // ACCOUNTS
+
+        public DbSet<CompanyProfileModel> CompanyProfiles { get; set; }
+        public DbSet<CompanyDocumentCategoryModel> CompanyDocumentCategories { get; set; }
+        public DbSet<CompanyDocumentModel> CompanyDocuments { get; set; }
+
+        public DbSet<ClientModel> Clients { get; set; }
+        public DbSet<ProposalModel> Proposals { get; set; }
+        public DbSet<PurchaseOrderModel> PurchaseOrders { get; set; }
+
+        public DbSet<InvoiceModel> Invoices { get; set; }
+        public DbSet<InvoiceDetailsModel> InvoiceDetails { get; set; }
+        public DbSet<PaymentReceiptModel> PaymentReceipts { get; set; }
+
+        public DbSet<ExpenseCategoryModel> ExpenseCategories { get; set; }
+        public DbSet<ExpenseVoucherModel> ExpenseVouchers { get; set; }
+
+        public DbSet<ExpenseCategoryModel> TableExpenseCategories { get; set; }
+        public DbSet<ExpenseVoucherModel> TableExpenseVouchers { get; set; }
+
+        public DbSet<GstMonthlySnapshotModel> GstMonthlySnapshots { get; set; }
+        public DbSet<GstReturnModel> GstReturns { get; set; }
+        public DbSet<GstChallanModel> GstChallans { get; set; }
+        public DbSet<GstItcRecordModel> GstItcRecords { get; set; }
+        public DbSet<GstDocumentModel> GstDocuments { get; set; }
+
+        public DbSet<FinancialAuditDocumentModel> FinancialAuditDocuments { get; set; }
+        public DbSet<FinancialAuditDocumentModel> TableFinancialAuditDocuments { get; set; }
+        public DbSet<OfficeAssetModel> OfficeAssets { get; set; }
+
+        public DbSet<PfMonthlySnapshotModel> PfMonthlySnapshots { get; set; }
+        public DbSet<PfChallanModel> PfChallans { get; set; }
+        public DbSet<PfDocumentModel> PfDocuments { get; set; }
+
+        public DbSet<EsicMonthlySnapshotModel> EsicMonthlySnapshots { get; set; }
+        public DbSet<EsicChallanModel> EsicChallans { get; set; }
+        public DbSet<EsicDocumentModel> EsicDocuments { get; set; }
+
+        public DbSet<PtMonthlySnapshotModel> PtMonthlySnapshots { get; set; }
+        public DbSet<PtChallanModel> PtChallans { get; set; }
+        public DbSet<PtDocumentModel> PtDocuments { get; set; }
+
+        public DbSet<NoticeModel> Notices { get; set; }
+        public DbSet<NoticeDocumentModel> NoticeDocuments { get; set; }
+
+        public DbSet<FinancialSequenceModel> FinancialSequences { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -440,6 +487,217 @@ namespace AryamanBMS.Data
                 .WithMany()
                 .HasForeignKey(r => r.RiskOwnerEmployeeId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            // ACCOUNTS
+
+            // Accounts & Finance
+            modelBuilder.Entity<ClientModel>().ToTable("tableclientmaster");
+            modelBuilder.Entity<ClientModel>()
+                .HasIndex(x => x.ClientCode)
+                .IsUnique();
+
+            modelBuilder.Entity<CompanyProfileModel>().ToTable("tablecompanyprofile");
+            modelBuilder.Entity<CompanyProfileModel>()
+                .HasIndex(x => x.GSTIN)
+                .IsUnique();
+
+            modelBuilder.Entity<CompanyDocumentCategoryModel>().ToTable("tablecompanydocumentcategory");
+            modelBuilder.Entity<CompanyDocumentCategoryModel>()
+                .HasIndex(x => x.CategoryName)
+                .IsUnique();
+
+            modelBuilder.Entity<CompanyDocumentModel>().ToTable("tablecompanydocument");
+            modelBuilder.Entity<CompanyDocumentModel>()
+                .HasOne(x => x.Category)
+                .WithMany()
+                .HasForeignKey(x => x.DocumentCategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<FinancialSequenceModel>().ToTable("tablefinancialsequence");
+            modelBuilder.Entity<FinancialSequenceModel>()
+                .HasIndex(x => new { x.DocumentType, x.FinancialYear })
+                .IsUnique();
+
+            modelBuilder.Entity<ProposalModel>().ToTable("tableproposal");
+            modelBuilder.Entity<ProposalModel>()
+                .HasIndex(x => x.ProposalNumber)
+                .IsUnique();
+            modelBuilder.Entity<ProposalModel>()
+                .HasOne(x => x.Client)
+                .WithMany(x => x.Proposals)
+                .HasForeignKey(x => x.ClientId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<ProposalModel>()
+                .HasOne(x => x.Project)
+                .WithMany()
+                .HasForeignKey(x => x.ProjectId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<PurchaseOrderModel>().ToTable("tablepurchaseorder");
+            modelBuilder.Entity<PurchaseOrderModel>()
+                .HasIndex(x => x.OrderNumber)
+                .IsUnique();
+            modelBuilder.Entity<PurchaseOrderModel>()
+                .HasOne(x => x.Client)
+                .WithMany(x => x.PurchaseOrders)
+                .HasForeignKey(x => x.ClientId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<PurchaseOrderModel>()
+                .HasOne(x => x.Proposal)
+                .WithMany(x => x.PurchaseOrders)
+                .HasForeignKey(x => x.ProposalId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<InvoiceModel>().ToTable("tableinvoicemaster");
+            modelBuilder.Entity<InvoiceModel>()
+                .HasIndex(x => x.InvoiceNo)
+                .IsUnique();
+            modelBuilder.Entity<InvoiceModel>()
+                .HasOne(x => x.Client)
+                .WithMany()
+                .HasForeignKey(x => x.ClientId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<InvoiceModel>()
+                .HasMany(x => x.InvoiceDetails)
+                .WithOne(x => x.Invoice)
+                .HasForeignKey(x => x.InvoiceId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<InvoiceDetailsModel>().ToTable("tableinvoicedetails");
+
+            modelBuilder.Entity<PaymentReceiptModel>().ToTable("tablepaymentreceipt");
+            modelBuilder.Entity<PaymentReceiptModel>()
+                .HasIndex(x => x.ReceiptNo)
+                .IsUnique();
+            modelBuilder.Entity<PaymentReceiptModel>()
+                .HasOne(x => x.Client)
+                .WithMany()
+                .HasForeignKey(x => x.ClientId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<PaymentReceiptModel>()
+                .HasOne(x => x.Invoice)
+                .WithMany()
+                .HasForeignKey(x => x.InvoiceId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ExpenseCategoryModel>().ToTable("tableexpensecategories");
+            modelBuilder.Entity<ExpenseCategoryModel>()
+                .HasIndex(x => x.CategoryCode)
+                .IsUnique();
+
+            modelBuilder.Entity<ExpenseVoucherModel>().ToTable("tableexpensevouchers");
+            modelBuilder.Entity<ExpenseVoucherModel>()
+                .HasIndex(x => x.VoucherNumber)
+                .IsUnique();
+            modelBuilder.Entity<ExpenseVoucherModel>()
+                .HasOne(x => x.Category)
+                .WithMany(x => x.ExpenseVouchers)
+                .HasForeignKey(x => x.ExpenseCategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<GstMonthlySnapshotModel>().ToTable("tablegstmonthlysnapshot");
+            modelBuilder.Entity<GstMonthlySnapshotModel>()
+                .HasIndex(x => new { x.Month, x.Year })
+                .IsUnique();
+
+            modelBuilder.Entity<GstReturnModel>().ToTable("tablegstreturn");
+            modelBuilder.Entity<GstReturnModel>()
+                .HasOne(x => x.Snapshot)
+                .WithMany(x => x.Returns)
+                .HasForeignKey(x => x.SnapshotId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<GstChallanModel>().ToTable("tablegstchallan");
+            modelBuilder.Entity<GstChallanModel>()
+                .HasOne(x => x.Snapshot)
+                .WithMany(x => x.Challans)
+                .HasForeignKey(x => x.SnapshotId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<GstItcRecordModel>().ToTable("tablegstitcrecord");
+            modelBuilder.Entity<GstItcRecordModel>()
+                .HasOne(x => x.Snapshot)
+                .WithMany(x => x.ItcRecords)
+                .HasForeignKey(x => x.SnapshotId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<GstDocumentModel>().ToTable("tablegstdocument");
+            modelBuilder.Entity<GstDocumentModel>()
+                .HasOne(x => x.Snapshot)
+                .WithMany(x => x.Documents)
+                .HasForeignKey(x => x.SnapshotId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<FinancialAuditDocumentModel>().ToTable("tablefinancialauditdocuments");
+
+            modelBuilder.Entity<OfficeAssetModel>().ToTable("tableofficeasset");
+
+            modelBuilder.Entity<PfMonthlySnapshotModel>().ToTable("tablepfmonthlysnapshot");
+            modelBuilder.Entity<PfMonthlySnapshotModel>()
+                .HasIndex(x => new { x.Month, x.Year })
+                .IsUnique();
+
+            modelBuilder.Entity<PfChallanModel>().ToTable("tablepfchallan");
+            modelBuilder.Entity<PfChallanModel>()
+                .HasOne(x => x.Snapshot)
+                .WithMany(x => x.Challans)
+                .HasForeignKey(x => x.PfSnapshotId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PfDocumentModel>().ToTable("tablepfdocument");
+            modelBuilder.Entity<PfDocumentModel>()
+                .HasOne(x => x.Snapshot)
+                .WithMany(x => x.Documents)
+                .HasForeignKey(x => x.PfSnapshotId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<EsicMonthlySnapshotModel>().ToTable("tableesicmonthlysnapshot");
+            modelBuilder.Entity<EsicMonthlySnapshotModel>()
+                .HasIndex(x => new { x.Month, x.Year })
+                .IsUnique();
+
+            modelBuilder.Entity<EsicChallanModel>().ToTable("tableesicchallan");
+            modelBuilder.Entity<EsicChallanModel>()
+                .HasOne(x => x.Snapshot)
+                .WithMany(x => x.Challans)
+                .HasForeignKey(x => x.EsicSnapshotId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<EsicDocumentModel>().ToTable("tableesicdocument");
+            modelBuilder.Entity<EsicDocumentModel>()
+                .HasOne(x => x.Snapshot)
+                .WithMany(x => x.Documents)
+                .HasForeignKey(x => x.EsicSnapshotId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PtMonthlySnapshotModel>().ToTable("tableptmonthlysnapshot");
+            modelBuilder.Entity<PtMonthlySnapshotModel>()
+                .HasIndex(x => new { x.Month, x.Year })
+                .IsUnique();
+
+            modelBuilder.Entity<PtChallanModel>().ToTable("tableptchallan");
+            modelBuilder.Entity<PtChallanModel>()
+                .HasOne(x => x.Snapshot)
+                .WithMany(x => x.Challans)
+                .HasForeignKey(x => x.PtSnapshotId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PtDocumentModel>().ToTable("tableptdocument");
+            modelBuilder.Entity<PtDocumentModel>()
+                .HasOne(x => x.Snapshot)
+                .WithMany(x => x.Documents)
+                .HasForeignKey(x => x.PtSnapshotId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<NoticeModel>().ToTable("tablenotice");
+
+            modelBuilder.Entity<NoticeDocumentModel>().ToTable("tablenoticedocument");
+            modelBuilder.Entity<NoticeDocumentModel>()
+                .HasOne(x => x.Notice)
+                .WithMany(x => x.Documents)
+                .HasForeignKey(x => x.NoticeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
 
         }
     }

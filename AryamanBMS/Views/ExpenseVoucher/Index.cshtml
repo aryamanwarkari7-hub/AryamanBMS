@@ -1,0 +1,231 @@
+@model IEnumerable<ExpenseVoucherModel>
+
+@{
+    ViewData["Title"] = "Expense Vouchers";
+    string status = ViewBag.Status as string ?? "";
+    int? categoryId = ViewBag.CategoryId as int?;
+    string search = ViewBag.Search as string ?? "";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">EXPENSE VOUCHERS</h1>
+        <p class="module-subtitle">
+            Manage expense entries, GST and approval status
+        </p>
+    </div>
+    <div class="module-header-actions">
+        <a href="@Url.Action("Create")" class="btn-app btn-primary-app">
+            <i class="bi bi-plus-circle"></i> New Voucher
+        </a>
+    </div>
+</div>
+
+
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+
+        <form method="get" class="w-100">
+
+            <div class="form-grid-4">
+
+                <div class="form-group">
+                    <input type="text"
+                           name="search"
+                           value="@search"
+                           class="app-input"
+                           placeholder="Voucher / Vendor / Invoice" />
+                </div>
+
+                <div class="form-group">
+                    <select name="categoryId"
+                            class="app-select">
+                        <option value="">All Categories</option>
+
+                        @foreach (var category in ViewBag.Categories)
+                        {
+                            <option value="@category.ExpenseCategoryId"
+                                    selected="@(categoryId.HasValue && categoryId.Value == category.ExpenseCategoryId)">
+                                @category.CategoryName
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <button type="submit"
+                            class="btn-app btn-primary-app w-100">
+                        <i class="bi bi-search"></i>
+                        Search
+                    </button>
+                </div>
+
+                <div class="form-group">
+                    <a asp-action="Index"
+                       class="btn-app btn-secondary-app w-100">
+                        Reset
+                    </a>
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+
+    <div class="card-body">
+
+        <div class="module-header-actions justify-content-start mb-3">
+
+            <a asp-action="Index"
+               asp-route-search="@search"
+               asp-route-categoryId="@categoryId"
+               class="btn-app @(string.IsNullOrWhiteSpace(status) ? "btn-primary-app" : "btn-secondary-app")">
+                All
+            </a>
+
+            <a asp-action="Index"
+               asp-route-search="@search"
+               asp-route-categoryId="@categoryId"
+               asp-route-status="Draft"
+               class="btn-app @(status == "Draft" ? "btn-primary-app" : "btn-secondary-app")">
+                Draft
+            </a>
+
+            <a asp-action="Index"
+               asp-route-search="@search"
+               asp-route-categoryId="@categoryId"
+               asp-route-status="Posted"
+               class="btn-app @(status == "Posted" ? "btn-primary-app" : "btn-secondary-app")">
+                Posted
+            </a>
+
+            <a asp-action="Index"
+               asp-route-search="@search"
+               asp-route-categoryId="@categoryId"
+               asp-route-status="Cancelled"
+               class="btn-app @(status == "Cancelled" ? "btn-primary-app" : "btn-secondary-app")">
+                Cancelled
+            </a>
+
+        </div>
+
+    @if (Model.Any())
+    {
+        <div class="table-responsive">
+            <table class="app-table">
+                <thead>
+                    <tr>
+                        <th>Voucher No.</th>
+                        <th>Date</th>
+                        <th>Category</th>
+                        <th>Vendor</th>
+                        <th class="text-end amount-column">Amount</th>
+                        <th class="text-end amount-column">Total(with GST)</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var voucher in Model)
+                    {
+                        <tr>
+                            <td>
+                                <a href="@Url.Action("Details", new { id = voucher.ExpenseVoucherId })">
+                                    <strong>@voucher.VoucherNumber</strong>
+                                </a>
+                            </td>
+                            <td>@voucher.VoucherDate.ToString("dd MMM yyyy")</td>
+                            <td>@voucher.Category?.CategoryName</td>
+                            <td>@voucher.VendorName</td>
+                            <td class="text-end amount-column">₹ @voucher.Amount.ToString("N2")</td>
+                            <td class="text-end amount-column">₹ @voucher.TotalAmount.ToString("N2")</td>
+                            <td class="text-center">
+                                    @if (voucher.Status == "Draft")
+                                {
+                                    <span class="badge-warning">Draft</span>
+                                }
+                                else if (voucher.Status == "Posted")
+                                {
+                                    <span class="badge-success">Posted</span>
+                                }
+                                else if (voucher.Status == "Cancelled")
+                                {
+                                    <span class="badge-danger">Cancelled</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="table-actions">
+                                    @if (voucher.Status == "Draft")
+                                    {
+                                            <a href="@Url.Action("Details", new { id = voucher.ExpenseVoucherId })"
+                                               class="btn-app btn-icon btn-primary-app"
+                                               title="Details">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+
+                                            <a href="@Url.Action("Edit", new { id = voucher.ExpenseVoucherId })"
+                                               class="btn-app btn-icon btn-secondary-app"
+                                               title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+
+                                            @if (User.IsInRole("Admin") || User.IsInRole("Finance"))
+                                            {
+                                                 <form method="post"
+                                                       action="@Url.Action("Approve")"
+                                                       class="d-inline">
+                                                     @Html.AntiForgeryToken()
+                                                     <input type="hidden" name="id" value="@voucher.ExpenseVoucherId" />
+                                                 
+                                                     <button type="submit"
+                                                             class="btn-app btn-icon btn-success-app"
+                                                             title="Approve"
+                                                             onclick="return confirm('Approve this voucher?')">
+                                                         <i class="bi bi-check-circle"></i>
+                                                     </button>
+                                                 </form>
+
+                                            }
+
+                                            <a href="@Url.Action("Delete", new { id = voucher.ExpenseVoucherId })"
+                                               class="btn-app btn-icon btn-danger-app"
+                                               title="Delete Voucher">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                    }
+                                    else
+                                    {
+                                            <a href="@Url.Action("Details", new { id = voucher.ExpenseVoucherId })"
+                                               class="btn-app btn-icon btn-primary-app"
+                                               title="Details">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+            <div class="empty-state">
+                No expense vouchers found.
+            </div>
+    }
+</div>
+</div>
+
+    <style>
+        .amount-column {
+            width: 140px;
+            min-width: 140px;
+            max-width: 140px;
+            white-space: nowrap;
+        }
+    </style>

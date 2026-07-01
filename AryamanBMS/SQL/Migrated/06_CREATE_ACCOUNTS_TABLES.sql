@@ -1,0 +1,591 @@
+-- Accounts & Finance tables only
+-- Extracted from AryamanBMS-Accounts old database dump
+-- Do not include Identity, Employee, Project, Attendance, Salary, Leave tables
+
+CREATE TABLE `tableclientmaster` (
+  `ClientId` int NOT NULL AUTO_INCREMENT,
+  `ClientCode` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  `ClientName` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `ContactPerson` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `Phone` varchar(15) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `Email` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `Address` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `City` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `State` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `GSTNumber` varchar(15) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `PANNumber` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `ClientType` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `Remarks` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `IsActive` tinyint(1) NOT NULL DEFAULT '1',
+  `CreatedOn` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdatedOn` datetime DEFAULT NULL,
+  PRIMARY KEY (`ClientId`),
+  UNIQUE KEY `UQ_ClientCode` (`ClientCode`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `tablecompanyprofile` (
+  `CompanyProfileId` int NOT NULL AUTO_INCREMENT,
+  `CompanyName` varchar(200) NOT NULL,
+  `GSTIN` varchar(15) DEFAULT NULL,
+  `PAN` varchar(20) DEFAULT NULL,
+  `Address` varchar(500) DEFAULT NULL,
+  `Email` varchar(150) DEFAULT NULL,
+  `Phone` varchar(20) DEFAULT NULL,
+  `IsActive` bit(1) NOT NULL DEFAULT b'1',
+  `CreatedOn` datetime NOT NULL,
+  `UpdatedOn` datetime DEFAULT NULL,
+  PRIMARY KEY (`CompanyProfileId`),
+  UNIQUE KEY `UX_TableCompanyProfile_GSTIN` (`GSTIN`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `tablecompanydocumentcategory` (
+  `DocumentCategoryId` int NOT NULL AUTO_INCREMENT,
+  `CategoryCode` varchar(20) NOT NULL,
+  `CategoryName` varchar(100) NOT NULL,
+  `Description` varchar(500) DEFAULT NULL,
+  `DisplayOrder` int NOT NULL DEFAULT '0',
+  `IsActive` bit(1) NOT NULL DEFAULT b'1',
+  `CreatedOn` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdatedOn` datetime DEFAULT NULL,
+  `HasExpiry` bit(1) NOT NULL DEFAULT (1),
+  `RequireDocumentNumber` bit(1) NOT NULL DEFAULT (0),
+  `IsMandatory` bit(1) NOT NULL DEFAULT b'0',
+  `ExpiryReminderDays` int NOT NULL DEFAULT '30',
+  `AllowMultipleDocuments` bit(1) NOT NULL DEFAULT b'0',
+  `AllowedExtensions` varchar(200) DEFAULT NULL,
+  `MaxFileSizeMB` bigint DEFAULT NULL,
+  PRIMARY KEY (`DocumentCategoryId`),
+  UNIQUE KEY `UX_CompanyDocumentCategory_CategoryName` (`CategoryName`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `tablecompanydocument` (
+  `CompanyDocumentId` int NOT NULL AUTO_INCREMENT,
+  `DocumentCategoryId` int NOT NULL,
+  `DocumentName` varchar(200) NOT NULL,
+  `DocumentNumber` varchar(100) DEFAULT NULL,
+  `IssuedBy` varchar(200) DEFAULT NULL,
+  `IssueDate` date DEFAULT NULL,
+  `ExpiryDate` date DEFAULT NULL,
+  `FileName` varchar(255) NOT NULL,
+  `StoredFileName` varchar(255) NOT NULL,
+  `FileExtension` varchar(20) DEFAULT NULL,
+  `ContentType` varchar(100) DEFAULT NULL,
+  `FileSize` bigint NOT NULL DEFAULT '0',
+  `FilePath` varchar(500) NOT NULL,
+  `VersionNo` int NOT NULL DEFAULT '1',
+  `IsMandatory` bit(1) NOT NULL DEFAULT b'0',
+  `Remarks` text,
+  `IsActive` bit(1) NOT NULL DEFAULT b'1',
+  `CreatedOn` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdatedOn` datetime DEFAULT NULL,
+  PRIMARY KEY (`CompanyDocumentId`),
+  KEY `FK_CompanyDocument_Category` (`DocumentCategoryId`),
+  CONSTRAINT `FK_CompanyDocument_Category` FOREIGN KEY (`DocumentCategoryId`) REFERENCES `tablecompanydocumentcategory` (`DocumentCategoryId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `tablefinancialsequence` (
+  `SequenceId` int NOT NULL AUTO_INCREMENT,
+  `DocumentType` varchar(50) NOT NULL,
+  `FinancialYear` varchar(20) NOT NULL,
+  `LastNumber` int NOT NULL,
+  `UpdatedOn` datetime NOT NULL,
+  PRIMARY KEY (`SequenceId`),
+  UNIQUE KEY `UX_TableFinancialSequence` (`DocumentType`,`FinancialYear`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `tableproposal` (
+  `ProposalId` int NOT NULL AUTO_INCREMENT,
+  `ProposalNumber` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  `ClientId` int NOT NULL,
+  `ProjectId` int DEFAULT NULL,
+  `ProposalTitle` varchar(300) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  `ProposalDate` date NOT NULL,
+  `ValidUntil` date DEFAULT NULL,
+  `ProposalAmount` decimal(18,2) DEFAULT NULL,
+  `Currency` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'INR',
+  `Scope` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `Terms` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `Remarks` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `Status` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Draft',
+  `FileName` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  `StoredFileName` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  `FileExtension` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `ContentType` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `FileSize` bigint NOT NULL DEFAULT '0',
+  `FilePath` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  `VersionNo` int NOT NULL DEFAULT '1',
+  `IsConverted` tinyint(1) NOT NULL DEFAULT '0',
+  `IsActive` tinyint(1) NOT NULL DEFAULT '1',
+  `CreatedOn` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdatedOn` datetime DEFAULT NULL,
+  PRIMARY KEY (`ProposalId`),
+  UNIQUE KEY `UQ_ProposalNumber` (`ProposalNumber`),
+  KEY `IX_Proposal_ClientId` (`ClientId`),
+  KEY `IX_Proposal_ProjectId` (`ProjectId`),
+  CONSTRAINT `FK_Proposal_Client` FOREIGN KEY (`ClientId`) REFERENCES `tableclientmaster` (`ClientId`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `FK_Proposal_Project` FOREIGN KEY (`ProjectId`) REFERENCES `tableproject` (`Id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `tablepurchaseorder` (
+  `PurchaseOrderId` int NOT NULL AUTO_INCREMENT,
+  `OrderNumber` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  `OrderType` varchar(5) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'PO',
+  `ClientId` int NOT NULL,
+  `ProposalId` int DEFAULT NULL,
+  `OrderTitle` varchar(300) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  `OrderDate` date NOT NULL,
+  `DeliveryDueDate` date DEFAULT NULL,
+  `OrderAmount` decimal(18,2) DEFAULT NULL,
+  `Currency` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'INR',
+  `Status` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Open',
+  `VendorReference` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `Remarks` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `FileName` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  `StoredFileName` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  `FileExtension` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `ContentType` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `FileSize` bigint NOT NULL DEFAULT '0',
+  `FilePath` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  `IsActive` tinyint(1) NOT NULL DEFAULT '1',
+  `CreatedOn` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdatedOn` datetime DEFAULT NULL,
+  PRIMARY KEY (`PurchaseOrderId`),
+  UNIQUE KEY `UQ_OrderNumber` (`OrderNumber`),
+  KEY `IX_PurchaseOrder_ClientId` (`ClientId`),
+  KEY `IX_PurchaseOrder_ProposalId` (`ProposalId`),
+  CONSTRAINT `FK_PurchaseOrder_Client` FOREIGN KEY (`ClientId`) REFERENCES `tableclientmaster` (`ClientId`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `FK_PurchaseOrder_Proposal` FOREIGN KEY (`ProposalId`) REFERENCES `tableproposal` (`ProposalId`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `tableinvoicemaster` (
+  `InvoiceId` int NOT NULL AUTO_INCREMENT,
+  `InvoiceNo` varchar(30) NOT NULL,
+  `InvoiceDate` date NOT NULL,
+  `ProposalId` int DEFAULT NULL,
+  `PurchaseWorkOrderId` int DEFAULT NULL,
+  `ClientId` int NOT NULL,
+  `BillingAddress` longtext,
+  `GSTNo` longtext,
+  `ProjectName` longtext,
+  `DueDate` date DEFAULT NULL,
+  `PaymentTerms` longtext,
+  `SubTotal` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `Discount` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `GSTAmount` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `GrandTotal` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `PaidAmount` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `BalanceAmount` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `InvoiceStatus` varchar(30) NOT NULL DEFAULT 'Draft',
+  `Remarks` longtext,
+  `AttachmentPath` longtext,
+  `IsDeleted` bit(1) NOT NULL DEFAULT b'0',
+  `CreatedBy` int DEFAULT NULL,
+  `CreatedOn` datetime DEFAULT CURRENT_TIMESTAMP,
+  `ModifiedBy` int DEFAULT NULL,
+  `ModifiedOn` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`InvoiceId`),
+  UNIQUE KEY `InvoiceNo` (`InvoiceNo`),
+  KEY `IDX_InvoiceNo` (`InvoiceNo`),
+  KEY `IDX_ClientId` (`ClientId`),
+  KEY `IDX_InvoiceDate` (`InvoiceDate`),
+  KEY `IDX_Status` (`InvoiceStatus`),
+  KEY `IDX_ProposalId` (`ProposalId`),
+  KEY `IDX_POWOId` (`PurchaseWorkOrderId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `tableinvoicedetails` (
+  `InvoiceDetailId` int NOT NULL AUTO_INCREMENT,
+  `InvoiceId` int NOT NULL,
+  `ItemName` varchar(250) NOT NULL,
+  `Description` text,
+  `Qty` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `Unit` varchar(30) DEFAULT NULL,
+  `Rate` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `GSTPercent` decimal(5,2) NOT NULL DEFAULT '0.00',
+  `GSTAmount` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `Amount` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `SortOrder` int NOT NULL DEFAULT '1',
+  PRIMARY KEY (`InvoiceDetailId`),
+  KEY `IDX_InvoiceId` (`InvoiceId`),
+  CONSTRAINT `FK_InvoiceDetails_InvoiceMaster` FOREIGN KEY (`InvoiceId`) REFERENCES `tableinvoicemaster` (`InvoiceId`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `tablepaymentreceipt` (
+  `PaymentReceiptId` int NOT NULL AUTO_INCREMENT,
+  `ReceiptNo` varchar(30) NOT NULL,
+  `ReceiptDate` date NOT NULL,
+  `InvoiceId` int NOT NULL,
+  `ClientId` int NOT NULL,
+  `AmountReceived` decimal(18,2) NOT NULL,
+  `PaymentMode` varchar(30) NOT NULL,
+  `BankName` varchar(200) DEFAULT NULL,
+  `TransactionNo` varchar(100) DEFAULT NULL,
+  `ReferenceNo` varchar(100) DEFAULT NULL,
+  `ReceivedBy` varchar(150) DEFAULT NULL,
+  `AttachmentPath` varchar(500) DEFAULT NULL,
+  `Remarks` text,
+  `IsCancelled` bit(1) NOT NULL DEFAULT b'0',
+  `IsActive` bit(1) NOT NULL DEFAULT b'1',
+  `CreatedOn` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdatedOn` datetime DEFAULT NULL,
+  PRIMARY KEY (`PaymentReceiptId`),
+  UNIQUE KEY `ReceiptNo` (`ReceiptNo`),
+  KEY `FK_PaymentReceipt_Invoice` (`InvoiceId`),
+  KEY `FK_PaymentReceipt_Client` (`ClientId`),
+  CONSTRAINT `FK_PaymentReceipt_Client` FOREIGN KEY (`ClientId`) REFERENCES `tableclientmaster` (`ClientId`),
+  CONSTRAINT `FK_PaymentReceipt_Invoice` FOREIGN KEY (`InvoiceId`) REFERENCES `tableinvoicemaster` (`InvoiceId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `tableexpensecategories` (
+  `ExpenseCategoryId` int NOT NULL AUTO_INCREMENT,
+  `CategoryCode` varchar(50) NOT NULL,
+  `CategoryName` varchar(100) NOT NULL,
+  `Description` varchar(500) DEFAULT NULL,
+  `DefaultGSTRate` decimal(5,2) NOT NULL DEFAULT '0.00',
+  `ITCEligible` bit(1) NOT NULL DEFAULT b'1',
+  `GLAccountCode` varchar(50) DEFAULT NULL,
+  `IsActive` bit(1) NOT NULL DEFAULT b'1',
+  `CreatedOn` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdatedOn` datetime DEFAULT NULL,
+  PRIMARY KEY (`ExpenseCategoryId`),
+  UNIQUE KEY `UQ_ExpenseCategory_CategoryCode` (`CategoryCode`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `tableexpensevouchers` (
+  `ExpenseVoucherId` int NOT NULL AUTO_INCREMENT,
+  `VoucherNumber` varchar(50) NOT NULL,
+  `VoucherDate` datetime NOT NULL,
+  `FinancialYear` varchar(20) NOT NULL,
+  `ExpenseCategoryId` int NOT NULL,
+  `Description` varchar(500) NOT NULL,
+  `Amount` decimal(12,2) NOT NULL,
+  `GSTRate` decimal(5,2) NOT NULL DEFAULT '0.00',
+  `CGSTAmount` decimal(12,2) NOT NULL DEFAULT '0.00',
+  `SGSTAmount` decimal(12,2) NOT NULL DEFAULT '0.00',
+  `IGSTAmount` decimal(12,2) NOT NULL DEFAULT '0.00',
+  `TotalGSTAmount` decimal(12,2) NOT NULL DEFAULT '0.00',
+  `TotalAmount` decimal(12,2) NOT NULL DEFAULT '0.00',
+  `VendorName` varchar(50) DEFAULT NULL,
+  `VendorGSTIN` varchar(20) DEFAULT NULL,
+  `InvoiceNumber` varchar(20) DEFAULT NULL,
+  `Status` varchar(20) DEFAULT 'Draft',
+  `ITCEligible` bit(1) NOT NULL DEFAULT b'1',
+  `Remarks` varchar(500) DEFAULT NULL,
+  `CreatedByUserId` int NOT NULL,
+  `ApprovedByUserId` int DEFAULT NULL,
+  `ApprovedOn` datetime DEFAULT NULL,
+  `CreatedOn` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdatedOn` datetime DEFAULT NULL,
+  `IsActive` bit(1) NOT NULL DEFAULT b'1',
+  PRIMARY KEY (`ExpenseVoucherId`),
+  UNIQUE KEY `IX_ExpenseVoucher_VoucherNumber` (`VoucherNumber`),
+  KEY `IX_ExpenseVoucher_Category` (`ExpenseCategoryId`),
+  KEY `IX_ExpenseVoucher_Date` (`VoucherDate`),
+  KEY `IX_ExpenseVoucher_FinancialYear` (`FinancialYear`),
+  CONSTRAINT `FK_ExpenseVoucher_ExpenseCategory` FOREIGN KEY (`ExpenseCategoryId`) REFERENCES `tableexpensecategories` (`ExpenseCategoryId`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `tablegstmonthlysnapshot` (
+  `SnapshotId` int NOT NULL AUTO_INCREMENT,
+  `Month` int NOT NULL,
+  `Year` int NOT NULL,
+  `FinancialYear` varchar(10) NOT NULL,
+  `SalesTaxableAmount` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `SalesCGST` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `SalesSGST` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `SalesIGST` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `PurchaseTaxableAmount` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `PurchaseCGST` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `PurchaseSGST` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `PurchaseIGST` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `TotalOutputGST` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `TotalInputGST` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `NetGSTPayable` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `InvoiceCount` int NOT NULL DEFAULT '0',
+  `ExpenseVoucherCount` int NOT NULL DEFAULT '0',
+  `Status` varchar(20) NOT NULL DEFAULT 'Draft',
+  `GeneratedOn` datetime NOT NULL,
+  `VerifiedOn` datetime DEFAULT NULL,
+  `FiledOn` datetime DEFAULT NULL,
+  `Remarks` varchar(500) DEFAULT NULL,
+  PRIMARY KEY (`SnapshotId`),
+  UNIQUE KEY `UK_GST_MONTH` (`Month`,`Year`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `tablegstreturn` (
+  `GstReturnId` int NOT NULL AUTO_INCREMENT,
+  `SnapshotId` int NOT NULL,
+  `ReturnType` varchar(20) NOT NULL,
+  `Status` varchar(20) NOT NULL DEFAULT 'Draft',
+  `ARNNumber` varchar(50) DEFAULT NULL,
+  `AcknowledgementNumber` varchar(50) DEFAULT NULL,
+  `FilingDate` date DEFAULT NULL,
+  `DueDate` date DEFAULT NULL,
+  `FiledBy` varchar(100) DEFAULT NULL,
+  `GSTPractitionerName` varchar(100) DEFAULT NULL,
+  `GSTPractitionerEnrollmentNo` varchar(20) DEFAULT NULL,
+  `IsRevisedReturn` tinyint(1) NOT NULL DEFAULT '0',
+  `OriginalARNNumber` varchar(50) DEFAULT NULL,
+  `Remarks` varchar(500) DEFAULT NULL,
+  `CreatedOn` datetime NOT NULL,
+  `UpdatedOn` datetime DEFAULT NULL,
+  PRIMARY KEY (`GstReturnId`),
+  KEY `FK_GSTRETURN_SNAPSHOT` (`SnapshotId`),
+  CONSTRAINT `FK_GSTRETURN_SNAPSHOT` FOREIGN KEY (`SnapshotId`) REFERENCES `tablegstmonthlysnapshot` (`SnapshotId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `tablegstchallan` (
+  `ChallanId` int NOT NULL AUTO_INCREMENT,
+  `SnapshotId` int NOT NULL,
+  `ChallanNumber` varchar(50) NOT NULL,
+  `CPIN` varchar(50) DEFAULT NULL,
+  `CIN` varchar(50) DEFAULT NULL,
+  `PaymentDate` date DEFAULT NULL,
+  `BankName` varchar(100) DEFAULT NULL,
+  `PaymentMode` varchar(50) DEFAULT NULL,
+  `AmountPaid` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `InterestAmount` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `LateFee` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `Penalty` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `Status` varchar(20) NOT NULL DEFAULT 'Pending',
+  `Remarks` varchar(500) DEFAULT NULL,
+  `CreatedOn` datetime NOT NULL,
+  `UpdatedOn` datetime DEFAULT NULL,
+  PRIMARY KEY (`ChallanId`),
+  KEY `FK_CHALLAN_SNAPSHOT` (`SnapshotId`),
+  CONSTRAINT `FK_CHALLAN_SNAPSHOT` FOREIGN KEY (`SnapshotId`) REFERENCES `tablegstmonthlysnapshot` (`SnapshotId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `tablegstitcrecord` (
+  `ItcRecordId` int NOT NULL AUTO_INCREMENT,
+  `SnapshotId` int NOT NULL,
+  `VendorName` varchar(200) NOT NULL,
+  `VendorGSTIN` varchar(15) DEFAULT NULL,
+  `InvoiceNumber` varchar(100) NOT NULL,
+  `InvoiceDate` date NOT NULL,
+  `TaxableAmount` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `CGST` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `SGST` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `IGST` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `EligibilityStatus` varchar(20) NOT NULL DEFAULT 'Eligible',
+  `Remarks` varchar(500) DEFAULT NULL,
+  `CreatedOn` datetime NOT NULL,
+  `UpdatedOn` datetime DEFAULT NULL,
+  PRIMARY KEY (`ItcRecordId`),
+  KEY `FK_ITC_SNAPSHOT` (`SnapshotId`),
+  CONSTRAINT `FK_ITC_SNAPSHOT` FOREIGN KEY (`SnapshotId`) REFERENCES `tablegstmonthlysnapshot` (`SnapshotId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `tablegstdocument` (
+  `GstDocumentId` int NOT NULL AUTO_INCREMENT,
+  `SnapshotId` int NOT NULL,
+  `DocumentType` varchar(50) NOT NULL,
+  `FileName` varchar(255) NOT NULL,
+  `StoredFileName` varchar(255) NOT NULL,
+  `FilePath` varchar(500) NOT NULL,
+  `UploadedBy` varchar(100) DEFAULT NULL,
+  `UploadedOn` datetime NOT NULL,
+  `Remarks` varchar(500) DEFAULT NULL,
+  PRIMARY KEY (`GstDocumentId`),
+  KEY `FK_DOCUMENT_SNAPSHOT` (`SnapshotId`),
+  CONSTRAINT `FK_DOCUMENT_SNAPSHOT` FOREIGN KEY (`SnapshotId`) REFERENCES `tablegstmonthlysnapshot` (`SnapshotId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `tablefinancialauditdocuments` (
+  `FinancialAuditDocumentId` int NOT NULL AUTO_INCREMENT,
+  `DocumentCategory` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `FinancialYear` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `FileName` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `FilePath` varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `Remarks` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `UploadedOn` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`FinancialAuditDocumentId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `tableofficeasset` (
+  `OfficeAssetId` int NOT NULL AUTO_INCREMENT,
+  `AssetName` varchar(200) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `AssetCategory` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `AssetCode` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `PurchaseDate` date NOT NULL,
+  `PurchaseValue` decimal(18,2) NOT NULL,
+  `VendorName` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `AssignedTo` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `FinancialYear` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `Status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'InUse',
+  `Remarks` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `CreatedOn` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdatedOn` datetime DEFAULT NULL,
+  PRIMARY KEY (`OfficeAssetId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `tablepfmonthlysnapshot` (
+  `PfSnapshotId` int NOT NULL AUTO_INCREMENT,
+  `Month` int NOT NULL,
+  `Year` int NOT NULL,
+  `FinancialYear` varchar(10) NOT NULL,
+  `EmployeeDeductionTotal` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `EmployerContributionTotal` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `TotalPayable` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `EmployeeCount` int NOT NULL DEFAULT '0',
+  `Status` varchar(20) NOT NULL DEFAULT 'Pending',
+  `GeneratedOn` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`PfSnapshotId`),
+  UNIQUE KEY `UX_PfSnapshot_MonthYear` (`Month`,`Year`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `tablepfchallan` (
+  `PfChallanId` int NOT NULL AUTO_INCREMENT,
+  `PfSnapshotId` int NOT NULL,
+  `TRRN` varchar(50) DEFAULT NULL,
+  `PaymentDate` date DEFAULT NULL,
+  `BankName` varchar(100) DEFAULT NULL,
+  `PaymentMode` varchar(50) DEFAULT NULL,
+  `AmountPaid` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `InterestAmount` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `LateFee` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `Status` varchar(20) NOT NULL DEFAULT 'Pending',
+  `Remarks` varchar(500) DEFAULT NULL,
+  `CreatedOn` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdatedOn` datetime DEFAULT NULL,
+  PRIMARY KEY (`PfChallanId`),
+  KEY `FK_PfChallan_Snapshot` (`PfSnapshotId`),
+  CONSTRAINT `FK_PfChallan_Snapshot` FOREIGN KEY (`PfSnapshotId`) REFERENCES `tablepfmonthlysnapshot` (`PfSnapshotId`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `tablepfdocument` (
+  `PfDocumentId` int NOT NULL AUTO_INCREMENT,
+  `PfSnapshotId` int NOT NULL,
+  `DocumentType` varchar(30) NOT NULL,
+  `FileName` varchar(255) NOT NULL,
+  `FilePath` varchar(500) NOT NULL,
+  `Remarks` varchar(500) DEFAULT NULL,
+  `UploadedOn` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`PfDocumentId`),
+  KEY `FK_PfDocument_Snapshot` (`PfSnapshotId`),
+  CONSTRAINT `FK_PfDocument_Snapshot` FOREIGN KEY (`PfSnapshotId`) REFERENCES `tablepfmonthlysnapshot` (`PfSnapshotId`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `tableesicmonthlysnapshot` (
+  `EsicSnapshotId` int NOT NULL AUTO_INCREMENT,
+  `Month` int NOT NULL,
+  `Year` int NOT NULL,
+  `FinancialYear` varchar(10) NOT NULL,
+  `EmployeeDeductionTotal` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `EmployerContributionTotal` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `TotalPayable` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `EmployeeCount` int NOT NULL DEFAULT '0',
+  `Status` varchar(20) NOT NULL DEFAULT 'Pending',
+  `GeneratedOn` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`EsicSnapshotId`),
+  UNIQUE KEY `UX_EsicSnapshot_MonthYear` (`Month`,`Year`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `tableesicchallan` (
+  `EsicChallanId` int NOT NULL AUTO_INCREMENT,
+  `EsicSnapshotId` int NOT NULL,
+  `ChallanNumber` varchar(50) DEFAULT NULL,
+  `PaymentDate` date DEFAULT NULL,
+  `BankName` varchar(100) DEFAULT NULL,
+  `PaymentMode` varchar(50) DEFAULT NULL,
+  `AmountPaid` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `InterestAmount` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `LateFee` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `Status` varchar(20) NOT NULL DEFAULT 'Pending',
+  `Remarks` varchar(500) DEFAULT NULL,
+  `CreatedOn` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdatedOn` datetime DEFAULT NULL,
+  PRIMARY KEY (`EsicChallanId`),
+  KEY `FK_EsicChallan_Snapshot` (`EsicSnapshotId`),
+  CONSTRAINT `FK_EsicChallan_Snapshot` FOREIGN KEY (`EsicSnapshotId`) REFERENCES `tableesicmonthlysnapshot` (`EsicSnapshotId`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `tableesicdocument` (
+  `EsicDocumentId` int NOT NULL AUTO_INCREMENT,
+  `EsicSnapshotId` int NOT NULL,
+  `DocumentType` varchar(30) NOT NULL,
+  `FileName` varchar(255) NOT NULL,
+  `FilePath` varchar(500) NOT NULL,
+  `Remarks` varchar(500) DEFAULT NULL,
+  `UploadedOn` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`EsicDocumentId`),
+  KEY `FK_EsicDocument_Snapshot` (`EsicSnapshotId`),
+  CONSTRAINT `FK_EsicDocument_Snapshot` FOREIGN KEY (`EsicSnapshotId`) REFERENCES `tableesicmonthlysnapshot` (`EsicSnapshotId`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `tableptmonthlysnapshot` (
+  `PtSnapshotId` int NOT NULL AUTO_INCREMENT,
+  `Month` int NOT NULL,
+  `Year` int NOT NULL,
+  `FinancialYear` varchar(10) NOT NULL,
+  `TotalPayable` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `EmployeeCount` int NOT NULL DEFAULT '0',
+  `Status` varchar(20) NOT NULL DEFAULT 'Pending',
+  `GeneratedOn` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`PtSnapshotId`),
+  UNIQUE KEY `UX_PtSnapshot_MonthYear` (`Month`,`Year`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `tableptchallan` (
+  `PtChallanId` int NOT NULL AUTO_INCREMENT,
+  `PtSnapshotId` int NOT NULL,
+  `ChallanNumber` varchar(50) DEFAULT NULL,
+  `PaymentDate` date DEFAULT NULL,
+  `BankName` varchar(100) DEFAULT NULL,
+  `PaymentMode` varchar(50) DEFAULT NULL,
+  `AmountPaid` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `InterestAmount` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `LateFee` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `Status` varchar(20) NOT NULL DEFAULT 'Pending',
+  `Remarks` varchar(500) DEFAULT NULL,
+  `CreatedOn` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdatedOn` datetime DEFAULT NULL,
+  PRIMARY KEY (`PtChallanId`),
+  KEY `FK_PtChallan_Snapshot` (`PtSnapshotId`),
+  CONSTRAINT `FK_PtChallan_Snapshot` FOREIGN KEY (`PtSnapshotId`) REFERENCES `tableptmonthlysnapshot` (`PtSnapshotId`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `tableptdocument` (
+  `PtDocumentId` int NOT NULL AUTO_INCREMENT,
+  `PtSnapshotId` int NOT NULL,
+  `DocumentType` varchar(30) NOT NULL,
+  `FileName` varchar(255) NOT NULL,
+  `FilePath` varchar(500) NOT NULL,
+  `Remarks` varchar(500) DEFAULT NULL,
+  `UploadedOn` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`PtDocumentId`),
+  KEY `FK_PtDocument_Snapshot` (`PtSnapshotId`),
+  CONSTRAINT `FK_PtDocument_Snapshot` FOREIGN KEY (`PtSnapshotId`) REFERENCES `tableptmonthlysnapshot` (`PtSnapshotId`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `tablenotice` (
+  `NoticeId` int NOT NULL AUTO_INCREMENT,
+  `NoticeNumber` varchar(100) DEFAULT NULL,
+  `Department` varchar(30) NOT NULL,
+  `NoticeDate` date NOT NULL,
+  `ReceivedDate` date NOT NULL,
+  `DueDate` date DEFAULT NULL,
+  `Subject` varchar(255) NOT NULL,
+  `Description` varchar(2000) DEFAULT NULL,
+  `Status` varchar(20) NOT NULL DEFAULT 'Open',
+  `ReplyDate` date DEFAULT NULL,
+  `ReplyDetails` varchar(2000) DEFAULT NULL,
+  `Remarks` varchar(500) DEFAULT NULL,
+  `CreatedOn` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdatedOn` datetime DEFAULT NULL,
+  PRIMARY KEY (`NoticeId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `tablenoticedocument` (
+  `NoticeDocumentId` int NOT NULL AUTO_INCREMENT,
+  `NoticeId` int NOT NULL,
+  `DocumentType` varchar(30) NOT NULL,
+  `FileName` varchar(255) NOT NULL,
+  `FilePath` varchar(500) NOT NULL,
+  `Remarks` varchar(500) DEFAULT NULL,
+  `UploadedOn` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`NoticeDocumentId`),
+  KEY `FK_NoticeDocument_Notice` (`NoticeId`),
+  CONSTRAINT `FK_NoticeDocument_Notice` FOREIGN KEY (`NoticeId`) REFERENCES `tablenotice` (`NoticeId`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+

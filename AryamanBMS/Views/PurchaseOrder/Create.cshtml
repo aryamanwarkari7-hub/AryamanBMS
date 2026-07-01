@@ -1,0 +1,46 @@
+@model AryamanBMS.ViewModels.PurchaseOrderViewModel
+
+@{
+    ViewData["Title"] = "New PO / WO";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Add PO / WO</h1>
+        <p class="module-subtitle">Create and upload a purchase order or work order</p>
+    </div>
+
+    <a asp-action="Index" class="btn-app btn-secondary-app">
+        <i class="bi bi-arrow-left"></i>
+        Back
+    </a>
+</div>
+
+    <div class="app-card">
+        <div class="card-header">
+            <strong>Order Details</strong>
+        </div>
+        <div class="card-body">
+            <form asp-action="Create" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly" class="app-alert-danger d-none"></div>
+
+                <partial name="_PurchaseOrderForm" model="Model" />
+
+                <hr />
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn-app btn-primary-app">
+                        <i class="bi bi-check-circle"></i> Save Order
+                    </button>
+                    <a asp-action="Index" class="btn-app btn-secondary-app">Cancel</a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

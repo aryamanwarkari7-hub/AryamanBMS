@@ -1,0 +1,351 @@
+@model ExpenseVoucherModel
+
+@{
+    string title = Model.ExpenseVoucherId == 0 ? "Create Expense Voucher" : "Edit Expense Voucher";
+    ViewData["Title"] = title;
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">@title.ToUpper()</h1>
+        <p class="module-subtitle">
+            Record expense details, GST and vendor invoice information.
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="Index"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
+
+</div>
+
+<form method="post" id="expenseForm">
+
+<div class="app-card form-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Voucher Information</h2>
+            <p class="card-subtitle">
+                Enter basic voucher and category details.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+        
+            @Html.AntiForgeryToken()
+
+            <div asp-validation-summary="ModelOnly"
+                 class="app-alert-danger">
+            </div>
+                @if (Model.ExpenseVoucherId != 0)
+                {
+                    <input type="hidden" asp-for="ExpenseVoucherId" />
+                    <div class="app-alert-info">
+                        <strong>Voucher Number:</strong> @Model.VoucherNumber<br />
+                        <strong>Status:</strong> @Model.Status
+                    </div>
+                }
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+                    <label asp-for="VoucherDate" class="form-label">
+                        Voucher Date
+                    </label>
+
+                    <input type="date"
+                           asp-for="VoucherDate"
+                           class="app-input" />
+
+                    <span asp-validation-for="VoucherDate"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="FinancialYear" class="form-label">
+                        Financial Year
+                    </label>
+
+                    <input asp-for="FinancialYear"
+                           class="app-input"
+                           readonly />
+
+                    <span asp-validation-for="FinancialYear"
+                          class="validation-message"></span>
+                </div>
+
+            </div>
+
+            <div class="form-group">
+                    <label asp-for="ExpenseCategoryId" class="form-label">Expense Category <span class="validation-message">*</span></label>
+                <select asp-for="ExpenseCategoryId"
+                        class="app-select"
+                        id="expenseCategorySelect"
+                        required>
+                    <option value="">Select Category</option>
+
+                    @foreach (var category in ViewBag.Categories)
+                    {
+                        <option value="@category.ExpenseCategoryId"
+                                data-gst="@category.DefaultGSTRate"
+                                data-itc="@category.ITCEligible.ToString().ToLower()">
+                            @category.CategoryName
+                        </option>
+                    }
+                </select>
+                    <span asp-validation-for="ExpenseCategoryId" class="validation-message"></span>
+                </div>
+
+            <div class="form-group">
+                    <label asp-for="Description" class="form-label">Description</label>
+                <span asp-validation-for="Description" class="validation-message"></span>
+                    <textarea asp-for="Description" class="app-input" rows="3" 
+                              placeholder="Enter expense description"></textarea>
+                </div>
+
+                
+    </div>
+</div>
+
+<div class="app-card form-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Amount Details</h2>
+            <p class="card-subtitle">
+                Enter taxable amount and GST rate.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-2">
+
+            <div class="form-group">
+                <label asp-for="Amount" class="form-label">
+                    Amount Before GST
+                </label>
+
+                <input type="number"
+                       asp-for="Amount"
+                       class="app-input"
+                       placeholder="0.00"
+                       min="0"
+                       step="0.01" />
+
+                <span asp-validation-for="Amount"
+                      class="validation-message"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="GSTRate" class="form-label">
+                    GST Rate %
+                </label>
+
+                <input type="number"
+                       asp-for="GSTRate"
+                           id="gstRateInput"
+                       class="app-input"
+                       placeholder="0"
+                       min="0"
+                       max="100"
+                       step="0.01" />
+
+                <span asp-validation-for="GSTRate"
+                      class="validation-message"></span>
+            </div>
+
+        </div>
+
+        <div class="app-alert-info">
+
+            <div class="form-grid-4">
+
+                <div class="form-group">
+                    <label class="form-label">CGST</label>
+                    <strong>₹ <span id="cgstAmount">@Model.CGSTAmount.ToString("N2")</span></strong>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">SGST</label>
+                    <strong>₹ <span id="sgstAmount">@Model.SGSTAmount.ToString("N2")</span></strong>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Total GST</label>
+                    <strong>₹ <span id="totalGst">@Model.TotalGSTAmount.ToString("N2")</span></strong>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Total Amount</label>
+                    <strong>₹ <span id="totalAmount">@Model.TotalAmount.ToString("N2")</span></strong>
+                </div>
+
+            </div>
+
+        </div>
+
+            <div class="form-check">
+                <input asp-for="ITCEligible"
+                       id="itcEligibleInput"
+                       class="form-check-input" />
+
+                <label asp-for="ITCEligible"
+                       class="form-check-label">
+                    Input Tax Credit Eligible
+                </label>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="app-card form-card">
+
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Vendor Information</h2>
+                <p class="card-subtitle">
+                    Enter vendor bill and GST details.
+                </p>
+            </div>
+        </div>
+
+        <div class="card-body">
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+                    <label asp-for="VendorName" class="form-label">Vendor Name</label>
+
+                    <input asp-for="VendorName"
+                           class="app-input"
+                           placeholder="Vendor name"
+                           maxlength="50" />
+
+                    <span asp-validation-for="VendorName"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="VendorGSTIN" class="form-label">Vendor GSTIN</label>
+
+                    <input asp-for="VendorGSTIN"
+                           class="app-input"
+                           placeholder="15-digit GSTIN"
+                           maxlength="20" />
+
+                    <span asp-validation-for="VendorGSTIN"
+                          class="validation-message"></span>
+                </div>
+
+            </div>
+
+            <div class="form-group">
+                <label asp-for="InvoiceNumber" class="form-label">Vendor Invoice Number</label>
+
+                <input asp-for="InvoiceNumber"
+                       class="app-input"
+                       placeholder="Reference invoice number"
+                       maxlength="20" />
+
+                <span asp-validation-for="InvoiceNumber"
+                      class="validation-message"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Remarks" class="form-label">Remarks</label>
+
+                <textarea asp-for="Remarks"
+                          class="app-input"
+                          rows="3"
+                          placeholder="Additional remarks or notes"></textarea>
+
+                <span asp-validation-for="Remarks"
+                      class="validation-message"></span>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="app-card">
+        <div class="card-body form-actions">
+
+            <button type="submit" class="btn-app btn-primary-app">
+                <i class="bi bi-check-circle"></i>
+                Save
+            </button>
+
+            <a asp-action="Index" class="btn-app btn-secondary-app">
+                Cancel
+            </a>
+
+        </div>
+    </div>
+
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+                document.addEventListener('DOMContentLoaded', function () {
+            const expenseForm = document.getElementById('expenseForm');
+            const categorySelect = document.getElementById('expenseCategorySelect');
+            const gstRateInput = document.getElementById('gstRateInput');
+            const itcEligibleInput = document.getElementById('itcEligibleInput');
+
+            function calculateAmounts() {
+                const amount = parseFloat(document.querySelector('input[name="Amount"]').value) || 0;
+                const gstRate = parseFloat(gstRateInput.value) || 0;
+
+                if (gstRate === 0) {
+                    document.getElementById('cgstAmount').textContent = '0.00';
+                    document.getElementById('sgstAmount').textContent = '0.00';
+                    document.getElementById('totalGst').textContent = '0.00';
+                    document.getElementById('totalAmount').textContent = amount.toFixed(2);
+                    return;
+                }
+
+                const totalGst = (amount * gstRate) / 100;
+                const cgst = totalGst / 2;
+                const sgst = totalGst / 2;
+                const totalAmount = amount + totalGst;
+
+                document.getElementById('cgstAmount').textContent = cgst.toFixed(2);
+                document.getElementById('sgstAmount').textContent = sgst.toFixed(2);
+                document.getElementById('totalGst').textContent = totalGst.toFixed(2);
+                document.getElementById('totalAmount').textContent = totalAmount.toFixed(2);
+            }
+
+            categorySelect.addEventListener('change', function () {
+                const selected = this.options[this.selectedIndex];
+
+                if (!selected || !selected.value) {
+                    return;
+                }
+
+                gstRateInput.value = selected.dataset.gst || 0;
+                itcEligibleInput.checked = selected.dataset.itc === 'true';
+
+                calculateAmounts();
+            });
+
+            expenseForm.addEventListener('input', function (e) {
+                if (e.target.name === 'Amount' || e.target.name === 'GSTRate') {
+                    calculateAmounts();
+                }
+            });
+
+            calculateAmounts();
+        });
+    </script>
+}
