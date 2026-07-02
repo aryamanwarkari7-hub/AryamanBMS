@@ -15,7 +15,7 @@ namespace AryamanBMS.Repositories
         }
 
         private IQueryable<FinancialAuditDocumentModel> Documents =>
-            _context.TableFinancialAuditDocuments;
+    _context.TableFinancialAuditDocuments;
 
         public async Task<List<FinancialAuditDocumentModel>> GetAllAsync()
         {

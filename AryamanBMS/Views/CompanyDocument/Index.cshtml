@@ -21,48 +21,27 @@
 </div>
 
 <div>
-
-    @if (TempData["Success"] != null)
-    {
-        <div class="app-alert-success">
-            @TempData["Success"]
-            <button type="button"
-                    class="btn-close"
-                    data-bs-dismiss="alert">
-            </button>
-        </div>
-    }
-
-    @if (TempData["Error"] != null)
-    {
-        <div class="app-alert-danger">
-            @TempData["Error"]
-            <button type="button"
-                    class="btn-close"
-                    data-bs-dismiss="alert">
-            </button>
-        </div>
-    }
-
     <div class="app-card">
 
         <div class="card-header">
-            <h5 class="card-title">Filters</h5>
+            <div>
+                <h2 class="card-title">Document Register</h2>
+                <p class="card-subtitle">
+                    Search and manage uploaded company documents.
+                </p>
+            </div>
+        </div>
 
-            <div class="row">
-
-                <div class="col-md-4">
-
+        <div class="card-body">
+            <div class="form-grid-3">
+                <div class="form-group">
+                    <label class="form-label">Search</label>
                     <input type="text"
                            id="searchBox"
                            class="app-input"
-                           placeholder="Search Document..." />
-
+                           placeholder="Search document, category or number" />
                 </div>
-
             </div>
-
-        </div>
 
         <div class="card-body">
 
@@ -87,7 +66,9 @@
 
                             <th>Status</th>
 
-                            <th width="220">Action</th>
+                           <th class="text-center">Active</th>
+
+                            <th>Action</th>
 
                         </tr>
 
@@ -160,50 +141,53 @@
 
                                     </td>
 
-                                    <td>
-
-                                        <a asp-action="Details"
-                                           asp-route-id="@item.CompanyDocumentId"
-                                           class="btn-app btn-icon btn-primary-app">
-
-                                            <i class="bi bi-eye"></i>
-
-                                        </a>
-
-                                        <a asp-action="Edit"
-                                           asp-route-id="@item.CompanyDocumentId"
-                                           class="btn-app btn-icon btn-secondary-app">
-
-                                            <i class="bi bi-pencil-square"></i>
-
-                                        </a>
-
-                                        <a asp-action="Download"
-                                           asp-route-id="@item.CompanyDocumentId"
-                                           class="btn-app btn-icon btn-success-app">
-
-                                            <i class="bi bi-download"></i>
-
-                                        </a>
-
-                                        <form asp-action="Delete"
-                                              asp-route-id="@item.CompanyDocumentId"
-                                              method="post"
-                                              class="d-inline">
-
-                                            @Html.AntiForgeryToken()
-
-                                            <button type="submit"
-                                                    class="btn-app btn-icon btn-danger-app"
-                                                    onclick="return confirm('Delete this document?');">
-
-                                                <i class="bi bi-trash"></i>
-
-                                            </button>
-
-                                        </form>
-
+                                    <td class="text-center">
+                                        @if (item.IsActive)
+                                        {
+                                            <span class="badge-success">Active</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge-secondary">Archived</span>
+                                        }
                                     </td>
+
+                                        <td class="text-center">
+                                            <div class="table-actions">
+
+                                                <a asp-action="Details"
+                                                   asp-route-id="@item.CompanyDocumentId"
+                                                   class="btn-app btn-icon btn-primary-app"
+                                                   title="Details">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+
+                                                <a asp-action="Edit"
+                                                   asp-route-id="@item.CompanyDocumentId"
+                                                   class="btn-app btn-icon btn-secondary-app"
+                                                   title="Edit">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+
+                                                @if (item.IsActive)
+                                                {
+                                                    <a asp-action="Download"
+                                                       asp-route-id="@item.CompanyDocumentId"
+                                                       class="btn-app btn-icon btn-success-app"
+                                                       title="Download">
+                                                        <i class="bi bi-download"></i>
+                                                    </a>
+                                                }
+
+                                                <a asp-action="Delete"
+                                                   asp-route-id="@item.CompanyDocumentId"
+                                                   class="btn-app btn-icon btn-danger-app"
+                                                   title="Archive / Activate">
+                                                    <i class="bi bi-archive"></i>
+                                                </a>
+
+                                            </div>
+                                        </td>
 
                                 </tr>
                             }
@@ -212,12 +196,10 @@
                         {
                             <tr>
 
-                                <td colspan="7"
-                                    class="text-center text-muted">
-
-                                    No Company Documents Found.
-
-                                </td>
+                                    <td colspan="8"
+                                        class="empty-state">
+                                        No company documents found.
+                                    </td>
 
                             </tr>
                         }

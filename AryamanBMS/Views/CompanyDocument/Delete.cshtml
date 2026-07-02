@@ -1,0 +1,155 @@
+@model AryamanBMS.Models.CompanyDocumentModel
+
+@{
+    ViewData["Title"] = Model.IsActive
+        ? "Archive Company Document"
+        : "Activate Company Document";
+
+    string title = Model.IsActive
+        ? "ARCHIVE COMPANY DOCUMENT"
+        : "ACTIVATE COMPANY DOCUMENT";
+
+    string subtitle = Model.IsActive
+        ? "Archive this document without deleting the uploaded file."
+        : "Restore this document to active company records.";
+
+    string actionText = Model.IsActive
+        ? "Archive Document"
+        : "Activate Document";
+
+    string actionIcon = Model.IsActive
+        ? "bi-archive"
+        : "bi-arrow-counterclockwise";
+
+    string actionClass = Model.IsActive
+        ? "btn-danger-app"
+        : "btn-success-app";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">@title</h1>
+        <p class="module-subtitle">
+            @subtitle
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="Details"
+           asp-route-id="@Model.CompanyDocumentId"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-eye"></i>
+            Details
+        </a>
+
+        <a asp-action="Index"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Document Summary</h2>
+            <p class="card-subtitle">
+                Review the document before changing its active status.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-2">
+
+            <div class="form-group">
+                <label class="form-label">Document Name</label>
+                <strong>@Model.DocumentName</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Category</label>
+                <strong>@(Model.Category?.CategoryName ?? "-")</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Document Number</label>
+                <strong>@(string.IsNullOrWhiteSpace(Model.DocumentNumber) ? "-" : Model.DocumentNumber)</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">File Name</label>
+                <strong>@(string.IsNullOrWhiteSpace(Model.FileName) ? "-" : Model.FileName)</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Expiry Date</label>
+                <strong>@(Model.ExpiryDate?.ToString("dd-MMM-yyyy") ?? "-")</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Current Status</label>
+                @if (Model.IsActive)
+                {
+                    <span class="badge-success">Active</span>
+                }
+                else
+                {
+                    <span class="badge-secondary">Archived</span>
+                }
+            </div>
+
+        </div>
+
+        <div class="app-alert-danger">
+            @if (Model.IsActive)
+            {
+                <span>
+                    This will archive the document from active records. The uploaded file will not be deleted.
+                </span>
+            }
+            else
+            {
+                <span>
+                    This will restore the document to active records.
+                </span>
+            }
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-body">
+
+        <div class="table-actions">
+
+            <form asp-action="DeleteConfirmed"
+                  asp-route-id="@Model.CompanyDocumentId"
+                  method="post">
+                @Html.AntiForgeryToken()
+
+                <button type="submit"
+                        class="btn-app @actionClass">
+                    <i class="bi @actionIcon"></i>
+                    @actionText
+                </button>
+            </form>
+
+            <a asp-action="Index"
+               class="btn-app btn-secondary-app">
+                Cancel
+            </a>
+
+        </div>
+
+    </div>
+
+</div>

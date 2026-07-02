@@ -66,6 +66,11 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> Save(
             CompanyDocumentCategoryModel model)
         {
+            model.CategoryCode = model.CategoryCode?.Trim().ToUpper();
+            model.CategoryName = model.CategoryName?.Trim();
+            model.Description = model.Description?.Trim();
+            model.AllowedExtensions = model.AllowedExtensions?.Trim().ToLower();
+
             if (!ModelState.IsValid)
             {
                 TempData["Error"] =
@@ -76,6 +81,7 @@ namespace AryamanBMS.Controllers
 
             if (model.DocumentCategoryId == 0)
             {
+                model.IsActive = true;
                 model.CreatedOn = DateTime.Now;
 
                 await _repository.AddAsync(model);
@@ -155,18 +161,6 @@ namespace AryamanBMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            bool inUse =
-                await _repository
-                    .IsCategoryInUseAsync(id);
-
-            if (inUse)
-            {
-                TempData["Error"] =
-                    "Cannot delete category because it is being used by Company Documents.";
-
-                return RedirectToAction(nameof(Index));
-            }
-
             var category =
                 await _repository.GetByIdAsync(id);
 
@@ -178,44 +172,20 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            await _repository.DeleteAsync(category);
+            category.IsActive = !category.IsActive;
+            category.UpdatedOn = DateTime.Now;
 
+            await _repository.UpdateAsync(category);
             await _repository.SaveAsync();
 
-            TempData["Success"] =
-                "Category deleted successfully.";
+            TempData["Success"] = category.IsActive
+                ? "Category activated successfully."
+                : "Category archived successfully.";
 
             return RedirectToAction(nameof(Index));
         }
 
         #endregion
 
-        #region Toggle Status
-
-        [HttpPost]
-        public async Task<IActionResult> ToggleStatus(int id)
-        {
-            var category =
-                await _repository.GetByIdAsync(id);
-
-            if (category == null)
-            {
-                return NotFound();
-            }
-
-            category.IsActive =
-                !category.IsActive;
-
-            category.UpdatedOn =
-                DateTime.Now;
-
-            await _repository.UpdateAsync(category);
-
-            await _repository.SaveAsync();
-
-            return Ok();
-        }
-
-        #endregion
-    }
+     }
 }

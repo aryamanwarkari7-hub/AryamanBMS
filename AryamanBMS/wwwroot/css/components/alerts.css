@@ -15,6 +15,11 @@
     box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
 }
 
+.alert-warning-app {
+    background-color: orange;
+    box-shadow: 0 4px 12px rgba(217, 119, 6, 0.25);
+}
+
 .alert-error-app {
     background: #dc2626;
     box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);

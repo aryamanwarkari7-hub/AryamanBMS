@@ -97,5 +97,5 @@
 -- AFTER `CurrentYearAllocation`;
 
 -- REMARK INSTEAD OF BODY --
-ALTER TABLE tableletters
-CHANGE COLUMN Body Remark TEXT NULL;
+-- ALTER TABLE tableletters
+-- CHANGE COLUMN Body Remark TEXT NULL;

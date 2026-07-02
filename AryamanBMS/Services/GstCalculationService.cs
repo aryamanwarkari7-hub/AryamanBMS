@@ -28,6 +28,8 @@ namespace AryamanBMS.Services
             return await _context.Invoices
                 .Where(x =>
                     !x.IsDeleted &&
+                    x.InvoiceStatus != FinancialConstants.InvoiceStatus.Draft &&
+                    x.InvoiceStatus != FinancialConstants.InvoiceStatus.Cancelled &&
                     x.InvoiceDate.Month == month &&
                     x.InvoiceDate.Year == year)
                 .SumAsync(x => (decimal?)x.GSTAmount) ?? 0;
@@ -63,6 +65,8 @@ namespace AryamanBMS.Services
             var invoices = await _context.Invoices
                 .Where(x =>
                     !x.IsDeleted &&
+                    x.InvoiceStatus != FinancialConstants.InvoiceStatus.Draft &&
+                    x.InvoiceStatus != FinancialConstants.InvoiceStatus.Cancelled &&
                     x.InvoiceDate.Month == month &&
                     x.InvoiceDate.Year == year)
                 .ToListAsync();
@@ -86,6 +90,13 @@ namespace AryamanBMS.Services
             decimal purchaseIGST = expenses.Sum(x => x.IGSTAmount);
 
             decimal inputGST = expenses.Sum(x => x.TotalGSTAmount);
+
+            if (!invoices.Any() && !expenses.Any())
+            {
+                throw new InvalidOperationException(
+                    "No GST records were found for the selected period. Add a " +
+                    "valid invoice or posted ITC expense voucher before generating a snapshot.");
+            }
 
             var snapshot = await _context.GstMonthlySnapshots
                 .FirstOrDefaultAsync(x =>

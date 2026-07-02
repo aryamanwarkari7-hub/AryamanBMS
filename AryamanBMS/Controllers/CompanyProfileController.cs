@@ -31,6 +31,14 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> Index(
             CompanyProfileModel model)
         {
+
+            model.CompanyName = model.CompanyName?.Trim() ?? string.Empty;
+            model.GSTIN = model.GSTIN?.Trim().ToUpper();
+            model.PAN = model.PAN?.Trim().ToUpper();
+            model.Address = model.Address?.Trim();
+            model.Email = model.Email?.Trim();
+            model.Phone = model.Phone?.Trim();
+
             if (!ModelState.IsValid)
             {
                 return View(model);
@@ -48,6 +56,8 @@ namespace AryamanBMS.Controllers
 
                     return View(model);
                 }
+                model.IsActive = true;
+                model.CreatedOn = DateTime.Now;
 
                 await _companyProfileRepository
                     .AddAsync(model);
@@ -60,6 +70,8 @@ namespace AryamanBMS.Controllers
             }
             else
             {
+                model.IsActive = true;
+                model.UpdatedOn = DateTime.Now;
                 await _companyProfileRepository
                     .UpdateAsync(model);
 

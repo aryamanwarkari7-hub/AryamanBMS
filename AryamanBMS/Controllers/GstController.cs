@@ -208,10 +208,16 @@ namespace AryamanBMS.Controllers
 
                 return RedirectToAction(nameof(Dashboard), new { month, year });
             }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, $"GST snapshot not generated for {month}/{year}");
+                TempData["Warning"] = ex.Message;
+                return RedirectToAction(nameof(Index), new { month, year });
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error generating GST snapshot for {month}/{year}");
-                TempData["Error"] = $"Error generating GST snapshot: {ex.Message}";
+                TempData["Error"] = "Unable to generate GST snapshot right now. Please check the selected period and try again.";
                 return RedirectToAction(nameof(Dashboard), new { month, year });
             }
         }

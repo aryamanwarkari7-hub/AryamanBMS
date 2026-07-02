@@ -4,71 +4,72 @@
     ViewData["Title"] = "Upload Company Document";
 }
 
-<div class="module-content">
+<div class="module-header">
 
-    <div class="row mb-3">
+    <div>
+        <h1 class="module-title">UPLOAD COMPANY DOCUMENT</h1>
+        <p class="module-subtitle">
+            Add legal, statutory and compliance documents for company records.
+        </p>
+    </div>
 
-        <div class="col-md-12">
+    <div class="module-header-actions">
+        <a asp-action="Index"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
 
-            <h3>
-                <i class="bi bi-upload text-primary"></i>
-                Upload Company Document
-            </h3>
+</div>
 
-            <hr />
+<form asp-action="Create"
+      method="post"
+      enctype="multipart/form-data">
 
+    <div asp-validation-summary="ModelOnly"
+         class="app-alert-danger">
+    </div>
+
+    <div class="app-card form-card">
+
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Document Information</h2>
+                <p class="card-subtitle">
+                    Enter document details and upload the related file.
+                </p>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <partial name="_DocumentForm" model="Model" />
         </div>
 
     </div>
 
     <div class="app-card">
 
-        <div class="card-body">
+        <div class="card-body form-actions">
 
-            <form asp-action="Create"
-                  method="post"
-                  enctype="multipart/form-data">
+            <button type="submit"
+                    class="btn-app btn-primary-app">
+                <i class="bi bi-check-circle"></i>
+                Save Document
+            </button>
 
-                <div asp-validation-summary="ModelOnly"
-                     class="app-alert-danger">
-                </div>
-
-                <partial name="_DocumentForm" model="Model" />
-
-                <hr />
-
-                <div class="text-end">
-
-                    <button type="submit"
-                            class="btn-app btn-primary-app">
-
-                        <i class="bi bi-check-circle"></i>
-
-                        Save
-
-                    </button>
-
-                    <a asp-action="Index"
-                       class="btn-app btn-secondary-app">
-
-                        <i class="bi bi-arrow-left"></i>
-
-                        Back
-
-                    </a>
-
-                </div>
-
-            </form>
+            <a asp-action="Index"
+               class="btn-app btn-secondary-app">
+                Cancel
+            </a>
 
         </div>
 
     </div>
 
-</div>
+</form>
 
-@section Scripts {
-
+@section Scripts
+{
     <partial name="_ValidationScriptsPartial" />
-
 }

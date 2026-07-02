@@ -24,14 +24,21 @@ namespace AryamanBMS.Controllers
 
         public async Task<IActionResult> Index(string? financialYear, string? category)
         {
-            List<FinancialAuditDocumentModel> documents;
+            var documents = await _repository.GetAllAsync();
 
-            if (!string.IsNullOrEmpty(financialYear))
-                documents = await _repository.GetByFinancialYearAsync(financialYear);
-            else if (!string.IsNullOrEmpty(category))
-                documents = await _repository.GetByCategoryAsync(category);
-            else
-                documents = await _repository.GetAllAsync();
+            if (!string.IsNullOrWhiteSpace(financialYear))
+            {
+                documents = documents
+                    .Where(x => x.FinancialYear == financialYear)
+                    .ToList();
+            }
+
+            if (!string.IsNullOrWhiteSpace(category))
+            {
+                documents = documents
+                    .Where(x => x.DocumentCategory == category)
+                    .ToList();
+            }
 
             ViewBag.FilterFinancialYear = financialYear;
             ViewBag.FilterCategory = category;
@@ -56,6 +63,10 @@ namespace AryamanBMS.Controllers
             ModelState.Remove(nameof(model.FileName));
             ModelState.Remove(nameof(model.FilePath));
 
+            model.DocumentCategory = model.DocumentCategory?.Trim() ?? string.Empty;
+            model.FinancialYear = model.FinancialYear?.Trim() ?? string.Empty;
+            model.Remarks = model.Remarks?.Trim();
+
             if (uploadFile == null)
             {
                 ModelState.AddModelError(nameof(uploadFile), "Please select a file to upload.");
@@ -74,6 +85,9 @@ namespace AryamanBMS.Controllers
 
             model.FileName = upload.OriginalFileName;
             model.FilePath = upload.RelativePath;
+
+            model.UploadedOn = DateTime.Now;
+            model.IsActive = true;
 
             await _repository.AddAsync(model);
             await _repository.SaveAsync();
@@ -98,7 +112,14 @@ namespace AryamanBMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, FinancialAuditDocumentModel model, IFormFile? uploadFile)
         {
+            ModelState.Remove(nameof(model.FileName));
+            ModelState.Remove(nameof(model.FilePath));
+
             if (id != model.FinancialAuditDocumentId) return NotFound();
+
+            model.DocumentCategory = model.DocumentCategory?.Trim() ?? string.Empty;
+            model.FinancialYear = model.FinancialYear?.Trim() ?? string.Empty;
+            model.Remarks = model.Remarks?.Trim();
 
             if (!ModelState.IsValid)
                 return View(model);
@@ -120,7 +141,10 @@ namespace AryamanBMS.Controllers
                 }
 
                 // Upload succeeded first — safe to delete old file now
-                await _fileStorage.DeleteAsync(existing.FilePath);
+                if (!string.IsNullOrWhiteSpace(existing.FilePath))
+                {
+                    await _fileStorage.DeleteAsync(existing.FilePath);
+                }
 
                 existing.FileName = upload.OriginalFileName;
                 existing.FilePath = upload.RelativePath;
@@ -154,6 +178,12 @@ namespace AryamanBMS.Controllers
             var document = await _repository.GetByIdAsync(id);
             if (document == null) return NotFound();
 
+            if (!document.IsActive)
+            {
+                TempData["Error"] = "Archived audit documents cannot be downloaded.";
+                return RedirectToAction(nameof(Index));
+            }
+
             var bytes = await _fileStorage.DownloadAsync(document.FilePath);
             if (bytes == null)
             {
@@ -173,13 +203,19 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             var document = await _repository.GetByIdAsync(id);
-            if (document == null) return NotFound();
 
-            await _fileStorage.DeleteAsync(document.FilePath);
-            await _repository.DeleteAsync(document);
+            if (document == null)
+                return NotFound();
+
+            document.IsActive = !document.IsActive;
+
+            await _repository.UpdateAsync(document);
             await _repository.SaveAsync();
 
-            TempData["Success"] = "Document deleted successfully.";
+            TempData["Success"] = document.IsActive
+                ? "Audit document activated successfully."
+                : "Audit document archived successfully.";
+
             return RedirectToAction(nameof(Index));
         }
 

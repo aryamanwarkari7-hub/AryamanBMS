@@ -9,14 +9,14 @@
 
     <input asp-for="DocumentCategoryId" type="hidden" />
 
-    <div class="modal-header bg-primary text-white">
+    <div class="modal-header">
 
         <h5 class="modal-title" id="modalTitle">
             Company Document Category
         </h5>
 
         <button type="button"
-                class="btn-close btn-close-white"
+                class="btn-close"
                 data-bs-dismiss="modal">
         </button>
 
@@ -28,202 +28,179 @@
              class="app-alert-danger">
         </div>
 
-        <div class="row">
+        <div class="form-grid-2">
 
-            <!-- Category Code -->
-
-            <div class="col-md-4 mb-3">
-
+            <div class="form-group">
                 <label asp-for="CategoryCode"
                        class="form-label">
+                    Category Code <span class="validation-message">*</span>
                 </label>
 
                 <input asp-for="CategoryCode"
                        class="app-input"
                        maxlength="20"
-                       placeholder="GST" />
+                       placeholder="Ex: GST" />
 
                 <span asp-validation-for="CategoryCode"
                       class="validation-message">
                 </span>
-
             </div>
 
-            <!-- Category Name -->
-
-            <div class="col-md-8 mb-3">
-
+            <div class="form-group">
                 <label asp-for="CategoryName"
                        class="form-label">
+                    Category Name <span class="validation-message">*</span>
                 </label>
 
                 <input asp-for="CategoryName"
                        class="app-input"
-                       placeholder="GST Registration" />
+                       placeholder="Ex: GST Registration" />
 
                 <span asp-validation-for="CategoryName"
                       class="validation-message">
                 </span>
-
             </div>
 
         </div>
 
-        <!-- Description -->
-
-        <div class="mb-3">
+        <div class="form-group">
 
             <label asp-for="Description"
                    class="form-label">
+                Description
             </label>
 
             <textarea asp-for="Description"
                       class="app-input"
-                      rows="3">
-            </textarea>
+                      rows="3"
+                      placeholder="Enter category purpose or notes"></textarea>
+
+            <span asp-validation-for="Description"
+                  class="validation-message">
+            </span>
 
         </div>
 
-        <div class="row">
+        <div class="form-grid-3">
 
-            <!-- Display Order -->
-
-            <div class="col-md-4 mb-3">
-
+            <div class="form-group">
                 <label asp-for="DisplayOrder"
                        class="form-label">
+                    Display Order
                 </label>
 
                 <input asp-for="DisplayOrder"
-                       class="app-input" />
+                       class="app-input"
+                       type="number"
+                       min="0" />
 
+                <span asp-validation-for="DisplayOrder"
+                      class="validation-message">
+                </span>
             </div>
 
-            <!-- Reminder -->
-
-            <div class="col-md-4 mb-3">
-
+            <div class="form-group">
                 <label asp-for="ExpiryReminderDays"
                        class="form-label">
+                    Reminder Days
                 </label>
 
                 <input asp-for="ExpiryReminderDays"
-                       class="app-input" />
+                       class="app-input"
+                       type="number"
+                       min="0" />
 
+                <span asp-validation-for="ExpiryReminderDays"
+                      class="validation-message">
+                </span>
             </div>
 
-            <!-- File Size -->
-
-            <div class="col-md-4 mb-3">
-
+            <div class="form-group">
                 <label asp-for="MaxFileSizeMB"
                        class="form-label">
+                    Max File Size (MB)
                 </label>
 
                 <input asp-for="MaxFileSizeMB"
                        class="app-input"
+                       type="number"
+                       min="1"
                        placeholder="20" />
 
+                <span asp-validation-for="MaxFileSizeMB"
+                      class="validation-message">
+                </span>
             </div>
 
         </div>
 
-        <!-- Extensions -->
-
-        <div class="mb-3">
+        <div class="form-group">
 
             <label asp-for="AllowedExtensions"
                    class="form-label">
+                Allowed Extensions
             </label>
 
             <input asp-for="AllowedExtensions"
                    class="app-input"
                    placeholder="pdf,jpg,jpeg,png" />
 
-        </div>
-
-        <hr />
-
-        <div class="row">
-
-            <div class="col-md-4">
-
-                <div class="form-check mb-2">
-
-                    <input asp-for="IsMandatory"
-                           class="form-check-input" />
-
-                    <label asp-for="IsMandatory"
-                           class="form-check-label">
-                    </label>
-
-                </div>
-
-            </div>
-
-            <div class="col-md-4">
-
-                <div class="form-check mb-2">
-
-                    <input asp-for="HasExpiry"
-                           class="form-check-input" />
-
-                    <label asp-for="HasExpiry"
-                           class="form-check-label">
-                    </label>
-
-                </div>
-
-            </div>
-
-            <div class="col-md-4">
-
-                <div class="form-check mb-2">
-
-                    <input asp-for="RequireDocumentNumber"
-                           class="form-check-input" />
-
-                    <label asp-for="RequireDocumentNumber"
-                           class="form-check-label">
-                    </label>
-
-                </div>
-
-            </div>
+            <span asp-validation-for="AllowedExtensions"
+                  class="validation-message">
+            </span>
 
         </div>
 
-        <div class="row">
+        <div class="app-alert-info">
+            Use comma-separated extensions without dots. Example: pdf,jpg,jpeg,png
+        </div>
 
-            <div class="col-md-6">
+        <div class="form-grid-2">
 
-                <div class="form-check mb-2">
+            <label class="form-check">
+                <input asp-for="IsMandatory"
+                       class="form-check-input" />
 
-                    <input asp-for="AllowMultipleDocuments"
-                           class="form-check-input" />
+                <span class="form-check-label">
+                    Mandatory document
+                </span>
+            </label>
 
-                    <label asp-for="AllowMultipleDocuments"
-                           class="form-check-label">
-                    </label>
+            <label class="form-check">
+                <input asp-for="HasExpiry"
+                       class="form-check-input" />
 
-                </div>
+                <span class="form-check-label">
+                    Has expiry date
+                </span>
+            </label>
 
-            </div>
+            <label class="form-check">
+                <input asp-for="RequireDocumentNumber"
+                       class="form-check-input" />
 
-            <div class="col-md-6">
+                <span class="form-check-label">
+                    Require document number
+                </span>
+            </label>
 
-                <div class="form-check mb-2">
+            <label class="form-check">
+                <input asp-for="AllowMultipleDocuments"
+                       class="form-check-input" />
 
-                    <input asp-for="IsActive"
-                           class="form-check-input" />
+                <span class="form-check-label">
+                    Allow multiple documents
+                </span>
+            </label>
 
-                    <label asp-for="IsActive"
-                           class="form-check-label">
-                    </label>
+            <label class="form-check">
+                <input asp-for="IsActive"
+                       class="form-check-input" />
 
-                </div>
-
-            </div>
+                <span class="form-check-label">
+                    Active
+                </span>
+            </label>
 
         </div>
 
@@ -232,20 +209,15 @@
     <div class="modal-footer">
 
         <button type="submit"
-                class="btn-app btn-success-app">
-
+                class="btn-app btn-primary-app">
             <i class="bi bi-check-circle"></i>
-
             Save
-
         </button>
 
         <button type="button"
                 class="btn-app btn-secondary-app"
                 data-bs-dismiss="modal">
-
             Cancel
-
         </button>
 
     </div>

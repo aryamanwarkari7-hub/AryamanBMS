@@ -34,5 +34,7 @@ namespace AryamanBMS.Models
         public string? Remarks { get; set; }
 
         public DateTime UploadedOn { get; set; } = DateTime.Now;
+
+        public bool IsActive { get; set; } = true;
     }
 }

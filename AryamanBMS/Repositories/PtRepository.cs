@@ -52,11 +52,23 @@ namespace AryamanBMS.Repositories
             }
 
             var salaryRecords = await _context.SalaryRecords
-                .Where(x => x.Month == month && x.Year == year)
-                .ToListAsync();
+               .Where(x => x.Month == month && x.Year == year)
+               .ToListAsync();
+
+            if (!salaryRecords.Any())
+            {
+                throw new InvalidOperationException(
+                    $"No salary records found for {month}/{year}. PT snapshot cannot be generated.");
+            }
 
             decimal totalPayable = salaryRecords.Sum(x => x.ProfessionalTax);
             int employeeCount = salaryRecords.Count;
+
+            if (totalPayable <= 0)
+            {
+                throw new InvalidOperationException(
+                    $"No PT payable amount found for {month}/{year}. Snapshot was not generated.");
+            }
 
             int fyStart = month >= FinancialConstants.FinancialYearStartMonth ? year : year - 1;
             string financialYear = $"{fyStart}-{(fyStart + 1).ToString().Substring(2)}";

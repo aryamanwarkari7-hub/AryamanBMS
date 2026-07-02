@@ -17,18 +17,33 @@ namespace AryamanBMS.Controllers
 
         #region Index
 
-        public async Task<IActionResult> Index(string? financialYear, string? category, string? status)
+        public async Task<IActionResult> Index(
+    string? financialYear,
+    string? category,
+    string? status)
         {
-            List<OfficeAssetModel> assets;
+            var assets = await _repository.GetAllAsync();
 
-            if (!string.IsNullOrEmpty(financialYear))
-                assets = await _repository.GetByFinancialYearAsync(financialYear);
-            else if (!string.IsNullOrEmpty(category))
-                assets = await _repository.GetByCategoryAsync(category);
-            else if (!string.IsNullOrEmpty(status))
-                assets = await _repository.GetByStatusAsync(status);
-            else
-                assets = await _repository.GetAllAsync();
+            if (!string.IsNullOrWhiteSpace(financialYear))
+            {
+                assets = assets
+                    .Where(x => x.FinancialYear == financialYear)
+                    .ToList();
+            }
+
+            if (!string.IsNullOrWhiteSpace(category))
+            {
+                assets = assets
+                    .Where(x => x.AssetCategory == category)
+                    .ToList();
+            }
+
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                assets = assets
+                    .Where(x => x.Status == status)
+                    .ToList();
+            }
 
             ViewBag.FilterFinancialYear = financialYear;
             ViewBag.FilterCategory = category;
@@ -50,6 +65,17 @@ namespace AryamanBMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(OfficeAssetModel model)
         {
+            model.AssetName = model.AssetName?.Trim() ?? string.Empty;
+            model.AssetCategory = model.AssetCategory?.Trim() ?? string.Empty;
+            model.AssetCode = model.AssetCode?.Trim();
+            model.VendorName = model.VendorName?.Trim();
+            model.AssignedTo = model.AssignedTo?.Trim();
+            model.FinancialYear = model.FinancialYear?.Trim() ?? string.Empty;
+            model.Status = model.Status?.Trim() ?? "InUse";
+            model.Remarks = model.Remarks?.Trim();
+            model.IsActive = true;
+            model.CreatedOn = DateTime.Now;
+
             if (!ModelState.IsValid)
                 return View(model);
 
@@ -123,12 +149,22 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             var asset = await _repository.GetByIdAsync(id);
-            if (asset == null) return NotFound();
 
-            await _repository.DeleteAsync(asset);
+            if (asset == null)
+            {
+                return NotFound();
+            }
+
+            asset.IsActive = !asset.IsActive;
+            asset.UpdatedOn = DateTime.Now;
+
+            await _repository.UpdateAsync(asset);
             await _repository.SaveAsync();
 
-            TempData["Success"] = "Asset deleted successfully.";
+            TempData["Success"] = asset.IsActive
+                ? "Asset activated successfully."
+                : "Asset archived successfully.";
+
             return RedirectToAction(nameof(Index));
         }
 

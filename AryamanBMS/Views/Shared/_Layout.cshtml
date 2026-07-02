@@ -55,6 +55,17 @@
                 </div>
             }
 
+            @if (TempData["Warning"] != null)
+            {
+                <div class="alert-message-app alert-warning-app">
+                    <i class="bi bi-info-circle-fill"></i>
+
+                    <div>
+                        @TempData["Warning"]
+                    </div>
+                </div>
+            }
+
             @if (TempData["Error"] != null)
             {
                 <div class="alert-message-app alert-error-app">

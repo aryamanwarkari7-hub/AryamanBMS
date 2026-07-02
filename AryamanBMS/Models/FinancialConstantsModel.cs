@@ -61,7 +61,11 @@
         public static class InvoiceStatus
         {
             public const string Draft = "Draft";
-            public const string Approved = "Approved";
+            public const string Generated = "Generated";
+            public const string Sent = "Sent";
+            public const string Pending = "Pending";
+            public const string PartiallyPaid = "Partially Paid";
+            public const string Paid = "Paid";
             public const string Cancelled = "Cancelled";
         }
 

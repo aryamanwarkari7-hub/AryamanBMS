@@ -15,6 +15,15 @@
                 ? "badge-warning"
                 : "badge-secondary";
     }
+
+    string snapshotButtonText =
+    Model.SnapshotStatus == "Pending"
+        ? "Generate Snapshot"
+        : "Regenerate Snapshot";
+
+    bool canRegenerateSnapshot =
+    Model.SnapshotStatus != "Filed" &&
+    Model.SnapshotStatus != "Locked";
 }
 
 <div class="module-header">
@@ -256,26 +265,37 @@
 
     <div class="card-body form-actions">
 
-        <form method="post"
-              asp-action="Generate">
+        <a asp-action="Index"
+           asp-route-month="@Model.Month"
+           asp-route-year="@Model.Year"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back to GST
+        </a>
 
-            @Html.AntiForgeryToken()
+        @if (canRegenerateSnapshot)
+        {
+            <form method="post"
+                  asp-action="Generate">
 
-            <input type="hidden"
-                   name="month"
-                   value="@Model.Month" />
+                @Html.AntiForgeryToken()
 
-            <input type="hidden"
-                   name="year"
-                   value="@Model.Year" />
+                <input type="hidden"
+                       name="month"
+                       value="@Model.Month" />
 
-            <button type="submit"
-                    class="btn-app btn-primary-app">
-                <i class="bi bi-arrow-clockwise"></i>
-                Regenerate Snapshot
-            </button>
+                <input type="hidden"
+                       name="year"
+                       value="@Model.Year" />
 
-        </form>
+                <button type="submit"
+                        class="btn-app btn-primary-app">
+                    <i class="bi bi-arrow-clockwise"></i>
+                    @snapshotButtonText
+                </button>
+
+            </form>
+        }
 
     </div>
 

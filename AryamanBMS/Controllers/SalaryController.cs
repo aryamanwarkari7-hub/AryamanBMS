@@ -431,15 +431,16 @@ namespace AryamanBMS.Controllers
             var previousSalaryRecords = await _salaryRecordRepository.SalaryRecords
                 .ToListAsync();
 
-            var selectedPeriod = new DateTime(year, month, 1);
+            
+
+            var selectedPeriodEnd =
+                new DateTime(year, month, DateTime.DaysInMonth(year, month));
 
             var salaryStructures =
-                await _context.EmployeeSalaryStructures
-                    .AsNoTracking()
-                    .Where(x =>
-                        x.IsActive &&
-                        x.EffectiveFrom.Date <= selectedPeriod)
-                    .ToListAsync();
+              await _context.EmployeeSalaryStructures
+                  .AsNoTracking()
+                  .Where(x => x.IsActive)
+                  .ToListAsync();
 
             using var workbook = new XLWorkbook(templatePath);
 
@@ -487,29 +488,38 @@ namespace AryamanBMS.Controllers
                     continue;
                 }
 
-                var latestSalary = previousSalaryRecords
-                    .Where(s =>
-                        s.EmployeeId == employee.Id &&
-                        (
-                            s.Year < year ||
-                            (s.Year == year && s.Month <= month)
-                        ))
-                    .OrderByDescending(s => s.Year)
-                    .ThenByDescending(s => s.Month)
-                    .ThenByDescending(s => s.ImportedOn)
-                    .FirstOrDefault();
-
+                var latestSalary =
+                  previousSalaryRecords
+                      .Where(s =>
+                          s.EmployeeId == employee.Id &&
+                          (
+                              s.Year < year ||
+                              (s.Year == year && s.Month <= month)
+                          ))
+                      .OrderByDescending(s => s.Year)
+                      .ThenByDescending(s => s.Month)
+                      .ThenByDescending(s => s.ImportedOn)
+                      .FirstOrDefault();
+                  
                 var latestSalaryStructure =
-                 salaryStructures
-                     .Where(x => x.EmployeeId == employee.Id)
-                     .OrderByDescending(x => x.EffectiveFrom)
-                     .ThenByDescending(x => x.Id)
-                     .FirstOrDefault();
+              salaryStructures
+                  .Where(x =>
+                      x.EmployeeId == employee.Id &&
+                      x.EffectiveFrom.Date <= selectedPeriodEnd)
+                  .OrderByDescending(x => x.EffectiveFrom)
+                  .ThenByDescending(x => x.Id)
+                  .FirstOrDefault()
+              ?? salaryStructures
+                  .Where(x => x.EmployeeId == employee.Id)
+                  .OrderByDescending(x => x.EffectiveFrom)
+                  .ThenByDescending(x => x.Id)
+                  .FirstOrDefault();
 
-                decimal actualSalary =
-                    latestSalaryStructure?.ActualSalary
-                    ?? latestSalary?.ActualSalary
-                    ?? 0;
+                decimal actualSalary = latestSalaryStructure?.ActualSalary
+                 ?? latestSalary?.ActualSalary
+                 ?? 0;
+
+
 
                 worksheet.Cell(row, 1).Value = serialNo;
                 worksheet.Cell(row, 2).Value = employee.EmployeeCode;

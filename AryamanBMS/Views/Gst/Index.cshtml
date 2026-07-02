@@ -245,7 +245,29 @@
                             <td colspan="7" class="empty-state">
                                 @if (hasSelectedPeriod)
                                 {
-                                    <span>No GST snapshot found for the selected month. Open dashboard and generate snapshot.</span>
+                                    <div class="empty-state">
+                                        <p>No GST snapshot found for the selected month.</p>
+
+                                        <form asp-action="Generate"
+                                              method="post"
+                                              class="form-actions">
+                                            @Html.AntiForgeryToken()
+
+                                            <input type="hidden"
+                                                   name="month"
+                                                   value="@currentMonth" />
+
+                                            <input type="hidden"
+                                                   name="year"
+                                                   value="@currentYear" />
+
+                                            <button type="submit"
+                                                    class="btn-app btn-primary-app">
+                                                <i class="bi bi-calculator"></i>
+                                                Generate Snapshot
+                                            </button>
+                                        </form>
+                                    </div>
                                 }
                                 else
                                 {

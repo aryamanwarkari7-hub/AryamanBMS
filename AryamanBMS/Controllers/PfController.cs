@@ -75,10 +75,27 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> MarkFiled(int id)
         {
             var snapshot = await _pfRepository.GetSnapshotByIdAsync(id);
-            if (snapshot == null)
-                return NotFound();
 
-            await _pfRepository.UpdateSnapshotStatusAsync(id, FinancialConstants.StatutoryStatus.Filed);
+            if (snapshot == null)
+            {
+                return NotFound();
+            }
+
+            if (snapshot.TotalPayable <= 0)
+            {
+                TempData["Error"] = "PF snapshot has no payable amount and cannot be marked as filed.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            if (snapshot.Status == FinancialConstants.StatutoryStatus.Paid)
+            {
+                TempData["Error"] = "Paid PF snapshots cannot be moved back to filed.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            await _pfRepository.UpdateSnapshotStatusAsync(
+                id,
+                FinancialConstants.StatutoryStatus.Filed);
 
             TempData["Success"] = "PF snapshot marked as Filed.";
             return RedirectToAction(nameof(Details), new { id });
@@ -89,10 +106,35 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> MarkPaid(int id)
         {
             var snapshot = await _pfRepository.GetSnapshotByIdAsync(id);
-            if (snapshot == null)
-                return NotFound();
 
-            await _pfRepository.UpdateSnapshotStatusAsync(id, FinancialConstants.StatutoryStatus.Paid);
+            if (snapshot == null)
+            {
+                return NotFound();
+            }
+
+            if (snapshot.Status != FinancialConstants.StatutoryStatus.Filed)
+            {
+                TempData["Error"] = "PF snapshot must be marked as filed before it can be marked as paid.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            if (!snapshot.Challans.Any())
+            {
+                TempData["Error"] = "Please record PF challan details before marking this snapshot as paid.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            decimal paidAmount = snapshot.Challans.Sum(x => x.AmountPaid);
+
+            if (paidAmount < snapshot.TotalPayable)
+            {
+                TempData["Error"] = "Paid challan amount is less than PF payable amount.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            await _pfRepository.UpdateSnapshotStatusAsync(
+                id,
+                FinancialConstants.StatutoryStatus.Paid);
 
             TempData["Success"] = "PF snapshot marked as Paid.";
             return RedirectToAction(nameof(Details), new { id });
@@ -104,6 +146,25 @@ namespace AryamanBMS.Controllers
         {
             ModelState.Remove(nameof(model.Snapshot));
 
+            model.TRRN = model.TRRN?.Trim();
+            model.BankName = model.BankName?.Trim();
+            model.PaymentMode = model.PaymentMode?.Trim();
+            model.Remarks = model.Remarks?.Trim();
+
+            if (model.AmountPaid <= 0)
+            {
+                ModelState.AddModelError(nameof(model.AmountPaid), "Amount paid must be greater than zero.");
+            }
+
+            if (!model.PaymentDate.HasValue)
+            {
+                ModelState.AddModelError(nameof(model.PaymentDate), "Payment date is required.");
+            }
+            else if (model.PaymentDate.Value.Date > DateTime.Today)
+            {
+                ModelState.AddModelError(nameof(model.PaymentDate), "Payment date cannot be in the future.");
+            }
+
             if (!ModelState.IsValid)
             {
                 TempData["Error"] = "Please correct the challan details and try again.";
@@ -113,6 +174,8 @@ namespace AryamanBMS.Controllers
             var snapshot = await _pfRepository.GetSnapshotByIdAsync(model.PfSnapshotId);
             if (snapshot == null)
                 return NotFound();
+
+            model.Status = FinancialConstants.StatutoryStatus.Paid;
 
             await _pfRepository.AddChallanAsync(model);
             await _pfRepository.SaveAsync();
@@ -128,6 +191,15 @@ namespace AryamanBMS.Controllers
             var snapshot = await _pfRepository.GetSnapshotByIdAsync(snapshotId);
             if (snapshot == null)
                 return NotFound();
+
+            documentType = documentType?.Trim() ?? string.Empty;
+            remarks = remarks?.Trim();
+
+            if (string.IsNullOrWhiteSpace(documentType))
+            {
+                TempData["Error"] = "Please select a document type.";
+                return RedirectToAction(nameof(Details), new { id = snapshotId });
+            }
 
             if (file == null || file.Length == 0)
             {

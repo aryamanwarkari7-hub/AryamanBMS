@@ -2,344 +2,272 @@
 
 @{
     ViewData["Title"] = "Statutory Notices";
+
+    var notices = Model.ToList();
+
+    string? selectedDepartment = ViewBag.Department as string;
+    string? selectedStatus = ViewBag.Status as string;
+
+    int openCount = notices.Count(x => x.Status == FinancialConstants.NoticeStatus.Open);
+    int repliedCount = notices.Count(x => x.Status == FinancialConstants.NoticeStatus.Replied);
+    int closedCount = notices.Count(x => x.Status == FinancialConstants.NoticeStatus.Closed);
+    int escalatedCount = notices.Count(x => x.Status == FinancialConstants.NoticeStatus.Escalated);
 }
 
 <div class="module-header">
+
     <div>
-        <h1 class="module-title">Statutory Notices</h1>
+        <h1 class="module-title">STATUTORY NOTICES</h1>
         <p class="module-subtitle">
-            Track notices from GST, PF, ESIC, Income Tax, Labour, ROC and other authorities
+            Track notices from GST, PF, ESIC, Income Tax, Labour, ROC and other authorities.
         </p>
     </div>
 
     <div class="module-header-actions">
-        <a asp-action="Create" class="btn-app btn-primary-app">
+        <a asp-action="Create"
+           class="btn-app btn-primary-app">
             <i class="bi bi-plus-circle"></i>
             Add Notice
         </a>
     </div>
+
 </div>
 
-<div>
+@if (TempData["Success"] != null)
+{
+    <div class="app-alert-success">
+        @TempData["Success"]
+    </div>
+}
 
-    @if (TempData["Success"] != null)
-    {
-        <div class="app-alert-success">
-            @TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+@if (TempData["Error"] != null)
+{
+    <div class="app-alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
+<div class="dashboard-grid">
+
+    <div class="stats-card">
+        <div class="stats-label">Open</div>
+        <div class="stats-number">@openCount</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Replied</div>
+        <div class="stats-number">@repliedCount</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Escalated</div>
+        <div class="stats-number">@escalatedCount</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Closed</div>
+        <div class="stats-number">@closedCount</div>
+    </div>
+
+</div>
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Notice Register</h2>
+            <p class="card-subtitle">
+                Use filters below to view statutory notices by department and status.
+            </p>
         </div>
-    }
+    </div>
 
-    @if (TempData["Error"] != null)
-    {
-        <div class="app-alert-danger">
-            @TempData["Error"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
+    <div class="card-body">
 
-    <div class="app-card">
+        <form method="get"
+              asp-action="Index">
 
-        <div class="card-header">
-            <h5 class="card-title">Filters</h5>
-        </div>
+            <div class="form-grid-3">
 
-        <div class="card-body">
+                <div class="form-group">
+                    <label class="form-label">Department</label>
 
-            <form method="get" asp-action="Index">
+                    <select name="department"
+                            class="app-select">
+                        <option value="">All Departments</option>
 
-                <div class="form-grid-3">
+                        <option value="@FinancialConstants.NoticeDepartment.GST" selected="@(selectedDepartment == FinancialConstants.NoticeDepartment.GST ? "selected" : null)">GST</option>
+                        <option value="@FinancialConstants.NoticeDepartment.PF" selected="@(selectedDepartment == FinancialConstants.NoticeDepartment.PF ? "selected" : null)">PF</option>
+                        <option value="@FinancialConstants.NoticeDepartment.ESIC" selected="@(selectedDepartment == FinancialConstants.NoticeDepartment.ESIC ? "selected" : null)">ESIC</option>
+                        <option value="@FinancialConstants.NoticeDepartment.IncomeTax" selected="@(selectedDepartment == FinancialConstants.NoticeDepartment.IncomeTax ? "selected" : null)">Income Tax</option>
+                        <option value="@FinancialConstants.NoticeDepartment.Labour" selected="@(selectedDepartment == FinancialConstants.NoticeDepartment.Labour ? "selected" : null)">Labour</option>
+                        <option value="@FinancialConstants.NoticeDepartment.ROC" selected="@(selectedDepartment == FinancialConstants.NoticeDepartment.ROC ? "selected" : null)">ROC</option>
+                        <option value="@FinancialConstants.NoticeDepartment.Other" selected="@(selectedDepartment == FinancialConstants.NoticeDepartment.Other ? "selected" : null)">Other</option>
+                    </select>
+                </div>
 
-                    <div class="form-group">
+                <div class="form-group">
+                    <label class="form-label">Status</label>
 
-                        <label class="form-label">Department</label>
+                    <select name="status"
+                            class="app-select">
+                        <option value="">All Status</option>
 
-                        <select name="department" class="app-select">
+                        <option value="@FinancialConstants.NoticeStatus.Open" selected="@(selectedStatus == FinancialConstants.NoticeStatus.Open ? "selected" : null)">Open</option>
+                        <option value="@FinancialConstants.NoticeStatus.Replied" selected="@(selectedStatus == FinancialConstants.NoticeStatus.Replied ? "selected" : null)">Replied</option>
+                        <option value="@FinancialConstants.NoticeStatus.Closed" selected="@(selectedStatus == FinancialConstants.NoticeStatus.Closed ? "selected" : null)">Closed</option>
+                        <option value="@FinancialConstants.NoticeStatus.Escalated" selected="@(selectedStatus == FinancialConstants.NoticeStatus.Escalated ? "selected" : null)">Escalated</option>
+                    </select>
+                </div>
 
-                            <option value="">All Departments</option>
+                <div class="form-group">
+                    <label class="form-label">&nbsp;</label>
 
-                            <option value="@FinancialConstants.NoticeDepartment.GST"
-                                    selected="@(ViewBag.Department == FinancialConstants.NoticeDepartment.GST)">
-                                GST
-                            </option>
-
-                            <option value="@FinancialConstants.NoticeDepartment.PF"
-                                    selected="@(ViewBag.Department == FinancialConstants.NoticeDepartment.PF)">
-                                PF
-                            </option>
-
-                            <option value="@FinancialConstants.NoticeDepartment.ESIC"
-                                    selected="@(ViewBag.Department == FinancialConstants.NoticeDepartment.ESIC)">
-                                ESIC
-                            </option>
-
-                            <option value="@FinancialConstants.NoticeDepartment.IncomeTax"
-                                    selected="@(ViewBag.Department == FinancialConstants.NoticeDepartment.IncomeTax)">
-                                Income Tax
-                            </option>
-
-                            <option value="@FinancialConstants.NoticeDepartment.Labour"
-                                    selected="@(ViewBag.Department == FinancialConstants.NoticeDepartment.Labour)">
-                                Labour
-                            </option>
-
-                            <option value="@FinancialConstants.NoticeDepartment.ROC"
-                                    selected="@(ViewBag.Department == FinancialConstants.NoticeDepartment.ROC)">
-                                ROC
-                            </option>
-
-                            <option value="@FinancialConstants.NoticeDepartment.Other"
-                                    selected="@(ViewBag.Department == FinancialConstants.NoticeDepartment.Other)">
-                                Other
-                            </option>
-
-                        </select>
-
-                    </div>
-
-                    <div class="form-group">
-
-                        <label class="form-label">Status</label>
-
-                        <select name="status" class="app-select">
-
-                            <option value="">All Status</option>
-
-                            <option value="@FinancialConstants.NoticeStatus.Open"
-                                    selected="@(ViewBag.Status == FinancialConstants.NoticeStatus.Open)">
-                                Open
-                            </option>
-
-                            <option value="@FinancialConstants.NoticeStatus.Replied"
-                                    selected="@(ViewBag.Status == FinancialConstants.NoticeStatus.Replied)">
-                                Replied
-                            </option>
-
-                            <option value="@FinancialConstants.NoticeStatus.Closed"
-                                    selected="@(ViewBag.Status == FinancialConstants.NoticeStatus.Closed)">
-                                Closed
-                            </option>
-
-                            <option value="@FinancialConstants.NoticeStatus.Escalated"
-                                    selected="@(ViewBag.Status == FinancialConstants.NoticeStatus.Escalated)">
-                                Escalated
-                            </option>
-
-                        </select>
-
-                    </div>
-
-                    <div class="form-group d-flex flex-row align-items-end gap-2">
-
-                        <button type="submit" class="btn-app btn-primary-app">
+                    <div class="form-actions">
+                        <button type="submit"
+                                class="btn-app btn-primary-app">
                             <i class="bi bi-funnel"></i>
                             Filter
                         </button>
 
-                        <a asp-action="Index" class="btn-app btn-secondary-app">
+                        <a asp-action="Index"
+                           class="btn-app btn-secondary-app">
                             Reset
                         </a>
-
                     </div>
-
                 </div>
 
-            </form>
+            </div>
 
-        </div>
+        </form>
 
-    </div>
+        <div class="table-responsive">
 
-    <div class="app-card table-card">
+            <table class="app-table">
 
-        <div class="card-header">
-            <h5 class="card-title">Notice Register</h5>
-        </div>
+                <thead>
+                    <tr>
+                        <th>Notice No.</th>
+                        <th>Department</th>
+                        <th>Subject</th>
+                        <th>Notice Date</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                        <th class="text-center">Documents</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
 
-        <div class="card-body">
-
-            <div class="table-responsive">
-
-                <table class="app-table">
-
-                    <thead >
-
-                        <tr>
-
-                            <th>Notice No.</th>
-
-                            <th>Department</th>
-
-                            <th>Subject</th>
-
-                            <th>Notice Date</th>
-
-                            <th>Due Date</th>
-
-                            <th>Status</th>
-
-                            <th class="text-center">Documents</th>
-
-                            <th class="text-center">
-                                Actions
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-                    <tbody>
-
-                        @if (Model.Any())
+                <tbody>
+                    @if (notices.Any())
+                    {
+                        foreach (var item in notices)
                         {
-                            foreach (var item in Model)
+                            string statusBadge = item.Status switch
                             {
-                                var statusBadge = item.Status switch
-                                {
-                                    "Open" => "badge-warning",
-                                    "Replied" => "badge-info",
-                                    "Closed" => "badge-success",
-                                    "Escalated" => "badge-danger",
-                                    _ => "badge-secondary"
-                                };
+                                FinancialConstants.NoticeStatus.Open => "badge-warning",
+                                FinancialConstants.NoticeStatus.Replied => "badge-info",
+                                FinancialConstants.NoticeStatus.Closed => "badge-success",
+                                FinancialConstants.NoticeStatus.Escalated => "badge-danger",
+                                _ => "badge-secondary"
+                            };
 
-                                var deptBadge = item.Department switch
-                                {
-                                    "GST" => "badge-success",
-                                    "PF" => "badge-primary",
-                                    "ESIC" => "badge-info",
-                                    "IncomeTax" => "bg-dark",
-                                    "Labour" => "badge-warning",
-                                    "ROC" => "badge-secondary",
-                                    _ => "bg-light text-dark"
-                                };
+                            bool isOverdue =
+                            item.DueDate.HasValue &&
+                            item.DueDate.Value.Date < DateTime.Today &&
+                            item.Status != FinancialConstants.NoticeStatus.Closed;
 
-                                <tr>
+                            <tr>
+                                <td>@(string.IsNullOrWhiteSpace(item.NoticeNumber) ? "-" : item.NoticeNumber)</td>
 
-                                    <td>
-                                        @item.NoticeNumber
-                                    </td>
+                                <td>
+                                    <span class="badge-secondary">
+                                        @item.Department
+                                    </span>
+                                </td>
 
-                                    <td>
-                                        <span class="@deptBadge">
-                                            @item.Department
-                                        </span>
-                                    </td>
+                                <td>
+                                    <strong>@item.Subject</strong>
 
-                                    <td>
+                                    @if (!string.IsNullOrWhiteSpace(item.Description))
+                                    {
+                                        <div class="card-subtitle">
+                                            @(item.Description.Length > 80
+                                                                            ? item.Description.Substring(0, 80) + "..."
+                                                                            : item.Description)
+                            </div>
+                                                        }
+                                </td>
 
-                                        <strong>@item.Subject</strong>
+                                <td>@item.NoticeDate.ToString("dd-MMM-yyyy")</td>
 
-                                        @if (!string.IsNullOrWhiteSpace(item.Description))
-                                        {
-                                            <br />
-
-                                            <small class="card-subtitle">
-                                                @(item.Description.Length > 80
-                                                    ? item.Description.Substring(0, 80) + "..."
-                                                    : item.Description)
-                                            </small>
-                                        }
-
-                                    </td>
-
-                                    <td>
-                                        @item.NoticeDate.ToString("dd-MMM-yyyy")
-                                    </td>
-
-                                    <td>
-
-                                        @if (item.DueDate.HasValue)
-                                        {
+                                <td>
+                                    @if (item.DueDate.HasValue)
+                                    {
+                                        <span class="@(isOverdue ? "badge-danger" : "")">
                                             @item.DueDate.Value.ToString("dd-MMM-yyyy")
-                                        }
-                                        else
-                                        {
-                                            <span class="card-subtitle">-</span>
-                                        }
-
-                                    </td>
-
-                                    <td>
-
-                                        <span class="@statusBadge">
-                                            @item.Status
                                         </span>
+                                    }
+                                    else
+                                    {
+                                        <span>-</span>
+                                    }
+                                </td>
 
-                                    </td>
+                                <td>
+                                    <span class="@statusBadge">
+                                        @item.Status
+                                    </span>
+                                </td>
 
-                                    <td class="text-center">
+                                <td class="text-center">
+                                    <span class="badge-secondary">
+                                        @(item.Documents?.Count ?? 0)
+                                    </span>
+                                </td>
 
-                                        <span class="badge-secondary">
-                                            @(item.Documents?.Count ?? 0)
-                                        </span>
-
-                                    </td>
-
-                                    <td class="text-center">
-
+                                <td>
+                                    <div class="table-actions">
                                         <a asp-action="Details"
                                            asp-route-id="@item.NoticeId"
                                            class="btn-app btn-icon btn-primary-app"
                                            title="Details">
-
                                             <i class="bi bi-eye"></i>
-
                                         </a>
 
                                         <a asp-action="Edit"
                                            asp-route-id="@item.NoticeId"
                                            class="btn-app btn-icon btn-secondary-app"
                                            title="Edit">
-
-                                            <i class="bi bi-pencil-square"></i>
-
+                                            <i class="bi bi-pencil"></i>
                                         </a>
 
                                         <a asp-action="Delete"
                                            asp-route-id="@item.NoticeId"
                                            class="btn-app btn-icon btn-danger-app"
-                                           onclick="return confirm('Are you sure you want to delete this notice?');"
                                            title="Delete">
-
                                             <i class="bi bi-trash"></i>
-
                                         </a>
-
-                                    </td>
-
-                                </tr>
-                            }
-                        }
-                        else
-                        {
-                            <tr>
-
-                                <td colspan="8" class="text-center py-5 text-muted">
-
-                                    <i class="bi bi-inbox fs-2 mb-2 d-block"></i>
-
-                                    No statutory notices found.
-
+                                    </div>
                                 </td>
-
                             </tr>
                         }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8"
+                                class="empty-state">
+                                No statutory notices found.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
 
-                    </tbody>
-
-                </table>
-
-            </div>
+            </table>
 
         </div>
 
     </div>
 
 </div>
-
-@section Scripts {
-
-    <partial name="_ValidationScriptsPartial" />
-
-}

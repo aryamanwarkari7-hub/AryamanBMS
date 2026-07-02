@@ -55,21 +55,12 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(
-            CompanyDocumentViewModel vm)
+        public async Task<IActionResult> Create(CompanyDocumentViewModel vm)
         {
             await LoadCategories(vm);
 
             if (!ModelState.IsValid)
             {
-                foreach (var item in ModelState)
-                {
-                    foreach (var error in item.Value.Errors)
-                    {
-                        Console.WriteLine($"{item.Key} : {error.ErrorMessage}");
-                    }
-                }
-
                 return View(vm);
             }
 
@@ -227,8 +218,7 @@ namespace AryamanBMS.Controllers
                     return View(vm);
                 }
 
-                await _fileStorage.DeleteAsync(
-                    document.FilePath);
+                string oldFilePath = document.FilePath;
 
                 var upload =
                     await _fileStorage.UploadAsync(
@@ -263,6 +253,11 @@ namespace AryamanBMS.Controllers
                     upload.RelativePath;
 
                 document.VersionNo++;
+
+                if (!string.IsNullOrWhiteSpace(oldFilePath))
+                {
+                    await _fileStorage.DeleteAsync(oldFilePath);
+                }
             }
 
             await _documentRepository.UpdateAsync(
@@ -303,6 +298,12 @@ namespace AryamanBMS.Controllers
             if (document == null)
                 return NotFound();
 
+            if (!document.IsActive)
+            {
+                TempData["Error"] = "Archived documents cannot be downloaded.";
+                return RedirectToAction(nameof(Index));
+            }
+
             var fileBytes =
                 await _fileStorage.DownloadAsync(
                     document.FilePath);
@@ -326,8 +327,6 @@ namespace AryamanBMS.Controllers
 
         #region Delete
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
             var document =
@@ -336,15 +335,28 @@ namespace AryamanBMS.Controllers
             if (document == null)
                 return NotFound();
 
-            await _fileStorage.DeleteAsync(
-                document.FilePath);
+            return View(document);
+        }
 
-            await _documentRepository.DeleteAsync(document);
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            var document =
+                await _documentRepository.GetByIdAsync(id);
 
+            if (document == null)
+                return NotFound();
+
+            document.IsActive = !document.IsActive;
+            document.UpdatedOn = DateTime.Now;
+
+            await _documentRepository.UpdateAsync(document);
             await _documentRepository.SaveAsync();
 
-            TempData["Success"] =
-                "Document deleted successfully.";
+            TempData["Success"] = document.IsActive
+                ? "Document activated successfully."
+                : "Document archived successfully.";
 
             return RedirectToAction(nameof(Index));
         }

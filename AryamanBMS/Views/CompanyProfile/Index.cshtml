@@ -2,71 +2,149 @@
 
 @{
     ViewData["Title"] = "Company Profile";
+
+    string buttonText = Model.CompanyProfileId == 0
+        ? "Create Profile"
+        : "Update Profile";
 }
 
-<h2>Company Profile</h2>
+<div class="module-header">
 
-@if (TempData["Success"] != null)
-{
-    <div class="app-alert-success">
-        @TempData["Success"]
-    </div>
-}
-
-@if (TempData["Error"] != null)
-{
-    <div class="app-alert-danger">
-        @TempData["Error"]
-    </div>
-}
-
-<form asp-action="Index" method="post">
-
-    <input type="hidden"
-           asp-for="CompanyProfileId" />
-
-    <div class="mb-3">
-        <label asp-for="CompanyName"></label>
-        <input asp-for="CompanyName"
-               class="app-input" />
-        <span asp-validation-for="CompanyName"
-              class="validation-message"></span>
+    <div>
+        <h1 class="module-title">COMPANY PROFILE</h1>
+        <p class="module-subtitle">
+            Maintain company identity, tax registration and contact details.
+        </p>
     </div>
 
-    <div class="mb-3">
-        <label asp-for="GSTIN"></label>
-        <input asp-for="GSTIN"
-               class="app-input" />
+</div>
+
+<form asp-action="Index"
+      method="post">
+
+    @Html.AntiForgeryToken()
+
+    <input asp-for="CompanyProfileId" type="hidden" />
+    <input asp-for="CreatedOn" type="hidden" />
+    <input asp-for="IsActive" type="hidden" />
+
+    <div asp-validation-summary="ModelOnly"
+         class="app-alert-danger">
     </div>
 
-    <div class="mb-3">
-        <label asp-for="PAN"></label>
-        <input asp-for="PAN"
-               class="app-input" />
+    <div class="app-card form-card">
+
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Profile Information</h2>
+                <p class="card-subtitle">
+                    These details are used across invoices, documents and statutory records.
+                </p>
+            </div>
+        </div>
+
+        <div class="card-body">
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+                    <label asp-for="CompanyName" class="form-label">
+                        Company Name <span class="validation-message">*</span>
+                    </label>
+
+                    <input asp-for="CompanyName"
+                           class="app-input"
+                           placeholder="Enter company name" />
+
+                    <span asp-validation-for="CompanyName"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="GSTIN" class="form-label">
+                        GSTIN
+                    </label>
+
+                    <input asp-for="GSTIN"
+                           class="app-input"
+                           placeholder="Enter GSTIN" />
+
+                    <span asp-validation-for="GSTIN"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="PAN" class="form-label">
+                        PAN
+                    </label>
+
+                    <input asp-for="PAN"
+                           class="app-input"
+                           placeholder="Enter PAN" />
+
+                    <span asp-validation-for="PAN"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Phone" class="form-label">
+                        Phone
+                    </label>
+
+                    <input asp-for="Phone"
+                           class="app-input"
+                           placeholder="Enter phone number" />
+
+                    <span asp-validation-for="Phone"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Email" class="form-label">
+                        Email
+                    </label>
+
+                    <input asp-for="Email"
+                           class="app-input"
+                           placeholder="Enter email address" />
+
+                    <span asp-validation-for="Email"
+                          class="validation-message"></span>
+                </div>
+
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Address" class="form-label">
+                    Address
+                </label>
+
+                <textarea asp-for="Address"
+                          class="app-input"
+                          rows="4"
+                          placeholder="Enter registered office address"></textarea>
+
+                <span asp-validation-for="Address"
+                      class="validation-message"></span>
+            </div>
+
+        </div>
+
     </div>
 
-    <div class="mb-3">
-        <label asp-for="Address"></label>
-        <textarea asp-for="Address"
-                  class="app-input"></textarea>
-    </div>
+    <div class="app-card">
 
-    <div class="mb-3">
-        <label asp-for="Email"></label>
-        <input asp-for="Email"
-               class="app-input" />
-    </div>
+        <div class="card-body form-actions">
 
-    <div class="mb-3">
-        <label asp-for="Phone"></label>
-        <input asp-for="Phone"
-               class="app-input" />
-    </div>
+            <button type="submit"
+                    class="btn-app btn-primary-app">
+                <i class="bi bi-check-circle"></i>
+                @buttonText
+            </button>
 
-    <button type="submit"
-            class="btn-app btn-primary-app">
-        Save
-    </button>
+        </div>
+
+    </div>
 
 </form>
 

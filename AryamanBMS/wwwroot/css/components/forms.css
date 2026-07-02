@@ -16,6 +16,7 @@
     font-size: var(--font-sm);
     font-weight: var(--fw-medium);
     color: var(--text-secondary);
+    margin-bottom: 0;
 }
 
 /* ==========================================

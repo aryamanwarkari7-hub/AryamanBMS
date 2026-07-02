@@ -46,6 +46,8 @@ namespace AryamanBMS.Models
         [StringLength(20)]
         public string Status { get; set; } = "InUse";
 
+        public bool IsActive { get; set; } = true;
+
         [StringLength(500)]
         public string? Remarks { get; set; }
 

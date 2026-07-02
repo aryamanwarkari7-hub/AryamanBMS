@@ -4,79 +4,80 @@
     ViewData["Title"] = "Edit Company Document";
 }
 
-<div class="module-content">
+<div class="module-header">
 
-    <div class="row mb-3">
+    <div>
+        <h1 class="module-title">EDIT COMPANY DOCUMENT</h1>
+        <p class="module-subtitle">
+            Update document details or replace the uploaded file.
+        </p>
+    </div>
 
-        <div class="col-md-12">
+    <div class="module-header-actions">
+        <a asp-action="Details"
+           asp-route-id="@Model.Document.CompanyDocumentId"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-eye"></i>
+            Details
+        </a>
 
-            <h3>
-                <i class="bi bi-file-earmark-text-pen text-warning"></i>
-                Edit Company Document
-            </h3>
+        <a asp-action="Index"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
 
-            <hr />
+</div>
 
+<form asp-action="Edit"
+      asp-route-id="@Model.Document.CompanyDocumentId"
+      method="post"
+      enctype="multipart/form-data">
+
+    <input asp-for="Document.CompanyDocumentId" type="hidden" />
+
+    <div asp-validation-summary="ModelOnly"
+         class="app-alert-danger">
+    </div>
+
+    <div class="app-card form-card">
+
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Document Information</h2>
+                <p class="card-subtitle">
+                    Keep existing file or upload a replacement document.
+                </p>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <partial name="_DocumentForm" model="Model" />
         </div>
 
     </div>
 
     <div class="app-card">
 
-        <div class="card-header">
+        <div class="card-body form-actions">
 
-            <strong>
-                Update Document Information
-            </strong>
+            <button type="submit"
+                    class="btn-app btn-primary-app">
+                <i class="bi bi-check-circle"></i>
+                Update Document
+            </button>
 
-        </div>
-
-        <div class="card-body">
-
-            <form asp-action="Edit"
-                  asp-route-id="@Model.Document.CompanyDocumentId"
-                  method="post"
-                  enctype="multipart/form-data">
-
-                <input asp-for="Document.CompanyDocumentId" type="hidden" />
-
-                <div asp-validation-summary="ModelOnly"
-                     class="app-alert-danger">
-                </div>
-
-                <partial name="_DocumentForm" model="Model" />
-
-                <hr />
-
-                <div class="d-flex justify-content-between">
-
-                    <a asp-action="Index"
-                       class="btn-app btn-secondary-app">
-
-                        <i class="bi bi-arrow-left"></i>
-
-                        Back
-
-                    </a>
-
-                    <button type="submit"
-                            class="btn-app btn-secondary-app">
-
-                        <i class="bi bi-check-circle"></i>
-
-                        Update Document
-
-                    </button>
-
-                </div>
-
-            </form>
+            <a asp-action="Index"
+               class="btn-app btn-secondary-app">
+                Cancel
+            </a>
 
         </div>
 
     </div>
 
-</div>
+</form>
 
 @section Scripts
 {

@@ -5,10 +5,11 @@
 }
 
 <div class="module-header">
+
     <div>
-        <h1 class="module-title">Company Document Categories</h1>
+        <h1 class="module-title">COMPANY DOCUMENT CATEGORIES</h1>
         <p class="module-subtitle">
-            Manage company document categories
+            Manage document types, expiry rules and upload constraints.
         </p>
     </div>
 
@@ -16,234 +17,151 @@
         <button type="button"
                 class="btn-app btn-primary-app"
                 onclick="openCreate()">
-
             <i class="bi bi-plus-circle"></i>
-
             Add Category
-
         </button>
-
     </div>
 
 </div>
 
-<div>
+<div class="app-card">
 
-    @if (TempData["Success"] != null)
-    {
-        <div class="app-alert-success">
-
-            @TempData["Success"]
-
-            <button class="btn-close"
-                    data-bs-dismiss="alert">
-            </button>
-
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Category Register</h2>
+            <p class="card-subtitle">
+                Define document types, expiry rules and upload constraints.
+            </p>
         </div>
-    }
+    </div>
 
-    @if (TempData["Error"] != null)
-    {
-        <div class="app-alert-danger">
+    <div class="card-body">
 
-            @TempData["Error"]
+        <div class="table-responsive">
 
-            <button class="btn-close"
-                    data-bs-dismiss="alert">
-            </button>
+            <table class="app-table"
+                   id="categoryTable">
 
-        </div>
-    }
+                <thead>
+                    <tr>
+                        <th>Order</th>
+                        <th>Code</th>
+                        <th>Category</th>
+                        <th>Description</th>
+                        <th class="text-center">Mandatory</th>
+                        <th class="text-center">Expiry</th>
+                        <th class="text-center">Active</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
 
-    <div class="app-card">
-
-        <div class="card-body">
-
-            <div class="table-responsive">
-
-                <table class="app-table"
-                       id="categoryTable">
-
-                    <thead >
-
-                        <tr>
-
-                            <th>
-                                Order
-                            </th>
-
-                            <th>
-                                Code
-                            </th>
-
-                            <th>
-                                Category
-                            </th>
-
-                            <th>
-                                Description
-                            </th>
-
-                            <th class="text-center">
-                                Mandatory
-                            </th>
-
-                            <th class="text-center">
-                                Expiry
-                            </th>
-
-                            <th class="text-center">
-                                Active
-                            </th>
-
-                            <th class="text-center">
-
-                                Actions
-
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-                    <tbody>
-
-                        @foreach (var item in Model)
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        foreach (var item in Model)
                         {
                             <tr>
+                                <td>@item.DisplayOrder</td>
 
                                 <td>
-
-                                    @item.DisplayOrder
-
+                                    <span class="badge-secondary">
+                                        @item.CategoryCode
+                                    </span>
                                 </td>
 
                                 <td>
-
-                                    @item.CategoryCode
-
+                                    <strong>@item.CategoryName</strong>
                                 </td>
 
                                 <td>
-
-                                    <strong>
-
-                                        @item.CategoryName
-
-                                    </strong>
-
-                                </td>
-
-                                <td>
-
-                                    @item.Description
-
+                                    @(string.IsNullOrWhiteSpace(item.Description) ? "-" : item.Description)
                                 </td>
 
                                 <td class="text-center">
-
                                     @if (item.IsMandatory)
                                     {
-                                        <span class="badge-success">
-
-                                            YES
-
-                                        </span>
+                                        <span class="badge-success">Yes</span>
                                     }
                                     else
                                     {
-                                        <span class="badge-secondary">
-
-                                            NO
-
-                                        </span>
+                                        <span class="badge-secondary">No</span>
                                     }
-
                                 </td>
 
                                 <td class="text-center">
-
                                     @if (item.HasExpiry)
                                     {
-                                        <span class="badge-warning">
-
-                                            Expires
-
-                                        </span>
+                                        <span class="badge-warning">Expires</span>
                                     }
                                     else
                                     {
-                                        <span class="badge-info">
-
-                                            Lifetime
-
-                                        </span>
+                                        <span class="badge-info">Lifetime</span>
                                     }
-
                                 </td>
 
                                 <td class="text-center">
-
                                     @if (item.IsActive)
                                     {
-                                        <span class="badge-success">
-
-                                            Active
-
-                                        </span>
+                                        <span class="badge-success">Active</span>
                                     }
                                     else
                                     {
-                                        <span class="badge-danger">
-
-                                            Inactive
-
-                                        </span>
+                                        <span class="badge-secondary">Archived</span>
                                     }
-
                                 </td>
 
                                 <td class="text-center">
+                                    <div class="table-actions">
 
-                                    <button class="btn-app btn-icon btn-primary-app"
-                                            onclick="openEdit(@item.DocumentCategoryId)">
+                                        <button type="button"
+                                                class="btn-app btn-icon btn-primary-app"
+                                                onclick="openEdit(@item.DocumentCategoryId)"
+                                                title="Edit">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </button>
 
-                                        <i class="bi bi-pencil-square"></i>
+                                        @if (item.IsActive)
+                                        {
+                                            <button type="button"
+                                                    class="btn-app btn-icon btn-danger-app"
+                                                    onclick="deleteCategory(@item.DocumentCategoryId)"
+                                                    title="Archive">
+                                                <i class="bi bi-archive"></i>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button type="button"
+                                                    class="btn-app btn-icon btn-success-app"
+                                                    onclick="deleteCategory(@item.DocumentCategoryId)"
+                                                    title="Activate">
+                                                <i class="bi bi-arrow-counterclockwise"></i>
+                                            </button>
+                                        }
 
-                                    </button>
-
-                                    <button class="btn-app btn-icon btn-danger-app"
-                                            onclick="deleteCategory(@item.DocumentCategoryId)">
-
-                                        <i class="bi bi-trash"></i>
-
-                                    </button>
-
-                                    <button class="btn-app btn-icon btn-secondary-app"
-                                            onclick="toggleStatus(@item.DocumentCategoryId)">
-
-                                        <i class="bi bi-power"></i>
-
-                                    </button>
-
+                                    </div>
                                 </td>
-
                             </tr>
                         }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8"
+                                class="empty-state">
+                                No document categories found.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
 
-                    </tbody>
-
-                </table>
-
-            </div>
+            </table>
 
         </div>
 
     </div>
 
 </div>
-
-<!-- Bootstrap Modal -->
 
 <div class="modal fade"
      id="categoryModal"
@@ -254,7 +172,7 @@
         <div class="modal-content">
 
             @await Html.PartialAsync("_CreateEditModal",
-                     new AryamanBMS.Models.CompanyDocumentCategoryModel())
+            new AryamanBMS.Models.CompanyDocumentCategoryModel())
 
         </div>
 
@@ -267,154 +185,57 @@
     <partial name="_ValidationScriptsPartial" />
 
     <script>
-
-        //----------------------------------------------------
-        // Open Create
-        //----------------------------------------------------
-
         function openCreate() {
-
             $("#modalTitle").text("Add Company Document Category");
-
             $("#categoryForm")[0].reset();
-
             $("#DocumentCategoryId").val(0);
-
+            $("#IsActive").prop("checked", true);
             $("#categoryModal").modal("show");
         }
 
-
-        //----------------------------------------------------
-        // Open Edit
-        //----------------------------------------------------
-
         function openEdit(id) {
+            $.get('/CompanyDocumentCategory/Get/' + id, function (data) {
+                $("#modalTitle").text("Edit Company Document Category");
 
-            $.get('/CompanyDocumentCategory/Get/' + id,
+                $("#DocumentCategoryId").val(data.documentCategoryId);
+                $("#CategoryCode").val(data.categoryCode);
+                $("#CategoryName").val(data.categoryName);
+                $("#Description").val(data.description);
+                $("#DisplayOrder").val(data.displayOrder);
+                $("#ExpiryReminderDays").val(data.expiryReminderDays);
+                $("#AllowedExtensions").val(data.allowedExtensions);
+                $("#MaxFileSizeMB").val(data.maxFileSizeMB);
 
-                function (data) {
+                $("#IsMandatory").prop("checked", data.isMandatory);
+                $("#HasExpiry").prop("checked", data.hasExpiry);
+                $("#RequireDocumentNumber").prop("checked", data.requireDocumentNumber);
+                $("#AllowMultipleDocuments").prop("checked", data.allowMultipleDocuments);
+                $("#IsActive").prop("checked", data.isActive);
 
-                    $("#modalTitle")
-                        .text("Edit Company Document Category");
-
-                    $("#DocumentCategoryId")
-                        .val(data.documentCategoryId);
-
-                    $("#CategoryCode")
-                        .val(data.categoryCode);
-
-                    $("#CategoryName")
-                        .val(data.categoryName);
-
-                    $("#Description")
-                        .val(data.description);
-
-                    $("#DisplayOrder")
-                        .val(data.displayOrder);
-
-                    $("#ExpiryReminderDays")
-                        .val(data.expiryReminderDays);
-
-                    $("#AllowedExtensions")
-                        .val(data.allowedExtensions);
-
-                    $("#MaxFileSizeMB")
-                        .val(data.maxFileSizeMB);
-
-                    $("#IsMandatory")
-                        .prop("checked", data.isMandatory);
-
-                    $("#HasExpiry")
-                        .prop("checked", data.hasExpiry);
-
-                    $("#RequireDocumentNumber")
-                        .prop("checked",
-                            data.requireDocumentNumber);
-
-                    $("#AllowMultipleDocuments")
-                        .prop("checked",
-                            data.allowMultipleDocuments);
-
-                    $("#IsActive")
-                        .prop("checked", data.isActive);
-
-                    $("#categoryModal").modal("show");
-
-                });
-
+                $("#categoryModal").modal("show");
+            });
         }
 
+            function deleteCategory(id) {
+            if (!confirm("Do you want to change this category status?")) {
+                return;
+            }
 
-        //----------------------------------------------------
-        // Delete
-        //----------------------------------------------------
-
-        function deleteCategory(id) {
-
-            Swal.fire({
-
-                title: 'Delete Category?',
-
-                text: 'This action cannot be undone.',
-
-                icon: 'warning',
-
-                showCancelButton: true,
-
-                confirmButtonText: 'Delete',
-
-                cancelButtonText: 'Cancel'
-
-            }).then((result) => {
-
-                if (result.isConfirmed) {
-
-                    var form = $('<form/>', {
-
-                        action: '/CompanyDocumentCategory/Delete',
-
-                        method: 'post'
-
-                    });
-
-                    form.append('@Html.AntiForgeryToken()');
-
-                    form.append($('<input/>', {
-
-                        type: 'hidden',
-
-                        name: 'id',
-
-                        value: id
-
-                    }));
-
-                    $('body').append(form);
-
-                    form.submit();
-
-                }
-
+            var form = $('<form/>', {
+                action: '/CompanyDocumentCategory/Delete',
+                method: 'post'
             });
 
+            form.append('@Html.AntiForgeryToken()');
+
+            form.append($('<input/>', {
+                type: 'hidden',
+                name: 'id',
+                value: id
+            }));
+
+            $('body').append(form);
+            form.submit();
         }
-
-
-        //----------------------------------------------------
-        // Toggle Active
-        //----------------------------------------------------
-
-        function toggleStatus(id) {
-
-            $.post('/CompanyDocumentCategory/ToggleStatus/' + id,
-
-                function () {
-
-                    location.reload();
-
-                });
-
-        }
-
     </script>
 }

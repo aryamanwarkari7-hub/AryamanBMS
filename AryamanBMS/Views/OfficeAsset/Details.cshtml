@@ -1,9 +1,18 @@
 @model AryamanBMS.Models.OfficeAssetModel
 
 @{
-    ViewData["Title"] = "Asset Details";
+    ViewData["Title"] = "Office Asset Details";
 
-    string StatusBadge(string status) => status switch
+    string StatusLabel(string value) => value switch
+    {
+        "InUse" => "In Use",
+        "UnderRepair" => "Under Repair",
+        "Disposed" => "Disposed",
+        "Idle" => "Idle",
+        _ => value
+    };
+
+    string StatusBadge(string value) => value switch
     {
         "InUse" => "badge-success",
         "Idle" => "badge-secondary",
@@ -11,108 +20,212 @@
         "Disposed" => "badge-danger",
         _ => "badge-secondary"
     };
-
-    string StatusLabel(string status) => status == "UnderRepair" ? "Under Repair" : status;
 }
 
-<div class="module-content">
+<div class="module-header">
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-            <h3 class="mb-0">
-                <i class="bi bi-box-seames-stacked text-primary"></i>
-                Asset Details
-            </h3>
-            <small class="card-subtitle">
-                <span class="@StatusBadge(Model.Status)">@StatusLabel(Model.Status)</span>
-            </small>
-        </div>
-        <div class="d-flex gap-2">
-            <a asp-action="Edit" asp-route-id="@Model.OfficeAssetId" class="btn-app btn-secondary-app">
-                <i class="bi bi-pencil-square"></i> Edit
-            </a>
-            <a asp-action="Index" class="btn-app btn-secondary-app">
-                <i class="bi bi-arrow-left"></i> Back
-            </a>
-        </div>
+    <div>
+        <h1 class="module-title">Office Asset Details</h1>
+        <p class="module-subtitle">
+            <span class="badge-secondary">
+                @(string.IsNullOrWhiteSpace(Model.AssetCode) ? "No Asset Code" : Model.AssetCode)
+            </span>
+        </p>
     </div>
 
-    <div class="row">
+    <div class="module-header-actions">
 
-        <div class="col-md-8">
-            <div class="app-card">
-                <div class="card-header"><strong>Asset Information</strong></div>
-                <div class="card-body">
+        <a asp-action="Edit"
+           asp-route-id="@Model.OfficeAssetId"
+           class="btn-app btn-icon btn-primary-app"
+           title="Edit">
+            <i class="bi bi-pencil"></i>
+        </a>
 
-                    <div class="mb-3">
-                        <label class="fw-bold">Asset Name</label>
-                        <div class="fs-5">@Model.AssetName</div>
-                    </div>
+        <a asp-action="Index"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
 
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="fw-bold">Category</label>
-                            <div>@Model.AssetCategory</div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="fw-bold">Asset Code</label>
-                            <div>@(Model.AssetCode ?? "-")</div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="fw-bold">Financial Year</label>
-                            <div>@Model.FinancialYear</div>
-                        </div>
-                    </div>
+    </div>
 
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="fw-bold">Purchase Date</label>
-                            <div>@Model.PurchaseDate.ToString("dd-MMM-yyyy")</div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="fw-bold">Purchase Value</label>
-                            <div class="fs-5 fw-bold text-success">₹ @Model.PurchaseValue.ToString("N0")</div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="fw-bold">Vendor</label>
-                            <div>@(Model.VendorName ?? "-")</div>
-                        </div>
-                    </div>
+</div>
 
-                    <div class="mb-3">
-                        <label class="fw-bold">Assigned To</label>
-                        <div>@(Model.AssignedTo ?? "Unassigned")</div>
-                    </div>
+<div class="app-card">
 
-                    <div class="mb-2">
-                        <label class="fw-bold">Remarks</label>
-                        <div class="border rounded p-3 bg-light">
-                            @(string.IsNullOrWhiteSpace(Model.Remarks) ? "No remarks" : Model.Remarks)
-                        </div>
-                    </div>
+    <div class="card-header">
+        <h5 class="card-title">Asset Information</h5>
+    </div>
 
+    <div class="card-body">
+
+        <div class="form-grid-2">
+
+            <div class="form-group">
+                <label class="form-label">Asset Name</label>
+                <div>@Model.AssetName</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Asset Category</label>
+                <div>@Model.AssetCategory</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Asset Code</label>
+                <div>@(Model.AssetCode ?? "-")</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Asset Status</label>
+                <div>
+                    <span class="@StatusBadge(Model.Status)">
+                        @StatusLabel(Model.Status)
+                    </span>
                 </div>
             </div>
+
         </div>
 
-        <div class="col-md-4">
-            <div class="app-card">
-                <div class="card-header"><strong>Status &amp; Audit</strong></div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <label class="fw-bold">Status</label>
-                        <div><span class="@StatusBadge(Model.Status) fs-6">@StatusLabel(Model.Status)</span></div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="fw-bold">Created On</label>
-                        <div>@Model.CreatedOn.ToString("dd-MMM-yyyy hh:mm tt")</div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="fw-bold">Last Updated</label>
-                        <div>@(Model.UpdatedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")</div>
-                    </div>
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Purchase Information</h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-2">
+
+            <div class="form-group">
+                <label class="form-label">Purchase Date</label>
+                <div>@Model.PurchaseDate.ToString("dd-MMM-yyyy")</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Purchase Value</label>
+                <div>INR @Model.PurchaseValue.ToString("N2")</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Vendor Name</label>
+                <div>@(Model.VendorName ?? "-")</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Financial Year</label>
+                <div>@Model.FinancialYear</div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Assignment & Remarks</h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-2">
+
+            <div class="form-group">
+                <label class="form-label">Assigned To</label>
+                <div>@(Model.AssignedTo ?? "-")</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Record Status</label>
+                <div>
+                    @if (Model.IsActive)
+                    {
+                        <span class="badge-success">Active</span>
+                    }
+                    else
+                    {
+                        <span class="badge-danger">Archived</span>
+                    }
                 </div>
             </div>
+
+        </div>
+
+        <div class="form-group mt-3">
+            <label class="form-label">Remarks</label>
+            <div>@(string.IsNullOrWhiteSpace(Model.Remarks) ? "-" : Model.Remarks)</div>
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Audit Information</h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-2">
+
+            <div class="form-group">
+                <label class="form-label">Created On</label>
+                <div>@Model.CreatedOn.ToString("dd-MMM-yyyy hh:mm tt")</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Last Updated</label>
+                <div>@(Model.UpdatedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")</div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-body">
+
+        <div class="table-actions">
+
+            <a asp-action="Edit"
+               asp-route-id="@Model.OfficeAssetId"
+               class="btn-app btn-icon btn-primary-app"
+               title="Edit">
+                <i class="bi bi-pencil"></i>
+            </a>
+
+            <form asp-action="Delete"
+                  asp-route-id="@Model.OfficeAssetId"
+                  method="post"
+                  class="d-inline">
+                @Html.AntiForgeryToken()
+
+                <button type="submit"
+                        class="btn-app @(Model.IsActive ? "btn-danger-app" : "btn-success-app")"
+                        onclick="return confirm('@(Model.IsActive ? "Archive this asset?" : "Activate this asset?")')">
+                    <i class="bi @(Model.IsActive ? "bi-archive" : "bi-arrow-clockwise")"></i>
+                    @(Model.IsActive ? "Archive Asset" : "Activate Asset")
+                </button>
+            </form>
+
+            <a asp-action="Index"
+               class="btn-app btn-secondary-app">
+                Cancel
+            </a>
+
         </div>
 
     </div>

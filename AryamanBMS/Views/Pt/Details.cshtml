@@ -2,246 +2,436 @@
 
 @{
     ViewData["Title"] = "PT Snapshot Details";
-    var monthName = System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(Model.Month);
+
+    string monthName =
+        System.Globalization.CultureInfo.CurrentCulture
+            .DateTimeFormat
+            .GetMonthName(Model.Month);
+
+    string statusBadgeClass =
+        Model.Status switch
+        {
+            FinancialConstants.StatutoryStatus.Paid => "badge-success",
+            FinancialConstants.StatutoryStatus.Filed => "badge-info",
+            _ => "badge-warning"
+        };
 }
 
-<div class="module-content">
+<div class="module-header">
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-            <h3 class="mb-0">
-                <i class="bi bi-bank text-primary"></i>
-                PT Snapshot — @monthName @Model.Year
-            </h3>
-            <small class="card-subtitle">FY @Model.FinancialYear</small>
-        </div>
-        <a asp-action="Index" class="btn-app btn-secondary-app">
-            <i class="bi bi-arrow-left"></i> Back
+    <div>
+        <h1 class="module-title">PT Snapshot Details</h1>
+        <p class="module-subtitle">
+            @monthName @Model.Year | FY @Model.FinancialYear
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="Index"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
         </a>
     </div>
 
-    @if (TempData["Success"] != null)
-    {
-        <div class="app-alert-success">
-            @TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
+</div>
 
-    @if (TempData["Error"] != null)
-    {
-        <div class="app-alert-danger">
-            @TempData["Error"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
 
-    <!-- Summary Card -->
-    <div class="app-card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <strong>Liability Summary</strong>
-            @{
-                var badgeClass = Model.Status switch
-                {
-                    "Paid" => "badge-success",
-                    "Filed" => "badge-info",
-                    _ => "badge-warning"
-                };
-            }
-            <span class="@badgeClass">@Model.Status</span>
+
+<div class="app-card form-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Liability Summary</h2>
+            <p class="card-subtitle">
+                PT liability generated from salary records.
+            </p>
         </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-4 mb-3">
-                    <label class="text-muted small">Employee Count</label>
-                    <p class="fw-bold mb-0">@Model.EmployeeCount</p>
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label class="text-muted small">Financial Year</label>
-                    <p class="fw-bold mb-0">@Model.FinancialYear</p>
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label class="text-muted small">Total Payable</label>
-                    <p class="fw-bold mb-0 text-danger">₹ @Model.TotalPayable.ToString("N2")</p>
-                </div>
+
+        <span class="@statusBadgeClass">
+            @Model.Status
+        </span>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-3">
+
+            <div class="form-group">
+                <label class="form-label">Employee Count</label>
+                <div>@Model.EmployeeCount</div>
             </div>
 
-            @if (Model.Status == "Pending")
+            <div class="form-group">
+                <label class="form-label">Financial Year</label>
+                <div>@Model.FinancialYear</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Total Payable</label>
+                <div><strong>INR @Model.TotalPayable.ToString("N2")</strong></div>
+            </div>
+
+        </div>
+
+        <div class="form-actions">
+
+            @if (Model.Status == FinancialConstants.StatutoryStatus.Pending)
             {
-                <form asp-action="MarkFiled" asp-route-id="@Model.PtSnapshotId" method="post" class="d-inline">
-                    <button type="submit" class="btn-app btn-icon btn-primary-app">
-                        <i class="bi bi-flag"></i> Mark as Filed
+                <form asp-action="MarkFiled"
+                      asp-route-id="@Model.PtSnapshotId"
+                      method="post">
+                    <button type="submit"
+                            class="btn-app btn-primary-app">
+                        <i class="bi bi-flag"></i>
+                        Mark as Filed
                     </button>
                 </form>
             }
-            @if (Model.Status == "Filed")
+
+            @if (Model.Status == FinancialConstants.StatutoryStatus.Filed)
             {
-                <form asp-action="MarkPaid" asp-route-id="@Model.PtSnapshotId" method="post" class="d-inline">
-                    <button type="submit" class="btn-app btn-icon btn-success-app">
-                        <i class="bi bi-check-circle"></i> Mark as Paid
+                <form asp-action="MarkPaid"
+                      asp-route-id="@Model.PtSnapshotId"
+                      method="post">
+                    <button type="submit"
+                            class="btn-app btn-success-app">
+                        <i class="bi bi-check-circle"></i>
+                        Mark as Paid
                     </button>
                 </form>
             }
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Challan Details</h2>
+            <p class="card-subtitle">
+                Record PT challan payment information.
+            </p>
         </div>
     </div>
 
-    <div class="row">
+    <div class="card-body">
 
-        <!-- Challan Section -->
-        <div class="col-lg-6 mb-4">
-            <div class="app-card">
-                <div class="card-header">
-                    <strong>Challan Details</strong>
-                </div>
-                <div class="card-body">
+        <div class="table-responsive">
 
+            <table class="app-table">
+
+                <thead>
+                    <tr>
+                        <th>Challan No.</th>
+                        <th>Payment Date</th>
+                        <th>Bank</th>
+                        <th>Mode</th>
+                        <th class="text-end">Amount Paid</th>
+                        <th class="text-end">Interest</th>
+                        <th class="text-end">Late Fee</th>
+                        <th class="text-center">Status</th>
+                    </tr>
+                </thead>
+
+                <tbody>
                     @if (Model.Challans.Any())
                     {
-                        <table class="app-table">
-                            <thead >
-                                <tr>
-                                    <th>Challan No.</th>
-                                    <th>Payment Date</th>
-                                    <th class="text-end">Amount Paid</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var c in Model.Challans)
-                                {
-                                    <tr>
-                                        <td>@(c.ChallanNumber ?? "-")</td>
-                                        <td>@(c.PaymentDate?.ToString("dd-MMM-yyyy") ?? "-")</td>
-                                        <td class="text-end">@c.AmountPaid.ToString("N2")</td>
-                                        <td>@c.Status</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
+                        foreach (var challan in Model.Challans)
+                        {
+                            <tr>
+                                <td>@(challan.ChallanNumber ?? "-")</td>
+                                <td>@(challan.PaymentDate?.ToString("dd-MMM-yyyy") ?? "-")</td>
+                                <td>@(challan.BankName ?? "-")</td>
+                                <td>@(challan.PaymentMode ?? "-")</td>
+                                <td class="text-end">INR @challan.AmountPaid.ToString("N2")</td>
+                                <td class="text-end">INR @challan.InterestAmount.ToString("N2")</td>
+                                <td class="text-end">INR @challan.LateFee.ToString("N2")</td>
+                                <td class="text-center">
+                                    <span class="badge-success">@challan.Status</span>
+                                </td>
+                            </tr>
+                        }
                     }
                     else
                     {
-                        <p class="text-muted text-center py-3 mb-0">No challan recorded yet.</p>
+                        <tr>
+                            <td colspan="8"
+                                class="empty-state">
+                                No PT challan recorded yet.
+                            </td>
+                        </tr>
                     }
+                </tbody>
 
-                    <hr />
+            </table>
 
-                    <h6 class="text-muted small text-uppercase">Add Challan</h6>
-                    <form asp-action="AddChallan" method="post">
-                        <input type="hidden" name="PtSnapshotId" value="@Model.PtSnapshotId" />
+        </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label small">Challan Number</label>
-                                <input type="text" name="ChallanNumber" class="app-input" />
-                            </div>
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label small">Payment Date</label>
-                                <input type="date" name="PaymentDate" class="app-input" />
-                            </div>
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label small">Bank Name</label>
-                                <input type="text" name="BankName" class="app-input" />
-                            </div>
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label small">Payment Mode</label>
-                                <input type="text" name="PaymentMode" class="app-input" placeholder="NEFT / Online" />
-                            </div>
-                            <div class="col-md-4 mb-2">
-                                <label class="form-label small">Amount Paid</label>
-                                <input type="number" step="0.01" name="AmountPaid" class="app-input" />
-                            </div>
-                            <div class="col-md-4 mb-2">
-                                <label class="form-label small">Interest</label>
-                                <input type="number" step="0.01" name="InterestAmount" class="app-input" value="0" />
-                            </div>
-                            <div class="col-md-4 mb-2">
-                                <label class="form-label small">Late Fee</label>
-                                <input type="number" step="0.01" name="LateFee" class="app-input" value="0" />
-                            </div>
-                            <div class="col-12 mb-2">
-                                <label class="form-label small">Remarks</label>
-                                <input type="text" name="Remarks" class="app-input" />
-                            </div>
-                        </div>
+    </div>
 
-                        <button type="submit" class="btn-app btn-primary-app">
-                            <i class="bi bi-plus-circle"></i> Add Challan
-                        </button>
-                    </form>
+</div>
 
-                </div>
+@if (Model.Status != FinancialConstants.StatutoryStatus.Paid)
+{
+    <div class="app-card form-card">
+
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Add Challan</h2>
+                <p class="card-subtitle">
+                    Add payment details before marking PT as paid.
+                </p>
             </div>
         </div>
 
-        <!-- Documents Section -->
-        <div class="col-lg-6 mb-4">
-            <div class="app-card">
-                <div class="card-header">
-                    <strong>Documents</strong>
-                </div>
-                <div class="card-body">
+        <div class="card-body">
 
+            <form asp-action="AddChallan"
+                  method="post">
+
+                <input type="hidden"
+                       name="PtSnapshotId"
+                       value="@Model.PtSnapshotId" />
+
+                <div class="form-grid-4">
+
+                    <div class="form-group">
+                        <label class="form-label">Challan Number</label>
+                        <input type="text"
+                               name="ChallanNumber"
+                               class="app-input" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Payment Date</label>
+                        <input type="date"
+                               name="PaymentDate"
+                               class="app-input" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Bank Name</label>
+                        <input type="text"
+                               name="BankName"
+                               class="app-input" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Payment Mode</label>
+                        <input type="text"
+                               name="PaymentMode"
+                               class="app-input"
+                               placeholder="NEFT / Online" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Amount Paid</label>
+                        <input type="number"
+                               step="0.01"
+                               name="AmountPaid"
+                               class="app-input" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Interest</label>
+                        <input type="number"
+                               step="0.01"
+                               name="InterestAmount"
+                               class="app-input"
+                               value="0" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Late Fee</label>
+                        <input type="number"
+                               step="0.01"
+                               name="LateFee"
+                               class="app-input"
+                               value="0" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Remarks</label>
+                        <input type="text"
+                               name="Remarks"
+                               class="app-input" />
+                    </div>
+
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit"
+                            class="btn-app btn-primary-app">
+                        <i class="bi bi-plus-circle"></i>
+                        Add Challan
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+}
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Documents</h2>
+            <p class="card-subtitle">
+                Upload PT challan, return or supporting documents.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        <div class="table-responsive">
+
+            <table class="app-table">
+
+                <thead>
+                    <tr>
+                        <th>Document Type</th>
+                        <th>File Name</th>
+                        <th>Remarks</th>
+                        <th>Uploaded On</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
                     @if (Model.Documents.Any())
                     {
-                        <ul class="list-group mb-3">
-                            @foreach (var doc in Model.Documents)
-                            {
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <span class="badge-secondary">@doc.DocumentType</span>
-                                        <a href="@Url.Content("~/" + doc.FilePath)" target="_blank">@doc.FileName</a>
+                        foreach (var document in Model.Documents)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="badge-secondary">
+                                        @document.DocumentType
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <a href="@Url.Content("~/" + document.FilePath)"
+                                       target="_blank">
+                                        @document.FileName
+                                    </a>
+                                </td>
+
+                                <td>@(document.Remarks ?? "-")</td>
+
+                                <td>@document.UploadedOn.ToString("dd-MMM-yyyy")</td>
+
+                                <td class="text-center">
+                                    <div class="table-actions">
+                                        <form asp-action="DeleteDocument"
+                                              method="post">
+                                            <input type="hidden"
+                                                   name="id"
+                                                   value="@document.PtDocumentId" />
+
+                                            <input type="hidden"
+                                                   name="snapshotId"
+                                                   value="@Model.PtSnapshotId" />
+
+                                            <button type="submit"
+                                                    class="btn-app btn-icon btn-danger-app"
+                                                    title="Delete"
+                                                    onclick="return confirm('Delete this document?');">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
                                     </div>
-                                    <form asp-action="DeleteDocument" method="post" class="d-inline">
-                                        <input type="hidden" name="id" value="@doc.PtDocumentId" />
-                                        <input type="hidden" name="snapshotId" value="@Model.PtSnapshotId" />
-                                        <button type="submit" class="btn-app btn-icon btn-danger-app"
-                                                onclick="return confirm('Delete this document?');">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
-                                </li>
-                            }
-                        </ul>
+                                </td>
+                            </tr>
+                        }
                     }
                     else
                     {
-                        <p class="text-muted text-center py-3">No documents uploaded yet.</p>
+                        <tr>
+                            <td colspan="5"
+                                class="empty-state">
+                                No PT documents uploaded yet.
+                            </td>
+                        </tr>
                     }
+                </tbody>
 
-                    <hr />
+            </table>
 
-                    <h6 class="text-muted small text-uppercase">Upload Document</h6>
-                    <form asp-action="UploadDocument" method="post" enctype="multipart/form-data">
-                        <input type="hidden" name="snapshotId" value="@Model.PtSnapshotId" />
-
-                        <div class="mb-2">
-                            <label class="form-label small">Document Type</label>
-                            <select name="documentType" class="app-select">
-                                <option value="Challan">Challan</option>
-                                <option value="Return">Return</option>
-                                <option value="Other">Other</option>
-                            </select>
-                        </div>
-
-                        <div class="mb-2">
-                            <label class="form-label small">File</label>
-                            <input type="file" name="file" class="app-input" required />
-                        </div>
-
-                        <div class="mb-2">
-                            <label class="form-label small">Remarks</label>
-                            <input type="text" name="remarks" class="app-input" />
-                        </div>
-
-                        <button type="submit" class="btn-app btn-icon btn-primary-app">
-                            <i class="bi bi-upload"></i> Upload
-                        </button>
-                    </form>
-
-                </div>
-            </div>
         </div>
+
+    </div>
+
+</div>
+
+<div class="app-card form-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Upload Document</h2>
+            <p class="card-subtitle">
+                Upload PT challan, return or related supporting file.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        <form asp-action="UploadDocument"
+              method="post"
+              enctype="multipart/form-data">
+
+            <input type="hidden"
+                   name="snapshotId"
+                   value="@Model.PtSnapshotId" />
+
+            <div class="form-grid-3">
+
+                <div class="form-group">
+                    <label class="form-label">Document Type</label>
+                    <select name="documentType"
+                            class="app-select">
+                        <option value="">Select Document Type</option>
+                        <option value="Challan">Challan</option>
+                        <option value="Return">Return</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">File</label>
+                    <input type="file"
+                           name="file"
+                           class="app-input"
+                           required />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Remarks</label>
+                    <input type="text"
+                           name="remarks"
+                           class="app-input" />
+                </div>
+
+            </div>
+
+            <div class="form-actions">
+                <button type="submit"
+                        class="btn-app btn-primary-app">
+                    <i class="bi bi-upload"></i>
+                    Upload
+                </button>
+            </div>
+
+        </form>
 
     </div>
 

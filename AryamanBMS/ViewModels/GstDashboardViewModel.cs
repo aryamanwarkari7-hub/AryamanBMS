@@ -8,6 +8,8 @@
 
         public string FinancialYear { get; set; } = "";
 
+        public string SnapshotStatus { get; set; } = "Pending";
+
         public decimal SalesTaxable { get; set; }
 
         public decimal OutputGST { get; set; }

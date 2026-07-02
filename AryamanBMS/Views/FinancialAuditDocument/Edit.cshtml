@@ -1,122 +1,120 @@
 @model AryamanBMS.Models.FinancialAuditDocumentModel
 
 @{
-    ViewData["Title"] = "Edit Document";
+    ViewData["Title"] = "Upload Audit Document";
 }
 
-<div class="module-content">
+<div class="module-header">
+    <div>
+        <h1 class="module-title">UPLOAD AUDIT DOCUMENT</h1>
+        <p class="module-subtitle">
+            Upload bank statements, audit reports, CA documents and CS records.
+        </p>
+    </div>
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-            <h3 class="mb-0">
-                <i class="bi bi-pencil-square text-warning"></i>
-                Edit Document
-            </h3>
-            <small class="card-subtitle">@Model.FileName</small>
+    <div class="module-header-actions">
+        <a asp-action="Index" class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
+</div>
+
+<form asp-action="Create"
+      method="post"
+      enctype="multipart/form-data">
+
+    @Html.AntiForgeryToken()
+
+    <div asp-validation-summary="ModelOnly" class="app-alert-danger"></div>
+
+    <div class="app-card form-card">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Document Details</h2>
+                <p class="card-subtitle">
+                    Enter audit document details and select file to upload.
+                </p>
+            </div>
         </div>
-        <div>
-            <a asp-action="Details" asp-route-id="@Model.FinancialAuditDocumentId" class="btn-app btn-primary-app">
-                <i class="bi bi-eye"></i> Details
-            </a>
-            <a asp-action="Index" class="btn-app btn-secondary-app">
-                <i class="bi bi-arrow-left"></i> Back
-            </a>
+
+        <div class="card-body">
+            <div class="form-grid-3">
+                <div class="form-group">
+                    <label asp-for="DocumentCategory" class="form-label">
+                        Category <span class="validation-message">*</span>
+                    </label>
+
+                    <select asp-for="DocumentCategory" class="app-select">
+                        <option value="">Select Category</option>
+                        <option value="BankStatement">Bank Statement</option>
+                        <option value="AuditReport">Audit Report</option>
+                        <option value="CADocument">CA Document</option>
+                        <option value="CSDocument">CS Document</option>
+                        <option value="Other">Other</option>
+                    </select>
+
+                    <span asp-validation-for="DocumentCategory" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="FinancialYear" class="form-label">
+                        Financial Year <span class="validation-message">*</span>
+                    </label>
+
+                    <input asp-for="FinancialYear"
+                           class="app-input"
+                           placeholder="Ex: 2026-27" />
+
+                    <span asp-validation-for="FinancialYear" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="uploadFile" class="form-label">
+                        File <span class="validation-message">*</span>
+                    </label>
+
+                    <input type="file"
+                           id="uploadFile"
+                           name="uploadFile"
+                           class="app-input"
+                           accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                           required />
+
+                    <p class="card-subtitle">
+                        PDF, Word, Excel or image files.
+                    </p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Remarks" class="form-label">Remarks</label>
+
+                <textarea asp-for="Remarks"
+                          class="app-input"
+                          rows="4"
+                          placeholder="Optional notes about this document"></textarea>
+
+                <span asp-validation-for="Remarks" class="validation-message"></span>
+            </div>
         </div>
     </div>
 
     <div class="app-card">
+        <div class="card-body form-actions">
+            <button type="submit" class="btn-app btn-primary-app">
+                <i class="bi bi-check-circle"></i>
+                Upload Document
+            </button>
 
-        <div class="card-header">
-            <strong>Document Details</strong>
+            <a asp-action="Index" class="btn-app btn-secondary-app">
+                Cancel
+            </a>
         </div>
-
-        <div class="card-body">
-            <form asp-action="Edit" asp-route-id="@Model.FinancialAuditDocumentId"
-                  method="post" enctype="multipart/form-data">
-                @Html.AntiForgeryToken()
-                <input asp-for="FinancialAuditDocumentId" type="hidden" />
-
-                <div asp-validation-summary="ModelOnly" class="app-alert-danger"></div>
-
-                <div class="row">
-
-                    <!-- Category -->
-                    <div class="col-md-4 mb-3">
-                        <label asp-for="DocumentCategory" class="form-label">
-                            Category <span class="validation-message">*</span>
-                        </label>
-                        <select asp-for="DocumentCategory" class="app-select">
-                            <option value="">-- Select Category --</option>
-                            <option value="BankStatement">Bank Statement</option>
-                            <option value="AuditReport">Audit Report</option>
-                            <option value="CADocument">CA Document</option>
-                            <option value="CSDocument">CS Document</option>
-                            <option value="Other">Other</option>
-                        </select>
-                        <span asp-validation-for="DocumentCategory" class="validation-message"></span>
-                    </div>
-
-                    <!-- Financial Year -->
-                    <div class="col-md-4 mb-3">
-                        <label asp-for="FinancialYear" class="form-label">
-                            Financial Year <span class="validation-message">*</span>
-                        </label>
-                        <input asp-for="FinancialYear" class="app-input" />
-                        <span asp-validation-for="FinancialYear" class="validation-message"></span>
-                    </div>
-
-                    <!-- Replace File -->
-                    <div class="col-md-4 mb-3">
-                        <label for="uploadFile" class="form-label">Replace File</label>
-                        <input type="file" id="uploadFile" name="uploadFile" class="app-input"
-                               accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" />
-                        <small class="card-subtitle">Leave empty to keep current file</small>
-                    </div>
-
-                </div>
-
-                <div class="row">
-
-                    <!-- Remarks -->
-                    <div class="col-md-12 mb-3">
-                        <label asp-for="Remarks" class="form-label">Remarks</label>
-                        <textarea asp-for="Remarks" class="app-input" rows="2"></textarea>
-                        <span asp-validation-for="Remarks" class="validation-message"></span>
-                    </div>
-
-                </div>
-
-                <div class="app-alert-info">
-                    <div class="row align-items-center">
-                        <div class="col-md-8">
-                            <i class="bi bi-file-earmark-text"></i>
-                            <strong>Current File:</strong> @Model.FileName
-                        </div>
-                        <div class="col-md-4 text-end">
-                            <a asp-action="Download" asp-route-id="@Model.FinancialAuditDocumentId"
-                               class="btn-app btn-icon btn-success-app">
-                                <i class="bi bi-download"></i> Download
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <hr />
-
-                <div class="d-flex gap-2">
-                    <button type="submit" class="btn-app btn-secondary-app">
-                        <i class="bi bi-check-circle"></i> Update Document
-                    </button>
-                    <a asp-action="Index" class="btn-app btn-secondary-app">Cancel</a>
-                </div>
-
-            </form>
-        </div>
-
     </div>
+</form>
 
-</div>
-
-@section Scripts {
+@section Scripts
+{
     <partial name="_ValidationScriptsPartial" />
 }

@@ -149,12 +149,14 @@ namespace AryamanBMS.Services
                             x.Year == year);
 
                     if (existingSalary != null &&
-                     string.Equals(
-                         existingSalary.PaymentStatus,
-                         "Paid",
-                         StringComparison.OrdinalIgnoreCase))
+                      string.Equals(
+                          existingSalary.PaymentStatus,
+                          "Paid",
+                          StringComparison.OrdinalIgnoreCase))
                     {
-                        result.SkippedPaidCount++;
+                        result.Errors.Add(
+                            $"Row {row} ({employeeCode}): Salary is already marked as Paid. Reverse/unmark payment before re-importing.");
+
                         continue;
                     }
 

@@ -2,301 +2,209 @@
 
 @{
     ViewData["Title"] = "Company Document Details";
+
+    string expiryStatus = "No Expiry";
+    string expiryBadge = "badge-secondary";
+
+    if (Model.ExpiryDate.HasValue)
+    {
+        if (Model.ExpiryDate.Value < DateTime.Today)
+        {
+            expiryStatus = "Expired";
+            expiryBadge = "badge-danger";
+        }
+        else if (Model.ExpiryDate.Value <= DateTime.Today.AddDays(30))
+        {
+            expiryStatus = "Expiring Soon";
+            expiryBadge = "badge-warning";
+        }
+        else
+        {
+            expiryStatus = "Valid";
+            expiryBadge = "badge-success";
+        }
+    }
 }
 
-<div class="module-content">
+<div class="module-header">
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="module-title">COMPANY DOCUMENT DETAILS</h1>
+        <p class="module-subtitle">
+            View document information, validity and uploaded file details.
+        </p>
+    </div>
 
+    <div class="module-header-actions">
+
+        <a asp-action="Edit"
+           asp-route-id="@Model.CompanyDocumentId"
+           class="btn-app btn-primary-app">
+            <i class="bi bi-pencil"></i>
+            Edit
+        </a>
+
+        <a asp-action="Index"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
         <div>
-
-            <h3>
-                <i class="bi bi-file-earmark-text-lines text-primary"></i>
-                Company Document Details
-            </h3>
-
-            <small class="card-subtitle">
-                View Company Document Information
-            </small>
-
+            <h2 class="card-title">Document Information</h2>
+            <p class="card-subtitle">
+                Core document and compliance details.
+            </p>
         </div>
+    </div>
 
-        <div>
+    <div class="card-body">
 
-            <a asp-action="Edit"
-               asp-route-id="@Model.CompanyDocumentId"
-               class="btn-app btn-secondary-app">
+        <div class="form-grid-2">
 
-                <i class="bi bi-pencil-square"></i>
+            <div class="form-group">
+                <label class="form-label">Category</label>
+                <strong>@(Model.Category?.CategoryName ?? "-")</strong>
+            </div>
 
-                Edit
+            <div class="form-group">
+                <label class="form-label">Document Name</label>
+                <strong>@Model.DocumentName</strong>
+            </div>
 
-            </a>
+            <div class="form-group">
+                <label class="form-label">Document Number</label>
+                <strong>@(string.IsNullOrWhiteSpace(Model.DocumentNumber) ? "-" : Model.DocumentNumber)</strong>
+            </div>
 
-            <a asp-action="Index"
-               class="btn-app btn-secondary-app">
+            <div class="form-group">
+                <label class="form-label">Issued By</label>
+                <strong>@(string.IsNullOrWhiteSpace(Model.IssuedBy) ? "-" : Model.IssuedBy)</strong>
+            </div>
 
-                <i class="bi bi-arrow-left"></i>
+            <div class="form-group">
+                <label class="form-label">Issue Date</label>
+                <strong>@(Model.IssueDate?.ToString("dd-MMM-yyyy") ?? "-")</strong>
+            </div>
 
-                Back
+            <div class="form-group">
+                <label class="form-label">Expiry Date</label>
+                <div>
+                    <span class="@expiryBadge">@expiryStatus</span>
+                    <strong>
+                        @(Model.ExpiryDate?.ToString("dd-MMM-yyyy") ?? "-")
+                    </strong>
+                </div>
+            </div>
 
-            </a>
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                @if (Model.IsActive)
+                {
+                    <span class="badge-success">Active</span>
+                }
+                else
+                {
+                    <span class="badge-secondary">Archived</span>
+                }
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Version</label>
+                <strong>@Model.VersionNo</strong>
+            </div>
 
         </div>
 
     </div>
 
-    <div class="app-card">
+</div>
 
-        <div class="card-header">
+<div class="app-card">
 
-            <strong>
-
-                Document Information
-
-            </strong>
-
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Uploaded File</h2>
+            <p class="card-subtitle">
+                Stored file information and download action.
+            </p>
         </div>
+    </div>
 
-        <div class="card-body">
+    <div class="card-body">
 
-            <div class="row">
+        <div class="form-grid-2">
 
-                <div class="col-md-6 mb-3">
-
-                    <label class="fw-bold">
-                        Category
-                    </label>
-
-                    <div>
-                        @Model.Category?.CategoryName
-                    </div>
-
-                </div>
-
-                <div class="col-md-6 mb-3">
-
-                    <label class="fw-bold">
-                        Document Name
-                    </label>
-
-                    <div>
-                        @Model.DocumentName
-                    </div>
-
-                </div>
-
+            <div class="form-group">
+                <label class="form-label">File Name</label>
+                <strong>@(string.IsNullOrWhiteSpace(Model.FileName) ? "-" : Model.FileName)</strong>
             </div>
 
-            <div class="row">
-
-                <div class="col-md-6 mb-3">
-
-                    <label class="fw-bold">
-                        Document Number
-                    </label>
-
-                    <div>
-                        @(string.IsNullOrWhiteSpace(Model.DocumentNumber)
-                            ? "-"
-                            : Model.DocumentNumber)
-                    </div>
-
-                </div>
-
-                <div class="col-md-6 mb-3">
-
-                    <label class="fw-bold">
-                        Issued By
-                    </label>
-
-                    <div>
-                        @(string.IsNullOrWhiteSpace(Model.IssuedBy)
-                            ? "-"
-                            : Model.IssuedBy)
-                    </div>
-
-                </div>
-
+            <div class="form-group">
+                <label class="form-label">File Size</label>
+                <strong>@(Math.Round(Model.FileSize / 1024.0, 2)) KB</strong>
             </div>
 
-            <div class="row">
-
-                <div class="col-md-6 mb-3">
-
-                    <label class="fw-bold">
-                        Issue Date
-                    </label>
-
-                    <div>
-                        @(Model.IssueDate?.ToString("dd-MMM-yyyy") ?? "-")
-                    </div>
-
-                </div>
-
-                <div class="col-md-6 mb-3">
-
-                    <label class="fw-bold">
-                        Expiry Date
-                    </label>
-
-                    <div>
-
-                        @if (Model.ExpiryDate.HasValue)
-                        {
-                            if (Model.ExpiryDate.Value < DateTime.Today)
-                            {
-                                <span class="badge-danger">
-                                    Expired
-                                </span>
-
-                                <span>
-                                    @Model.ExpiryDate.Value.ToString("dd-MMM-yyyy")
-                                </span>
-                            }
-                            else if (Model.ExpiryDate.Value <= DateTime.Today.AddDays(30))
-                            {
-                                <span class="badge-warning">
-                                    Expiring Soon
-                                </span>
-
-                                <span>
-                                    @Model.ExpiryDate.Value.ToString("dd-MMM-yyyy")
-                                </span>
-                            }
-                            else
-                            {
-                                <span class="badge-success">
-                                    Valid
-                                </span>
-
-                                <span>
-                                    @Model.ExpiryDate.Value.ToString("dd-MMM-yyyy")
-                                </span>
-                            }
-                        }
-                        else
-                        {
-                            <span>-</span>
-                        }
-
-                    </div>
-
-                </div>
-
+            <div class="form-group">
+                <label class="form-label">Created On</label>
+                <strong>@Model.CreatedOn.ToString("dd-MMM-yyyy hh:mm tt")</strong>
             </div>
 
-            <div class="row">
-
-                <div class="col-md-6 mb-3">
-
-                    <label class="fw-bold">
-                        File Name
-                    </label>
-
-                    <div>
-                        @Model.FileName
-                    </div>
-
-                </div>
-
-                <div class="col-md-6 mb-3">
-
-                    <label class="fw-bold">
-                        File Size
-                    </label>
-
-                    <div>
-
-                        @(Math.Round(Model.FileSize / 1024.0, 2)) KB
-
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="row">
-
-                <div class="col-md-6 mb-3">
-
-                    <label class="fw-bold">
-                        Created On
-                    </label>
-
-                    <div>
-                        @Model.CreatedOn.ToString("dd-MMM-yyyy hh:mm tt")
-                    </div>
-
-                </div>
-
-                <div class="col-md-6 mb-3">
-
-                    <label class="fw-bold">
-                        Last Updated
-                    </label>
-
-                    <div>
-
-                        @(Model.UpdatedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")
-
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="mb-3">
-
-                <label class="fw-bold">
-                    Remarks
-                </label>
-
-                <div class="border rounded p-3 bg-light">
-
-                    @(string.IsNullOrWhiteSpace(Model.Remarks)
-                        ? "No Remarks"
-                        : Model.Remarks)
-
-                </div>
-
+            <div class="form-group">
+                <label class="form-label">Last Updated</label>
+                <strong>@(Model.UpdatedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")</strong>
             </div>
 
         </div>
 
-        <div class="card-footer bg-white">
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Remarks</h2>
+            <p class="card-subtitle">
+                Additional notes or compliance reference.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+        @(string.IsNullOrWhiteSpace(Model.Remarks) ? "No remarks added." : Model.Remarks)
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-body form-actions">
+
+        @if (Model.IsActive)
+        {
             <a asp-action="Download"
                asp-route-id="@Model.CompanyDocumentId"
                class="btn-app btn-success-app">
-
                 <i class="bi bi-download"></i>
-
                 Download
-
             </a>
+        }
 
-            <a asp-action="Edit"
-               asp-route-id="@Model.CompanyDocumentId"
-               class="btn-app btn-secondary-app">
-
-                <i class="bi bi-pencil-square"></i>
-
-                Edit
-
-            </a>
-
-            <a asp-action="Delete"
-               asp-route-id="@Model.CompanyDocumentId"
-               class="btn-app btn-danger-app"
-               onclick="return confirm('Delete this document?');">
-
-                <i class="bi bi-trash"></i>
-
-                Delete
-
-            </a>
-
-        </div>
+        <a asp-action="Edit"
+           asp-route-id="@Model.CompanyDocumentId"
+           class="btn-app btn-primary-app">
+            <i class="bi bi-pencil"></i>
+            Edit
+        </a>
 
     </div>
 

@@ -1,0 +1,117 @@
+﻿@model AryamanBMS.Models.NoticeModel
+
+@{
+    ViewData["Title"] = "Delete Notice";
+
+    string statusBadgeClass =
+        Model.Status switch
+        {
+            FinancialConstants.NoticeStatus.Open => "badge-warning",
+            FinancialConstants.NoticeStatus.Replied => "badge-info",
+            FinancialConstants.NoticeStatus.Closed => "badge-success",
+            FinancialConstants.NoticeStatus.Escalated => "badge-danger",
+            _ => "badge-secondary"
+        };
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Delete Notice</h1>
+        <p class="module-subtitle">
+            Confirm deletion of this statutory notice.
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="Index"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
+
+</div>
+
+<div class="app-alert-danger">
+    This action will permanently delete this notice and its linked record. Continue only if this entry was created by mistake.
+</div>
+
+<div class="app-card form-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">@Model.Subject</h2>
+            <p class="card-subtitle">
+                @(string.IsNullOrWhiteSpace(Model.NoticeNumber) ? "No notice number" : Model.NoticeNumber)
+            </p>
+        </div>
+
+        <span class="@statusBadgeClass">
+            @Model.Status
+        </span>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-3">
+
+            <div class="form-group">
+                <label class="form-label">Department</label>
+                <div>@Model.Department</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Notice Date</label>
+                <div>@Model.NoticeDate.ToString("dd-MMM-yyyy")</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Received Date</label>
+                <div>@Model.ReceivedDate.ToString("dd-MMM-yyyy")</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Due Date</label>
+                <div>@(Model.DueDate?.ToString("dd-MMM-yyyy") ?? "-")</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Reply Date</label>
+                <div>@(Model.ReplyDate?.ToString("dd-MMM-yyyy") ?? "-")</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Documents</label>
+                <div>@(Model.Documents?.Count ?? 0)</div>
+            </div>
+
+        </div>
+
+        <form asp-action="Delete"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <input type="hidden"
+                   asp-for="NoticeId" />
+
+            <div class="form-actions">
+                <button type="submit"
+                        class="btn-app btn-danger-app">
+                    <i class="bi bi-trash"></i>
+                    Delete Notice
+                </button>
+
+                <a asp-action="Details"
+                   asp-route-id="@Model.NoticeId"
+                   class="btn-app btn-secondary-app">
+                    Cancel
+                </a>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>

@@ -2,13 +2,21 @@
 
 @{
     ViewData["Title"] = "PF Records";
+
+    string StatusBadge(string status) => status switch
+    {
+        "Paid" => "badge-success",
+        "Filed" => "badge-info",
+        "Pending" => "badge-warning",
+        _ => "badge-secondary"
+    };
 }
 
 <div class="module-header">
     <div>
         <h1 class="module-title">PF Records</h1>
         <p class="module-subtitle">
-            Monthly Provident Fund liability and challan tracking
+            Monthly Provident Fund liability and challan tracking.
         </p>
     </div>
 
@@ -20,85 +28,120 @@
     </div>
 </div>
 
-<div>
+<div class="dashboard-grid">
 
-    @if (TempData["Success"] != null)
-    {
-        <div class="app-alert-success">
-            @TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    <div class="stats-card">
+        <div class="stats-label">Total Snapshots</div>
+        <div class="stats-number">@Model.Count</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Pending</div>
+        <div class="stats-number">@Model.Count(x => x.Status == "Pending")</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Filed</div>
+        <div class="stats-number">@Model.Count(x => x.Status == "Filed")</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Paid</div>
+        <div class="stats-number">@Model.Count(x => x.Status == "Paid")</div>
+    </div>
+
+</div>
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">PF Snapshot Register</h2>
+            <p class="card-subtitle">
+                Review generated monthly PF liability snapshots.
+            </p>
         </div>
-    }
+    </div>
 
-    @if (TempData["Error"] != null)
-    {
-        <div class="app-alert-danger">
-            @TempData["Error"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
+    <div class="card-body">
 
-    <div class="app-card">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="app-table">
-                    <thead >
-                        <tr>
-                            <th>Period</th>
-                            <th>Financial Year</th>
-                            <th class="text-end">Employee Count</th>
-                            <th class="text-end">Employee Deduction</th>
-                            <th class="text-end">Employer Contribution</th>
-                            <th class="text-end">Total Payable</th>
-                            <th class="text-center">Status</th>
-                            <th class="text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (Model.Any())
-                        {
-                            @foreach (var item in Model)
-                            {
-                                <tr>
-                                    <td>@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(item.Month) @item.Year</td>
-                                    <td>@item.FinancialYear</td>
-                                    <td class="text-end">@item.EmployeeCount</td>
-                                    <td class="text-end">@item.EmployeeDeductionTotal.ToString("N2")</td>
-                                    <td class="text-end">@item.EmployerContributionTotal.ToString("N2")</td>
-                                    <td class="text-end fw-bold">@item.TotalPayable.ToString("N2")</td>
-                                    <td class="text-center">
-                                        @{
-                                            var badgeClass = item.Status switch
-                                            {
-                                                "Paid" => "badge-success",
-                                                "Filed" => "badge-info",
-                                                _ => "badge-warning"
-                                            };
-                                        }
-                                        <span class="@badgeClass">@item.Status</span>
-                                    </td>
-                                    <td class="text-center">
-                                        <a asp-action="Details" asp-route-id="@item.PfSnapshotId"
-                                           class="btn-app btn-icon btn-primary-app" title="Details">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                            }
-                        }
-                        else
+        <div class="table-responsive">
+
+            <table class="app-table">
+
+                <thead>
+                    <tr>
+                        <th>Period</th>
+                        <th>Financial Year</th>
+                        <th class="text-end">Employees</th>
+                        <th class="text-end">Employee Deduction</th>
+                        <th class="text-end">Employer Contribution</th>
+                        <th class="text-end">Total Payable</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        foreach (var item in Model)
                         {
                             <tr>
-                                <td colspan="8" class="text-center text-muted py-4">
-                                    <i class="bi bi-inbox fs-2 mb-2 d-block"></i>
-                                    No PF snapshots generated yet.
+                                <td>
+                                    @System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(item.Month)
+                                    @item.Year
+                                </td>
+
+                                <td>@item.FinancialYear</td>
+
+                                <td class="text-end">@item.EmployeeCount</td>
+
+                                <td class="text-end">
+                                    INR @item.EmployeeDeductionTotal.ToString("N2")
+                                </td>
+
+                                <td class="text-end">
+                                    INR @item.EmployerContributionTotal.ToString("N2")
+                                </td>
+
+                                <td class="text-end">
+                                    <strong>INR @item.TotalPayable.ToString("N2")</strong>
+                                </td>
+
+                                <td class="text-center">
+                                    <span class="@StatusBadge(item.Status)">
+                                        @item.Status
+                                    </span>
+                                </td>
+
+                                <td class="text-center">
+                                    <div class="table-actions">
+                                        <a asp-action="Details"
+                                           asp-route-id="@item.PfSnapshotId"
+                                           class="btn-app btn-icon btn-primary-app"
+                                           title="Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                         }
-                    </tbody>
-                </table>
-            </div>
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="empty-state">
+                                No PF snapshots generated yet.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+
+            </table>
+
         </div>
+
     </div>
 
 </div>

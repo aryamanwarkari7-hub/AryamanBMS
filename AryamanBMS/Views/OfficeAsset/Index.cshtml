@@ -1,12 +1,24 @@
 @model IEnumerable<AryamanBMS.Models.OfficeAssetModel>
 
 @{
-    ViewData["Title"] = "Office Asset Records";
-    var filterFY = ViewBag.FilterFinancialYear as string;
-    var filterCategory = ViewBag.FilterCategory as string;
-    var filterStatus = ViewBag.FilterStatus as string;
+    ViewData["Title"] = "Office Assets";
 
-    string StatusBadge(string status) => status switch
+    var assets = Model?.ToList() ?? new List<AryamanBMS.Models.OfficeAssetModel>();
+
+    string financialYear = ViewBag.FilterFinancialYear as string ?? "";
+    string category = ViewBag.FilterCategory as string ?? "";
+    string status = ViewBag.FilterStatus as string ?? "";
+
+    string StatusLabel(string value) => value switch
+    {
+        "InUse" => "In Use",
+        "UnderRepair" => "Under Repair",
+        "Disposed" => "Disposed",
+        "Idle" => "Idle",
+        _ => value
+    };
+
+    string StatusBadge(string value) => value switch
     {
         "InUse" => "badge-success",
         "Idle" => "badge-secondary",
@@ -14,148 +26,207 @@
         "Disposed" => "badge-danger",
         _ => "badge-secondary"
     };
-
-    string StatusLabel(string status) => status switch
-    {
-        "UnderRepair" => "Under Repair",
-        _ => status
-    };
 }
 
 <div class="module-header">
     <div>
-        <h1 class="module-title">Office Asset Records</h1>
-        <p class="module-subtitle">
-            Laptops, furniture, equipment and other office assets
-        </p>
+        <h1 class="module-title">OFFICE ASSETS</h1>
+        <p class="module-subtitle">Track office assets, assignment and asset status.</p>
     </div>
 
     <div class="module-header-actions">
         <a asp-action="Create" class="btn-app btn-primary-app">
-            <i class="bi bi-plus-circle"></i> Add Asset
+            <i class="bi bi-plus-circle"></i>
+            Add Asset
         </a>
     </div>
 </div>
 
-<div>
-
-    @if (TempData["Success"] != null)
-    {
-        <div class="app-alert-success">
-            @TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-    @if (TempData["Error"] != null)
-    {
-        <div class="app-alert-danger">
-            @TempData["Error"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-
-    <!-- Status filter tabs -->
-    <ul class="nav nav-pills mb-3 flex-wrap gap-1">
-        <li class="nav-item">
-            <a class="nav-link @(string.IsNullOrEmpty(filterStatus) ? "active" : "")"
-               asp-action="Index">All</a>
-        </li>
-        @foreach (var s in new[] { "InUse", "Idle", "UnderRepair", "Disposed" })
-        {
-            <li class="nav-item">
-                <a class="nav-link @(filterStatus == s ? "active" : "")"
-                   asp-action="Index" asp-route-status="@s">
-                    @StatusLabel(s)
-                </a>
-            </li>
-        }
-    </ul>
-
-    <div class="app-card">
-        <div class="card-body">
-            <div class="table-responsive">
-
-                <table class="app-table" id="officeAssetTable">
-
-                    <thead >
-                        <tr>
-                            <th>Asset Name</th>
-                            <th>Category</th>
-                            <th>Asset Code</th>
-                            <th>Purchase Date</th>
-                            <th class="text-end">Value</th>
-                            <th>Assigned To</th>
-                            <th>FY</th>
-                            <th class="text-center">Status</th>
-                            <th class="text-center">Actions</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                    <tbody>
-                        @foreach (var item in Model)
-                        {
-                            <tr>
-                                <td><strong>@item.AssetName</strong></td>
-                                <td>@item.AssetCategory</td>
-                                <td>@(item.AssetCode ?? "-")</td>
-                                <td>@item.PurchaseDate.ToString("dd-MMM-yyyy")</td>
-                                <td class="text-end">₹ @item.PurchaseValue.ToString("N0")</td>
-                                <td>@(item.AssignedTo ?? "-")</td>
-                                <td>@item.FinancialYear</td>
-                                <td class="text-center">
-                                    <span class="@StatusBadge(item.Status)">
-                                        @StatusLabel(item.Status)
-                                    </span>
-                                </td>
-                                <td class="text-center">
-                                    <a asp-action="Details" asp-route-id="@item.OfficeAssetId"
-                                       class="btn-app btn-icon btn-primary-app" title="Details">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                    <a asp-action="Edit" asp-route-id="@item.OfficeAssetId"
-                                       class="btn-app btn-icon btn-secondary-app" title="Edit">
-                                        <i class="bi bi-pencil-square"></i>
-                                    </a>
-                                    <button class="btn-app btn-icon btn-danger-app"
-                                            onclick="deleteAsset(@item.OfficeAssetId, '@item.AssetName')"
-                                            title="Delete">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                            
-
-                </table>
-
-            </div>
+<div class="app-card form-card">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Asset Filter</h2>
+            <p class="card-subtitle">Filter assets by financial year and category.</p>
         </div>
     </div>
 
+    <div class="card-body">
+        <form asp-action="Index" method="get">
+            <input type="hidden" name="status" value="@status" />
+
+            <div class="form-grid-3">
+                <div class="form-group">
+                    <label class="form-label">Financial Year</label>
+                    <input name="financialYear"
+                           value="@financialYear"
+                           class="app-input"
+                           placeholder="2026-27" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <select name="category" class="app-select">
+                        <option value="">All Categories</option>
+                        <option value="Laptop" selected="@(category == "Laptop")">Laptop</option>
+                        <option value="Furniture" selected="@(category == "Furniture")">Furniture</option>
+                        <option value="AC" selected="@(category == "AC")">AC</option>
+                        <option value="Projector" selected="@(category == "Projector")">Projector</option>
+                        <option value="Printer" selected="@(category == "Printer")">Printer</option>
+                        <option value="Vehicle" selected="@(category == "Vehicle")">Vehicle</option>
+                        <option value="Other" selected="@(category == "Other")">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn-app btn-primary-app w-100">
+                        <i class="bi bi-search"></i>
+                        Load
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
 </div>
 
-@section Scripts {
-    <script>
-        function deleteAsset(id, name) {
-            Swal.fire({
-                title: 'Delete Asset?',
-                text: `"${name}" will be permanently deleted.`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Delete',
-                confirmButtonColor: '#dc3545',
-                cancelButtonText: 'Cancel'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    var form = $('<form/>', { action: '/OfficeAsset/Delete', method: 'post' });
-                    form.append('@Html.AntiForgeryToken()');
-                    form.append($('<input/>', { type: 'hidden', name: 'id', value: id }));
-                    $('body').append(form);
-                    form.submit();
-                }
-            });
-        }
-    </script>
-}
+<div class="app-card table-card">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Asset Register</h2>
+            <p class="card-subtitle">Use quick filters below to view assets by status.</p>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        <div class="module-header-actions justify-content-start mb-3">
+            <a asp-action="Index"
+               asp-route-financialYear="@financialYear"
+               asp-route-category="@category"
+               class="btn-app @(string.IsNullOrWhiteSpace(status) ? "btn-primary-app" : "btn-secondary-app")">
+                All
+            </a>
+
+            <a asp-action="Index"
+               asp-route-financialYear="@financialYear"
+               asp-route-category="@category"
+               asp-route-status="InUse"
+               class="btn-app @(status == "InUse" ? "btn-primary-app" : "btn-secondary-app")">
+                In Use
+            </a>
+
+            <a asp-action="Index"
+               asp-route-financialYear="@financialYear"
+               asp-route-category="@category"
+               asp-route-status="Idle"
+               class="btn-app @(status == "Idle" ? "btn-primary-app" : "btn-secondary-app")">
+                Idle
+            </a>
+
+            <a asp-action="Index"
+               asp-route-financialYear="@financialYear"
+               asp-route-category="@category"
+               asp-route-status="UnderRepair"
+               class="btn-app @(status == "UnderRepair" ? "btn-primary-app" : "btn-secondary-app")">
+                Under Repair
+            </a>
+
+            <a asp-action="Index"
+               asp-route-financialYear="@financialYear"
+               asp-route-category="@category"
+               asp-route-status="Disposed"
+               class="btn-app @(status == "Disposed" ? "btn-primary-app" : "btn-secondary-app")">
+                Disposed
+            </a>
+        </div>
+
+        <div class="table-responsive">
+            <table class="app-table">
+                <thead>
+                    <tr>
+                        <th>Asset</th>
+                        <th>Category</th>
+                        <th>Code</th>
+                        <th>Purchase Date</th>
+                        <th class="text-end">Value</th>
+                        <th>Assigned To</th>
+                        <th>FY</th>
+                        <th>Status</th>
+                        <th>Record</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (assets.Any())
+                    {
+                        foreach (var asset in assets)
+                        {
+                            <tr>
+                                <td>@asset.AssetName</td>
+                                <td>@asset.AssetCategory</td>
+                                <td>@(asset.AssetCode ?? "-")</td>
+                                <td>@asset.PurchaseDate.ToString("dd-MMM-yyyy")</td>
+                                <td class="text-end">INR @asset.PurchaseValue.ToString("N2")</td>
+                                <td>@(asset.AssignedTo ?? "-")</td>
+                                <td>@asset.FinancialYear</td>
+                                <td>
+                                    <span class="@StatusBadge(asset.Status)">
+                                        @StatusLabel(asset.Status)
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (asset.IsActive)
+                                    {
+                                        <span class="badge-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-secondary">Archived</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="table-actions">
+                                        <a asp-action="Details"
+                                           asp-route-id="@asset.OfficeAssetId"
+                                           class="btn-app btn-icon btn-primary-app">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+
+                                        <a asp-action="Edit"
+                                           asp-route-id="@asset.OfficeAssetId"
+                                           class="btn-app btn-icon btn-secondary-app">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+
+                                        <form asp-action="Delete"
+                                              asp-route-id="@asset.OfficeAssetId"
+                                              method="post"
+                                              class="d-inline">
+                                            @Html.AntiForgeryToken()
+
+                                            <button type="submit"
+                                                    class="btn-app btn-icon @(asset.IsActive ? "btn-danger-app" : "btn-success-app")"
+                                                    onclick="return confirm('@(asset.IsActive ? "Archive this asset?" : "Activate this asset?")')">
+                                                <i class="bi @(asset.IsActive ? "bi-archive" : "bi-arrow-clockwise")"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="10" class="empty-state">
+                                No office assets found.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>

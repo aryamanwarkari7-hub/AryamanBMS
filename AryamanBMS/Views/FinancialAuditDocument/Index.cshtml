@@ -1,9 +1,10 @@
 @model IEnumerable<AryamanBMS.Models.FinancialAuditDocumentModel>
 
 @{
-    ViewData["Title"] = "Bank Statements, Financial & Audit Records";
-    var filterFY = ViewBag.FilterFinancialYear as string;
-    var filterCategory = ViewBag.FilterCategory as string;
+    ViewData["Title"] = "Financial Audit Documents";
+
+    string filterFY = ViewBag.FilterFinancialYear as string ?? "";
+    string filterCategory = ViewBag.FilterCategory as string ?? "";
 
     string CategoryLabel(string cat) => cat switch
     {
@@ -26,154 +27,251 @@
 
 <div class="module-header">
     <div>
-        <h1 class="module-title">Financial &amp; Audit Records</h1>
+        <h1 class="module-title">FINANCIAL AUDIT DOCUMENTS</h1>
         <p class="module-subtitle">
-            CA, CS, audit report and bank statement documents
+            Manage bank statements, audit reports, CA documents and CS records.
         </p>
     </div>
 
     <div class="module-header-actions">
         <a asp-action="Create" class="btn-app btn-primary-app">
-            <i class="bi bi-plus-circle"></i> Upload Document
+            <i class="bi bi-plus-circle"></i>
+            Upload Document
         </a>
     </div>
 </div>
 
-<div>
-
-    @if (TempData["Success"] != null)
-    {
-        <div class="app-alert-success">
-            @TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-    @if (TempData["Error"] != null)
-    {
-        <div class="app-alert-danger">
-            @TempData["Error"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-
-    <!-- Category filter tabs -->
-    <ul class="nav nav-pills mb-3 flex-wrap gap-1">
-        <li class="nav-item">
-            <a class="nav-link @(string.IsNullOrEmpty(filterCategory) ? "active" : "")"
-               asp-action="Index">All</a>
-        </li>
-        @foreach (var c in new[] { "BankStatement", "AuditReport", "CADocument", "CSDocument", "Other" })
-        {
-            <li class="nav-item">
-                <a class="nav-link @(filterCategory == c ? "active" : "")"
-                   asp-action="Index" asp-route-category="@c">
-                    @CategoryLabel(c)
-                </a>
-            </li>
-        }
-    </ul>
-
-    <div class="app-card">
-        <div class="card-body">
-            <div class="table-responsive">
-
-                <table class="app-table" id="financialAuditTable">
-
-                    <thead >
-                        <tr>
-                            <th>Category</th>
-                            <th>Financial Year</th>
-                            <th>File Name</th>
-                            <th>Remarks</th>
-                            <th>Uploaded On</th>
-                            <th class="text-center">Actions</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        @if (Model.Any())
-                        {
-                            @foreach (var item in Model)
-                            {
-                                <tr>
-                                    <td>
-                                        <span class="@CategoryBadge(item.DocumentCategory)">
-                                            @CategoryLabel(item.DocumentCategory)
-                                        </span>
-                                    </td>
-                                    <td>@item.FinancialYear</td>
-                                    <td>
-                                        <i class="bi bi-file-earmark-text"></i>
-                                        @item.FileName
-                                    </td>
-                                    <td>@(string.IsNullOrWhiteSpace(item.Remarks) ? "-" : item.Remarks)</td>
-                                    <td>@item.UploadedOn.ToString("dd-MMM-yyyy hh:mm tt")</td>
-                                    <td class="text-center">
-
-                                        <a asp-action="Details" asp-route-id="@item.FinancialAuditDocumentId"
-                                           class="btn-app btn-icon btn-primary-app" title="Details">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-
-                                        <a asp-action="Edit" asp-route-id="@item.FinancialAuditDocumentId"
-                                           class="btn-app btn-icon btn-secondary-app" title="Edit">
-                                            <i class="bi bi-pencil-square"></i>
-                                        </a>
-
-                                        <a asp-action="Download" asp-route-id="@item.FinancialAuditDocumentId"
-                                           class="btn-app btn-icon btn-success-app" title="Download">
-                                            <i class="bi bi-download"></i>
-                                        </a>
-
-                                        <button class="btn-app btn-icon btn-danger-app"
-                                                onclick="deleteDocument(@item.FinancialAuditDocumentId, '@item.FileName')"
-                                                title="Delete">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-
-                                    </td>
-                                </tr>
-                            }
-                        }
-                        else
-                        {
-                            <tr>
-                                <td colspan="6" class="text-center text-muted py-4">
-                                    <i class="bi bi-bank fs-2 mb-2 d-block"></i>
-                                    No documents found.
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-
-                </table>
-
-            </div>
+<div class="app-card form-card">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Filters</h2>
+            <p class="card-subtitle">
+                Filter documents by financial year and document category.
+            </p>
         </div>
     </div>
 
+    <div class="card-body">
+        <form asp-action="Index" method="get">
+            <div class="form-grid-3">
+                <div class="form-group">
+                    <label class="form-label">Financial Year</label>
+                    <input name="financialYear"
+                           value="@filterFY"
+                           class="app-input"
+                           placeholder="Ex: 2026-27" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <select name="category" class="app-select">
+                        <option value="">All Categories</option>
+                        <option value="BankStatement" selected="@(filterCategory == "BankStatement")">Bank Statement</option>
+                        <option value="AuditReport" selected="@(filterCategory == "AuditReport")">Audit Report</option>
+                        <option value="CADocument" selected="@(filterCategory == "CADocument")">CA Document</option>
+                        <option value="CSDocument" selected="@(filterCategory == "CSDocument")">CS Document</option>
+                        <option value="Other" selected="@(filterCategory == "Other")">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn-app btn-primary-app">
+                        <i class="bi bi-search"></i>
+                        Load
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
 </div>
 
-@section Scripts {
+<div class="app-card table-card">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Document Register</h2>
+            <p class="card-subtitle">
+                Uploaded financial and audit records.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <div class="module-header-actions justify-content-start mb-3">
+
+            <a asp-action="Index"
+               asp-route-financialYear="@filterFY"
+               class="btn-app @(string.IsNullOrEmpty(filterCategory) ? "btn-primary-app" : "btn-secondary-app")">
+                All
+            </a>
+
+            <a asp-action="Index"
+               asp-route-financialYear="@filterFY"
+               asp-route-category="BankStatement"
+               class="btn-app @(filterCategory == "BankStatement" ? "btn-primary-app" : "btn-secondary-app")">
+                Bank Statements
+            </a>
+
+            <a asp-action="Index"
+               asp-route-financialYear="@filterFY"
+               asp-route-category="AuditReport"
+               class="btn-app @(filterCategory == "AuditReport" ? "btn-primary-app" : "btn-secondary-app")">
+                Audit Reports
+            </a>
+
+            <a asp-action="Index"
+               asp-route-financialYear="@filterFY"
+               asp-route-category="CADocument"
+               class="btn-app @(filterCategory == "CADocument" ? "btn-primary-app" : "btn-secondary-app")">
+                CA Documents
+            </a>
+
+            <a asp-action="Index"
+               asp-route-financialYear="@filterFY"
+               asp-route-category="CSDocument"
+               class="btn-app @(filterCategory == "CSDocument" ? "btn-primary-app" : "btn-secondary-app")">
+                CS Documents
+            </a>
+
+            <a asp-action="Index"
+               asp-route-financialYear="@filterFY"
+               asp-route-category="Other"
+               class="btn-app @(filterCategory == "Other" ? "btn-primary-app" : "btn-secondary-app")">
+                Other
+            </a>
+
+        </div>
+        <div class="table-responsive">
+            <table class="app-table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Financial Year</th>
+                        <th>File Name</th>
+                        <th>Remarks</th>
+                        <th>Uploaded On</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="@CategoryBadge(item.DocumentCategory)">
+                                        @CategoryLabel(item.DocumentCategory)
+                                    </span>
+                                </td>
+
+                                <td>@item.FinancialYear</td>
+
+                                <td>
+                                    <i class="bi bi-file-earmark-text"></i>
+                                    @item.FileName
+                                </td>
+
+                                <td>@(string.IsNullOrWhiteSpace(item.Remarks) ? "-" : item.Remarks)</td>
+
+                                <td>@item.UploadedOn.ToString("dd-MMM-yyyy hh:mm tt")</td>
+
+                                <td class="text-center">
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-secondary">Archived</span>
+                                    }
+                                </td>
+
+                                <td class="text-center">
+                                    <div class="table-actions">
+                                        <a asp-action="Details"
+                                           asp-route-id="@item.FinancialAuditDocumentId"
+                                           class="btn-app btn-icon btn-primary-app"
+                                           title="Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+
+                                        <a asp-action="Edit"
+                                           asp-route-id="@item.FinancialAuditDocumentId"
+                                           class="btn-app btn-icon btn-secondary-app"
+                                           title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+
+                                        @if (item.IsActive)
+                                        {
+                                            <a asp-action="Download"
+                                               asp-route-id="@item.FinancialAuditDocumentId"
+                                               class="btn-app btn-icon btn-success-app"
+                                               title="Download">
+                                                <i class="bi bi-download"></i>
+                                            </a>
+
+                                            <button type="button"
+                                                    class="btn-app btn-icon btn-danger-app"
+                                                    onclick="changeDocumentStatus(@item.FinancialAuditDocumentId)"
+                                                    title="Archive">
+                                                <i class="bi bi-archive"></i>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button type="button"
+                                                    class="btn-app btn-icon btn-success-app"
+                                                    onclick="changeDocumentStatus(@item.FinancialAuditDocumentId)"
+                                                    title="Activate">
+                                                <i class="bi bi-arrow-counterclockwise"></i>
+                                            </button>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="empty-state">
+                                No financial audit documents found.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
     <script>
-        function deleteDocument(id, fileName) {
-            Swal.fire({
-                title: 'Delete Document?',
-                text: `"${fileName}" will be permanently deleted.`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Delete',
-                confirmButtonColor: '#dc3545',
-                cancelButtonText: 'Cancel'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    var form = $('<form/>', { action: '/FinancialAuditDocument/Delete', method: 'post' });
-                    form.append('@Html.AntiForgeryToken()');
-                    form.append($('<input/>', { type: 'hidden', name: 'id', value: id }));
-                    $('body').append(form);
-                    form.submit();
-                }
+        function changeDocumentStatus(id) {
+            if (!confirm("Do you want to change this document status?")) {
+                return;
+            }
+
+            var form = $('<form/>', {
+                action: '/FinancialAuditDocument/Delete',
+                method: 'post'
             });
+
+            form.append('@Html.AntiForgeryToken()');
+
+            form.append($('<input/>', {
+                type: 'hidden',
+                name: 'id',
+                value: id
+            }));
+
+            $('body').append(form);
+            form.submit();
         }
     </script>
 }

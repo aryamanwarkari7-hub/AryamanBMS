@@ -26,19 +26,20 @@ namespace AryamanBMS.Controllers
 
         public async Task<IActionResult> Index(string? department, string? status)
         {
-            IEnumerable<NoticeModel> notices;
+            var notices = await _noticeRepository.GetAllAsync();
 
             if (!string.IsNullOrWhiteSpace(department))
             {
-                notices = await _noticeRepository.GetByDepartmentAsync(department);
+                notices = notices
+                    .Where(x => x.Department == department)
+                    .ToList();
             }
-            else if (!string.IsNullOrWhiteSpace(status))
+
+            if (!string.IsNullOrWhiteSpace(status))
             {
-                notices = await _noticeRepository.GetByStatusAsync(status);
-            }
-            else
-            {
-                notices = await _noticeRepository.GetAllAsync();
+                notices = notices
+                    .Where(x => x.Status == status)
+                    .ToList();
             }
 
             ViewBag.Department = department;
@@ -69,6 +70,8 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> Create(NoticeModel model)
         {
             ModelState.Remove(nameof(model.Documents));
+
+            ValidateNotice(model);
 
             if (!ModelState.IsValid)
                 return View(model);
@@ -101,6 +104,7 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> Edit(NoticeModel model)
         {
             ModelState.Remove(nameof(model.Documents));
+            ValidateNotice(model);
 
             if (!ModelState.IsValid)
                 return View(model);
@@ -170,6 +174,15 @@ namespace AryamanBMS.Controllers
             if (notice == null)
                 return NotFound();
 
+            documentType = documentType?.Trim() ?? string.Empty;
+remarks = remarks?.Trim();
+
+if (string.IsNullOrWhiteSpace(documentType))
+{
+    TempData["Error"] = "Please select a document type.";
+    return RedirectToAction(nameof(Details), new { id = noticeId });
+}
+
             if (file == null || file.Length == 0)
             {
                 TempData["Error"] = "Please select a file.";
@@ -220,5 +233,51 @@ namespace AryamanBMS.Controllers
         }
 
         #endregion
+
+        #region Helper
+        private void ValidateNotice(NoticeModel model)
+        {
+            model.NoticeNumber = model.NoticeNumber?.Trim();
+            model.Department = model.Department?.Trim() ?? string.Empty;
+            model.Subject = model.Subject?.Trim() ?? string.Empty;
+            model.Description = model.Description?.Trim();
+            model.Status = model.Status?.Trim() ?? FinancialConstants.NoticeStatus.Open;
+            model.ReplyDetails = model.ReplyDetails?.Trim();
+            model.Remarks = model.Remarks?.Trim();
+
+            if (model.ReceivedDate.Date < model.NoticeDate.Date)
+            {
+                ModelState.AddModelError(
+                    nameof(model.ReceivedDate),
+                    "Received date cannot be before notice date.");
+            }
+
+            if (model.DueDate.HasValue &&
+                model.DueDate.Value.Date < model.ReceivedDate.Date)
+            {
+                ModelState.AddModelError(
+                    nameof(model.DueDate),
+                    "Due date cannot be before received date.");
+            }
+
+            if (model.Status == FinancialConstants.NoticeStatus.Replied &&
+                !model.ReplyDate.HasValue)
+            {
+                ModelState.AddModelError(
+                    nameof(model.ReplyDate),
+                    "Reply date is required when status is Replied.");
+            }
+
+            if (model.Status == FinancialConstants.NoticeStatus.Closed &&
+                !model.ReplyDate.HasValue)
+            {
+                ModelState.AddModelError(
+                    nameof(model.ReplyDate),
+                    "Reply date is required when closing a notice.");
+            }
+        }
+
+        #endregion
     }
-}
+
+ }

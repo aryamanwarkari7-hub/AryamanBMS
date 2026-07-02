@@ -26,7 +26,11 @@ namespace AryamanBMS.Services
                 return new GstDashboardViewModel
                 {
                     Month = month,
-                    Year = year
+                    Year = year,
+                    FinancialYear = month >= 4
+                       ? $"{year}-{(year + 1).ToString().Substring(2)}"
+                       : $"{year - 1}-{year.ToString().Substring(2)}",
+                    SnapshotStatus = "Pending"
                 };
             }
 
@@ -35,7 +39,7 @@ namespace AryamanBMS.Services
                 Month = snapshot.Month,
                 Year = snapshot.Year,
                 FinancialYear = snapshot.FinancialYear,
-
+                SnapshotStatus = snapshot.Status,
                 SalesTaxable = snapshot.SalesTaxableAmount,
                 OutputGST = snapshot.TotalOutputGST,
                 InputGST = snapshot.TotalInputGST,
