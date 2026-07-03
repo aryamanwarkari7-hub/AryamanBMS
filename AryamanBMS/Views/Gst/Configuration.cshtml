@@ -1,0 +1,286 @@
+@model AryamanBMS.ViewModels.GstConfigurationViewModel
+
+@{
+    ViewData["Title"] = "GST Configuration";
+
+    var states = new Dictionary<string, string>
+    {
+        { "AN", "Andaman and Nicobar Islands" },
+        { "AP", "Andhra Pradesh" },
+        { "AR", "Arunachal Pradesh" },
+        { "AS", "Assam" },
+        { "BR", "Bihar" },
+        { "CH", "Chandigarh" },
+        { "CG", "Chhattisgarh" },
+        { "DD", "Daman and Diu" },
+        { "DL", "Delhi" },
+        { "DN", "Dadra and Nagar Haveli" },
+        { "GA", "Goa" },
+        { "GJ", "Gujarat" },
+        { "HR", "Haryana" },
+        { "HP", "Himachal Pradesh" },
+        { "JK", "Jammu and Kashmir" },
+        { "JH", "Jharkhand" },
+        { "KA", "Karnataka" },
+        { "KL", "Kerala" },
+        { "LA", "Ladakh" },
+        { "LD", "Lakshadweep" },
+        { "MP", "Madhya Pradesh" },
+        { "MH", "Maharashtra" },
+        { "MN", "Manipur" },
+        { "ML", "Meghalaya" },
+        { "MZ", "Mizoram" },
+        { "NL", "Nagaland" },
+        { "OD", "Odisha" },
+        { "PY", "Puducherry" },
+        { "PB", "Punjab" },
+        { "RJ", "Rajasthan" },
+        { "SK", "Sikkim" },
+        { "TN", "Tamil Nadu" },
+        { "TS", "Telangana" },
+        { "TR", "Tripura" },
+        { "UP", "Uttar Pradesh" },
+        { "UK", "Uttarakhand" },
+        { "WB", "West Bengal" }
+    };
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">GST CONFIGURATION</h1>
+        <p class="module-subtitle">
+            Manage company GST registration details and default GST rates.
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="Index"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
+
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="app-alert-success">
+        @TempData["Success"]
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="app-alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
+@if (TempData["Warning"] != null)
+{
+    <div class="app-alert-warning">
+        @TempData["Warning"]
+    </div>
+}
+
+<div class="app-card form-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Company GST Details</h2>
+            <p class="card-subtitle">
+                These details are used for GST compliance and reporting.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        <form asp-action="UpdateCompanyGst"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <div class="form-grid-3">
+
+                <div class="form-group">
+                    <label asp-for="CompanyName"
+                           class="form-label">
+                        Company Name
+                    </label>
+
+                    <input asp-for="CompanyName"
+                           class="app-input"
+                           maxlength="200"
+                           placeholder="Enter company legal name" />
+
+                    <span asp-validation-for="CompanyName"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="CompanyGstin"
+                           class="form-label">
+                        GSTIN
+                    </label>
+
+                    <input asp-for="CompanyGstin"
+                           class="app-input"
+                           maxlength="15"
+                           placeholder="27ABCDE1234F1Z5" />
+
+                    <span asp-validation-for="CompanyGstin"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="RegisteredState"
+                           class="form-label">
+                        Registered State
+                    </label>
+
+                    <select asp-for="RegisteredState"
+                            class="app-select">
+                        <option value="">Select State</option>
+
+                        @foreach (var state in states)
+                        {
+                            <option value="@state.Key">
+                                @state.Value
+                            </option>
+                        }
+                    </select>
+
+                    <span asp-validation-for="RegisteredState"
+                          class="validation-message"></span>
+                </div>
+
+            </div>
+
+            <div class="form-actions">
+                <button type="submit"
+                        class="btn-app btn-primary-app">
+                    <i class="bi bi-check-circle"></i>
+                    Save Company Details
+                </button>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<div class="app-card form-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">GST Rates</h2>
+            <p class="card-subtitle">
+                IGST should equal CGST plus SGST.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        <form asp-action="UpdateGstRates"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <div class="form-grid-3">
+
+                <div class="form-group">
+                    <label asp-for="CgstRate"
+                           class="form-label">
+                        CGST Rate %
+                    </label>
+
+                    <input asp-for="CgstRate"
+                           type="number"
+                           class="app-input"
+                           min="0"
+                           max="100"
+                           step="0.01" />
+
+                    <span asp-validation-for="CgstRate"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="SgstRate"
+                           class="form-label">
+                        SGST Rate %
+                    </label>
+
+                    <input asp-for="SgstRate"
+                           type="number"
+                           class="app-input"
+                           min="0"
+                           max="100"
+                           step="0.01" />
+
+                    <span asp-validation-for="SgstRate"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="IgstRate"
+                           class="form-label">
+                        IGST Rate %
+                    </label>
+
+                    <input asp-for="IgstRate"
+                           type="number"
+                           class="app-input"
+                           min="0"
+                           max="100"
+                           step="0.01" />
+
+                    <span asp-validation-for="IgstRate"
+                          class="validation-message"></span>
+                </div>
+
+            </div>
+
+            <div class="form-actions">
+                <button type="submit"
+                        class="btn-app btn-primary-app">
+                    <i class="bi bi-check-circle"></i>
+                    Save GST Rates
+                </button>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-body">
+        <div class="form-grid-2">
+            <div class="form-group">
+                <label class="form-label">Active Configuration</label>
+                <span class="@(Model.IsActive ? "badge-success" : "badge-secondary")">
+                    @(Model.IsActive ? "Active" : "Inactive")
+                </span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Last Updated On</label>
+                <div>@Model.LastUpdatedOn.ToString("dd-MMM-yyyy hh:mm tt")</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

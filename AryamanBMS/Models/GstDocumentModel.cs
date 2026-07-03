@@ -39,6 +39,9 @@ namespace AryamanBMS.Models
         [StringLength(500)]
         public string? Remarks { get; set; }
 
+        [StringLength(450)]
+        public string? UploadedByUserId { get; set; }
+
         public DateTime UploadedOn { get; set; } = DateTime.Now;
     }
 }

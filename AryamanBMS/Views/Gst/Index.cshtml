@@ -184,6 +184,7 @@
                         <th class="text-end amount-column">Output GST</th>
                         <th class="text-end amount-column">Input GST</th>
                         <th class="text-end amount-column">Net Payable</th>
+                        <th class="text-end amount-column">ITC Carry Forward</th>
                         <th class="text-center">Documents</th>
                         <th class="text-center">Actions</th>
                     </tr>
@@ -221,6 +222,10 @@
                                     ₹ @snapshot.NetGSTPayable.ToString("N2")
                                 </td>
 
+                                <td class="text-end amount-column">
+                                    ₹ @snapshot.InputCreditCarryForward.ToString("N2")
+                                </td>
+
                                 <td class="text-center">
                                     @snapshot.Documents.Count
                                 </td>
@@ -242,7 +247,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="7" class="empty-state">
+                            <td colspan="8" class="empty-state">
                                 @if (hasSelectedPeriod)
                                 {
                                     <div class="empty-state">

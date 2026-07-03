@@ -27,8 +27,12 @@ namespace AryamanBMS.Controllers
         private readonly IGstConfigurationRepository _configurationRepository;
         private readonly IGstReturnRepository _returnRepository;
         private readonly IGstChallanRepository _challanRepository;
+        private readonly IGstDocumentRepository _documentRepository;
+        private readonly IFileStorageService _fileStorageService;
         private readonly UserManager<ApplicationUserModel> _userManager;
         private readonly ILogger<GstController> _logger;
+
+        private const string DocumentFolder = "GstDocuments";
 
         /// <summary>
         /// Constructor with dependency injection
@@ -40,6 +44,8 @@ namespace AryamanBMS.Controllers
            IGstConfigurationRepository configurationRepository,
            IGstReturnRepository returnRepository,
            IGstChallanRepository challanRepository,
+           IGstDocumentRepository documentRepository,
+           IFileStorageService fileStorageService,
            UserManager<ApplicationUserModel> userManager,
            ILogger<GstController> logger)
         {
@@ -49,6 +55,8 @@ namespace AryamanBMS.Controllers
             _configurationRepository = configurationRepository;
             _returnRepository = returnRepository;
             _challanRepository = challanRepository;
+            _documentRepository = documentRepository;
+            _fileStorageService = fileStorageService;
             _userManager = userManager;
             _logger = logger;
         }
@@ -466,12 +474,52 @@ namespace AryamanBMS.Controllers
                         nameof(Dashboard),
                         new { snapshot.Month, snapshot.Year });
                 }
+
+                if (filedDate.Value.Date > DateTime.Today)
+                {
+                    TempData["Error"] =
+                        "Filing date cannot be in the future.";
+
+                    return RedirectToAction(
+                        nameof(Dashboard),
+                        new { snapshot.Month, snapshot.Year });
+                }
+
+                if (filedDate.Value.Date < GetTaxPeriodStartDate(
+                        snapshot.Month,
+                        snapshot.Year))
+                {
+                    TempData["Error"] =
+                        "Filing date cannot be before the selected GST period.";
+
+                    return RedirectToAction(
+                        nameof(Dashboard),
+                        new { snapshot.Month, snapshot.Year });
+                }
             }
 
             var gstReturn =
                 await _returnRepository.GetByReturnTypeAsync(
                     snapshotId,
                     returnType);
+
+            if (gstReturn != null &&
+                string.Equals(
+                    gstReturn.Status,
+                    "Filed",
+                    StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(
+                    status,
+                    "Pending",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["Error"] =
+                    "Filed GST returns cannot be moved back to Pending without an Admin reopen workflow.";
+
+                return RedirectToAction(
+                    nameof(Dashboard),
+                    new { snapshot.Month, snapshot.Year });
+            }
 
             if (gstReturn == null)
             {
@@ -585,11 +633,62 @@ namespace AryamanBMS.Controllers
                         nameof(Dashboard),
                         new { snapshot.Month, snapshot.Year });
                 }
+
+                if (paymentDate.Value.Date > DateTime.Today)
+                {
+                    TempData["Error"] =
+                        "Challan payment date cannot be in the future.";
+
+                    return RedirectToAction(
+                        nameof(Dashboard),
+                        new { snapshot.Month, snapshot.Year });
+                }
+
+                if (paymentDate.Value.Date < GetTaxPeriodStartDate(
+                        snapshot.Month,
+                        snapshot.Year))
+                {
+                    TempData["Error"] =
+                        "Challan payment date cannot be before the selected GST period.";
+
+                    return RedirectToAction(
+                        nameof(Dashboard),
+                        new { snapshot.Month, snapshot.Year });
+                }
+
+                if (string.IsNullOrWhiteSpace(cin) ||
+                    string.IsNullOrWhiteSpace(cpin))
+                {
+                    TempData["Error"] =
+                        "CIN and CPIN are required when challan status is Paid.";
+
+                    return RedirectToAction(
+                        nameof(Dashboard),
+                        new { snapshot.Month, snapshot.Year });
+                }
             }
 
             var challan =
                 await _challanRepository.GetByChallanNumberAsync(
                     challanNumber.Trim());
+
+            if (challan != null &&
+                string.Equals(
+                    challan.Status,
+                    "Paid",
+                    StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(
+                    status,
+                    "Pending",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["Error"] =
+                    "Paid GST challans cannot be moved back to Pending.";
+
+                return RedirectToAction(
+                    nameof(Dashboard),
+                    new { snapshot.Month, snapshot.Year });
+            }
 
             if (challan == null)
             {
@@ -636,7 +735,156 @@ namespace AryamanBMS.Controllers
                 new { snapshot.Month, snapshot.Year });
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UploadDocument(
+            int snapshotId,
+            string documentType,
+            IFormFile file,
+            string? remarks)
+        {
+            var snapshot =
+                await _snapshotRepository.GetByIdAsync(snapshotId);
+
+            if (snapshot == null)
+                return NotFound();
+
+            documentType = documentType?.Trim() ?? string.Empty;
+            remarks = remarks?.Trim();
+
+            if (string.IsNullOrWhiteSpace(documentType))
+            {
+                TempData["Error"] = "Please select a document type.";
+
+                return RedirectToAction(
+                    nameof(Dashboard),
+                    new { snapshot.Month, snapshot.Year });
+            }
+
+            if (file == null || file.Length == 0)
+            {
+                TempData["Error"] = "Please select a file to upload.";
+
+                return RedirectToAction(
+                    nameof(Dashboard),
+                    new { snapshot.Month, snapshot.Year });
+            }
+
+            var uploadResult =
+                await _fileStorageService.UploadAsync(file, DocumentFolder);
+
+            if (!uploadResult.Success)
+            {
+                TempData["Error"] = uploadResult.ErrorMessage;
+
+                return RedirectToAction(
+                    nameof(Dashboard),
+                    new { snapshot.Month, snapshot.Year });
+            }
+
+            var document = new GstDocumentModel
+            {
+                SnapshotId = snapshotId,
+                DocumentType = documentType,
+                FileName = uploadResult.OriginalFileName,
+                FilePath = uploadResult.RelativePath,
+                UploadedByUserId = _userManager.GetUserId(User),
+                Remarks = remarks
+            };
+
+            await _documentRepository.AddAsync(document);
+            await _documentRepository.SaveAsync();
+
+            TempData["Success"] = "GST document uploaded successfully.";
+
+            return RedirectToAction(
+                nameof(Dashboard),
+                new { snapshot.Month, snapshot.Year });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DownloadDocument(int id)
+        {
+            var document =
+                await _documentRepository.GetByIdAsync(id);
+
+            if (document == null)
+                return NotFound();
+
+            var fileBytes =
+                await _fileStorageService.DownloadAsync(document.FilePath);
+
+            if (fileBytes == null)
+            {
+                TempData["Error"] = "Document file was not found.";
+
+                int month =
+                    document.Snapshot?.Month ?? DateTime.Now.Month;
+
+                int year =
+                    document.Snapshot?.Year ?? DateTime.Now.Year;
+
+                return RedirectToAction(
+                    nameof(Dashboard),
+                    new { month, year });
+            }
+
+            return File(
+                fileBytes,
+                GetContentType(document.FileName),
+                Path.GetFileName(document.FileName));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteDocument(
+            int id,
+            int snapshotId)
+        {
+            var document =
+                await _documentRepository.GetByIdAsync(id);
+
+            if (document == null)
+                return NotFound();
+
+            var snapshot =
+                document.Snapshot
+                ?? await _snapshotRepository.GetByIdAsync(document.SnapshotId);
+
+            if (snapshot == null)
+                return NotFound();
+
+            if (string.Equals(
+                    snapshot.Status,
+                    "Filed",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["Error"] =
+                    "Documents linked to a filed GST snapshot cannot be deleted.";
+
+                return RedirectToAction(
+                    nameof(Dashboard),
+                    new { snapshot.Month, snapshot.Year });
+            }
+
+            await _documentRepository.DeleteAsync(document);
+            await _documentRepository.SaveAsync();
+
+            await _fileStorageService.DeleteAsync(document.FilePath);
+
+            TempData["Success"] = "GST document deleted successfully.";
+
+            return RedirectToAction(
+                nameof(Dashboard),
+                new { snapshot.Month, snapshot.Year });
+        }
+
         #region Helper Methods
+
+        private DateTime GetTaxPeriodStartDate(int month, int year)
+        {
+            return new DateTime(year, month, 1);
+        }
 
         /// <summary>
         /// Get financial year from month and calendar year
@@ -722,6 +970,21 @@ namespace AryamanBMS.Controllers
             };
 
             return states.Contains(stateCode);
+        }
+
+        private static string GetContentType(string fileName)
+        {
+            return Path.GetExtension(fileName).ToLowerInvariant() switch
+            {
+                ".pdf" => "application/pdf",
+                ".doc" => "application/msword",
+                ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                ".xls" => "application/vnd.ms-excel",
+                ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".png" => "image/png",
+                _ => "application/octet-stream"
+            };
         }
 
         #endregion

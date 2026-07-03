@@ -52,7 +52,9 @@ namespace AryamanBMS.Services
             decimal output = await GetOutputGSTAsync(month, year);
             decimal input = await GetInputGSTAsync(month, year);
 
-            return output - input;
+            decimal difference = output - input;
+
+            return difference > 0 ? difference : 0;
         }
 
         public async Task<GstMonthlySnapshotModel> GenerateMonthlySnapshotAsync(
@@ -148,7 +150,14 @@ namespace AryamanBMS.Services
 
             snapshot.TotalOutputGST = outputGST;
             snapshot.TotalInputGST = inputGST;
-            snapshot.NetGSTPayable = outputGST - inputGST;
+
+            decimal difference = outputGST - inputGST;
+
+            snapshot.NetGSTPayable =
+                difference > 0 ? difference : 0;
+
+            snapshot.InputCreditCarryForward =
+                difference < 0 ? Math.Abs(difference) : 0;
 
             snapshot.InvoiceCount = invoices.Count;
             snapshot.ExpenseVoucherCount = expenses.Count;

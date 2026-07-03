@@ -71,6 +71,9 @@ namespace AryamanBMS.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal NetGSTPayable { get; set; }
 
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal InputCreditCarryForward { get; set; }
+
         // -----------------------------
         // Statistics
         // -----------------------------

@@ -62,8 +62,8 @@
     </div>
 
     <div class="stats-card">
-        <div class="stats-label">Sales Taxable</div>
-        <div class="stats-number">₹ @Model.SalesTaxable.ToString("N2")</div>
+        <div class="stats-label">ITC Carry Forward</div>
+        <div class="stats-number">₹ @Model.InputCreditCarryForward.ToString("N2")</div>
     </div>
 
 </div>
@@ -181,6 +181,11 @@
                 <strong>₹ @Model.NetGSTPayable.ToString("N2")</strong>
             </div>
 
+            <div class="form-group">
+                <label class="form-label">ITC Carry Forward</label>
+                <strong>₹ @Model.InputCreditCarryForward.ToString("N2")</strong>
+            </div>
+
         </div>
 
     </div>
@@ -262,7 +267,8 @@
                                     <input type="text"
                                            name="arnNumber"
                                            class="app-input"
-                                           maxlength="100" />
+                                           maxlength="100"
+                                           value="@Model.Gstr1ArnNumber" />
                                 </div>
 
                                 <div class="form-group">
@@ -270,7 +276,8 @@
 
                                     <input type="date"
                                            name="filedDate"
-                                           class="app-input" />
+                                           class="app-input"
+                                           value="@(Model.Gstr1FiledDate?.ToString("yyyy-MM-dd"))" />
                                 </div>
 
                                 <div class="form-group">
@@ -278,7 +285,7 @@
 
                                     <textarea name="remarks"
                                           class="app-textarea"
-                                          maxlength="500"></textarea>
+                                          maxlength="500">@Model.Gstr1Remarks</textarea>
                                 </div>
 
                                 <button type="submit"
@@ -338,7 +345,8 @@
                                     <input type="text"
                                            name="arnNumber"
                                            class="app-input"
-                                           maxlength="100" />
+                                           maxlength="100"
+                                           value="@Model.Gstr3BArnNumber" />
                                 </div>
 
                                 <div class="form-group">
@@ -346,7 +354,8 @@
 
                                     <input type="date"
                                            name="filedDate"
-                                           class="app-input" />
+                                           class="app-input"
+                                           value="@(Model.Gstr3BFiledDate?.ToString("yyyy-MM-dd"))" />
                                 </div>
 
                                 <div class="form-group">
@@ -354,7 +363,7 @@
 
                                     <textarea name="remarks"
                                           class="app-textarea"
-                                          maxlength="500"></textarea>
+                                          maxlength="500">@Model.Gstr3BRemarks</textarea>
                                 </div>
 
                                 <button type="submit"
@@ -406,6 +415,7 @@
                                    name="challanNumber"
                                    class="app-input"
                                    maxlength="100"
+                                   value="@Model.ChallanNumber"
                                    required />
                         </div>
 
@@ -435,7 +445,7 @@
                                    class="app-input"
                                    min="0"
                                    step="0.01"
-                                   value="@Model.NetGSTPayable" />
+                                   value="@Model.AmountPaid" />
                         </div>
 
                         <div class="form-group">
@@ -443,7 +453,8 @@
 
                             <input type="date"
                                    name="paymentDate"
-                                   class="app-input" />
+                                   class="app-input"
+                                   value="@(Model.PaymentDate?.ToString("yyyy-MM-dd"))" />
                         </div>
 
                         <div class="form-group">
@@ -452,7 +463,8 @@
                             <input type="text"
                                    name="paymentMode"
                                    class="app-input"
-                                   maxlength="50" />
+                                   maxlength="50"
+                                   value="@Model.PaymentMode" />
                         </div>
 
                         <div class="form-group">
@@ -461,7 +473,8 @@
                             <input type="text"
                                    name="bankName"
                                    class="app-input"
-                                   maxlength="100" />
+                                   maxlength="100"
+                                   value="@Model.BankName" />
                         </div>
 
                         <div class="form-group">
@@ -470,7 +483,8 @@
                             <input type="text"
                                    name="cpin"
                                    class="app-input"
-                                   maxlength="100" />
+                                   maxlength="100"
+                                   value="@Model.CPIN" />
                         </div>
 
                         <div class="form-group">
@@ -479,7 +493,8 @@
                             <input type="text"
                                    name="cin"
                                    class="app-input"
-                                   maxlength="100" />
+                                   maxlength="100"
+                                   value="@Model.CIN" />
                         </div>
 
                     </div>
@@ -489,7 +504,7 @@
 
                         <textarea name="remarks"
                               class="app-textarea"
-                              maxlength="500"></textarea>
+                              maxlength="500">@Model.ChallanRemarks</textarea>
                     </div>
 
                     <button type="submit"
@@ -498,6 +513,61 @@
                     </button>
 
                 </form>
+
+                <div class="table-responsive">
+
+                    <table class="app-table">
+
+                        <thead>
+                            <tr>
+                                <th>Challan No.</th>
+                                <th>Payment Date</th>
+                                <th>Mode</th>
+                                <th>Bank</th>
+                                <th>CPIN</th>
+                                <th>CIN</th>
+                                <th class="text-end amount-column">Amount</th>
+                                <th class="text-center">Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @if (Model.Challans.Any())
+                            {
+                                foreach (var challan in Model.Challans)
+                                {
+                                    <tr>
+                                        <td>@challan.ChallanNumber</td>
+                                        <td>@(challan.PaymentDate?.ToString("dd-MMM-yyyy") ?? "-")</td>
+                                        <td>@(string.IsNullOrWhiteSpace(challan.PaymentMode) ? "-" : challan.PaymentMode)</td>
+                                        <td>@(string.IsNullOrWhiteSpace(challan.BankName) ? "-" : challan.BankName)</td>
+                                        <td>@(string.IsNullOrWhiteSpace(challan.CPIN) ? "-" : challan.CPIN)</td>
+                                        <td>@(string.IsNullOrWhiteSpace(challan.CIN) ? "-" : challan.CIN)</td>
+                                        <td class="text-end amount-column">
+                                            ₹ @challan.AmountPaid.ToString("N2")
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="@GstrStatusClass(challan.Status)">
+                                                @challan.Status
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="8"
+                                        class="empty-state">
+                                        No GST challans recorded for this period.
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+
+                    </table>
+
+                </div>
 
             </div>
 
@@ -565,6 +635,169 @@
     </div>
 
 </div>
+
+@if (Model.SnapshotId > 0)
+{
+    <div class="app-card table-card">
+
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">GST Documents</h2>
+                <p class="card-subtitle">
+                    Upload and manage GST working files, return copies and challans.
+                </p>
+            </div>
+        </div>
+
+        <div class="card-body">
+
+            @if (Model.SnapshotStatus != "Filed")
+            {
+                <form asp-action="UploadDocument"
+                      method="post"
+                      enctype="multipart/form-data">
+
+                    @Html.AntiForgeryToken()
+
+                    <input type="hidden"
+                           name="snapshotId"
+                           value="@Model.SnapshotId" />
+
+                    <div class="form-grid-4">
+
+                        <div class="form-group">
+                            <label class="form-label">Document Type</label>
+
+                            <select name="documentType"
+                                    class="app-select"
+                                    required>
+                                <option value="">Select Type</option>
+                                <option value="Working">Working</option>
+                                <option value="GSTR1">GSTR-1</option>
+                                <option value="GSTR3B">GSTR-3B</option>
+                                <option value="Challan">Challan</option>
+                                <option value="Excel">Excel</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">File</label>
+
+                            <input type="file"
+                                   name="file"
+                                   class="app-input"
+                                   required />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Remarks</label>
+
+                            <input type="text"
+                                   name="remarks"
+                                   class="app-input"
+                                   maxlength="500"
+                                   placeholder="Optional remarks" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">&nbsp;</label>
+
+                            <button type="submit"
+                                    class="btn-app btn-primary-app">
+                                <i class="bi bi-upload"></i>
+                                Upload
+                            </button>
+                        </div>
+
+                    </div>
+
+                </form>
+            }
+
+            <div class="table-responsive">
+
+                <table class="app-table">
+
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>File Name</th>
+                            <th>Uploaded On</th>
+                            <th>Uploader</th>
+                            <th>Remarks</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @if (Model.Documents.Any())
+                        {
+                            foreach (var document in Model.Documents)
+                            {
+                                <tr>
+                                    <td>@document.DocumentType</td>
+                                    <td>@document.FileName</td>
+                                    <td>@document.UploadedOn.ToString("dd-MMM-yyyy")</td>
+                                    <td>@(string.IsNullOrWhiteSpace(document.UploadedByUserId) ? "-" : document.UploadedByUserId)</td>
+                                    <td>@(string.IsNullOrWhiteSpace(document.Remarks) ? "-" : document.Remarks)</td>
+                                    <td>
+                                        <div class="table-actions">
+                                            <a asp-action="DownloadDocument"
+                                               asp-route-id="@document.GstDocumentId"
+                                               class="btn-app btn-icon btn-primary-app"
+                                               title="Download">
+                                                <i class="bi bi-download"></i>
+                                            </a>
+
+                                            @if (Model.SnapshotStatus != "Filed")
+                                            {
+                                                <form asp-action="DeleteDocument"
+                                                      method="post">
+
+                                                    @Html.AntiForgeryToken()
+
+                                                    <input type="hidden"
+                                                           name="id"
+                                                           value="@document.GstDocumentId" />
+
+                                                    <input type="hidden"
+                                                           name="snapshotId"
+                                                           value="@Model.SnapshotId" />
+
+                                                    <button type="submit"
+                                                            class="btn-app btn-icon btn-danger-app"
+                                                            onclick="return confirm('Delete this GST document?')"
+                                                            title="Delete">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+
+                                                </form>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6"
+                                    class="empty-state">
+                                    No GST documents uploaded for this period.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+}
 
 <div class="app-card">
 
