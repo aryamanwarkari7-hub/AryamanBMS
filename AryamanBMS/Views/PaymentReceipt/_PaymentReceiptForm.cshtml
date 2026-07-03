@@ -1,5 +1,9 @@
 @model AryamanBMS.Models.PaymentReceiptModel
 
+@{
+    bool isEdit = Model.PaymentReceiptId > 0;
+}
+
 <input asp-for="PaymentReceiptId" type="hidden" />
 
 <div class="row">
@@ -36,11 +40,17 @@
 
         <select asp-for="ClientId"
                 asp-items="ViewBag.Clients"
-                class="app-select">
+                class="app-select"
+                disabled="@isEdit">
 
             <option value="">Select Client</option>
 
         </select>
+
+        @if (isEdit)
+        {
+            <input asp-for="ClientId" type="hidden" />
+        }
 
         <span asp-validation-for="ClientId"
               class="validation-message"></span>
@@ -59,11 +69,17 @@
 
         <select asp-for="InvoiceId"
                 asp-items="ViewBag.Invoices"
-                class="app-select">
+                class="app-select"
+                disabled="@isEdit">
 
             <option value="">Select Invoice</option>
 
         </select>
+
+        @if (isEdit)
+        {
+            <input asp-for="InvoiceId" type="hidden" />
+        }
 
         <span asp-validation-for="InvoiceId"
               class="validation-message"></span>
@@ -168,20 +184,3 @@
 
 </div>
 
-<div class="row">
-
-    <div class="col-md-12">
-
-        <div class="form-check">
-
-            <input asp-for="IsCancelled"
-                   class="form-check-input" />
-
-            <label asp-for="IsCancelled"
-                   class="form-check-label"></label>
-
-        </div>
-
-    </div>
-
-</div>

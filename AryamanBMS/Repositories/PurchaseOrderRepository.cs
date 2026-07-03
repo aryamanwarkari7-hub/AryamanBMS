@@ -1,4 +1,5 @@
 using AryamanBMS.Data;
+using System.Data;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -79,5 +80,140 @@ namespace AryamanBMS.Repositories
         {
             await _context.SaveChangesAsync();
         }
+
+        public async Task CreateWithSequenceAsync(PurchaseOrderModel order)
+        {
+            await using var transaction =
+                await _context.Database.BeginTransactionAsync(
+                    IsolationLevel.Serializable);
+
+            try
+            {
+                DateTime now = DateTime.Now;
+
+                const string documentType = "PurchaseOrder";
+                string sequencePeriod = now.ToString("yyyyMM");
+
+                var sequence = await _context.FinancialSequences
+                    .FirstOrDefaultAsync(x =>
+                        x.DocumentType == documentType &&
+                        x.FinancialYear == sequencePeriod);
+
+                if (sequence == null)
+                {
+                    sequence = new FinancialSequenceModel
+                    {
+                        DocumentType = documentType,
+                        FinancialYear = sequencePeriod,
+                        LastNumber = 1,
+                        UpdatedOn = now
+                    };
+
+                    await _context.FinancialSequences.AddAsync(sequence);
+                }
+                else
+                {
+                    sequence.LastNumber++;
+                    sequence.UpdatedOn = now;
+                }
+
+                order.OrderNumber =
+                    $"PO-{now:yyMM}-{sequence.LastNumber:0000}";
+
+                order.CreatedOn = now;
+                order.UpdatedOn = null;
+                order.IsActive = true;
+
+                await _context.PurchaseOrders.AddAsync(order);
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+            public async Task<string> GenerateOrderNumberAsync()
+        {
+            DateTime now = DateTime.Now;
+
+            const string documentType = "PurchaseOrder";
+            string sequencePeriod = now.ToString("yyyyMM");
+
+            int lastNumber = await _context.FinancialSequences
+                .Where(x =>
+                    x.DocumentType == documentType &&
+                    x.FinancialYear == sequencePeriod)
+                .Select(x => x.LastNumber)
+                .FirstOrDefaultAsync();
+
+            return $"PO-{now:yyMM}-{lastNumber + 1:0000}";
+        }
+        public async Task CreateFromProposalWithSequenceAsync(
+    PurchaseOrderModel order,
+    ProposalModel? proposal)
+        {
+            await using var transaction =
+                await _context.Database.BeginTransactionAsync(
+                    IsolationLevel.Serializable);
+
+            try
+            {
+                DateTime now = DateTime.Now;
+
+                const string documentType = "PurchaseOrder";
+                string sequencePeriod = now.ToString("yyyyMM");
+
+                var sequence = await _context.FinancialSequences
+                    .FirstOrDefaultAsync(x =>
+                        x.DocumentType == documentType &&
+                        x.FinancialYear == sequencePeriod);
+
+                if (sequence == null)
+                {
+                    sequence = new FinancialSequenceModel
+                    {
+                        DocumentType = documentType,
+                        FinancialYear = sequencePeriod,
+                        LastNumber = 1,
+                        UpdatedOn = now
+                    };
+
+                    await _context.FinancialSequences.AddAsync(sequence);
+                }
+                else
+                {
+                    sequence.LastNumber++;
+                    sequence.UpdatedOn = now;
+                }
+
+                order.OrderNumber =
+                    $"{order.OrderType}-{now:yyMM}-{sequence.LastNumber:0000}";
+
+                order.CreatedOn = now;
+                order.UpdatedOn = null;
+                order.IsActive = true;
+
+                await _context.PurchaseOrders.AddAsync(order);
+
+                if (proposal != null)
+                {
+                    proposal.IsConverted = true;
+                    proposal.UpdatedOn = now;
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
     }
+    
 }

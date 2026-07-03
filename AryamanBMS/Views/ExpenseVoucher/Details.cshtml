@@ -104,9 +104,9 @@
                 {
                     <span class="badge-success">Posted</span>
                 }
-                else if (Model.Status == "Cancelled")
+                else if (Model.Status == "Rejected")
                 {
-                    <span class="badge-danger">Cancelled</span>
+                    <span class="badge-danger">Rejected</span>
                 }
             </div>
 
@@ -258,12 +258,76 @@
                 <strong>@(Model.ApprovedOn?.ToString("dd MMM yyyy HH:mm") ?? "-")</strong>
             </div>
 
+            <div class="form-group">
+                <label class="form-label">Rejected On</label>
+                <strong>
+                    @(Model.RejectedOn?.ToString("dd MMM yyyy HH:mm") ?? "-")
+                </strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Rejection Reason</label>
+                <strong>
+                    @(string.IsNullOrWhiteSpace(Model.RejectionReason)
+                                        ? "-"
+                                        : Model.RejectionReason)
+                </strong>
+            </div>
+
         </div>
 
     </div>
 
 </div>
     
+@if (Model.Status == FinancialConstants.ExpenseVoucherStatus.Draft &&
+    (User.IsInRole("Admin") || User.IsInRole("Finance")))
+{
+    <div class="app-card">
 
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Reject Voucher</h2>
+                <p class="card-subtitle">
+                    Provide a reason before rejecting this voucher.
+                </p>
+            </div>
+        </div>
+
+        <div class="card-body">
+
+            <form asp-controller="ExpenseVoucher"
+                  asp-action="Reject"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <input type="hidden"
+                       name="id"
+                       value="@Model.ExpenseVoucherId" />
+
+                <div class="form-group">
+                    <label class="form-label">
+                        Rejection Reason
+                    </label>
+
+                    <textarea name="rejectionReason"
+                          class="app-textarea"
+                          maxlength="500"
+                          required></textarea>
+                </div>
+
+                <button type="submit"
+                        class="btn-app btn-danger-app">
+                    <i class="bi bi-x-circle"></i>
+                    Reject Voucher
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+}
     
-</div>
+

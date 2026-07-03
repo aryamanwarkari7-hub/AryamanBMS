@@ -1,5 +1,6 @@
 using AryamanBMS.Data;
 using AryamanBMS.Models;
+using AryamanBMS.Repositories;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
 using AryamanBMS.ViewModels;
@@ -69,35 +70,56 @@ namespace AryamanBMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ProposalViewModel vm)
         {
+            ModelState.Remove("Proposal.ProposalNumber");
+
             await LoadDropdownsAsync(vm);
 
             if (!ModelState.IsValid)
                 return View(vm);
 
-            // File is required on create
             if (vm.UploadFile == null)
             {
-                ModelState.AddModelError(nameof(vm.UploadFile), "Please upload the proposal document.");
+                ModelState.AddModelError(
+                    nameof(vm.UploadFile),
+                    "Please upload the proposal document.");
+
                 return View(vm);
             }
 
-            var upload = await _fileStorage.UploadAsync(vm.UploadFile, "Proposals");
+            var upload =
+                await _fileStorage.UploadAsync(
+                    vm.UploadFile,
+                    "Proposals");
+
             if (!upload.Success)
             {
-                ModelState.AddModelError("", upload.ErrorMessage);
+                ModelState.AddModelError(
+                    nameof(vm.UploadFile),
+                    upload.ErrorMessage);
+
                 return View(vm);
             }
 
-            vm.Proposal.ProposalNumber = await GenerateProposalNumberAsync();
             ApplyFileFields(vm.Proposal, upload);
-            vm.Proposal.CreatedOn  = DateTime.Now;
-            vm.Proposal.IsActive   = true;
+
             vm.Proposal.IsConverted = false;
 
-            await _proposalRepo.AddAsync(vm.Proposal);
-            await _proposalRepo.SaveAsync();
+            try
+            {
+                await _proposalRepo.CreateWithSequenceAsync(
+                    vm.Proposal);
+            }
+            catch
+            {
+                await _fileStorage.DeleteAsync(
+                    upload.RelativePath);
 
-            TempData["Success"] = $"Proposal {vm.Proposal.ProposalNumber} created successfully.";
+                throw;
+            }
+
+            TempData["Success"] =
+                $"Proposal {vm.Proposal.ProposalNumber} created successfully.";
+
             return RedirectToAction(nameof(Index));
         }
 
@@ -279,17 +301,6 @@ namespace AryamanBMS.Controllers
             target.ContentType    = upload.ContentType;
             target.FileSize       = upload.FileSize;
             target.FilePath       = upload.RelativePath;
-        }
-
-        private async Task<string> GenerateProposalNumberAsync()
-        {
-            // Pattern: PROP-YYMM-NNNN  e.g. PROP-2526-0001
-            string fy = DateTime.Now.Month >= 4
-                ? $"{DateTime.Now.Year % 100}{(DateTime.Now.Year + 1) % 100}"
-                : $"{(DateTime.Now.Year - 1) % 100}{DateTime.Now.Year % 100}";
-
-            int count = await _context.Proposals.CountAsync() + 1;
-            return $"PROP-{fy}-{count:D4}";
         }
 
         #endregion

@@ -58,9 +58,42 @@ public class GstSnapshotRepository : IGstSnapshotRepository
 
     public Task DeleteAsync(GstMonthlySnapshotModel snapshot)
     {
-        _context.GstMonthlySnapshots.Remove(snapshot);
+        if (string.Equals(
+                snapshot.Status,
+                "Filed",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "Filed GST snapshots cannot be deleted.");
+        }
 
-        return Task.CompletedTask;
+        throw new InvalidOperationException(
+            "GST snapshots should be recalculated, not deleted.");
+    }
+
+    public async Task<bool> LockAsync(int month, int year)
+    {
+        var snapshot = await _context.GstMonthlySnapshots
+            .FirstOrDefaultAsync(x =>
+                x.Month == month &&
+                x.Year == year);
+
+        if (snapshot == null)
+            return false;
+
+        if (string.Equals(
+                snapshot.Status,
+                "Filed",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        snapshot.Status = "Filed";
+
+        await _context.SaveChangesAsync();
+
+        return true;
     }
 
     public async Task SaveAsync()

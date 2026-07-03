@@ -16,7 +16,7 @@ namespace AryamanBMS.Repositories
 
         public async Task<IEnumerable<ExpenseCategoryModel>> GetAllActiveAsync()
         {
-            return await _context.TableExpenseCategories
+            return await _context.ExpenseCategories
                 .AsNoTracking()
                 .Where(x => x.IsActive)
                 .OrderBy(x => x.CategoryName)
@@ -25,21 +25,21 @@ namespace AryamanBMS.Repositories
 
         public async Task<ExpenseCategoryModel?> GetByIdAsync(int id)
         {
-            return await _context.TableExpenseCategories
+            return await _context.ExpenseCategories
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.ExpenseCategoryId == id && x.IsActive);
         }
 
         public async Task<ExpenseCategoryModel?> GetByCategoryCodeAsync(string code)
         {
-            return await _context.TableExpenseCategories
+            return await _context.ExpenseCategories
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.CategoryCode == code && x.IsActive);
         }
 
         public async Task<bool> CategoryCodeExistsAsync(string code, int? excludeId = null)
         {
-            var query = _context.TableExpenseCategories
+            var query = _context.ExpenseCategories
                 .Where(x => x.CategoryCode == code);
 
             if (excludeId.HasValue)
@@ -51,24 +51,24 @@ namespace AryamanBMS.Repositories
         public async Task AddAsync(ExpenseCategoryModel model)
         {
             model.CreatedOn = DateTime.Now;
-            await _context.TableExpenseCategories.AddAsync(model);
+            await _context.ExpenseCategories.AddAsync(model);
         }
 
         public Task UpdateAsync(ExpenseCategoryModel model)
         {
             model.UpdatedOn = DateTime.Now;
-            _context.TableExpenseCategories.Update(model);
+            _context.ExpenseCategories.Update(model);
             return Task.CompletedTask;
         }
 
         public async Task SoftDeleteAsync(int id)
         {
-            var category = await _context.TableExpenseCategories.FindAsync(id);
+            var category = await _context.ExpenseCategories.FindAsync(id);
             if (category != null)
             {
                 category.IsActive = false;
                 category.UpdatedOn = DateTime.Now;
-                _context.TableExpenseCategories.Update(category);
+                _context.ExpenseCategories.Update(category);
             }
         }
 

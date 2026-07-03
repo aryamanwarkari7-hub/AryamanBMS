@@ -167,7 +167,11 @@
                     <input type="file"
                            name="file"
                            class="app-input"
+                           accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
                            required />
+                    <small class="form-text">
+                        PDF, Word, Excel, JPG or PNG only. Maximum size: 10 MB.
+                    </small>
                 </div>
 
                 <div class="form-group">
@@ -233,8 +237,11 @@
                                 <td>@doc.DocumentType</td>
 
                                 <td>
-                                    <a href="@Url.Content("~/" + doc.FilePath)"
-                                       target="_blank">
+                                    <a asp-controller="Notice"
+                                       asp-action="DownloadDocument"
+                                       asp-route-id="@doc.NoticeDocumentId"
+                                       class="app-link">
+                                        <i class="bi bi-download"></i>
                                         @doc.FileName
                                     </a>
                                 </td>

@@ -1,5 +1,6 @@
 using AryamanBMS.Data;
 using AryamanBMS.Models;
+using AryamanBMS.Repositories;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
 using AryamanBMS.ViewModels;
@@ -68,15 +69,66 @@ namespace AryamanBMS.Controllers
 
             if (proposalId.HasValue)
             {
-                var proposal = await _proposalRepo.GetByIdAsync(proposalId.Value);
-                if (proposal != null)
+                var proposal =
+                    await _proposalRepo.GetByIdAsync(
+                        proposalId.Value);
+
+                if (proposal == null)
+                    return NotFound();
+
+                if (!proposal.IsActive)
                 {
-                    vm.Order.ProposalId   = proposal.ProposalId;
-                    vm.Order.ClientId     = proposal.ClientId;
-                    vm.Order.OrderTitle   = proposal.ProposalTitle;
-                    vm.Order.OrderAmount  = proposal.ProposalAmount;
-                    vm.Order.Currency     = proposal.Currency;
+                    TempData["Error"] =
+                        "Inactive proposals cannot be converted.";
+
+                    return RedirectToAction(
+                        "Details",
+                        "Proposal",
+                        new { id = proposalId.Value });
                 }
+
+                if (proposal.IsConverted)
+                {
+                    TempData["Error"] =
+                        "This proposal has already been converted.";
+
+                    return RedirectToAction(
+                        "Details",
+                        "Proposal",
+                        new { id = proposalId.Value });
+                }
+
+                if (!string.Equals(
+                        proposal.Status,
+                        "Accepted",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    TempData["Error"] =
+                        "Only accepted proposals can be converted.";
+
+                    return RedirectToAction(
+                        "Details",
+                        "Proposal",
+                        new { id = proposalId.Value });
+                }
+
+                if (proposal.ValidUntil.HasValue &&
+                    proposal.ValidUntil.Value.Date < DateTime.Today)
+                {
+                    TempData["Error"] =
+                        "Expired proposals cannot be converted.";
+
+                    return RedirectToAction(
+                        "Details",
+                        "Proposal",
+                        new { id = proposalId.Value });
+                }
+
+                vm.Order.ProposalId = proposal.ProposalId;
+                vm.Order.ClientId = proposal.ClientId;
+                vm.Order.OrderTitle = proposal.ProposalTitle;
+                vm.Order.OrderAmount = proposal.ProposalAmount;
+                vm.Order.Currency = proposal.Currency;
             }
 
             await LoadDropdownsAsync(vm);
@@ -87,47 +139,116 @@ namespace AryamanBMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(PurchaseOrderViewModel vm)
         {
+            ModelState.Remove("Order.OrderNumber");
+
             await LoadDropdownsAsync(vm);
 
             if (!ModelState.IsValid)
                 return View(vm);
 
-            // File is required on Create
+            ProposalModel? sourceProposal = null;
+
+            if (vm.Order.ProposalId.HasValue)
+            {
+                sourceProposal = await _proposalRepo.GetByIdAsync(
+                    vm.Order.ProposalId.Value);
+
+                if (sourceProposal == null)
+                {
+                    ModelState.AddModelError(
+                        "Order.ProposalId",
+                        "Selected proposal was not found.");
+
+                    return View(vm);
+                }
+
+                if (!sourceProposal.IsActive)
+                {
+                    ModelState.AddModelError(
+                        "Order.ProposalId",
+                        "Inactive proposals cannot be converted.");
+
+                    return View(vm);
+                }
+
+                if (sourceProposal.IsConverted)
+                {
+                    ModelState.AddModelError(
+                        "Order.ProposalId",
+                        "This proposal has already been converted.");
+
+                    return View(vm);
+                }
+
+                if (!string.Equals(
+                        sourceProposal.Status,
+                        "Accepted",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    ModelState.AddModelError(
+                        "Order.ProposalId",
+                        "Only accepted proposals can be converted.");
+
+                    return View(vm);
+                }
+
+                if (sourceProposal.ValidUntil.HasValue &&
+                    sourceProposal.ValidUntil.Value.Date < DateTime.Today)
+                {
+                    ModelState.AddModelError(
+                        "Order.ProposalId",
+                        "Expired proposals cannot be converted.");
+
+                    return View(vm);
+                }
+
+                // Preserve trusted proposal values
+                vm.Order.ClientId = sourceProposal.ClientId;
+                vm.Order.OrderTitle = sourceProposal.ProposalTitle;
+                vm.Order.OrderAmount = sourceProposal.ProposalAmount;
+                vm.Order.Currency = sourceProposal.Currency;
+            }
+
             if (vm.UploadFile == null)
             {
-                ModelState.AddModelError(nameof(vm.UploadFile), "Please upload the order document.");
+                ModelState.AddModelError(
+                    nameof(vm.UploadFile),
+                    "Please upload the order document.");
+
                 return View(vm);
             }
 
             string folder = $"Orders/{vm.Order.OrderType}";
-            var upload    = await _fileStorage.UploadAsync(vm.UploadFile, folder);
+
+            var upload = await _fileStorage.UploadAsync(
+                vm.UploadFile,
+                folder);
+
             if (!upload.Success)
             {
-                ModelState.AddModelError("", upload.ErrorMessage);
+                ModelState.AddModelError(
+                    nameof(vm.UploadFile),
+                    upload.ErrorMessage);
+
                 return View(vm);
             }
 
-            vm.Order.OrderNumber = await GenerateOrderNumberAsync(vm.Order.OrderType);
             ApplyFileFields(vm.Order, upload);
-            vm.Order.CreatedOn = DateTime.Now;
-            vm.Order.IsActive  = true;
 
-            await _orderRepo.AddAsync(vm.Order);
-
-            // Mark the source proposal as converted if linked
-            if (vm.Order.ProposalId.HasValue)
+            try
             {
-                var proposal = await _proposalRepo.GetByIdAsync(vm.Order.ProposalId.Value);
-                if (proposal != null)
-                {
-                    proposal.IsConverted = true;
-                    await _proposalRepo.UpdateAsync(proposal);
-                }
+                await _orderRepo.CreateFromProposalWithSequenceAsync
+                    (vm.Order,sourceProposal);
+            }
+            catch
+            {
+                await _fileStorage.DeleteAsync(upload.RelativePath);
+                throw;
             }
 
-            await _orderRepo.SaveAsync();
+            TempData["Success"] =
+                $"{vm.Order.OrderType} {vm.Order.OrderNumber} created successfully.";
 
-            TempData["Success"] = $"{vm.Order.OrderType} {vm.Order.OrderNumber} created successfully.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -313,18 +434,7 @@ namespace AryamanBMS.Controllers
             target.FilePath       = upload.RelativePath;
         }
 
-        private async Task<string> GenerateOrderNumberAsync(string orderType)
-        {
-            // PO-2526-0001  or  WO-2526-0001
-            string fy = DateTime.Now.Month >= 4
-                ? $"{DateTime.Now.Year % 100}{(DateTime.Now.Year + 1) % 100}"
-                : $"{(DateTime.Now.Year - 1) % 100}{DateTime.Now.Year % 100}";
-
-            int count = await _context.PurchaseOrders
-                .CountAsync(o => o.OrderType == orderType) + 1;
-
-            return $"{orderType}-{fy}-{count:D4}";
-        }
+        
 
         #endregion
     }

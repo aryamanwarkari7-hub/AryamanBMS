@@ -80,17 +80,15 @@ namespace AryamanBMS.Data
         public DbSet<ExpenseCategoryModel> ExpenseCategories { get; set; }
         public DbSet<ExpenseVoucherModel> ExpenseVouchers { get; set; }
 
-        public DbSet<ExpenseCategoryModel> TableExpenseCategories { get; set; }
-        public DbSet<ExpenseVoucherModel> TableExpenseVouchers { get; set; }
-
         public DbSet<GstMonthlySnapshotModel> GstMonthlySnapshots { get; set; }
+        public DbSet<GstConfigurationModel> GstConfigurations { get; set; }
         public DbSet<GstReturnModel> GstReturns { get; set; }
         public DbSet<GstChallanModel> GstChallans { get; set; }
         public DbSet<GstItcRecordModel> GstItcRecords { get; set; }
         public DbSet<GstDocumentModel> GstDocuments { get; set; }
 
         public DbSet<FinancialAuditDocumentModel> FinancialAuditDocuments { get; set; }
-        public DbSet<FinancialAuditDocumentModel> TableFinancialAuditDocuments { get; set; }
+        
         public DbSet<OfficeAssetModel> OfficeAssets { get; set; }
 
         public DbSet<PfMonthlySnapshotModel> PfMonthlySnapshots { get; set; }
@@ -562,6 +560,7 @@ namespace AryamanBMS.Data
                 .WithOne(x => x.Invoice)
                 .HasForeignKey(x => x.InvoiceId)
                 .OnDelete(DeleteBehavior.Cascade);
+            
 
             modelBuilder.Entity<InvoiceDetailsModel>().ToTable("tableinvoicedetails");
 
@@ -599,6 +598,10 @@ namespace AryamanBMS.Data
             modelBuilder.Entity<GstMonthlySnapshotModel>()
                 .HasIndex(x => new { x.Month, x.Year })
                 .IsUnique();
+
+            modelBuilder.Entity<GstConfigurationModel>().ToTable("tablegstconfiguration");
+            modelBuilder.Entity<GstConfigurationModel>()
+                .HasIndex(x => x.IsActive);
 
             modelBuilder.Entity<GstReturnModel>().ToTable("tablegstreturn");
             modelBuilder.Entity<GstReturnModel>()

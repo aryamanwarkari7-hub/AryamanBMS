@@ -3,11 +3,13 @@ using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
 using AryamanBMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace AryamanBMS.Controllers
@@ -22,25 +24,33 @@ namespace AryamanBMS.Controllers
         private readonly IGstCalculationService _calculationService;
         private readonly IGstDashboardService _dashboardService;
         private readonly IGstSnapshotRepository _snapshotRepository;
+        private readonly IGstConfigurationRepository _configurationRepository;
+        private readonly IGstReturnRepository _returnRepository;
+        private readonly IGstChallanRepository _challanRepository;
+        private readonly UserManager<ApplicationUserModel> _userManager;
         private readonly ILogger<GstController> _logger;
 
         /// <summary>
         /// Constructor with dependency injection
         /// </summary>
         public GstController(
-            IGstCalculationService calculationService,
-            IGstDashboardService dashboardService,
-            IGstSnapshotRepository snapshotRepository,
-            ILogger<GstController> logger)
+           IGstCalculationService calculationService,
+           IGstDashboardService dashboardService,
+           IGstSnapshotRepository snapshotRepository,
+           IGstConfigurationRepository configurationRepository,
+           IGstReturnRepository returnRepository,
+           IGstChallanRepository challanRepository,
+           UserManager<ApplicationUserModel> userManager,
+           ILogger<GstController> logger)
         {
-            _calculationService = calculationService
-                ?? throw new ArgumentNullException(nameof(calculationService));
-            _dashboardService = dashboardService
-                ?? throw new ArgumentNullException(nameof(dashboardService));
-            _snapshotRepository = snapshotRepository
-                ?? throw new ArgumentNullException(nameof(snapshotRepository));
-            _logger = logger
-                ?? throw new ArgumentNullException(nameof(logger));
+            _calculationService = calculationService;
+            _dashboardService = dashboardService;
+            _snapshotRepository = snapshotRepository;
+            _configurationRepository = configurationRepository;
+            _returnRepository = returnRepository;
+            _challanRepository = challanRepository;
+            _userManager = userManager;
+            _logger = logger;
         }
 
         #region Index - Landing Page
@@ -238,18 +248,31 @@ namespace AryamanBMS.Controllers
             {
                 _logger.LogInformation("GST Configuration page accessed");
 
-                // TODO: Load GST configuration from database
-                // For now, return hardcoded defaults
-                var model = new GstConfigurationViewModel
-                {
-                    SgstRate = 9,
-                    CgstRate = 9,
-                    IgstRate = 18,
-                    CompanyGstin = "27AABCR5055N1Z0",
-                    CompanyName = "Your Company Name",
-                    RegisteredState = "MH",
-                    LastUpdatedOn = DateTime.Now
-                };
+                var configuration =
+                    await _configurationRepository.GetActiveAsync();
+
+                var model = configuration == null
+                    ? new GstConfigurationViewModel
+                    {
+                        SgstRate = 9,
+                        CgstRate = 9,
+                        IgstRate = 18,
+                        RegisteredState = "MH",
+                        LastUpdatedOn = DateTime.Now
+                    }
+                    : new GstConfigurationViewModel
+                    {
+                        GstConfigurationId = configuration.GstConfigurationId,
+                        CompanyName = configuration.CompanyName,
+                        CompanyGstin = configuration.CompanyGstin,
+                        RegisteredState = configuration.RegisteredState,
+                        CgstRate = configuration.CgstRate,
+                        SgstRate = configuration.SgstRate,
+                        IgstRate = configuration.IgstRate,
+                        IsActive = configuration.IsActive,
+                        UpdatedByUserId = configuration.UpdatedByUserId,
+                        LastUpdatedOn = configuration.UpdatedOn
+                    };
 
                 return View(model);
             }
@@ -280,48 +303,25 @@ namespace AryamanBMS.Controllers
         {
             try
             {
-                // Validate model
-                if (!ModelState.IsValid)
+                if (!AreValidGstRates(model.CgstRate, model.SgstRate, model.IgstRate))
                 {
-                    var errors = ModelState.Values.SelectMany(v => v.Errors);
-                    _logger.LogWarning($"Invalid GST rates: {string.Join(", ", errors.Select(e => e.ErrorMessage))}");
-                    TempData["Error"] = "Please enter valid GST rates (0-100).";
-                    return RedirectToAction(nameof(Configuration));
-                }
-
-                // Validate rate ranges
-                if (model.SgstRate < 0 || model.SgstRate > 100)
-                {
-                    TempData["Error"] = "SGST rate must be between 0 and 100.";
-                    return RedirectToAction(nameof(Configuration));
-                }
-
-                if (model.CgstRate < 0 || model.CgstRate > 100)
-                {
-                    TempData["Error"] = "CGST rate must be between 0 and 100.";
-                    return RedirectToAction(nameof(Configuration));
-                }
-
-                if (model.IgstRate < 0 || model.IgstRate > 100)
-                {
-                    TempData["Error"] = "IGST rate must be between 0 and 100.";
+                    TempData["Error"] = "GST rates must be between 0 and 100, and IGST should equal CGST + SGST.";
                     return RedirectToAction(nameof(Configuration));
                 }
 
                 _logger.LogInformation($"Updating GST rates: SGST={model.SgstRate}%, CGST={model.CgstRate}%, IGST={model.IgstRate}%");
 
-                // TODO: Save GST rates to database
-                // var gstConfig = new GstConfigurationModel
-                // {
-                //     SgstRate = model.SgstRate,
-                //     CgstRate = model.CgstRate,
-                //     IgstRate = model.IgstRate,
-                //     LastUpdatedOn = DateTime.Now,
-                //     UpdatedByUserId = GetCurrentUserId()
-                // };
-                // await _gstConfigRepository.SaveAsync(gstConfig);
+                var configuration =
+                    await GetOrCreateConfigurationAsync();
 
-                TempData["Warning"] = "GST rate saving is not implemented yet.";
+                configuration.CgstRate = model.CgstRate;
+                configuration.SgstRate = model.SgstRate;
+                configuration.IgstRate = model.IgstRate;
+                configuration.UpdatedByUserId = _userManager.GetUserId(User);
+
+                await _configurationRepository.SaveActiveAsync(configuration);
+
+                TempData["Success"] = "GST rates updated successfully.";
                 return RedirectToAction(nameof(Configuration));
             }
             catch (Exception ex)
@@ -351,19 +351,13 @@ namespace AryamanBMS.Controllers
         {
             try
             {
-                // Validate model
-                if (!ModelState.IsValid)
-                {
-                    var errors = ModelState.Values.SelectMany(v => v.Errors);
-                    _logger.LogWarning($"Invalid company GST details: {string.Join(", ", errors.Select(e => e.ErrorMessage))}");
-                    TempData["Error"] = "Please enter valid company details.";
-                    return RedirectToAction(nameof(Configuration));
-                }
+                model.CompanyName = model.CompanyName?.Trim() ?? string.Empty;
+                model.CompanyGstin = model.CompanyGstin?.Trim().ToUpperInvariant() ?? string.Empty;
+                model.RegisteredState = model.RegisteredState?.Trim().ToUpperInvariant() ?? string.Empty;
 
-                // Validate GSTIN format (15 characters)
-                if (string.IsNullOrWhiteSpace(model.CompanyGstin) || model.CompanyGstin.Length != 15)
+                if (!IsValidGstin(model.CompanyGstin))
                 {
-                    TempData["Error"] = "GSTIN must be exactly 15 characters long.";
+                    TempData["Error"] = "Enter a valid 15-character GSTIN.";
                     return RedirectToAction(nameof(Configuration));
                 }
 
@@ -374,8 +368,7 @@ namespace AryamanBMS.Controllers
                     return RedirectToAction(nameof(Configuration));
                 }
 
-                // Validate state
-                if (string.IsNullOrWhiteSpace(model.RegisteredState) || model.RegisteredState.Length != 2)
+                if (!IsValidRegisteredState(model.RegisteredState))
                 {
                     TempData["Error"] = "Please select a valid state.";
                     return RedirectToAction(nameof(Configuration));
@@ -383,15 +376,17 @@ namespace AryamanBMS.Controllers
 
                 _logger.LogInformation($"Updating company GST details: GSTIN={model.CompanyGstin}, Company={model.CompanyName}, State={model.RegisteredState}");
 
-                // TODO: Update company profile in database
-                // var company = await _companyService.GetCompanyAsync();
-                // company.Gstin = model.CompanyGstin;
-                // company.CompanyName = model.CompanyName;
-                // company.RegisteredState = model.RegisteredState;
-                // company.UpdatedOn = DateTime.Now;
-                // await _companyService.UpdateAsync(company);
+                var configuration =
+                    await GetOrCreateConfigurationAsync();
 
-                TempData["Warning"] = "Company GST detail saving is not implemented yet.";
+                configuration.CompanyName = model.CompanyName;
+                configuration.CompanyGstin = model.CompanyGstin;
+                configuration.RegisteredState = model.RegisteredState;
+                configuration.UpdatedByUserId = _userManager.GetUserId(User);
+
+                await _configurationRepository.SaveActiveAsync(configuration);
+
+                TempData["Success"] = "Company GST details updated successfully.";
                 return RedirectToAction(nameof(Configuration));
             }
             catch (Exception ex)
@@ -403,6 +398,243 @@ namespace AryamanBMS.Controllers
         }
 
         #endregion
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateReturn(
+               int snapshotId,
+               string returnType,
+               string status,
+               string? arnNumber,
+               DateTime? filedDate,
+               string? remarks)
+        {
+            var snapshot =
+                await _snapshotRepository.GetByIdAsync(snapshotId);
+
+            if (snapshot == null)
+                return NotFound();
+
+            if (snapshot.Status == "Filed")
+            {
+                TempData["Error"] =
+                    "Filed GST periods cannot be edited.";
+
+                return RedirectToAction(
+                    nameof(Dashboard),
+                    new { snapshot.Month, snapshot.Year });
+            }
+
+            if (returnType != "GSTR1" &&
+                returnType != "GSTR3B")
+            {
+                TempData["Error"] = "Invalid GST return type.";
+
+                return RedirectToAction(
+                    nameof(Dashboard),
+                    new { snapshot.Month, snapshot.Year });
+            }
+
+            if (status != "Pending" &&
+                status != "Filed")
+            {
+                TempData["Error"] = "Invalid return status.";
+
+                return RedirectToAction(
+                    nameof(Dashboard),
+                    new { snapshot.Month, snapshot.Year });
+            }
+
+            if (status == "Filed")
+            {
+                if (string.IsNullOrWhiteSpace(arnNumber))
+                {
+                    TempData["Error"] =
+                        "ARN number is required when filing a return.";
+
+                    return RedirectToAction(
+                        nameof(Dashboard),
+                        new { snapshot.Month, snapshot.Year });
+                }
+
+                if (!filedDate.HasValue)
+                {
+                    TempData["Error"] =
+                        "Filing date is required.";
+
+                    return RedirectToAction(
+                        nameof(Dashboard),
+                        new { snapshot.Month, snapshot.Year });
+                }
+            }
+
+            var gstReturn =
+                await _returnRepository.GetByReturnTypeAsync(
+                    snapshotId,
+                    returnType);
+
+            if (gstReturn == null)
+            {
+                gstReturn = new GstReturnModel
+                {
+                    SnapshotId = snapshotId,
+                    ReturnType = returnType,
+                    CreatedOn = DateTime.Now
+                };
+
+                await _returnRepository.AddAsync(gstReturn);
+            }
+
+            gstReturn.Status = status;
+            gstReturn.ArnNumber =
+                string.IsNullOrWhiteSpace(arnNumber)
+                    ? null
+                    : arnNumber.Trim();
+
+            gstReturn.FiledDate =
+                status == "Filed"
+                    ? filedDate
+                    : null;
+
+            gstReturn.FiledBy =
+                status == "Filed"
+                    ? User.Identity?.Name
+                    : null;
+
+            gstReturn.Remarks = remarks;
+            gstReturn.UpdatedOn = DateTime.Now;
+
+            await _returnRepository.SaveAsync();
+
+            TempData["Success"] =
+                $"{returnType} status updated successfully.";
+
+            return RedirectToAction(
+                nameof(Dashboard),
+                new { snapshot.Month, snapshot.Year });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateChallan(
+               int snapshotId,
+               string challanNumber,
+               string status,
+               decimal amountPaid,
+               DateTime? paymentDate,
+               string? paymentMode,
+               string? bankName,
+               string? cin,
+               string? cpin,
+               string? remarks)
+        {
+            var snapshot =
+                await _snapshotRepository.GetByIdAsync(snapshotId);
+
+            if (snapshot == null)
+                return NotFound();
+
+            if (snapshot.Status == "Filed")
+            {
+                TempData["Error"] =
+                    "Filed GST periods cannot be edited.";
+
+                return RedirectToAction(
+                    nameof(Dashboard),
+                    new { snapshot.Month, snapshot.Year });
+            }
+
+            if (status != "Pending" &&
+                status != "Paid")
+            {
+                TempData["Error"] = "Invalid challan status.";
+
+                return RedirectToAction(
+                    nameof(Dashboard),
+                    new { snapshot.Month, snapshot.Year });
+            }
+
+            if (string.IsNullOrWhiteSpace(challanNumber))
+            {
+                TempData["Error"] =
+                    "Challan number is required.";
+
+                return RedirectToAction(
+                    nameof(Dashboard),
+                    new { snapshot.Month, snapshot.Year });
+            }
+
+            if (status == "Paid")
+            {
+                if (amountPaid <= 0)
+                {
+                    TempData["Error"] =
+                        "Paid amount must be greater than zero.";
+
+                    return RedirectToAction(
+                        nameof(Dashboard),
+                        new { snapshot.Month, snapshot.Year });
+                }
+
+                if (!paymentDate.HasValue)
+                {
+                    TempData["Error"] =
+                        "Payment date is required.";
+
+                    return RedirectToAction(
+                        nameof(Dashboard),
+                        new { snapshot.Month, snapshot.Year });
+                }
+            }
+
+            var challan =
+                await _challanRepository.GetByChallanNumberAsync(
+                    challanNumber.Trim());
+
+            if (challan == null)
+            {
+                challan = new GstChallanModel
+                {
+                    SnapshotId = snapshotId,
+                    ChallanNumber = challanNumber.Trim(),
+                    CreatedOn = DateTime.Now
+                };
+
+                await _challanRepository.AddAsync(challan);
+            }
+            else if (challan.SnapshotId != snapshotId)
+            {
+                TempData["Error"] =
+                    "This challan number belongs to another GST period.";
+
+                return RedirectToAction(
+                    nameof(Dashboard),
+                    new { snapshot.Month, snapshot.Year });
+            }
+
+            challan.Status = status;
+            challan.AmountPaid = amountPaid;
+            challan.PaymentDate =
+                status == "Paid"
+                    ? paymentDate
+                    : null;
+
+            challan.PaymentMode = paymentMode;
+            challan.BankName = bankName;
+            challan.CIN = cin;
+            challan.CPIN = cpin;
+            challan.Remarks = remarks;
+            challan.UpdatedOn = DateTime.Now;
+
+            await _challanRepository.SaveAsync();
+
+            TempData["Success"] =
+                "GST challan updated successfully.";
+
+            return RedirectToAction(
+                nameof(Dashboard),
+                new { snapshot.Month, snapshot.Year });
+        }
 
         #region Helper Methods
 
@@ -434,14 +666,62 @@ namespace AryamanBMS.Controllers
                 .DateTimeFormat.GetMonthName(month);
         }
 
-        /// <summary>
-        /// Get current logged-in user ID
-        /// TODO: Implement if needed
-        /// </summary>
-        private int GetCurrentUserId()
+        private async Task<GstConfigurationModel> GetOrCreateConfigurationAsync()
         {
-            // Implementation would depend on your user management system
-            return 0;
+            var configuration =
+                await _configurationRepository.GetActiveAsync();
+
+            if (configuration != null)
+                return configuration;
+
+            return new GstConfigurationModel
+            {
+                CompanyName = "Aryaman Technologies Private Limited",
+                CompanyGstin = "27AABCA1234A1Z5",
+                RegisteredState = "MH",
+                CgstRate = 9,
+                SgstRate = 9,
+                IgstRate = 18,
+                IsActive = true
+            };
+        }
+
+        private bool AreValidGstRates(
+            decimal cgstRate,
+            decimal sgstRate,
+            decimal igstRate)
+        {
+            if (cgstRate < 0 || cgstRate > 100)
+                return false;
+
+            if (sgstRate < 0 || sgstRate > 100)
+                return false;
+
+            if (igstRate < 0 || igstRate > 100)
+                return false;
+
+            return igstRate == cgstRate + sgstRate;
+        }
+
+        private bool IsValidGstin(string gstin)
+        {
+            return Regex.IsMatch(
+                gstin,
+                @"^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$");
+        }
+
+        private bool IsValidRegisteredState(string stateCode)
+        {
+            var states = new HashSet<string>
+            {
+                "AN", "AP", "AR", "AS", "BR", "CH", "CG", "DD", "DL",
+                "DN", "GA", "GJ", "HR", "HP", "JK", "JH", "KA", "KL",
+                "LA", "LD", "MP", "MH", "MN", "ML", "MZ", "NL", "OD",
+                "PY", "PB", "RJ", "SK", "TN", "TS", "TR", "UP", "UK",
+                "WB"
+            };
+
+            return states.Contains(stateCode);
         }
 
         #endregion
@@ -494,10 +774,96 @@ namespace AryamanBMS.Controllers
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> LockSnapshot(int month, int year)
+        public async Task<IActionResult> LockSnapshot(
+    int month,
+    int year)
         {
-            TempData["Error"] = "GST snapshot filing lock is not implemented yet.";
-            return RedirectToAction(nameof(Dashboard), new { month, year });
+            if (month < 1 || month > 12)
+            {
+                TempData["Error"] = "Invalid month.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (year < 2000 ||
+                year > DateTime.Now.Year + 1)
+            {
+                TempData["Error"] = "Invalid year.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            var snapshot =
+                await _snapshotRepository.GetByMonthYearAsync(
+                    month,
+                    year);
+
+            if (snapshot == null)
+            {
+                TempData["Error"] =
+                    "Generate the GST snapshot before filing it.";
+
+                return RedirectToAction(
+                    nameof(Dashboard),
+                    new { month, year });
+            }
+
+            if (string.Equals(
+                    snapshot.Status,
+                    "Filed",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["Error"] =
+                    "This GST snapshot is already filed and locked.";
+
+                return RedirectToAction(
+                    nameof(Dashboard),
+                    new { month, year });
+            }
+
+            bool gstr1Filed = snapshot.Returns.Any(x =>
+               x.ReturnType == "GSTR1" &&
+               x.Status == "Filed");
+
+            bool gstr3bFiled = snapshot.Returns.Any(x =>
+                x.ReturnType == "GSTR3B" &&
+                x.Status == "Filed");
+
+            bool challanPaid = snapshot.Challans.Any(x =>
+                x.Status == "Paid");
+
+            if (!gstr1Filed || !gstr3bFiled || !challanPaid)
+            {
+                TempData["Error"] =
+                    "GSTR-1, GSTR-3B and GST challan must be completed before locking this period.";
+
+                return RedirectToAction(
+                    nameof(Dashboard),
+                    new { month, year });
+            }
+
+            bool locked =
+                await _snapshotRepository.LockAsync(
+                    month,
+                    year);
+
+            if (!locked)
+            {
+                TempData["Error"] =
+                    "GST snapshot could not be locked.";
+
+                return RedirectToAction(
+                    nameof(Dashboard),
+                    new { month, year });
+            }
+
+            TempData["Success"] =
+                $"GST snapshot for {GetMonthName(month)} {year} " +
+                "was filed and locked successfully.";
+
+            return RedirectToAction(
+                nameof(Dashboard),
+                new { month, year });
         }
 
         #endregion

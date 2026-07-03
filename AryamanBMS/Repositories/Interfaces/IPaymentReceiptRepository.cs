@@ -12,8 +12,6 @@ public interface IPaymentReceiptRepository
 
     Task DeleteAsync(PaymentReceiptModel model);
 
-    Task SaveAsync();
-
     Task<string> GenerateReceiptNoAsync();
 
     Task<List<ClientModel>> GetClientsAsync();
@@ -22,5 +20,8 @@ public interface IPaymentReceiptRepository
 
     Task<List<InvoiceModel>> GetInvoicesByClientAsync(int clientId);
 
-    Task UpdateInvoicePaymentAsync(int invoiceId);
+    Task<bool> TransactionReferenceExistsAsync(
+    string? transactionNo,
+    string? referenceNo,
+    int? excludePaymentReceiptId = null);
 }

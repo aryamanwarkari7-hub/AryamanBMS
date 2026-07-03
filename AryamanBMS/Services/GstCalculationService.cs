@@ -37,7 +37,7 @@ namespace AryamanBMS.Services
 
         public async Task<decimal> GetInputGSTAsync(int month, int year)
         {
-            return await _context.TableExpenseVouchers
+            return await _context.ExpenseVouchers
                 .Where(x =>
                     x.IsActive &&
                     x.ITCEligible &&
@@ -71,7 +71,7 @@ namespace AryamanBMS.Services
                     x.InvoiceDate.Year == year)
                 .ToListAsync();
 
-            var expenses = await _context.TableExpenseVouchers
+            var expenses = await _context.ExpenseVouchers
                 .Where(x =>
                     x.IsActive &&
                     x.ITCEligible &&
@@ -120,9 +120,25 @@ namespace AryamanBMS.Services
 
             snapshot.SalesTaxableAmount = salesTaxable;
 
-            snapshot.SalesCGST = outputGST / 2;
-            snapshot.SalesSGST = outputGST / 2;
-            snapshot.SalesIGST = 0;
+            decimal salesIGST = invoices
+                .Where(x => x.IsInterState)
+                .Sum(x => x.GSTAmount);
+
+            decimal salesIntrastateGST = invoices
+                .Where(x => !x.IsInterState)
+                .Sum(x => x.GSTAmount);
+
+            decimal salesCGST = Math.Round(
+                salesIntrastateGST / 2,
+                2,
+                MidpointRounding.AwayFromZero);
+
+            decimal salesSGST =
+                salesIntrastateGST - salesCGST;
+
+            snapshot.SalesCGST = salesCGST;
+            snapshot.SalesSGST = salesSGST;
+            snapshot.SalesIGST = salesIGST;
 
             snapshot.PurchaseTaxableAmount = purchaseTaxable;
 

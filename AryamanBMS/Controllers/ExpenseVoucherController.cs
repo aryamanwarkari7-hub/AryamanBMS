@@ -30,7 +30,7 @@ namespace AryamanBMS.Controllers
 
             if (!IsFinanceUser())
             {
-                int userId = GetCurrentUserId();
+                string userId = GetCurrentUserId();
 
                 vouchers = vouchers
                     .Where(x => x.CreatedByUserId == userId)
@@ -125,8 +125,22 @@ namespace AryamanBMS.Controllers
                 return View(model);
             }
 
-            // Generate voucher number
-            model.VoucherNumber = await GenerateUniqueVoucherNumber(model.FinancialYear);
+            if (!string.IsNullOrWhiteSpace(model.InvoiceNumber))
+            {
+                bool duplicateExists =
+                    await _voucherRepository.VendorInvoiceExistsAsync(
+                        model.VendorName,
+                        model.InvoiceNumber);
+
+                if (duplicateExists)
+                {
+                    ModelState.AddModelError(
+                        nameof(model.InvoiceNumber),
+                        "This vendor invoice number already exists.");
+
+                    return View(model);
+                }
+            }
 
             // Set GST rates and calculate amounts
             if (model.GSTRate == 0)
@@ -137,8 +151,8 @@ namespace AryamanBMS.Controllers
             model.CreatedByUserId = GetCurrentUserId();
             model.Status = FinancialConstants.ExpenseVoucherStatus.Draft;
 
-            await _voucherRepository.AddAsync(model);
-            await _voucherRepository.SaveAsync();
+            // Generate voucher number
+            await _voucherRepository.CreateWithSequenceAsync(model);
 
             TempData["Success"] = $"Expense Voucher '{model.VoucherNumber}' created successfully.";
             return RedirectToAction(nameof(Index));
@@ -181,12 +195,7 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // Only allow editing of draft vouchers
-            if (existing.Status != FinancialConstants.ExpenseVoucherStatus.Draft)
-            {
-                TempData["Error"] = "Only draft expense vouchers can be edited.";
-                return RedirectToAction(nameof(Index));
-            }
+            
 
             // Validate category exists
             var category = await _categoryRepository.GetByIdAsync(model.ExpenseCategoryId);
@@ -196,12 +205,49 @@ namespace AryamanBMS.Controllers
                 return View(model);
             }
 
+            if (model.Amount <= 0)
+            {
+                ModelState.AddModelError(
+                    nameof(model.Amount),
+                    "Amount should be greater than zero.");
+
+                return View(model);
+            }
+
+            if (model.VoucherDate.Date > DateTime.Today)
+            {
+                ModelState.AddModelError(
+                    nameof(model.VoucherDate),
+                    "Voucher date cannot be in the future.");
+
+                return View(model);
+            }
+
+            if (!string.IsNullOrWhiteSpace(model.InvoiceNumber))
+            {
+                bool duplicateExists =
+                    await _voucherRepository.VendorInvoiceExistsAsync(
+                        model.VendorName,
+                        model.InvoiceNumber,
+                        existing.ExpenseVoucherId);
+
+                if (duplicateExists)
+                {
+                    ModelState.AddModelError(
+                        nameof(model.InvoiceNumber),
+                        "This vendor invoice number already exists.");
+
+                    return View(model);
+                }
+            }
+
             // Update fields
             existing.ExpenseCategoryId = model.ExpenseCategoryId;
             existing.VoucherDate = model.VoucherDate;
             existing.Description = model.Description;
             existing.Amount = model.Amount;
             existing.GSTRate = model.GSTRate > 0 ? model.GSTRate : category.DefaultGSTRate;
+            existing.IsInterState = model.IsInterState;
             existing.VendorName = model.VendorName;
             existing.VendorGSTIN = model.VendorGSTIN;
             existing.InvoiceNumber = model.InvoiceNumber;
@@ -253,6 +299,11 @@ namespace AryamanBMS.Controllers
             }
 
             var userId = GetCurrentUserId();
+
+            voucher.RejectionReason = null;
+            voucher.RejectedByUserId = null;
+            voucher.RejectedOn = null;
+
             await _voucherRepository.ApproveAsync(id, userId);
             await _voucherRepository.SaveAsync();
 
@@ -262,28 +313,46 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Reject(int id)
+        public async Task<IActionResult> Reject(int id,string rejectionReason)
         {
-
             if (!IsFinanceUser())
-            {
                 return Forbid();
-            }
 
-            var voucher = await _voucherRepository.GetByIdAsync(id);
+            var voucher =
+                await _voucherRepository.GetByIdAsync(id);
+
             if (voucher == null)
                 return NotFound();
 
-            if (voucher.Status != FinancialConstants.ExpenseVoucherStatus.Draft)
+            if (voucher.Status !=
+                FinancialConstants.ExpenseVoucherStatus.Draft)
             {
-                TempData["Error"] = "Only draft expense vouchers can be rejected.";
+                TempData["Error"] =
+                    "Only draft expense vouchers can be rejected.";
+
                 return RedirectToAction(nameof(Index));
             }
 
-            await _voucherRepository.RejectAsync(id);
+            if (string.IsNullOrWhiteSpace(rejectionReason))
+            {
+                TempData["Error"] =
+                    "Rejection reason is required.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
+            }
+
+            await _voucherRepository.RejectAsync(
+                id,
+                GetCurrentUserId(),
+                rejectionReason);
+
             await _voucherRepository.SaveAsync();
 
-            TempData["Success"] = $"Expense Voucher '{voucher.VoucherNumber}' rejected.";
+            TempData["Success"] =
+                $"Expense Voucher '{voucher.VoucherNumber}' rejected.";
+
             return RedirectToAction(nameof(Index));
         }
 
@@ -367,60 +436,67 @@ namespace AryamanBMS.Controllers
             return $"{fyStart}-{fyEnd.ToString().Substring(2)}";
         }
 
-        private async Task<string> GenerateVoucherNumber(string financialYear)
+       
+
+        private string GetCurrentUserId()
         {
-            var sequence = await _voucherRepository.GetNextVoucherSequenceAsync(financialYear);
-            return $"{FinancialConstants.ExpenseVoucherPrefix}-{financialYear}-{sequence.ToString("D4")}";
+            return _userManager.GetUserId(User)
+                ?? throw new UnauthorizedAccessException(
+                    "Current user could not be identified.");
         }
 
-        private async Task<string> GenerateUniqueVoucherNumber(string financialYear)
+        private static void CalculateGSTAmounts(ExpenseVoucherModel model)
         {
-            string voucherNumber;
-            int attempts = 0;
+            model.Amount = Math.Round(
+                model.Amount,
+                2,
+                MidpointRounding.AwayFromZero);
 
-            do
-            {
-                voucherNumber = await GenerateVoucherNumber(financialYear);
-                attempts++;
+            model.GSTRate = Math.Round(
+                model.GSTRate,
+                2,
+                MidpointRounding.AwayFromZero);
 
-                if (attempts > 10)
-                {
-                    throw new InvalidOperationException(
-                        "Failed to generate unique voucher number. Please check financial sequence.");
-                }
-            }
-            while (await _voucherRepository.VoucherNumberExistsAsync(voucherNumber));
-
-            return voucherNumber;
-        }
-
-        private int GetCurrentUserId()
-        {
-            // This assumes ApplicationUserModel has an Id field. Adjust if needed.
-            return int.TryParse(_userManager.GetUserId(User), out int userId) ? userId : 0;
-        }
-
-        private void CalculateGSTAmounts(ExpenseVoucherModel model)
-        {
-            if (model.GSTRate == 0)
+            if (model.GSTRate <= 0)
             {
                 model.CGSTAmount = 0;
                 model.SGSTAmount = 0;
                 model.IGSTAmount = 0;
                 model.TotalGSTAmount = 0;
                 model.TotalAmount = model.Amount;
+
+                return;
+            }
+
+            decimal totalGst = Math.Round(
+                model.Amount * model.GSTRate / 100,
+                2,
+                MidpointRounding.AwayFromZero);
+
+            if (model.IsInterState)
+            {
+                model.CGSTAmount = 0;
+                model.SGSTAmount = 0;
+                model.IGSTAmount = totalGst;
             }
             else
             {
-                decimal gstAmount = (model.Amount * model.GSTRate) / 100;
+                decimal cgst = Math.Round(
+                    totalGst / 2,
+                    2,
+                    MidpointRounding.AwayFromZero);
 
-                model.CGSTAmount = gstAmount / 2;
-                model.SGSTAmount = gstAmount / 2;
+                model.CGSTAmount = cgst;
+                model.SGSTAmount = totalGst - cgst;
                 model.IGSTAmount = 0;
-
-                model.TotalGSTAmount = gstAmount;
-                model.TotalAmount = model.Amount + gstAmount;
             }
+
+            model.TotalGSTAmount = totalGst;
+
+            model.TotalAmount = Math.Round(
+                model.Amount + totalGst,
+                2,
+                MidpointRounding.AwayFromZero);
         }
     }
 }

@@ -13,6 +13,8 @@ namespace AryamanBMS.Repositories.Interfaces
 
         Task<List<ClientModel>> GetClientsAsync();
 
+        Task<List<ProjectModel>> GetProjectsAsync();
+
         Task AddAsync(InvoiceModel invoice);
 
         Task UpdateAsync(InvoiceModel invoice);
@@ -22,5 +24,8 @@ namespace AryamanBMS.Repositories.Interfaces
         Task<string> GenerateInvoiceNoAsync();
 
         Task SaveAsync();
+
+        Task CreateWithSequenceAsync(InvoiceModel invoice);
+        
     }
 }

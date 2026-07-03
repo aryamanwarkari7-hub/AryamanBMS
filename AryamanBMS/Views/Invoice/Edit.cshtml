@@ -78,15 +78,51 @@
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="ProjectName" class="form-label">Project Name</label>
-                    <input asp-for="ProjectName" class="app-input" />
-                    <span asp-validation-for="ProjectName" class="validation-message"></span>
+                    <label asp-for="ProjectId" class="form-label">
+                        Project
+                    </label>
+
+                    <select asp-for="ProjectId"
+                            class="app-select">
+
+                        <option value="">Select Project</option>
+
+                        @foreach (var project in ViewBag.Projects)
+                        {
+                            <option value="@project.Id"
+                                    selected="@(Model.ProjectId == project.Id)">
+                                @project.ProjectCode - @project.ProjectName
+                            </option>
+                        }
+
+                    </select>
+
+                    <span asp-validation-for="ProjectId"
+                          class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
                     <label asp-for="GSTNo" class="form-label">GST No</label>
                     <input asp-for="GSTNo" class="app-input" />
                     <span asp-validation-for="GSTNo" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <div class="form-check">
+
+                        <input asp-for="IsInterState"
+                               class="form-check-input" />
+
+                        <label asp-for="IsInterState"
+                               class="form-check-label">
+                            Interstate Invoice
+                        </label>
+
+                    </div>
+
+                    <small class="form-text">
+                        Select when the client state differs from the company state.
+                    </small>
                 </div>
 
                 <div class="form-group">

@@ -13,5 +13,9 @@ namespace AryamanBMS.Repositories.Interfaces
         Task UpdateAsync(PurchaseOrderModel order);
         Task DeleteAsync(PurchaseOrderModel order);
         Task SaveAsync();
+        Task<string> GenerateOrderNumberAsync();
+        Task CreateWithSequenceAsync(PurchaseOrderModel order);
+        Task CreateFromProposalWithSequenceAsync(
+    PurchaseOrderModel order,ProposalModel? proposal);
     }
 }

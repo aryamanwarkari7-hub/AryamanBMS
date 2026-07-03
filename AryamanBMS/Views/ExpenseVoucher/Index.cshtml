@@ -105,9 +105,9 @@
             <a asp-action="Index"
                asp-route-search="@search"
                asp-route-categoryId="@categoryId"
-               asp-route-status="Cancelled"
-               class="btn-app @(status == "Cancelled" ? "btn-primary-app" : "btn-secondary-app")">
-                Cancelled
+               asp-route-status="Rejected"
+               class="btn-app @(status == "Rejected" ? "btn-primary-app" : "btn-secondary-app")">
+                Rejected
             </a>
 
         </div>
@@ -151,9 +151,9 @@
                                 {
                                     <span class="badge-success">Posted</span>
                                 }
-                                else if (voucher.Status == "Cancelled")
+                                else if (voucher.Status == "Rejected")
                                 {
-                                    <span class="badge-danger">Cancelled</span>
+                                        <span class="badge-danger">Rejected</span>
                                 }
                             </td>
                             <td>

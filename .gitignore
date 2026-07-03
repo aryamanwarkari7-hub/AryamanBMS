@@ -337,13 +337,8 @@ DatabaseBackups/
 # User Uploads / Generated Private Documents
 # =========================================================
 
-uploads/
-
-# Employee private documents
-AryamanBMS/App_Data/EmployeeDocuments/
-
-# Letter private documents
-AryamanBMS/App_Data/LetterDocuments/
+AryamanBMS/App_Data/*
+!AryamanBMS/App_Data/.gitkeep
 
 # =========================================================
 # Public Generated HR Documents

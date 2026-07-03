@@ -65,9 +65,8 @@ namespace AryamanBMS.Controllers
                 {
                     TotalReceipts = allPayments.Count,
                     TotalReceived = activePayments.Sum(x => x.AmountReceived),
-                    PendingCount = activePayments.Count,
-                    CompletedCount = activePayments.Count,
-                    CancelledCount = allPayments.Count(x => x.IsCancelled)
+                    ActiveReceiptCount = activePayments.Count,
+                    CancelledReceiptCount = allPayments.Count(x => x.IsCancelled),
                 }
             };
 
@@ -95,6 +94,9 @@ namespace AryamanBMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(PaymentReceiptModel model)
         {
+
+            ModelState.Remove(nameof(model.ReceiptNo));
+
             await LoadFormDataAsync(model.ClientId);
 
             if (!ModelState.IsValid)
@@ -109,8 +111,19 @@ namespace AryamanBMS.Controllers
                 return View(model);
             }
 
-            model.IsActive = true;
-            model.IsCancelled = false;
+            bool duplicateReference =
+               await _paymentRepository.TransactionReferenceExistsAsync(
+                   model.TransactionNo,
+                   model.ReferenceNo);
+
+            if (duplicateReference)
+            {
+                ModelState.AddModelError(
+                    nameof(model.TransactionNo),
+                    "This transaction or reference number already exists.");
+
+                return View(model);
+            }
 
             await _paymentRepository.AddAsync(model);
 
@@ -136,45 +149,48 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, PaymentReceiptModel model)
+        public async Task<IActionResult> Edit(
+            int id,
+            PaymentReceiptModel model)
         {
             if (id != model.PaymentReceiptId)
-            {
                 return NotFound();
-            }
 
-            var payment = await _paymentRepository.GetByIdAsync(id);
+            var payment =
+                await _paymentRepository.GetByIdAsync(id);
 
             if (payment == null || payment.IsCancelled)
-            {
                 return NotFound();
-            }
 
-            await LoadFormDataAsync(model.ClientId);
+            // Preserve trusted relationship and system values
+            model.ClientId = payment.ClientId;
+            model.InvoiceId = payment.InvoiceId;
+            model.ReceiptNo = payment.ReceiptNo;
+            model.IsCancelled = payment.IsCancelled;
+            model.IsActive = payment.IsActive;
+
+            await LoadFormDataAsync(payment.ClientId);
 
             if (!ModelState.IsValid)
+                return View(model);
+
+            var invoice =
+                await GetSelectedInvoiceAsync(
+                    payment.ClientId,
+                    payment.InvoiceId);
+
+            decimal availableBalance =
+                (invoice?.BalanceAmount ?? 0) +
+                payment.AmountReceived;
+
+            if (!ValidateReceipt(
+                    model,
+                    invoice,
+                    availableBalance))
             {
                 return View(model);
             }
 
-            var invoice = await GetSelectedInvoiceAsync(model.ClientId, model.InvoiceId);
-
-            decimal availableBalance = invoice?.BalanceAmount ?? 0;
-
-            if (invoice != null &&
-                payment.InvoiceId == model.InvoiceId &&
-                !payment.IsCancelled)
-            {
-                availableBalance += payment.AmountReceived;
-            }
-
-            if (!ValidateReceipt(model, invoice, availableBalance))
-            {
-                return View(model);
-            }
-
-            payment.ClientId = model.ClientId;
-            payment.InvoiceId = model.InvoiceId;
             payment.ReceiptDate = model.ReceiptDate;
             payment.AmountReceived = model.AmountReceived;
             payment.PaymentMode = model.PaymentMode;
@@ -184,9 +200,25 @@ namespace AryamanBMS.Controllers
             payment.ReceivedBy = model.ReceivedBy;
             payment.Remarks = model.Remarks;
 
+            bool duplicateReference =
+               await _paymentRepository.TransactionReferenceExistsAsync(
+                  model.TransactionNo,
+                  model.ReferenceNo,
+                  payment.PaymentReceiptId);
+
+            if (duplicateReference)
+            {
+                ModelState.AddModelError(
+                    nameof(model.TransactionNo),
+                    "This transaction or reference number already exists.");
+
+                return View(model);
+            }
+
             await _paymentRepository.UpdateAsync(payment);
 
-            TempData["Success"] = "Payment receipt updated successfully.";
+            TempData["Success"] =
+                "Payment receipt updated successfully.";
 
             return RedirectToAction(nameof(Index));
         }
@@ -304,39 +336,71 @@ namespace AryamanBMS.Controllers
             {
                 ModelState.AddModelError(
                     nameof(model.InvoiceId),
-                    "Please select a valid invoice.");
+                    "Selected invoice was not found.");
 
                 return false;
+            }
+
+            if (invoice.ClientId != model.ClientId)
+            {
+                ModelState.AddModelError(
+                    nameof(model.InvoiceId),
+                    "Selected invoice does not belong to this client.");
+            }
+
+            if (invoice.IsDeleted ||
+                invoice.InvoiceStatus == "Cancelled")
+            {
+                ModelState.AddModelError(
+                    nameof(model.InvoiceId),
+                    "Payments cannot be recorded against a cancelled invoice.");
             }
 
             if (model.AmountReceived <= 0)
             {
                 ModelState.AddModelError(
                     nameof(model.AmountReceived),
-                    "Amount received should be greater than zero.");
-
-                return false;
+                    "Amount received must be greater than zero.");
             }
 
             if (model.AmountReceived > availableBalance)
             {
                 ModelState.AddModelError(
                     nameof(model.AmountReceived),
-                    $"Payment cannot exceed balance amount {availableBalance:N2}.");
-
-                return false;
+                    $"Amount cannot exceed the available balance of ₹{availableBalance:N2}.");
             }
 
-            if (model.ReceiptDate < invoice.InvoiceDate)
+            if (model.ReceiptDate.Date > DateTime.Today)
             {
                 ModelState.AddModelError(
                     nameof(model.ReceiptDate),
-                    "Receipt date cannot be before invoice date.");
-
-                return false;
+                    "Receipt date cannot be in the future.");
             }
 
-            return true;
+            if (model.ReceiptDate.Date < invoice.InvoiceDate.Date)
+            {
+                ModelState.AddModelError(
+                    nameof(model.ReceiptDate),
+                    "Receipt date cannot be before the invoice date.");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.PaymentMode))
+            {
+                ModelState.AddModelError(
+                    nameof(model.PaymentMode),
+                    "Payment mode is required.");
+            }
+
+            if (model.PaymentMode != "Cash" &&
+                string.IsNullOrWhiteSpace(model.TransactionNo) &&
+                string.IsNullOrWhiteSpace(model.ReferenceNo))
+            {
+                ModelState.AddModelError(
+                    nameof(model.TransactionNo),
+                    "Transaction or reference number is required for non-cash payments.");
+            }
+
+            return ModelState.IsValid;
         }
     }
 }

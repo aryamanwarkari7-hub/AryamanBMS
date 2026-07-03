@@ -30,12 +30,15 @@ namespace AryamanBMS.Services
                     FinancialYear = month >= 4
                        ? $"{year}-{(year + 1).ToString().Substring(2)}"
                        : $"{year - 1}-{year.ToString().Substring(2)}",
-                    SnapshotStatus = "Pending"
+                    SnapshotStatus = "Pending",
+                    SnapshotId = 0
                 };
             }
 
             return new GstDashboardViewModel
             {
+                SnapshotId = snapshot.SnapshotId,
+
                 Month = snapshot.Month,
                 Year = snapshot.Year,
                 FinancialYear = snapshot.FinancialYear,

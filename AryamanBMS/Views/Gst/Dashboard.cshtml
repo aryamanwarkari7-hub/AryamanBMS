@@ -22,8 +22,7 @@
         : "Regenerate Snapshot";
 
     bool canRegenerateSnapshot =
-    Model.SnapshotStatus != "Filed" &&
-    Model.SnapshotStatus != "Locked";
+    Model.SnapshotStatus != "Filed";
 }
 
 <div class="module-header">
@@ -199,6 +198,312 @@
         </div>
     </div>
 
+    @if (Model.SnapshotId > 0 &&
+        Model.SnapshotStatus != "Filed")
+    {
+        <div class="app-card">
+
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title">Update GST Compliance</h2>
+                    <p class="card-subtitle">
+                        Record return filing and challan payment details.
+                    </p>
+                </div>
+            </div>
+
+            <div class="card-body">
+
+                <div class="form-grid-2">
+
+                    <div class="app-card">
+
+                        <div class="card-header">
+                            <h3 class="card-title">GSTR-1</h3>
+                        </div>
+
+                        <div class="card-body">
+
+                            <form asp-controller="Gst"
+                                  asp-action="UpdateReturn"
+                                  method="post">
+
+                                @Html.AntiForgeryToken()
+
+                                <input type="hidden"
+                                       name="snapshotId"
+                                       value="@Model.SnapshotId" />
+
+                                <input type="hidden"
+                                       name="returnType"
+                                       value="GSTR1" />
+
+                                <div class="form-group">
+                                    <label class="form-label">Status</label>
+
+                                    <select name="status"
+                                            class="app-select"
+                                            required>
+                                        <option value="Pending"
+                                                selected="@(Model.Gstr1Status == "Pending")">
+                                            Pending
+                                        </option>
+
+                                        <option value="Filed"
+                                                selected="@(Model.Gstr1Status == "Filed")">
+                                            Filed
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">ARN Number</label>
+
+                                    <input type="text"
+                                           name="arnNumber"
+                                           class="app-input"
+                                           maxlength="100" />
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Filed Date</label>
+
+                                    <input type="date"
+                                           name="filedDate"
+                                           class="app-input" />
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Remarks</label>
+
+                                    <textarea name="remarks"
+                                          class="app-textarea"
+                                          maxlength="500"></textarea>
+                                </div>
+
+                                <button type="submit"
+                                        class="btn-app btn-primary-app">
+                                    Save GSTR-1
+                                </button>
+
+                            </form>
+
+                        </div>
+
+                    </div>
+
+                    <div class="app-card">
+
+                        <div class="card-header">
+                            <h3 class="card-title">GSTR-3B</h3>
+                        </div>
+
+                        <div class="card-body">
+
+                            <form asp-controller="Gst"
+                                  asp-action="UpdateReturn"
+                                  method="post">
+
+                                @Html.AntiForgeryToken()
+
+                                <input type="hidden"
+                                       name="snapshotId"
+                                       value="@Model.SnapshotId" />
+
+                                <input type="hidden"
+                                       name="returnType"
+                                       value="GSTR3B" />
+
+                                <div class="form-group">
+                                    <label class="form-label">Status</label>
+
+                                    <select name="status"
+                                            class="app-select"
+                                            required>
+                                        <option value="Pending"
+                                                selected="@(Model.Gstr3BStatus == "Pending")">
+                                            Pending
+                                        </option>
+
+                                        <option value="Filed"
+                                                selected="@(Model.Gstr3BStatus == "Filed")">
+                                            Filed
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">ARN Number</label>
+
+                                    <input type="text"
+                                           name="arnNumber"
+                                           class="app-input"
+                                           maxlength="100" />
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Filed Date</label>
+
+                                    <input type="date"
+                                           name="filedDate"
+                                           class="app-input" />
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Remarks</label>
+
+                                    <textarea name="remarks"
+                                          class="app-textarea"
+                                          maxlength="500"></textarea>
+                                </div>
+
+                                <button type="submit"
+                                        class="btn-app btn-primary-app">
+                                    Save GSTR-3B
+                                </button>
+
+                            </form>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="app-card">
+
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title">GST Challan</h2>
+                    <p class="card-subtitle">
+                        Record payment details for this GST period.
+                    </p>
+                </div>
+            </div>
+
+            <div class="card-body">
+
+                <form asp-controller="Gst"
+                      asp-action="UpdateChallan"
+                      method="post">
+
+                    @Html.AntiForgeryToken()
+
+                    <input type="hidden"
+                           name="snapshotId"
+                           value="@Model.SnapshotId" />
+
+                    <div class="form-grid-3">
+
+                        <div class="form-group">
+                            <label class="form-label">Challan Number</label>
+
+                            <input type="text"
+                                   name="challanNumber"
+                                   class="app-input"
+                                   maxlength="100"
+                                   required />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Status</label>
+
+                            <select name="status"
+                                    class="app-select"
+                                    required>
+                                <option value="Pending"
+                                        selected="@(Model.ChallanStatus == "Pending")">
+                                    Pending
+                                </option>
+
+                                <option value="Paid"
+                                        selected="@(Model.ChallanStatus == "Paid")">
+                                    Paid
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Amount Paid</label>
+
+                            <input type="number"
+                                   name="amountPaid"
+                                   class="app-input"
+                                   min="0"
+                                   step="0.01"
+                                   value="@Model.NetGSTPayable" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Payment Date</label>
+
+                            <input type="date"
+                                   name="paymentDate"
+                                   class="app-input" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Payment Mode</label>
+
+                            <input type="text"
+                                   name="paymentMode"
+                                   class="app-input"
+                                   maxlength="50" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Bank Name</label>
+
+                            <input type="text"
+                                   name="bankName"
+                                   class="app-input"
+                                   maxlength="100" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">CPIN</label>
+
+                            <input type="text"
+                                   name="cpin"
+                                   class="app-input"
+                                   maxlength="100" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">CIN</label>
+
+                            <input type="text"
+                                   name="cin"
+                                   class="app-input"
+                                   maxlength="100" />
+                        </div>
+
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Remarks</label>
+
+                        <textarea name="remarks"
+                              class="app-textarea"
+                              maxlength="500"></textarea>
+                    </div>
+
+                    <button type="submit"
+                            class="btn-app btn-success-app">
+                        Save Challan
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+    }
+
     <div class="card-body">
 
         <div class="form-grid-3">
@@ -295,6 +600,44 @@
                 </button>
 
             </form>
+
+
+        }
+
+        @if (Model.SnapshotStatus != "Filed" &&
+                Model.Gstr1Status == "Filed" &&
+                Model.Gstr3BStatus == "Filed" &&
+                Model.ChallanStatus == "Paid")
+        {
+            <form method="post"
+                  asp-action="LockSnapshot">
+
+                @Html.AntiForgeryToken()
+
+                <input type="hidden"
+                       name="month"
+                       value="@Model.Month" />
+
+                <input type="hidden"
+                       name="year"
+                       value="@Model.Year" />
+
+                <button type="submit"
+                        class="btn-app btn-danger-app"
+                        onclick="return confirm('File and permanently lock this GST period?')">
+
+                    <i class="bi bi-lock"></i>
+                    File & Lock
+
+                </button>
+
+            </form>
+        }
+        else
+        {
+            <span class="badge-warning">
+                Complete GSTR-1, GSTR-3B and Challan before locking
+            </span>
         }
 
     </div>

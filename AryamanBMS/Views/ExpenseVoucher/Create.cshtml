@@ -169,6 +169,24 @@
 
             <div class="form-grid-4">
 
+                    <div class="form-group">
+                        <div class="form-check">
+
+                            <input asp-for="IsInterState"
+                                   class="form-check-input" />
+
+                            <label asp-for="IsInterState"
+                                   class="form-check-label">
+                                Interstate Expense
+                            </label>
+
+                        </div>
+
+                        <small class="form-text">
+                            Select this when the supplier state differs from the company state.
+                        </small>
+                    </div>
+
                 <div class="form-group">
                     <label class="form-label">CGST</label>
                     <strong>₹ <span id="cgstAmount">@Model.CGSTAmount.ToString("N2")</span></strong>

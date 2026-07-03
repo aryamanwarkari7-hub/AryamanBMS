@@ -22,12 +22,14 @@ namespace AryamanBMS.Models
         [Required]
         public int ClientId { get; set; }
 
-        [Column(TypeName = "decimal(18,2)")]
+        [Range(typeof(decimal), "0.01", "999999999999.99",
+    ErrorMessage = "Amount received must be greater than zero.")]
         public decimal AmountReceived { get; set; }
 
         [Required]
         [StringLength(30)]
-        public string PaymentMode { get; set; } = "Cash";
+        public string PaymentMode { get; set; } = string.Empty;
+        
 
         [StringLength(200)]
         public string? BankName { get; set; }

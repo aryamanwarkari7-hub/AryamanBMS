@@ -99,3 +99,20 @@
 -- REMARK INSTEAD OF BODY --
 -- ALTER TABLE tableletters
 -- CHANGE COLUMN Body Remark TEXT NULL;
+
+-- ALTER TABLE tablefinancialauditdocuments
+-- ADD COLUMN IsActive bit(1) NOT NULL DEFAULT b'1';
+
+-- ALTER TABLE `tableofficeasset`
+-- ADD COLUMN `IsActive` bit(1) NOT NULL DEFAULT b'1';
+
+-- ALTER TABLE TableInvoiceMastertableinvoicemaster
+-- ADD COLUMN PaymentStatus VARCHAR(30) NOT NULL DEFAULT 'Unpaid'
+-- AFTER InvoiceStatus;
+
+-- ALTER TABLE TablePaymentReceipt
+-- ADD UNIQUE INDEX UX_TablePaymentReceipt_ReceiptNo (ReceiptNo);
+
+-- ALTER TABLE TableExpenseVouchers
+-- MODIFY COLUMN CreatedByUserId VARCHAR(450) NOT NULL,
+-- MODIFY COLUMN ApprovedByUserId VARCHAR(450) NULL;

@@ -72,9 +72,8 @@ namespace AryamanBMS.Repositories
 
         public Task DeleteAsync(GstItcRecordModel model)
         {
-            _context.GstItcRecords.Remove(model);
-
-            return Task.CompletedTask;
+            throw new InvalidOperationException(
+                "GST ITC records cannot be deleted directly.");
         }
 
         public async Task SaveAsync()

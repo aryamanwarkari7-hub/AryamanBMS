@@ -20,11 +20,11 @@ namespace AryamanBMS.ViewModels
 
         public decimal TotalReceived { get; set; }
 
-        public int PendingCount { get; set; }
+        public int ActiveReceiptCount { get; set; }
 
-        public int CompletedCount { get; set; }
+        public int CancelledReceiptCount { get; set; }
 
-        public int CancelledCount { get; set; }
+        
     }
 
     public class PaymentFilter

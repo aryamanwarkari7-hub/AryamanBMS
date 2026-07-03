@@ -15,7 +15,7 @@ namespace AryamanBMS.Repositories
         }
 
         private IQueryable<FinancialAuditDocumentModel> Documents =>
-    _context.TableFinancialAuditDocuments;
+    _context.FinancialAuditDocuments;
 
         public async Task<List<FinancialAuditDocumentModel>> GetAllAsync()
         {
@@ -50,19 +50,19 @@ namespace AryamanBMS.Repositories
         {
             model.UploadedOn = DateTime.Now;
 
-            await _context.TableFinancialAuditDocuments.AddAsync(model);
+            await _context.FinancialAuditDocuments.AddAsync(model);
         }
 
         public Task UpdateAsync(FinancialAuditDocumentModel model)
         {
-            _context.TableFinancialAuditDocuments.Update(model);
+            _context.FinancialAuditDocuments.Update(model);
 
             return Task.CompletedTask;
         }
 
         public Task DeleteAsync(FinancialAuditDocumentModel model)
         {
-            _context.TableFinancialAuditDocuments.Remove(model);
+            _context.FinancialAuditDocuments.Remove(model);
 
             return Task.CompletedTask;
         }

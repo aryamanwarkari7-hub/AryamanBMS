@@ -15,8 +15,8 @@ namespace AryamanBMS.Repositories
         }
 
         private IQueryable<GstReturnModel> Returns =>
-            _context.GstReturns
-                .Include(x => x.SnapshotId);
+           _context.GstReturns
+           .Include(x => x.Snapshot);
 
         public async Task<List<GstReturnModel>> GetAllAsync()
         {
@@ -49,6 +49,17 @@ namespace AryamanBMS.Repositories
 
         public async Task AddAsync(GstReturnModel model)
         {
+            bool duplicateExists = await _context.GstReturns
+                .AnyAsync(x =>
+                    x.SnapshotId == model.SnapshotId &&
+                    x.ReturnType == model.ReturnType);
+
+            if (duplicateExists)
+            {
+                throw new InvalidOperationException(
+                    $"A {model.ReturnType} return already exists for this GST snapshot.");
+            }
+
             model.CreatedOn = DateTime.Now;
 
             await _context.GstReturns.AddAsync(model);
@@ -65,7 +76,17 @@ namespace AryamanBMS.Repositories
 
         public Task DeleteAsync(GstReturnModel model)
         {
-            _context.GstReturns.Remove(model);
+            if (string.Equals(
+                    model.Status,
+                    "Filed",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Filed GST returns cannot be deleted.");
+            }
+
+            model.Status = "Cancelled";
+            model.UpdatedOn = DateTime.Now;
 
             return Task.CompletedTask;
         }

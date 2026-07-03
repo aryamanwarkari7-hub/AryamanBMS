@@ -27,5 +27,9 @@
         public string Gstr3BStatus { get; set; } = "Pending";
 
         public string ChallanStatus { get; set; } = "Pending";
+
+        public int SnapshotId { get; set; }
+
+        // Add other properties as needed
     }
 }

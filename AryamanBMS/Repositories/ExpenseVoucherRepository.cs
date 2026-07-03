@@ -1,4 +1,5 @@
 ﻿using AryamanBMS.Data;
+using System.Data;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -16,7 +17,7 @@ namespace AryamanBMS.Repositories
 
         public async Task<IEnumerable<ExpenseVoucherModel>> GetAllAsync()
         {
-            return await _context.TableExpenseVouchers
+            return await _context.ExpenseVouchers
                 .AsNoTracking()
                 .Where(x => x.IsActive)
                 .Include(x => x.Category)
@@ -26,7 +27,7 @@ namespace AryamanBMS.Repositories
 
         public async Task<IEnumerable<ExpenseVoucherModel>> GetByStatusAsync(string status)
         {
-            return await _context.TableExpenseVouchers
+            return await _context.ExpenseVouchers
                 .AsNoTracking()
                 .Where(x => x.Status == status && x.IsActive)
                 .Include(x => x.Category)
@@ -36,7 +37,7 @@ namespace AryamanBMS.Repositories
 
         public async Task<IEnumerable<ExpenseVoucherModel>> GetByFinancialYearAsync(string financialYear)
         {
-            return await _context.TableExpenseVouchers
+            return await _context.ExpenseVouchers
                 .AsNoTracking()
                 .Where(x => x.FinancialYear == financialYear && x.IsActive)
                 .Include(x => x.Category)
@@ -46,7 +47,7 @@ namespace AryamanBMS.Repositories
 
         public async Task<IEnumerable<ExpenseVoucherModel>> GetByCategoryAsync(int categoryId)
         {
-            return await _context.TableExpenseVouchers
+            return await _context.ExpenseVouchers
                 .AsNoTracking()
                 .Where(x => x.ExpenseCategoryId == categoryId && x.IsActive)
                 .Include(x => x.Category)
@@ -56,14 +57,14 @@ namespace AryamanBMS.Repositories
 
         public async Task<ExpenseVoucherModel?> GetByIdAsync(int id)
         {
-            return await _context.TableExpenseVouchers
+            return await _context.ExpenseVouchers
                 .Include(x => x.Category)
                 .FirstOrDefaultAsync(x => x.ExpenseVoucherId == id && x.IsActive);
         }
 
         public async Task<ExpenseVoucherModel?> GetByVoucherNumberAsync(string voucherNumber)
         {
-            return await _context.TableExpenseVouchers
+            return await _context.ExpenseVouchers
                 .AsNoTracking()
                 .Include(x => x.Category)
                 .FirstOrDefaultAsync(x => x.VoucherNumber == voucherNumber && x.IsActive);
@@ -71,7 +72,7 @@ namespace AryamanBMS.Repositories
 
         public async Task<bool> VoucherNumberExistsAsync(string voucherNumber, int? excludeId = null)
         {
-            var query = _context.TableExpenseVouchers
+            var query = _context.ExpenseVouchers
                 .Where(x => x.VoucherNumber == voucherNumber);
 
             if (excludeId.HasValue)
@@ -113,54 +114,149 @@ namespace AryamanBMS.Repositories
         {
             model.CreatedOn = DateTime.Now;
             model.IsActive = true;
-            await _context.TableExpenseVouchers.AddAsync(model);
+            await _context.ExpenseVouchers.AddAsync(model);
         }
 
         public Task UpdateAsync(ExpenseVoucherModel model)
         {
             model.UpdatedOn = DateTime.Now;
-            _context.TableExpenseVouchers.Update(model);
+            _context.ExpenseVouchers.Update(model);
             return Task.CompletedTask;
         }
 
-        public async Task ApproveAsync(int id, int approvedByUserId)
+        public async Task ApproveAsync(int id,string approvedByUserId)
         {
-            var voucher = await _context.TableExpenseVouchers.FindAsync(id);
+            var voucher = await _context.ExpenseVouchers
+                .FindAsync(id);
+
             if (voucher != null)
             {
-                voucher.Status = FinancialConstants.ExpenseVoucherStatus.Posted;
+                voucher.Status =
+                    FinancialConstants.ExpenseVoucherStatus.Posted;
+
                 voucher.ApprovedByUserId = approvedByUserId;
                 voucher.ApprovedOn = DateTime.Now;
+
+                voucher.RejectionReason = null;
+                voucher.RejectedByUserId = null;
+                voucher.RejectedOn = null;
+
                 voucher.UpdatedOn = DateTime.Now;
-                _context.TableExpenseVouchers.Update(voucher);
             }
         }
 
-        public async Task RejectAsync(int id)
+        public async Task RejectAsync(
+          int id,
+          string rejectedByUserId,
+          string rejectionReason)
         {
-            var voucher = await _context.TableExpenseVouchers.FindAsync(id);
-            if (voucher != null)
-            {
-                voucher.Status = FinancialConstants.ExpenseVoucherStatus.Cancelled;
-                voucher.UpdatedOn = DateTime.Now;
-                _context.TableExpenseVouchers.Update(voucher);
-            }
+            var voucher = await _context.ExpenseVouchers
+                .FirstOrDefaultAsync(x =>
+                    x.ExpenseVoucherId == id &&
+                    x.IsActive);
+
+            if (voucher == null)
+                return;
+
+            voucher.Status =
+                FinancialConstants.ExpenseVoucherStatus.Rejected;
+
+            voucher.RejectionReason = rejectionReason.Trim();
+            voucher.RejectedByUserId = rejectedByUserId;
+            voucher.RejectedOn = DateTime.Now;
+            voucher.UpdatedOn = DateTime.Now;
         }
 
         public async Task SoftDeleteAsync(int id)
         {
-            var voucher = await _context.TableExpenseVouchers.FindAsync(id);
+            var voucher = await _context.ExpenseVouchers.FindAsync(id);
             if (voucher != null)
             {
                 voucher.IsActive = false;
                 voucher.UpdatedOn = DateTime.Now;
-                _context.TableExpenseVouchers.Update(voucher);
+                _context.ExpenseVouchers.Update(voucher);
             }
         }
 
         public async Task SaveAsync()
         {
             await _context.SaveChangesAsync();
+        }
+        public async Task CreateWithSequenceAsync( ExpenseVoucherModel model)
+        {
+            await using var transaction =
+                await _context.Database.BeginTransactionAsync(
+                    IsolationLevel.Serializable);
+
+            try
+            {
+                DateTime now = DateTime.Now;
+
+                string documentType =
+                    FinancialConstants.ExpenseVoucherPrefix;
+
+                var sequence = await _context.FinancialSequences
+                    .FirstOrDefaultAsync(x =>
+                        x.DocumentType == documentType &&
+                        x.FinancialYear == model.FinancialYear);
+
+                if (sequence == null)
+                {
+                    sequence = new FinancialSequenceModel
+                    {
+                        DocumentType = documentType,
+                        FinancialYear = model.FinancialYear,
+                        LastNumber = 1,
+                        UpdatedOn = now
+                    };
+
+                    await _context.FinancialSequences.AddAsync(
+                        sequence);
+                }
+                else
+                {
+                    sequence.LastNumber++;
+                    sequence.UpdatedOn = now;
+                }
+
+                model.VoucherNumber =
+                    $"{documentType}-{model.FinancialYear}-" +
+                    $"{sequence.LastNumber:0000}";
+
+                model.CreatedOn = now;
+                model.UpdatedOn = null;
+                model.IsActive = true;
+                model.Status =
+                    FinancialConstants.ExpenseVoucherStatus.Draft;
+
+                await _context.ExpenseVouchers.AddAsync(model);
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        public async Task<bool> VendorInvoiceExistsAsync(
+             string? vendorName,
+             string invoiceNumber,
+             int? excludeId = null)
+        {
+            string normalizedVendor =
+                (vendorName ?? string.Empty).Trim().ToLower();
+
+            string normalizedInvoice =
+                invoiceNumber.Trim().ToLower();
+
+            return await _context.ExpenseVouchers.AnyAsync(x =>
+                x.IsActive &&
+                x.ExpenseVoucherId != excludeId &&
+                x.VendorName.ToLower() == normalizedVendor &&
+                x.InvoiceNumber.ToLower() == normalizedInvoice);
         }
     }
 }

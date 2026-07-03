@@ -1,4 +1,5 @@
 ﻿using AryamanBMS.Data;
+using System.Data;
 using AryamanBMS.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -31,51 +32,118 @@ namespace AryamanBMS.Repositories
         }
         public async Task AddAsync(PaymentReceiptModel model)
         {
+            await using var transaction =
+                await _context.Database.BeginTransactionAsync(
+                    IsolationLevel.Serializable);
+
             try
             {
-                model.CreatedOn = DateTime.Now;
+                DateTime now = DateTime.Now;
+
+                const string documentType = "PaymentReceipt";
+                string sequencePeriod = now.ToString("yyyyMM");
+
+                var sequence = await _context.FinancialSequences
+                    .FirstOrDefaultAsync(x =>
+                        x.DocumentType == documentType &&
+                        x.FinancialYear == sequencePeriod);
+
+                if (sequence == null)
+                {
+                    sequence = new FinancialSequenceModel
+                    {
+                        DocumentType = documentType,
+                        FinancialYear = sequencePeriod,
+                        LastNumber = 1,
+                        UpdatedOn = now
+                    };
+
+                    await _context.FinancialSequences.AddAsync(sequence);
+                }
+                else
+                {
+                    sequence.LastNumber++;
+                    sequence.UpdatedOn = now;
+                }
+
+                model.ReceiptNo =
+                    $"REC-{now:yyMM}-{sequence.LastNumber:0000}";
+
+                model.CreatedOn = now;
+                model.UpdatedOn = null;
                 model.IsActive = true;
+                model.IsCancelled = false;
 
                 await _context.PaymentReceipts.AddAsync(model);
 
                 await _context.SaveChangesAsync();
 
-                await UpdateInvoicePaymentAsync(model.InvoiceId);
+                await RecalculateInvoicePaymentAsync(model.InvoiceId);
+
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
             }
-            catch (Exception ex)
+            catch
             {
-                throw new Exception(ex.InnerException?.Message ?? ex.Message);
+                await transaction.RollbackAsync();
+                throw;
             }
         }
 
         public async Task UpdateAsync(PaymentReceiptModel model)
         {
-            model.UpdatedOn = DateTime.Now;
+            await using var transaction =
+                await _context.Database.BeginTransactionAsync(
+                    IsolationLevel.Serializable);
 
-            _context.PaymentReceipts.Update(model);
+            try
+            {
+                model.UpdatedOn = DateTime.Now;
 
-            await SaveAsync();
+                await _context.SaveChangesAsync();
 
-            await UpdateInvoicePaymentAsync(model.InvoiceId);
+                await RecalculateInvoicePaymentAsync(model.InvoiceId);
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task DeleteAsync(PaymentReceiptModel model)
         {
-            int invoiceId = model.InvoiceId;
+            await using var transaction =
+                await _context.Database.BeginTransactionAsync(
+                    IsolationLevel.Serializable);
 
-            _context.PaymentReceipts.Remove(model);
+            try
+            {
+                int invoiceId = model.InvoiceId;
 
-            await SaveAsync();
+                model.IsCancelled = true;
+                model.IsActive = false;
+                model.UpdatedOn = DateTime.Now;
 
-            await UpdateInvoicePaymentAsync(invoiceId);
+                await _context.SaveChangesAsync();
+
+                await RecalculateInvoicePaymentAsync(invoiceId);
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
-        public async Task SaveAsync()
-        {
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task<List<ClientModel>> GetClientsAsync()
+       public async Task<List<ClientModel>> GetClientsAsync()
         {
             return await _context.Clients
                 .Where(x => x.IsActive)
@@ -91,6 +159,7 @@ namespace AryamanBMS.Repositories
                 .OrderByDescending(x => x.InvoiceDate)
                 .ToListAsync();
         }
+
         public async Task<List<InvoiceModel>> GetInvoicesByClientAsync(int clientId)
         {
             return await _context.Invoices
@@ -103,62 +172,81 @@ namespace AryamanBMS.Repositories
 
         public async Task<string> GenerateReceiptNoAsync()
         {
-            var lastReceipt = await _context.PaymentReceipts
-                .OrderByDescending(x => x.PaymentReceiptId)
+            DateTime now = DateTime.Now;
+
+            const string documentType = "PaymentReceipt";
+            string sequencePeriod = now.ToString("yyyyMM");
+
+            int lastNumber = await _context.FinancialSequences
+                .Where(x =>
+                    x.DocumentType == documentType &&
+                    x.FinancialYear == sequencePeriod)
+                .Select(x => x.LastNumber)
                 .FirstOrDefaultAsync();
 
-            if (lastReceipt == null)
-                return "RCPT-000001";
-
-            int number = 1;
-
-            if (!string.IsNullOrWhiteSpace(lastReceipt.ReceiptNo))
-            {
-                var parts = lastReceipt.ReceiptNo.Split('-');
-
-                if (parts.Length > 1)
-                    int.TryParse(parts[1], out number);
-
-                number++;
-            }
-
-            return $"RCPT-{number:000000}";
+            return $"REC-{now:yyMM}-{lastNumber + 1:0000}";
         }
-
-        public async Task UpdateInvoicePaymentAsync(int invoiceId)
+        private async Task RecalculateInvoicePaymentAsync(int invoiceId)
         {
             var invoice = await _context.Invoices
-                .FirstOrDefaultAsync(x => x.InvoiceId == invoiceId);
+                .FirstOrDefaultAsync(x =>
+                    x.InvoiceId == invoiceId &&
+                    !x.IsDeleted);
 
             if (invoice == null)
                 return;
 
-            decimal paid = await _context.PaymentReceipts
-                .Where(x => x.InvoiceId == invoiceId &&
-                            !x.IsCancelled &&
-                            x.IsActive)
+            decimal paidAmount = await _context.PaymentReceipts
+                .Where(x =>
+                    x.InvoiceId == invoiceId &&
+                    x.IsActive &&
+                    !x.IsCancelled)
                 .SumAsync(x => (decimal?)x.AmountReceived) ?? 0;
 
-            invoice.PaidAmount = paid;
+            invoice.PaidAmount = paidAmount;
 
-            invoice.BalanceAmount = invoice.GrandTotal - paid;
+            invoice.BalanceAmount =
+                Math.Max(0, invoice.GrandTotal - paidAmount);
 
-            if (invoice.BalanceAmount <= 0)
+            invoice.PaymentStatus =
+           invoice.BalanceAmount <= 0
+               ? "Paid"
+               : paidAmount > 0
+               ? "Partially Paid"
+               : "Unpaid";
+           
+               invoice.ModifiedOn = DateTime.Now;
+        }
+
+        public async Task<bool> TransactionReferenceExistsAsync(
+    string? transactionNo,
+    string? referenceNo,
+    int? excludePaymentReceiptId = null)
+        {
+            string normalizedTransaction =
+                (transactionNo ?? string.Empty).Trim().ToLower();
+
+            string normalizedReference =
+                (referenceNo ?? string.Empty).Trim().ToLower();
+
+            if (string.IsNullOrWhiteSpace(normalizedTransaction) &&
+                string.IsNullOrWhiteSpace(normalizedReference))
             {
-                invoice.InvoiceStatus = "Paid";
-            }
-            else if (paid > 0)
-            {
-                invoice.InvoiceStatus = "Partially Paid";
-            }
-            else
-            {
-                invoice.InvoiceStatus = "Pending";
+                return false;
             }
 
-            _context.Invoices.Update(invoice);
-
-            await _context.SaveChangesAsync();
+            return await _context.PaymentReceipts.AnyAsync(x =>
+                !x.IsCancelled &&
+                x.PaymentReceiptId != excludePaymentReceiptId &&
+                (
+                    (!string.IsNullOrWhiteSpace(normalizedTransaction) &&
+                     x.TransactionNo != null &&
+                     x.TransactionNo.ToLower() == normalizedTransaction)
+                    ||
+                    (!string.IsNullOrWhiteSpace(normalizedReference) &&
+                     x.ReferenceNo != null &&
+                     x.ReferenceNo.ToLower() == normalizedReference)
+                ));
         }
     }
 }

@@ -32,6 +32,8 @@ namespace AryamanBMS.Models
         [Column(TypeName = "decimal(5,2)")]
         public decimal GSTRate { get; set; } = 0m;
 
+        public bool IsInterState { get; set; }
+
         [Column(TypeName = "decimal(12,2)")]
         public decimal CGSTAmount { get; set; } = 0m;
 
@@ -64,9 +66,11 @@ namespace AryamanBMS.Models
         [StringLength(500)]
         public string? Remarks { get; set; }
 
-        public int CreatedByUserId { get; set; }
+        [StringLength(450)]
+        public string CreatedByUserId { get; set; } = string.Empty;
 
-        public int? ApprovedByUserId { get; set; }
+        [StringLength(450)]
+        public string? ApprovedByUserId { get; set; }
 
         public DateTime? ApprovedOn { get; set; }
 
@@ -79,5 +83,12 @@ namespace AryamanBMS.Models
         // Navigation
         [ForeignKey(nameof(ExpenseCategoryId))]
         public virtual ExpenseCategoryModel? Category { get; set; }
+
+        // Reject
+        public string? RejectionReason { get; set; }
+
+        public string? RejectedByUserId { get; set; }
+
+        public DateTime? RejectedOn { get; set; }
     }
 }

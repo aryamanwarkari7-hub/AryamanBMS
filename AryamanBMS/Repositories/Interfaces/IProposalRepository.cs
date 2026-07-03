@@ -12,5 +12,7 @@ namespace AryamanBMS.Repositories.Interfaces
         Task UpdateAsync(ProposalModel proposal);
         Task DeleteAsync(ProposalModel proposal);
         Task SaveAsync();
+        Task<string> GenerateProposalNoAsync();
+        Task CreateWithSequenceAsync(ProposalModel proposal);
     }
 }

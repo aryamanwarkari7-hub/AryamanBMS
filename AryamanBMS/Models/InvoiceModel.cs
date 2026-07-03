@@ -21,9 +21,13 @@ namespace AryamanBMS.Models
         [Required]
         public int ClientId { get; set; }
 
+        public int? ProjectId { get; set; }
+
         public string? BillingAddress { get; set; }
 
         public string? GSTNo { get; set; }
+
+        public bool IsInterState { get; set; }
 
         public string? ProjectName { get; set; }
 
@@ -44,6 +48,7 @@ namespace AryamanBMS.Models
         public decimal BalanceAmount { get; set; }
 
         public string InvoiceStatus { get; set; } = "Draft";
+        public string PaymentStatus { get; set; } = "Unpaid";
 
         public string? Remarks { get; set; }
 
@@ -59,10 +64,16 @@ namespace AryamanBMS.Models
 
         public DateTime? ModifiedOn { get; set; }
 
+        
+
 
         [ForeignKey(nameof(ClientId))]
         [ValidateNever]
         public virtual ClientModel? Client { get; set; }
+
+        [ForeignKey(nameof(ProjectId))]
+        [ValidateNever]
+        public virtual ProjectModel? Project { get; set; }
 
         [ForeignKey(nameof(ProposalId))]
         [ValidateNever]
@@ -71,6 +82,8 @@ namespace AryamanBMS.Models
         [ForeignKey(nameof(PurchaseWorkOrderId))]
         [ValidateNever]
         public virtual PurchaseOrderModel? PurchaseOrder { get; set; }
+
+
 
         [ValidateNever]
         public virtual ICollection<InvoiceDetailsModel> InvoiceDetails { get; set; } = new List<InvoiceDetailsModel>();

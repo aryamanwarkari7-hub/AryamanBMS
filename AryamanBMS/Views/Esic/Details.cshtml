@@ -323,8 +323,11 @@
                                 </td>
 
                                 <td>
-                                    <a href="@Url.Content("~/" + document.FilePath)"
-                                       target="_blank">
+                                    <a asp-controller="Esic"
+                                       asp-action="DownloadDocument"
+                                       asp-route-id="@document.EsicDocumentId"
+                                       class="app-link">
+                                        <i class="bi bi-download"></i>
                                         @document.FileName
                                     </a>
                                 </td>
@@ -415,7 +418,11 @@
                     <input type="file"
                            name="file"
                            class="app-input"
+                           accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
                            required />
+                    <small class="form-text">
+                        PDF, Word, Excel, JPG or PNG only. Maximum size: 10 MB.
+                    </small>
                 </div>
 
                 <div class="form-group">

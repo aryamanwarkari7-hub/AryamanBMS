@@ -60,11 +60,23 @@ namespace AryamanBMS.Repositories
             return Task.CompletedTask;
         }
 
-        public Task DeleteAsync(GstDocumentModel model)
+        public async Task DeleteAsync(GstDocumentModel model)
         {
-            _context.GstDocuments.Remove(model);
+            var snapshot = await _context.GstMonthlySnapshots
+                .FirstOrDefaultAsync(x =>
+                    x.SnapshotId == model.SnapshotId);
 
-            return Task.CompletedTask;
+            if (snapshot != null &&
+                string.Equals(
+                    snapshot.Status,
+                    "Filed",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Documents linked to a filed GST snapshot cannot be deleted.");
+            }
+
+            _context.GstDocuments.Remove(model);
         }
 
         public async Task SaveAsync()

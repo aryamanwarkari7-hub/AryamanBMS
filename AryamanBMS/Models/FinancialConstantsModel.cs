@@ -81,7 +81,7 @@
         {
             public const string Draft = "Draft";
             public const string Posted = "Posted";
-            public const string Cancelled = "Cancelled";
+            public const string Rejected = "Rejected";
         }
     }
 

@@ -49,6 +49,16 @@ namespace AryamanBMS.Repositories
 
         public async Task AddAsync(GstChallanModel model)
         {
+            bool duplicateExists = await _context.GstChallans
+                .AnyAsync(x =>
+                    x.ChallanNumber == model.ChallanNumber);
+
+            if (duplicateExists)
+            {
+                throw new InvalidOperationException(
+                    "This GST challan number already exists.");
+            }
+
             model.CreatedOn = DateTime.Now;
 
             await _context.GstChallans.AddAsync(model);
@@ -65,9 +75,8 @@ namespace AryamanBMS.Repositories
 
         public Task DeleteAsync(GstChallanModel model)
         {
-            _context.GstChallans.Remove(model);
-
-            return Task.CompletedTask;
+            throw new InvalidOperationException(
+                "GST challans cannot be deleted because they are financial payment records.");
         }
 
         public async Task SaveAsync()

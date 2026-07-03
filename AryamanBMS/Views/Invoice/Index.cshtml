@@ -2,6 +2,13 @@
 
 @{
     ViewData["Title"] = "Invoice Tracker";
+
+    string currentSearch = Context.Request.Query["search"];
+    string currentClientId = Context.Request.Query["clientId"];
+    string currentInvoiceStatus =
+        Context.Request.Query["invoiceStatus"];
+    string currentPaymentStatus =
+        Context.Request.Query["paymentStatus"];
 }
 
 <div class="module-header">
@@ -22,6 +29,38 @@
 
 </div>
 
+<div class="dashboard-grid">
+
+    <div class="stats-card">
+        <div class="stats-label">Total Invoices</div>
+        <div class="stats-number">
+            @Model.TotalInvoices
+        </div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Invoice Amount</div>
+        <div class="stats-number">
+            ₹ @Model.TotalInvoiceAmount.ToString("N2")
+        </div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Amount Received</div>
+        <div class="stats-number">
+            ₹ @Model.TotalReceivedAmount.ToString("N2")
+        </div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Outstanding</div>
+        <div class="stats-number">
+            ₹ @Model.TotalOutstandingAmount.ToString("N2")
+        </div>
+    </div>
+
+</div>
+
 <div class="app-card">
 
     <div class="card-header">
@@ -30,53 +69,101 @@
 
     <div class="card-body">
 
-        <div class="form-grid-3">
+        <form method="get">
 
-            <div class="form-group">
-                <input type="text"
-                       id="txtSearch"
-                       class="app-input"
-                       placeholder="Search Invoice..." />
-            </div>
+            <div class="form-grid-3">
 
-            <div class="form-group">
-                <select id="ddlClient" class="app-select">
+                <div class="form-group">
+                    <input type="text"
+                           name="search"
+                           value="@currentSearch"
+                           class="app-input"
+                           placeholder="Invoice, client or project" />
+                </div>
 
-                    <option value="">
-                        All Clients
-                    </option>
+                <div class="form-group">
+                    <select name="clientId"
+                            class="app-select">
 
+                        <option value="">All Clients</option>
 
-                    @foreach (var client in Model.Clients)
-                    {
-                        <option value="@client.ClientName">
-                            @client.ClientName
+                        @foreach (var client in Model.Clients)
+                        {
+                            <option value="@client.ClientId"
+                                    selected="@(currentClientId == client.ClientId.ToString())">
+                                @client.ClientName
+                            </option>
+                        }
+
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <select name="invoiceStatus"
+                            class="app-select">
+
+                        <option value="">All Invoice Statuses</option>
+
+                        <option value="Draft"
+                                selected="@(currentInvoiceStatus == "Draft")">
+                            Draft
                         </option>
-                    }
 
-                </select>
+                        <option value="Issued"
+                                selected="@(currentInvoiceStatus == "Issued")">
+                            Issued
+                        </option>
+
+                        <option value="Cancelled"
+                                selected="@(currentInvoiceStatus == "Cancelled")">
+                            Cancelled
+                        </option>
+
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <select name="paymentStatus"
+                            class="app-select">
+
+                        <option value="">All Payment Statuses</option>
+
+                        <option value="Unpaid"
+                                selected="@(currentPaymentStatus == "Unpaid")">
+                            Unpaid
+                        </option>
+
+                        <option value="Partially Paid"
+                                selected="@(currentPaymentStatus == "Partially Paid")">
+                            Partially Paid
+                        </option>
+
+                        <option value="Paid"
+                                selected="@(currentPaymentStatus == "Paid")">
+                            Paid
+                        </option>
+
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <button type="submit"
+                            class="btn-app btn-primary-app w-100">
+                        <i class="bi bi-search"></i>
+                        Apply
+                    </button>
+                </div>
+
+                <div class="form-group">
+                    <a asp-action="Index"
+                       class="btn-app btn-secondary-app w-100">
+                        Reset
+                    </a>
+                </div>
 
             </div>
 
-            <div class="form-group">
-                <select id="ddlStatus" class="app-select">
-
-                    <option value="">
-                        All Status
-                    </option>
-
-                    <option>Draft</option>
-                    <option>Generated</option>
-                    <option>Sent</option>
-                    <option>Partially Paid</option>
-                    <option>Paid</option>
-                    <option>Cancelled</option>
-
-                </select>
-
-            </div>
-
-        </div>
+        </form>
 
     </div>
 
@@ -111,7 +198,9 @@
 
                     <th>Balance</th>
 
-                    <th>Status</th>
+                    <th>Invoice Status</th>
+
+                    <th>Payment Status</th>
 
                     <th>Action</th>
 
@@ -167,20 +256,40 @@
                             @item.PaidAmount.ToString("N2")
                         </td>
 
-
-
                         <td>
                             @item.BalanceAmount.ToString("N2")
                         </td>
 
-
-
-
+                        <td>
+                            @if (item.InvoiceStatus == "Issued")
+                            {
+                                <span class="badge-success">Issued</span>
+                            }
+                            else if (item.InvoiceStatus == "Cancelled")
+                            {
+                                <span class="badge-danger">Cancelled</span>
+                            }
+                            else
+                            {
+                                <span class="badge-warning">Draft</span>
+                            }
+                        </td>
 
                         <td>
-
-                            @item.InvoiceStatus
-
+                            @if (item.PaymentStatus == "Paid")
+                            {
+                                <span class="badge-success">Paid</span>
+                            }
+                            else if (item.PaymentStatus == "Partially Paid")
+                            {
+                                <span class="badge-warning">
+                                    Partially Paid
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge-danger">Unpaid</span>
+                            }
                         </td>
 
 
@@ -198,20 +307,31 @@
 
                             </a>
 
-                            <a asp-action="Edit"
-                               asp-route-id="@item.InvoiceId"
-                               class="btn-app btn-icon btn-secondary-app">
+                            
+                            @if (item.InvoiceStatus != "Cancelled" &&
+                            
+                            item.PaymentStatus != "Paid")
+                            
+                            {
+                                <a asp-action="Edit"
+                                   asp-route-id="@item.InvoiceId"
+                                   class="btn-app btn-icon btn-secondary-app">
+                                
+                                    <i class="bi bi-pencil"></i>
+                                
+                                </a>
+                             }
 
-                                <i class="bi bi-pencil"></i>
-
-                            </a>
-
-                            <a asp-action="Delete"
-                               asp-route-id="@item.InvoiceId"
-                               class="btn-app btn-icon btn-danger-app"
-                               title="Cancel Invoice">
-                                <i class="bi bi-trash"></i>
-                            </a>
+                            @if (item.InvoiceStatus != "Cancelled" &&
+                                                        item.PaidAmount == 0)
+                            {
+                                <a asp-action="Delete"
+                                   asp-route-id="@item.InvoiceId"
+                                   class="btn-app btn-icon btn-danger-app"
+                                   title="Cancel Invoice">
+                                    <i class="bi bi-x-circle"></i>
+                                </a>
+                            }
 
 
 
@@ -244,119 +364,3 @@
 
 </div>
 
-
-
-
-
-
-@section Scripts
-{
-
-    <script>
-
-
-        $("#txtSearch").keyup(function(){
-
-        var value=$(this).val().toLowerCase();
-
-
-        $("#invoiceTable tbody tr").filter(function(){
-
-        $(this).toggle(
-        $(this).text().toLowerCase().indexOf(value)>-1
-        );
-
-
-        });
-
-
-        });
-
-
-
-
-
-        $("#ddlClient").change(function(){
-
-
-        var value=$(this).val().toLowerCase();
-
-
-        $("#invoiceTable tbody tr").filter(function(){
-
-
-        if(value=="")
-        {
-
-        $(this).show();
-
-        }
-
-        else
-        {
-
-        $(this).toggle(
-
-        $(this).find("td:eq(2)")
-        .text()
-        .toLowerCase()
-        .indexOf(value)>-1
-
-        );
-
-
-        }
-
-
-        });
-
-
-        });
-
-
-
-
-
-        $("#ddlStatus").change(function(){
-
-
-        var value=$(this).val().toLowerCase();
-
-
-        $("#invoiceTable tbody tr").filter(function(){
-
-
-        if(value=="")
-        {
-
-        $(this).show();
-
-        }
-
-        else
-        {
-
-
-        $(this).toggle(
-
-        $(this).find("td:eq(7)")
-        .text()
-        .toLowerCase()
-        .indexOf(value)>-1
-
-        );
-
-
-        }
-
-
-        });
-
-
-        });
-
-
-
-    </script>
-
-}

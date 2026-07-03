@@ -4,6 +4,8 @@ namespace AryamanBMS.ViewModels
 {
     public class GstConfigurationViewModel
     {
+        public int GstConfigurationId { get; set; }
+
         [Required]
         [Range(0, 100)]
         public decimal SgstRate { get; set; } = 9;
@@ -27,6 +29,10 @@ namespace AryamanBMS.ViewModels
         [Required]
         [StringLength(50)]
         public string RegisteredState { get; set; } = "MH";
+
+        public bool IsActive { get; set; } = true;
+
+        public string? UpdatedByUserId { get; set; }
 
         public DateTime LastUpdatedOn { get; set; } = DateTime.Now;
     }

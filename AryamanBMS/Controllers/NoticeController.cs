@@ -175,13 +175,13 @@ namespace AryamanBMS.Controllers
                 return NotFound();
 
             documentType = documentType?.Trim() ?? string.Empty;
-remarks = remarks?.Trim();
-
-if (string.IsNullOrWhiteSpace(documentType))
-{
-    TempData["Error"] = "Please select a document type.";
-    return RedirectToAction(nameof(Details), new { id = noticeId });
-}
+             remarks = remarks?.Trim();
+             
+             if (string.IsNullOrWhiteSpace(documentType))
+             {
+                 TempData["Error"] = "Please select a document type.";
+                 return RedirectToAction(nameof(Details), new { id = noticeId });
+             }
 
             if (file == null || file.Length == 0)
             {
@@ -212,6 +212,32 @@ if (string.IsNullOrWhiteSpace(documentType))
             TempData["Success"] = "Document uploaded successfully.";
 
             return RedirectToAction(nameof(Details), new { id = noticeId });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DownloadDocument(int id)
+        {
+            var document = await _noticeRepository.GetDocumentByIdAsync(id);
+
+            if (document == null)
+                return NotFound();
+
+            var fileBytes =
+                await _fileStorageService.DownloadAsync(document.FilePath);
+
+            if (fileBytes == null)
+            {
+                TempData["Error"] = "Document file was not found.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id = document.NoticeId });
+            }
+
+            return File(
+                fileBytes,
+                GetContentType(document.FileName),
+                Path.GetFileName(document.FileName));
         }
 
         [HttpPost]
@@ -278,6 +304,31 @@ if (string.IsNullOrWhiteSpace(documentType))
         }
 
         #endregion
+        private static string GetContentType(string fileName)
+        {
+            return Path.GetExtension(fileName)
+                .ToLowerInvariant() switch
+            {
+                ".pdf" => "application/pdf",
+
+                ".doc" => "application/msword",
+
+                ".docx" =>
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+
+                ".xls" => "application/vnd.ms-excel",
+
+                ".xlsx" =>
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+
+                ".jpg" or ".jpeg" => "image/jpeg",
+
+                ".png" => "image/png",
+
+                _ => "application/octet-stream"
+            };
+        }
+
     }
 
  }

@@ -95,6 +95,7 @@ builder.Services.AddScoped<IPaymentReceiptRepository, PaymentRepository>();
 builder.Services.AddScoped<IExpenseCategoryRepository, ExpenseCategoryRepository>();
 builder.Services.AddScoped<IExpenseVoucherRepository, ExpenseVoucherRepository>();
 builder.Services.AddScoped<IGstSnapshotRepository, GstSnapshotRepository>();
+builder.Services.AddScoped<IGstConfigurationRepository, GstConfigurationRepository>();
 builder.Services.AddScoped<IGstReturnRepository, GstReturnRepository>();
 builder.Services.AddScoped<IGstChallanRepository, GstChallanRepository>();
 builder.Services.AddScoped<IGstItcRepository, GstItcRepository>();
