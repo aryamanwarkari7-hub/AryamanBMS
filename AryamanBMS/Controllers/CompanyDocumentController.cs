@@ -6,6 +6,7 @@ using AryamanBMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Security.Claims;
 
 namespace AryamanBMS.Controllers
 {
@@ -15,18 +16,14 @@ namespace AryamanBMS.Controllers
         private readonly ICompanyDocumentRepository _documentRepository;
         private readonly ICompanyDocumentCategoryRepository _categoryRepository;
         private readonly IFileStorageService _fileStorage;
-        private readonly ApplicationDbContext _context;
-
         public CompanyDocumentController(
             ICompanyDocumentRepository documentRepository,
             ICompanyDocumentCategoryRepository categoryRepository,
-            IFileStorageService fileStorage,
-            ApplicationDbContext context)
+            IFileStorageService fileStorage)
         {
             _documentRepository = documentRepository;
             _categoryRepository = categoryRepository;
             _fileStorage = fileStorage;
-            _context = context;
         }
 
         #region Index
@@ -124,11 +121,26 @@ namespace AryamanBMS.Controllers
                 DateTime.Now;
 
             vm.Document.IsActive = true;
+            vm.Document.UploadedByUserId = GetCurrentUserId();
 
-            await _documentRepository.AddAsync(
-                vm.Document);
+            try
+            {
+                await _documentRepository.AddAsync(
+                    vm.Document);
 
-            await _documentRepository.SaveAsync();
+                await _documentRepository.SaveAsync();
+            }
+            catch
+            {
+                await _fileStorage.DeleteAsync(
+                    upload.RelativePath);
+
+                ModelState.AddModelError(
+                    "",
+                    "Document could not be saved. Please try again.");
+
+                return View(vm);
+            }
 
             TempData["Success"] =
                 "Company document uploaded successfully.";
@@ -203,6 +215,9 @@ namespace AryamanBMS.Controllers
             document.UpdatedOn =
                 DateTime.Now;
 
+            string oldFilePath = document.FilePath;
+            string? newFilePath = null;
+
             if (vm.UploadFile != null)
             {
                 var category =
@@ -218,8 +233,6 @@ namespace AryamanBMS.Controllers
                     return View(vm);
                 }
 
-                string oldFilePath = document.FilePath;
-
                 var upload =
                     await _fileStorage.UploadAsync(
                         vm.UploadFile,
@@ -233,6 +246,8 @@ namespace AryamanBMS.Controllers
 
                     return View(vm);
                 }
+
+                newFilePath = upload.RelativePath;
 
                 document.FileName =
                     upload.OriginalFileName;
@@ -253,17 +268,38 @@ namespace AryamanBMS.Controllers
                     upload.RelativePath;
 
                 document.VersionNo++;
-
-                if (!string.IsNullOrWhiteSpace(oldFilePath))
-                {
-                    await _fileStorage.DeleteAsync(oldFilePath);
-                }
             }
 
-            await _documentRepository.UpdateAsync(
-                document);
+            try
+            {
+                await _documentRepository.UpdateAsync(
+                    document);
 
-            await _documentRepository.SaveAsync();
+                await _documentRepository.SaveAsync();
+            }
+            catch
+            {
+                if (!string.IsNullOrWhiteSpace(newFilePath))
+                {
+                    await _fileStorage.DeleteAsync(newFilePath);
+                }
+
+                ModelState.AddModelError(
+                    "",
+                    "Document could not be updated. Please try again.");
+
+                return View(vm);
+            }
+
+            if (!string.IsNullOrWhiteSpace(newFilePath) &&
+                !string.IsNullOrWhiteSpace(oldFilePath) &&
+                !string.Equals(
+                    oldFilePath,
+                    newFilePath,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                await _fileStorage.DeleteAsync(oldFilePath);
+            }
 
             TempData["Success"] =
                 "Document updated successfully.";
@@ -383,6 +419,12 @@ namespace AryamanBMS.Controllers
                     Text =
                         x.CategoryName
                 });
+        }
+
+        private string GetCurrentUserId()
+        {
+            return User.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? string.Empty;
         }
 
         #endregion

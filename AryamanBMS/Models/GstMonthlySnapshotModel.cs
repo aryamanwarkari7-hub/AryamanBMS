@@ -103,6 +103,17 @@ namespace AryamanBMS.Models
 
         public DateTime? FiledOn { get; set; }
 
+        [StringLength(450)]
+        public string? FiledByUserId { get; set; }
+
+        [StringLength(450)]
+        public string? ReopenedByUserId { get; set; }
+
+        public DateTime? ReopenedOn { get; set; }
+
+        [StringLength(500)]
+        public string? ReopenReason { get; set; }
+
         public string? Remarks { get; set; }
 
         // -----------------------------

@@ -45,7 +45,7 @@ namespace AryamanBMS.Repositories
         public Task UpdateAsync(ClientModel client)
         {
             client.UpdatedOn = DateTime.Now;
-            _context.Clients.Update(client);
+
             return Task.CompletedTask;
         }
 

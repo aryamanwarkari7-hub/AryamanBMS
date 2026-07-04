@@ -168,7 +168,7 @@
                                 <td>@(asset.AssetCode ?? "-")</td>
                                 <td>@asset.PurchaseDate.ToString("dd-MMM-yyyy")</td>
                                 <td class="text-end">INR @asset.PurchaseValue.ToString("N2")</td>
-                                <td>@(asset.AssignedTo ?? "-")</td>
+                                <td>@(asset.AssignedEmployee?.FullName ?? asset.AssignedTo ?? "-")</td>
                                 <td>@asset.FinancialYear</td>
                                 <td>
                                     <span class="@StatusBadge(asset.Status)">

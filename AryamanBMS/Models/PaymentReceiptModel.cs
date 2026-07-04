@@ -50,6 +50,14 @@ namespace AryamanBMS.Models
 
         public bool IsCancelled { get; set; } = false;
 
+        [StringLength(500)]
+        public string? CancellationReason { get; set; }
+
+        [StringLength(450)]
+        public string? CancelledByUserId { get; set; }
+
+        public DateTime? CancelledOn { get; set; }
+
         public bool IsActive { get; set; } = true;
 
         public DateTime CreatedOn { get; set; } = DateTime.Now;

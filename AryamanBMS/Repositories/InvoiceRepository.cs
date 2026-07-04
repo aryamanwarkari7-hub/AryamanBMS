@@ -16,7 +16,6 @@ namespace AryamanBMS.Repositories
             _context = context;
         }
 
-
         public IQueryable<InvoiceModel> Invoices => _context.Invoices;
 
 
@@ -81,14 +80,10 @@ namespace AryamanBMS.Repositories
         {
             invoice.ModifiedOn = DateTime.Now;
 
-
             invoice.BalanceAmount =
-                invoice.GrandTotal - invoice.PaidAmount;
-
-
-
-            _context.Invoices.Update(invoice);
-
+                Math.Max(
+                    0,
+                    invoice.GrandTotal - invoice.PaidAmount);
 
             return Task.CompletedTask;
         }

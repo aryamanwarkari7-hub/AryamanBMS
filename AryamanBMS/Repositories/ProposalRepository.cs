@@ -58,13 +58,21 @@ namespace AryamanBMS.Repositories
         public Task UpdateAsync(ProposalModel proposal)
         {
             proposal.UpdatedOn = DateTime.Now;
-            _context.Proposals.Update(proposal);
+
             return Task.CompletedTask;
         }
 
         public Task DeleteAsync(ProposalModel proposal)
         {
-            _context.Proposals.Remove(proposal);
+            if (proposal.IsConverted)
+            {
+                throw new InvalidOperationException(
+                    "Converted proposals cannot be deleted.");
+            }
+
+            proposal.IsActive = false;
+            proposal.UpdatedOn = DateTime.Now;
+
             return Task.CompletedTask;
         }
 

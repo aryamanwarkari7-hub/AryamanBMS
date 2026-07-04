@@ -49,15 +49,6 @@
             {
                 document.UpdatedOn = DateTime.Now;
 
-                _context.CompanyDocuments.Update(document);
-
-                return Task.CompletedTask;
-            }
-
-            public Task DeleteAsync(CompanyDocumentModel document)
-            {
-                _context.CompanyDocuments.Remove(document);
-
                 return Task.CompletedTask;
             }
 

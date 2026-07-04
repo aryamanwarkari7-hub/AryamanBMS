@@ -34,6 +34,16 @@ namespace AryamanBMS.Models
 
         public DateTime GeneratedOn { get; set; } = DateTime.Now;
 
+        [StringLength(450)]
+        public string? FiledByUserId { get; set; }
+
+        public DateTime? FiledOn { get; set; }
+
+        [StringLength(450)]
+        public string? PaidByUserId { get; set; }
+
+        public DateTime? PaidOn { get; set; }
+
         [ValidateNever]
         public virtual ICollection<PtChallanModel> Challans { get; set; } = new List<PtChallanModel>();
 

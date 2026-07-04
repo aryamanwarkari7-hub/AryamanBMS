@@ -13,7 +13,13 @@ namespace AryamanBMS.Repositories.Interfaces
 
         Task<PtMonthlySnapshotModel> GenerateSnapshotAsync(int month, int year);
 
-        Task UpdateSnapshotStatusAsync(int snapshotId, string status);
+        Task<bool> MarkFiledAsync(
+    int snapshotId,
+    string filedByUserId);
+
+        Task<bool> MarkPaidAsync(
+            int snapshotId,
+            string paidByUserId);
 
         // Challan
         Task AddChallanAsync(PtChallanModel challan);
@@ -27,7 +33,7 @@ namespace AryamanBMS.Repositories.Interfaces
 
         Task<PtDocumentModel?> GetDocumentByIdAsync(int id);
 
-        Task DeleteDocumentAsync(int id);
+        Task DeleteDocumentAsync(PtDocumentModel document);
 
         Task SaveAsync();
     }

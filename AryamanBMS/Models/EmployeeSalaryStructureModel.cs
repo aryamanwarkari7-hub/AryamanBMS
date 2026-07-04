@@ -14,6 +14,8 @@ namespace AryamanBMS.Models
         [Required]
         public DateTime EffectiveFrom { get; set; }
 
+        public DateTime? EffectiveTo { get; set; }
+
         [Required]
         [Range(0, 99999999)]
         public decimal ActualSalary { get; set; }

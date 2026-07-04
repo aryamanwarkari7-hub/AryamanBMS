@@ -69,6 +69,38 @@
                 </div>
             </div>
 
+            <div class="form-group">
+                <label class="form-label">Filed On</label>
+                <strong>
+                    @(Model.FiledOn?.ToString("dd MMM yyyy HH:mm") ?? "-")
+                </strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Filed By User ID</label>
+                <strong>
+                    @(string.IsNullOrWhiteSpace(Model.FiledByUserId)
+                                        ? "-"
+                                        : Model.FiledByUserId)
+                </strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Paid On</label>
+                <strong>
+                    @(Model.PaidOn?.ToString("dd MMM yyyy HH:mm") ?? "-")
+                </strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Paid By User ID</label>
+                <strong>
+                    @(string.IsNullOrWhiteSpace(Model.PaidByUserId)
+                                        ? "-"
+                                        : Model.PaidByUserId)
+                </strong>
+            </div>
+
         </div>
 
         <div class="table-actions mt-3">
@@ -274,7 +306,9 @@
                         <th>Document Type</th>
                         <th>File Name</th>
                         <th>Remarks</th>
+                        <th>Uploaded By</th>
                         <th>Uploaded On</th>
+                        <th>Status</th>
                         <th class="text-center">Actions</th>
                     </tr>
                 </thead>
@@ -301,22 +335,38 @@
 
                                 <td>@(document.Remarks ?? "-")</td>
 
+                                <td>@(string.IsNullOrWhiteSpace(document.UploadedByUserId) ? "-" : document.UploadedByUserId)</td>
+
                                 <td>@document.UploadedOn.ToString("dd-MMM-yyyy")</td>
+
+                                <td>
+                                    @if (document.IsActive)
+                                    {
+                                        <span class="badge-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-secondary">Archived</span>
+                                    }
+                                </td>
 
                                 <td class="text-center">
                                     <div class="table-actions">
-                                        <form asp-action="DeleteDocument" method="post" class="d-inline">
-                                            @Html.AntiForgeryToken()
+                                        @if (Model.Status == FinancialConstants.StatutoryStatus.Pending)
+                                        {
+                                            <form asp-action="DeleteDocument" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
 
-                                            <input type="hidden" name="id" value="@document.PfDocumentId" />
-                                            <input type="hidden" name="snapshotId" value="@Model.PfSnapshotId" />
+                                                <input type="hidden" name="id" value="@document.PfDocumentId" />
+                                                <input type="hidden" name="snapshotId" value="@Model.PfSnapshotId" />
 
-                                            <button type="submit"
-                                                    class="btn-app btn-icon btn-danger-app"
-                                                    onclick="return confirm('Delete this document?');">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </form>
+                                                <button type="submit"
+                                                        class="btn-app btn-icon btn-danger-app"
+                                                        onclick="return confirm('Archive this document?');">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        }
                                     </div>
                                 </td>
                             </tr>
@@ -325,7 +375,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="5" class="empty-state">
+                            <td colspan="7" class="empty-state">
                                 No PF documents uploaded yet.
                             </td>
                         </tr>

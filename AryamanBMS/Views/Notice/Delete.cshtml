@@ -1,7 +1,9 @@
 ﻿@model AryamanBMS.Models.NoticeModel
 
 @{
-    ViewData["Title"] = "Delete Notice";
+    ViewData["Title"] = Model.IsActive
+        ? "Archive Notice"
+        : "Activate Notice";
 
     string statusBadgeClass =
         Model.Status switch
@@ -19,7 +21,7 @@
     <div>
         <h1 class="module-title">Delete Notice</h1>
         <p class="module-subtitle">
-            Confirm deletion of this statutory notice.
+            Confirm the active status change for this statutory notice.
         </p>
     </div>
 
@@ -34,7 +36,14 @@
 </div>
 
 <div class="app-alert-danger">
-    This action will permanently delete this notice and its linked record. Continue only if this entry was created by mistake.
+    @if (Model.IsActive)
+    {
+        <span>This will archive the notice from active records without removing audit history.</span>
+    }
+    else
+    {
+        <span>This will restore the notice to active records.</span>
+    }
 </div>
 
 <div class="app-card form-card">
@@ -98,9 +107,9 @@
 
             <div class="form-actions">
                 <button type="submit"
-                        class="btn-app btn-danger-app">
-                    <i class="bi bi-trash"></i>
-                    Delete Notice
+                        class="btn-app @(Model.IsActive ? "btn-danger-app" : "btn-success-app")">
+                    <i class="bi @(Model.IsActive ? "bi-trash" : "bi-arrow-counterclockwise")"></i>
+                    @(Model.IsActive ? "Archive Notice" : "Activate Notice")
                 </button>
 
                 <a asp-action="Details"

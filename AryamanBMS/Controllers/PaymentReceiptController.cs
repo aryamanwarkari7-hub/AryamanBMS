@@ -5,18 +5,26 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
+using Microsoft.AspNetCore.Identity;
+
 namespace AryamanBMS.Controllers
 {
     [Authorize(Roles = "Admin,Finance")]
     public class PaymentReceiptController : Controller
     {
         private readonly IPaymentReceiptRepository _paymentRepository;
+        private readonly UserManager<ApplicationUserModel> _userManager;
 
-        public PaymentReceiptController(IPaymentReceiptRepository paymentRepository)
+        public PaymentReceiptController(
+          IPaymentReceiptRepository paymentRepository,
+          UserManager<ApplicationUserModel> userManager)
         {
             _paymentRepository = paymentRepository;
+            _userManager = userManager;
         }
 
+
+        #region Index
         public async Task<IActionResult> Index(
                   string? search,
                   int? clientId,
@@ -73,6 +81,10 @@ namespace AryamanBMS.Controllers
             return View(model);
         }
 
+        #endregion
+
+        #region Create
+
         [HttpGet]
         public async Task<IActionResult> Create()
         {
@@ -90,12 +102,16 @@ namespace AryamanBMS.Controllers
             return View(model);
         }
 
+        
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(PaymentReceiptModel model)
         {
 
             ModelState.Remove(nameof(model.ReceiptNo));
+
+            NormalizeReceipt(model);
 
             await LoadFormDataAsync(model.ClientId);
 
@@ -132,6 +148,9 @@ namespace AryamanBMS.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        #endregion
+
+        #region Edit
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
@@ -168,6 +187,8 @@ namespace AryamanBMS.Controllers
             model.ReceiptNo = payment.ReceiptNo;
             model.IsCancelled = payment.IsCancelled;
             model.IsActive = payment.IsActive;
+
+            NormalizeReceipt(model);
 
             await LoadFormDataAsync(payment.ClientId);
 
@@ -223,6 +244,9 @@ namespace AryamanBMS.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        #endregion
+
+        #region Details 
         [HttpGet]
         public async Task<IActionResult> Details(int id)
         {
@@ -236,14 +260,26 @@ namespace AryamanBMS.Controllers
             return View(payment);
         }
 
+        #endregion
+
+        #region Delete
         [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {
-            var payment = await _paymentRepository.GetByIdAsync(id);
+            var payment =
+                await _paymentRepository.GetByIdAsync(id);
 
             if (payment == null)
-            {
                 return NotFound();
+
+            if (payment.IsCancelled)
+            {
+                TempData["Error"] =
+                    "This payment receipt is already cancelled.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
             }
 
             return View(payment);
@@ -251,28 +287,67 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(
+          int id,
+          string cancellationReason)
         {
-            var payment = await _paymentRepository.GetByIdAsync(id);
-
-            if (payment == null)
+            if (string.IsNullOrWhiteSpace(
+                    cancellationReason))
             {
-                return NotFound();
+                TempData["Error"] =
+                    "Cancellation reason is required.";
+
+                return RedirectToAction(
+                    nameof(Delete),
+                    new { id });
             }
 
-            try
+            if (cancellationReason.Trim().Length > 500)
             {
-                await _paymentRepository.DeleteAsync(payment);
+                TempData["Error"] =
+                    "Cancellation reason cannot exceed 500 characters.";
 
-                TempData["Success"] = "Payment receipt cancelled successfully.";
+                return RedirectToAction(
+                    nameof(Delete),
+                    new { id });
             }
-            catch (Exception ex)
+
+            string? userId =
+                _userManager.GetUserId(User);
+
+            if (string.IsNullOrWhiteSpace(userId))
             {
-                TempData["Error"] = ex.Message;
+                TempData["Error"] =
+                    "Current user could not be identified.";
+
+                return RedirectToAction(
+                    nameof(Delete),
+                    new { id });
             }
+
+            bool cancelled =
+                await _paymentRepository.CancelAsync(
+                    id,
+                    userId,
+                    cancellationReason);
+
+            if (!cancelled)
+            {
+                TempData["Error"] =
+                    "Payment receipt could not be cancelled.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            TempData["Success"] =
+                "Payment receipt cancelled successfully.";
 
             return RedirectToAction(nameof(Index));
         }
+
+        #endregion
+
+        #region Helpers
 
         [HttpGet]
         public async Task<IActionResult> GetInvoicesByClient(
@@ -327,6 +402,49 @@ namespace AryamanBMS.Controllers
                 .FirstOrDefault(x => x.InvoiceId == invoiceId && !x.IsDeleted);
         }
 
+        private static readonly string[] AllowedPaymentModes =
+{
+             "Cash",
+             "Cheque",
+             "Bank Transfer",
+             "NEFT",
+             "RTGS",
+             "IMPS",
+             "UPI"
+};
+
+        private static void NormalizeReceipt(
+            PaymentReceiptModel model)
+        {
+            model.PaymentMode =
+                model.PaymentMode?.Trim() ?? string.Empty;
+
+            model.BankName =
+                string.IsNullOrWhiteSpace(model.BankName)
+                    ? null
+                    : model.BankName.Trim();
+
+            model.TransactionNo =
+                string.IsNullOrWhiteSpace(model.TransactionNo)
+                    ? null
+                    : model.TransactionNo.Trim();
+
+            model.ReferenceNo =
+                string.IsNullOrWhiteSpace(model.ReferenceNo)
+                    ? null
+                    : model.ReferenceNo.Trim();
+
+            model.ReceivedBy =
+                string.IsNullOrWhiteSpace(model.ReceivedBy)
+                    ? null
+                    : model.ReceivedBy.Trim();
+
+            model.Remarks =
+                string.IsNullOrWhiteSpace(model.Remarks)
+                    ? null
+                    : model.Remarks.Trim();
+        }
+
         private bool ValidateReceipt(
             PaymentReceiptModel model,
             InvoiceModel? invoice,
@@ -349,11 +467,12 @@ namespace AryamanBMS.Controllers
             }
 
             if (invoice.IsDeleted ||
-                invoice.InvoiceStatus == "Cancelled")
+               invoice.InvoiceStatus == "Cancelled" ||
+               invoice.InvoiceStatus == "Draft") 
             {
                 ModelState.AddModelError(
                     nameof(model.InvoiceId),
-                    "Payments cannot be recorded against a cancelled invoice.");
+                    "Payments can only be recorded against issued invoices.");
             }
 
             if (model.AmountReceived <= 0)
@@ -391,6 +510,46 @@ namespace AryamanBMS.Controllers
                     "Payment mode is required.");
             }
 
+            if (!AllowedPaymentModes.Contains(
+        model.PaymentMode,
+        StringComparer.OrdinalIgnoreCase))
+            {
+                ModelState.AddModelError(
+                    nameof(model.PaymentMode),
+                    "Invalid payment mode.");
+            }
+
+            bool isCash =
+                string.Equals(
+                    model.PaymentMode,
+                    "Cash",
+                    StringComparison.OrdinalIgnoreCase);
+
+            bool requiresBank =
+                model.PaymentMode is
+                    "Cheque" or
+                    "Bank Transfer" or
+                    "NEFT" or
+                    "RTGS" or
+                    "IMPS";
+
+            if (requiresBank &&
+                string.IsNullOrWhiteSpace(model.BankName))
+            {
+                ModelState.AddModelError(
+                    nameof(model.BankName),
+                    "Bank name is required for the selected payment mode.");
+            }
+
+            if (!isCash &&
+                string.IsNullOrWhiteSpace(model.TransactionNo) &&
+                string.IsNullOrWhiteSpace(model.ReferenceNo))
+            {
+                ModelState.AddModelError(
+                    nameof(model.TransactionNo),
+                    "Transaction or reference number is required for non-cash payments.");
+            }
+
             if (model.PaymentMode != "Cash" &&
                 string.IsNullOrWhiteSpace(model.TransactionNo) &&
                 string.IsNullOrWhiteSpace(model.ReferenceNo))
@@ -400,7 +559,11 @@ namespace AryamanBMS.Controllers
                     "Transaction or reference number is required for non-cash payments.");
             }
 
+
+
             return ModelState.IsValid;
         }
+
+        #endregion
     }
 }

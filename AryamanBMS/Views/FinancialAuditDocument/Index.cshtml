@@ -179,7 +179,11 @@
                                 <td>@item.UploadedOn.ToString("dd-MMM-yyyy hh:mm tt")</td>
 
                                 <td class="text-center">
-                                    @if (item.IsActive)
+                                    @if (item.IsFinalized)
+                                    {
+                                        <span class="badge-primary">Finalized</span>
+                                    }
+                                    else if (item.IsActive)
                                     {
                                         <span class="badge-success">Active</span>
                                     }
@@ -198,12 +202,15 @@
                                             <i class="bi bi-eye"></i>
                                         </a>
 
-                                        <a asp-action="Edit"
-                                           asp-route-id="@item.FinancialAuditDocumentId"
-                                           class="btn-app btn-icon btn-secondary-app"
-                                           title="Edit">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
+                                        @if (!item.IsFinalized)
+                                        {
+                                            <a asp-action="Edit"
+                                               asp-route-id="@item.FinancialAuditDocumentId"
+                                               class="btn-app btn-icon btn-secondary-app"
+                                               title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        }
 
                                         @if (item.IsActive)
                                         {
@@ -214,14 +221,17 @@
                                                 <i class="bi bi-download"></i>
                                             </a>
 
-                                            <button type="button"
-                                                    class="btn-app btn-icon btn-danger-app"
-                                                    onclick="changeDocumentStatus(@item.FinancialAuditDocumentId)"
-                                                    title="Archive">
-                                                <i class="bi bi-archive"></i>
-                                            </button>
+                                            @if (!item.IsFinalized)
+                                            {
+                                                <button type="button"
+                                                        class="btn-app btn-icon btn-danger-app"
+                                                        onclick="changeDocumentStatus(@item.FinancialAuditDocumentId)"
+                                                        title="Archive">
+                                                    <i class="bi bi-archive"></i>
+                                                </button>
+                                            }
                                         }
-                                        else
+                                        else if (!item.IsFinalized)
                                         {
                                             <button type="button"
                                                     class="btn-app btn-icon btn-success-app"

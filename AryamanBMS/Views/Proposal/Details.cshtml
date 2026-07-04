@@ -28,12 +28,15 @@
 
     <div class="module-header-actions">
 
-        <a asp-action="Edit"
-           asp-route-id="@Model.ProposalId"
-           class="btn-app btn-primary-app">
-            <i class="bi bi-pencil-square"></i>
-            Edit Proposal
-        </a>
+        @if (Model.IsActive && !Model.IsConverted)
+        {
+            <a asp-action="Edit"
+               asp-route-id="@Model.ProposalId"
+               class="btn-app btn-primary-app">
+                <i class="bi bi-pencil-square"></i>
+                Edit Proposal
+            </a>
+        }
 
         <a asp-action="Download"
            asp-route-id="@Model.ProposalId"
@@ -44,13 +47,13 @@
 
         
 
-        @if (Model.Status == "Accepted" && !Model.IsConverted)
+        @if (Model.IsActive && !Model.IsConverted)
         {
-            <a asp-action="ConvertToOrder"
+            <a asp-action="Edit"
                asp-route-id="@Model.ProposalId"
                class="btn-app btn-primary-app">
-                <i class="bi bi-arrow-left-right"></i>
-                Convert to PO/WO
+                <i class="bi bi-pencil-square"></i>
+                Edit Proposal
             </a>
         }
 

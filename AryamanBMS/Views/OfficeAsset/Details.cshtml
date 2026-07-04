@@ -1,7 +1,15 @@
 @model AryamanBMS.Models.OfficeAssetModel
+@using AryamanBMS.Models
+@using Microsoft.AspNetCore.Mvc.Rendering
 
 @{
     ViewData["Title"] = "Office Asset Details";
+
+    var history = ViewBag.AssignmentHistory as List<OfficeAssetAssignmentHistoryModel>
+        ?? new List<OfficeAssetAssignmentHistoryModel>();
+    var activeAssignment = ViewBag.ActiveAssignment as OfficeAssetAssignmentHistoryModel;
+    var employeeOptions = ViewBag.EmployeeOptions as List<SelectListItem>
+        ?? new List<SelectListItem>();
 
     string StatusLabel(string value) => value switch
     {
@@ -23,18 +31,12 @@
 }
 
 <div class="module-header">
-
     <div>
-        <h1 class="module-title">Office Asset Details</h1>
-        <p class="module-subtitle">
-            <span class="badge-secondary">
-                @(string.IsNullOrWhiteSpace(Model.AssetCode) ? "No Asset Code" : Model.AssetCode)
-            </span>
-        </p>
+        <h1 class="module-title">OFFICE ASSET DETAILS</h1>
+        <p class="module-subtitle">View asset lifecycle, current assignment and audit trail.</p>
     </div>
 
     <div class="module-header-actions">
-
         <a asp-action="Edit"
            asp-route-id="@Model.OfficeAssetId"
            class="btn-app btn-icon btn-primary-app"
@@ -42,169 +44,269 @@
             <i class="bi bi-pencil"></i>
         </a>
 
-        <a asp-action="Index"
-           class="btn-app btn-secondary-app">
+        <a asp-action="Index" class="btn-app btn-secondary-app">
             <i class="bi bi-arrow-left"></i>
             Back
         </a>
-
     </div>
-
 </div>
 
 <div class="app-card">
-
     <div class="card-header">
-        <h5 class="card-title">Asset Information</h5>
-    </div>
-
-    <div class="card-body">
-
-        <div class="form-grid-2">
-
-            <div class="form-group">
-                <label class="form-label">Asset Name</label>
-                <div>@Model.AssetName</div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Asset Category</label>
-                <div>@Model.AssetCategory</div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Asset Code</label>
-                <div>@(Model.AssetCode ?? "-")</div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Asset Status</label>
-                <div>
-                    <span class="@StatusBadge(Model.Status)">
-                        @StatusLabel(Model.Status)
-                    </span>
-                </div>
-            </div>
-
+        <div>
+            <h2 class="card-title">Asset Information</h2>
+            <p class="card-subtitle">Primary identity, lifecycle and current record status.</p>
         </div>
-
-    </div>
-
-</div>
-
-<div class="app-card">
-
-    <div class="card-header">
-        <h5 class="card-title">Purchase Information</h5>
     </div>
 
     <div class="card-body">
-
-        <div class="form-grid-2">
-
-            <div class="form-group">
-                <label class="form-label">Purchase Date</label>
-                <div>@Model.PurchaseDate.ToString("dd-MMM-yyyy")</div>
+        <div class="details-grid">
+            <div class="detail-item">
+                <span class="detail-label">Asset Name</span>
+                <span class="detail-value">@Model.AssetName</span>
             </div>
-
-            <div class="form-group">
-                <label class="form-label">Purchase Value</label>
-                <div>INR @Model.PurchaseValue.ToString("N2")</div>
+            <div class="detail-item">
+                <span class="detail-label">Asset Category</span>
+                <span class="detail-value">@Model.AssetCategory</span>
             </div>
-
-            <div class="form-group">
-                <label class="form-label">Vendor Name</label>
-                <div>@(Model.VendorName ?? "-")</div>
+            <div class="detail-item">
+                <span class="detail-label">Asset Code</span>
+                <span class="detail-value">@(string.IsNullOrWhiteSpace(Model.AssetCode) ? "-" : Model.AssetCode)</span>
             </div>
-
-            <div class="form-group">
-                <label class="form-label">Financial Year</label>
-                <div>@Model.FinancialYear</div>
+            <div class="detail-item">
+                <span class="detail-label">Status</span>
+                <span class="detail-value"><span class="@StatusBadge(Model.Status)">@StatusLabel(Model.Status)</span></span>
             </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-<div class="app-card">
-
-    <div class="card-header">
-        <h5 class="card-title">Assignment & Remarks</h5>
-    </div>
-
-    <div class="card-body">
-
-        <div class="form-grid-2">
-
-            <div class="form-group">
-                <label class="form-label">Assigned To</label>
-                <div>@(Model.AssignedTo ?? "-")</div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Record Status</label>
-                <div>
+            <div class="detail-item">
+                <span class="detail-label">Record</span>
+                <span class="detail-value">
                     @if (Model.IsActive)
                     {
                         <span class="badge-success">Active</span>
                     }
                     else
                     {
-                        <span class="badge-danger">Archived</span>
+                        <span class="badge-secondary">Archived</span>
                     }
+                </span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Current Assignment</span>
+                <span class="detail-value">@(string.IsNullOrWhiteSpace(Model.AssignedTo) ? "Not assigned" : Model.AssignedTo)</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="app-card">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Purchase & Warranty</h2>
+            <p class="card-subtitle">Purchase value and warranty coverage details.</p>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <div class="details-grid">
+            <div class="detail-item">
+                <span class="detail-label">Purchase Date</span>
+                <span class="detail-value">@Model.PurchaseDate.ToString("dd-MMM-yyyy")</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Purchase Value</span>
+                <span class="detail-value">INR @Model.PurchaseValue.ToString("N2")</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Vendor Name</span>
+                <span class="detail-value">@(string.IsNullOrWhiteSpace(Model.VendorName) ? "-" : Model.VendorName)</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Financial Year</span>
+                <span class="detail-value">@Model.FinancialYear</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Warranty Start</span>
+                <span class="detail-value">@(Model.WarrantyStartDate?.ToString("dd-MMM-yyyy") ?? "-")</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Warranty End</span>
+                <span class="detail-value">@(Model.WarrantyEndDate?.ToString("dd-MMM-yyyy") ?? "-")</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Disposal Date</span>
+                <span class="detail-value">@(Model.DisposalDate?.ToString("dd-MMM-yyyy") ?? "-")</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Remarks</span>
+                <span class="detail-value">@(string.IsNullOrWhiteSpace(Model.Remarks) ? "-" : Model.Remarks)</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="app-card form-card">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Assignment Control</h2>
+            <p class="card-subtitle">Keep assignment changes separate so history remains intact.</p>
+        </div>
+    </div>
+
+    <div class="card-body">
+        @if (activeAssignment == null)
+        {
+            <form asp-action="Assign" asp-route-id="@Model.OfficeAssetId" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label class="form-label">Employee</label>
+                        <select name="employeeId" class="app-select" required>
+                            <option value="">Select Employee</option>
+                            @foreach (var employee in employeeOptions)
+                            {
+                                <option value="@employee.Value">@employee.Text</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Condition on Assignment</label>
+                        <input name="conditionOnAssignment" class="app-input" placeholder="Working, sealed, serviced" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Remarks</label>
+                        <input name="remarks" class="app-input" placeholder="Optional assignment note" />
+                    </div>
+                </div>
+
+                <div class="form-actions mt-3">
+                    <button type="submit" class="btn-app btn-primary-app" @(Model.IsActive && Model.Status != "Disposed" ? null : "disabled")>
+                        <i class="bi bi-person-plus"></i>
+                        Assign Asset
+                    </button>
+                </div>
+            </form>
+        }
+        else
+        {
+            <div class="details-grid mb-3">
+                <div class="detail-item">
+                    <span class="detail-label">Assigned Employee</span>
+                    <span class="detail-value">@activeAssignment.Employee.FullName</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Assigned On</span>
+                    <span class="detail-value">@activeAssignment.AssignedOn.ToString("dd-MMM-yyyy hh:mm tt")</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Condition</span>
+                    <span class="detail-value">@(string.IsNullOrWhiteSpace(activeAssignment.ConditionOnAssignment) ? "-" : activeAssignment.ConditionOnAssignment)</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Remarks</span>
+                    <span class="detail-value">@(string.IsNullOrWhiteSpace(activeAssignment.Remarks) ? "-" : activeAssignment.Remarks)</span>
                 </div>
             </div>
 
-        </div>
+            <form asp-action="Return" asp-route-id="@Model.OfficeAssetId" method="post">
+                @Html.AntiForgeryToken()
 
-        <div class="form-group mt-3">
-            <label class="form-label">Remarks</label>
-            <div>@(string.IsNullOrWhiteSpace(Model.Remarks) ? "-" : Model.Remarks)</div>
-        </div>
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Condition on Return</label>
+                        <input name="conditionOnReturn" class="app-input" placeholder="Working, damaged, repair required" />
+                    </div>
 
+                    <div class="form-group">
+                        <label class="form-label">Remarks</label>
+                        <input name="remarks" class="app-input" placeholder="Optional return note" />
+                    </div>
+                </div>
+
+                <div class="form-actions mt-3">
+                    <button type="submit" class="btn-app btn-warning-app">
+                        <i class="bi bi-arrow-return-left"></i>
+                        Return Asset
+                    </button>
+                </div>
+            </form>
+        }
     </div>
-
 </div>
 
-<div class="app-card">
-
+<div class="app-card table-card">
     <div class="card-header">
-        <h5 class="card-title">Audit Information</h5>
+        <div>
+            <h2 class="card-title">Assignment History</h2>
+            <p class="card-subtitle">Every assignment and return is preserved for audit.</p>
+        </div>
     </div>
 
     <div class="card-body">
-
-        <div class="form-grid-2">
-
-            <div class="form-group">
-                <label class="form-label">Created On</label>
-                <div>@Model.CreatedOn.ToString("dd-MMM-yyyy hh:mm tt")</div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Last Updated</label>
-                <div>@(Model.UpdatedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")</div>
-            </div>
-
+        <div class="table-responsive">
+            <table class="app-table">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Assigned On</th>
+                        <th>Returned On</th>
+                        <th>Assigned By</th>
+                        <th>Returned By</th>
+                        <th>Condition</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (history.Any())
+                    {
+                        foreach (var item in history)
+                        {
+                            <tr>
+                                <td>@item.Employee.FullName</td>
+                                <td>@item.AssignedOn.ToString("dd-MMM-yyyy hh:mm tt")</td>
+                                <td>@(item.ReturnedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")</td>
+                                <td>@item.AssignedByUserId</td>
+                                <td>@(string.IsNullOrWhiteSpace(item.ReturnedByUserId) ? "-" : item.ReturnedByUserId)</td>
+                                <td>
+                                    Assign: @(string.IsNullOrWhiteSpace(item.ConditionOnAssignment) ? "-" : item.ConditionOnAssignment)
+                                    <br />
+                                    Return: @(string.IsNullOrWhiteSpace(item.ConditionOnReturn) ? "-" : item.ConditionOnReturn)
+                                </td>
+                                <td>
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-secondary">Closed</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="empty-state">No assignment history available.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
-
     </div>
-
 </div>
 
 <div class="app-card">
-
     <div class="card-body">
-
-        <div class="table-actions">
-
+        <div class="form-actions">
             <a asp-action="Edit"
                asp-route-id="@Model.OfficeAssetId"
-               class="btn-app btn-icon btn-primary-app"
-               title="Edit">
+               class="btn-app btn-primary-app">
                 <i class="bi bi-pencil"></i>
+                Edit
             </a>
 
             <form asp-action="Delete"
@@ -221,13 +323,9 @@
                 </button>
             </form>
 
-            <a asp-action="Index"
-               class="btn-app btn-secondary-app">
+            <a asp-action="Index" class="btn-app btn-secondary-app">
                 Cancel
             </a>
-
         </div>
-
     </div>
-
 </div>

@@ -18,7 +18,7 @@ namespace AryamanBMS.Repositories
         {
             return await _context.EsicMonthlySnapshots
                 .Include(x => x.Challans)
-                .Include(x => x.Documents)
+                .Include(x => x.Documents.Where(d => d.IsActive))
                 .OrderByDescending(x => x.Year)
                 .ThenByDescending(x => x.Month)
                 .ToListAsync();
@@ -28,7 +28,7 @@ namespace AryamanBMS.Repositories
         {
             return await _context.EsicMonthlySnapshots
                 .Include(x => x.Challans)
-                .Include(x => x.Documents)
+                .Include(x => x.Documents.Where(d => d.IsActive))
                 .FirstOrDefaultAsync(x => x.EsicSnapshotId == id);
         }
 
@@ -36,12 +36,26 @@ namespace AryamanBMS.Repositories
         {
             return await _context.EsicMonthlySnapshots
                 .Include(x => x.Challans)
-                .Include(x => x.Documents)
+                .Include(x => x.Documents.Where(d => d.IsActive))
                 .FirstOrDefaultAsync(x => x.Month == month && x.Year == year);
         }
 
         public async Task<EsicMonthlySnapshotModel> GenerateSnapshotAsync(int month, int year)
         {
+
+            if (month < 1 || month > 12)
+            {
+                throw new InvalidOperationException(
+                    "ESIC month must be between 1 and 12.");
+            }
+
+            if (year < 2000 ||
+                year > DateTime.Today.Year + 1)
+            {
+                throw new InvalidOperationException(
+                    "Invalid ESIC snapshot year.");
+            }
+
             var existing = await _context.EsicMonthlySnapshots
                 .FirstOrDefaultAsync(x => x.Month == month && x.Year == year);
 
@@ -106,15 +120,67 @@ namespace AryamanBMS.Repositories
             return snapshot;
         }
 
-        public async Task UpdateSnapshotStatusAsync(int snapshotId, string status)
+        public async Task<bool> MarkFiledAsync(
+    int snapshotId,
+    string filedByUserId)
         {
-            var snapshot = await _context.EsicMonthlySnapshots.FindAsync(snapshotId);
-            if (snapshot != null)
+            var snapshot = await _context.EsicMonthlySnapshots
+                .FirstOrDefaultAsync(x =>
+                    x.EsicSnapshotId == snapshotId);
+
+            if (snapshot == null)
+                return false;
+
+            if (snapshot.Status !=
+                FinancialConstants.StatutoryStatus.Pending)
             {
-                snapshot.Status = status;
-                _context.EsicMonthlySnapshots.Update(snapshot);
-                await _context.SaveChangesAsync();
+                return false;
             }
+
+            snapshot.Status =
+                FinancialConstants.StatutoryStatus.Filed;
+
+            snapshot.FiledByUserId = filedByUserId;
+            snapshot.FiledOn = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<bool> MarkPaidAsync(
+            int snapshotId,
+            string paidByUserId)
+        {
+            var snapshot = await _context.EsicMonthlySnapshots
+                .Include(x => x.Challans)
+                .FirstOrDefaultAsync(x =>
+                    x.EsicSnapshotId == snapshotId);
+
+            if (snapshot == null)
+                return false;
+
+            if (snapshot.Status !=
+                FinancialConstants.StatutoryStatus.Filed)
+            {
+                return false;
+            }
+
+            decimal paidAmount =
+                snapshot.Challans.Sum(x => x.AmountPaid);
+
+            if (paidAmount < snapshot.TotalPayable)
+                return false;
+
+            snapshot.Status =
+                FinancialConstants.StatutoryStatus.Paid;
+
+            snapshot.PaidByUserId = paidByUserId;
+            snapshot.PaidOn = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
+            return true;
         }
 
         public async Task AddChallanAsync(EsicChallanModel challan)
@@ -140,23 +206,21 @@ namespace AryamanBMS.Repositories
         public async Task AddDocumentAsync(EsicDocumentModel document)
         {
             document.UploadedOn = DateTime.Now;
+            document.IsActive = true;
             await _context.EsicDocuments.AddAsync(document);
         }
 
         public async Task<EsicDocumentModel?> GetDocumentByIdAsync(int id)
         {
             return await _context.EsicDocuments
+                .Include(x => x.Snapshot)
                 .FirstOrDefaultAsync(x => x.EsicDocumentId == id);
         }
 
-        public async Task DeleteDocumentAsync(int id)
+        public Task DeleteDocumentAsync(EsicDocumentModel document)
         {
-            var doc = await _context.EsicDocuments.FindAsync(id);
-            if (doc != null)
-            {
-                _context.EsicDocuments.Remove(doc);
-                await _context.SaveChangesAsync();
-            }
+            document.IsActive = false;
+            return Task.CompletedTask;
         }
 
         public async Task SaveAsync()

@@ -54,6 +54,9 @@ namespace AryamanBMS.Models
 
         public bool IsActive { get; set; } = true;
 
+        [StringLength(450)]
+        public string? UploadedByUserId { get; set; }
+
         public DateTime CreatedOn { get; set; } = DateTime.Now;
 
         public DateTime? UpdatedOn { get; set; }

@@ -71,7 +71,10 @@ public class GstSnapshotRepository : IGstSnapshotRepository
             "GST snapshots should be recalculated, not deleted.");
     }
 
-    public async Task<bool> LockAsync(int month, int year)
+    public async Task<bool> LockAsync(
+    int month,
+    int year,
+    string filedByUserId)
     {
         var snapshot = await _context.GstMonthlySnapshots
             .FirstOrDefaultAsync(x =>
@@ -90,6 +93,40 @@ public class GstSnapshotRepository : IGstSnapshotRepository
         }
 
         snapshot.Status = "Filed";
+        snapshot.FiledOn = DateTime.Now;
+        snapshot.FiledByUserId = filedByUserId;
+
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+
+    public async Task<bool> ReopenAsync(
+    int month,
+    int year,
+    string reopenedByUserId,
+    string reason)
+    {
+        var snapshot = await _context.GstMonthlySnapshots
+            .FirstOrDefaultAsync(x =>
+                x.Month == month &&
+                x.Year == year);
+
+        if (snapshot == null)
+            return false;
+
+        if (!string.Equals(
+                snapshot.Status,
+                "Filed",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        snapshot.Status = "Calculated";
+        snapshot.ReopenedByUserId = reopenedByUserId;
+        snapshot.ReopenedOn = DateTime.Now;
+        snapshot.ReopenReason = reason.Trim();
 
         await _context.SaveChangesAsync();
 

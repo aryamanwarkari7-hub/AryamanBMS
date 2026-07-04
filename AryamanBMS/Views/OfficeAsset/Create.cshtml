@@ -7,7 +7,7 @@
 <div class="module-header">
     <div>
         <h1 class="module-title">CREATE OFFICE ASSET</h1>
-        <p class="module-subtitle">Add asset purchase, assignment and current usage details.</p>
+        <p class="module-subtitle">Add asset purchase, warranty and lifecycle details.</p>
     </div>
 
     <div class="module-header-actions">
@@ -25,7 +25,7 @@
         <div class="card-header">
             <div>
                 <h2 class="card-title">Asset Information</h2>
-                <p class="card-subtitle">Enter basic asset details.</p>
+                <p class="card-subtitle">Enter the core asset identity and current lifecycle status.</p>
             </div>
         </div>
 
@@ -56,15 +56,15 @@
 
                 <div class="form-group">
                     <label asp-for="AssetCode" class="form-label">Asset Code</label>
-                    <input asp-for="AssetCode" class="app-input" placeholder="Asset code / tag number" />
+                    <input asp-for="AssetCode" class="app-input" placeholder="Unique asset tag or code" />
                     <span asp-validation-for="AssetCode" class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
                     <label asp-for="Status" class="form-label">Status <span class="validation-message">*</span></label>
                     <select asp-for="Status" class="app-select">
-                        <option value="InUse">In Use</option>
                         <option value="Idle">Idle</option>
+                        <option value="InUse">In Use</option>
                         <option value="UnderRepair">Under Repair</option>
                         <option value="Disposed">Disposed</option>
                     </select>
@@ -77,8 +77,8 @@
     <div class="app-card form-card">
         <div class="card-header">
             <div>
-                <h2 class="card-title">Purchase Details</h2>
-                <p class="card-subtitle">Record purchase and vendor details.</p>
+                <h2 class="card-title">Purchase & Warranty</h2>
+                <p class="card-subtitle">Capture purchase value and warranty dates for future tracking.</p>
             </div>
         </div>
 
@@ -107,6 +107,24 @@
                     <input asp-for="FinancialYear" class="app-input" placeholder="2026-27" />
                     <span asp-validation-for="FinancialYear" class="validation-message"></span>
                 </div>
+
+                <div class="form-group">
+                    <label asp-for="WarrantyStartDate" class="form-label">Warranty Start</label>
+                    <input asp-for="WarrantyStartDate" type="date" class="app-input" />
+                    <span asp-validation-for="WarrantyStartDate" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="WarrantyEndDate" class="form-label">Warranty End</label>
+                    <input asp-for="WarrantyEndDate" type="date" class="app-input" />
+                    <span asp-validation-for="WarrantyEndDate" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="DisposalDate" class="form-label">Disposal Date</label>
+                    <input asp-for="DisposalDate" type="date" class="app-input" />
+                    <span asp-validation-for="DisposalDate" class="validation-message"></span>
+                </div>
             </div>
         </div>
     </div>
@@ -114,17 +132,16 @@
     <div class="app-card form-card">
         <div class="card-header">
             <div>
-                <h2 class="card-title">Assignment</h2>
-                <p class="card-subtitle">Track current ownership or usage.</p>
+                <h2 class="card-title">Assignment & Notes</h2>
+                <p class="card-subtitle">Employee assignment is recorded after save from the details page.</p>
             </div>
         </div>
 
         <div class="card-body">
             <div class="form-grid-1">
                 <div class="form-group">
-                    <label asp-for="AssignedTo" class="form-label">Assigned To</label>
-                    <input asp-for="AssignedTo" class="app-input" placeholder="Employee / department name" />
-                    <span asp-validation-for="AssignedTo" class="validation-message"></span>
+                    <label class="form-label">Current Assignment</label>
+                    <input class="app-input" value="Assign after save from Details" readonly />
                 </div>
 
                 <div class="form-group">

@@ -79,6 +79,7 @@ namespace AryamanBMS.Data
 
         public DbSet<ExpenseCategoryModel> ExpenseCategories { get; set; }
         public DbSet<ExpenseVoucherModel> ExpenseVouchers { get; set; }
+        public DbSet<ExpenseVoucherDocumentModel> ExpenseVoucherDocuments { get; set; }
 
         public DbSet<GstMonthlySnapshotModel> GstMonthlySnapshots { get; set; }
         public DbSet<GstConfigurationModel> GstConfigurations { get; set; }
@@ -90,6 +91,8 @@ namespace AryamanBMS.Data
         public DbSet<FinancialAuditDocumentModel> FinancialAuditDocuments { get; set; }
         
         public DbSet<OfficeAssetModel> OfficeAssets { get; set; }
+        public DbSet<OfficeAssetAssignmentHistoryModel> OfficeAssetAssignmentHistories
+        { get; set; }
 
         public DbSet<PfMonthlySnapshotModel> PfMonthlySnapshots { get; set; }
         public DbSet<PfChallanModel> PfChallans { get; set; }
@@ -288,7 +291,9 @@ namespace AryamanBMS.Data
                 .HasIndex(x => new
                 {
                     x.EmployeeId,
-                    x.EffectiveFrom
+                    x.EffectiveFrom,
+                    x.EffectiveTo,
+                    x.IsActive
                 });
 
             modelBuilder.Entity<EmployeeSalaryStructureModel>()
@@ -506,6 +511,8 @@ namespace AryamanBMS.Data
 
             modelBuilder.Entity<CompanyDocumentModel>().ToTable("tablecompanydocument");
             modelBuilder.Entity<CompanyDocumentModel>()
+                .HasIndex(x => x.IsActive);
+            modelBuilder.Entity<CompanyDocumentModel>()
                 .HasOne(x => x.Category)
                 .WithMany()
                 .HasForeignKey(x => x.DocumentCategoryId)
@@ -594,6 +601,13 @@ namespace AryamanBMS.Data
                 .HasForeignKey(x => x.ExpenseCategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<ExpenseVoucherDocumentModel>().ToTable("tableexpensevoucherdocument");
+            modelBuilder.Entity<ExpenseVoucherDocumentModel>()
+                .HasOne(x => x.ExpenseVoucher)
+                .WithMany(x => x.Documents)
+                .HasForeignKey(x => x.ExpenseVoucherId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<GstMonthlySnapshotModel>().ToTable("tablegstmonthlysnapshot");
             modelBuilder.Entity<GstMonthlySnapshotModel>()
                 .HasIndex(x => new { x.Month, x.Year })
@@ -632,8 +646,43 @@ namespace AryamanBMS.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<FinancialAuditDocumentModel>().ToTable("tablefinancialauditdocuments");
+            modelBuilder.Entity<FinancialAuditDocumentModel>()
+                .HasIndex(x => x.FinancialYear);
+            modelBuilder.Entity<FinancialAuditDocumentModel>()
+                .HasIndex(x => x.DocumentCategory);
+            modelBuilder.Entity<FinancialAuditDocumentModel>()
+                .HasIndex(x => x.IsActive);
+            modelBuilder.Entity<FinancialAuditDocumentModel>()
+                .HasIndex(x => x.IsFinalized);
 
             modelBuilder.Entity<OfficeAssetModel>().ToTable("tableofficeasset");
+            modelBuilder.Entity<OfficeAssetModel>()
+                .HasIndex(x => x.AssetCode)
+                .IsUnique();
+            modelBuilder.Entity<OfficeAssetModel>()
+                .HasIndex(x => x.IsActive);
+            modelBuilder.Entity<OfficeAssetModel>()
+                .HasOne(x => x.AssignedEmployee)
+                .WithMany()
+                .HasForeignKey(x => x.AssignedEmployeeId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<OfficeAssetAssignmentHistoryModel>()
+                .ToTable("tableofficeassetassignmenthistory");
+            modelBuilder.Entity<OfficeAssetAssignmentHistoryModel>()
+                .HasIndex(x => new { x.OfficeAssetId, x.IsActive });
+            modelBuilder.Entity<OfficeAssetAssignmentHistoryModel>()
+                .HasIndex(x => x.EmployeeId);
+            modelBuilder.Entity<OfficeAssetAssignmentHistoryModel>()
+                .HasOne(x => x.OfficeAsset)
+                .WithMany(x => x.AssignmentHistory)
+                .HasForeignKey(x => x.OfficeAssetId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<OfficeAssetAssignmentHistoryModel>()
+                .HasOne(x => x.Employee)
+                .WithMany()
+                .HasForeignKey(x => x.EmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<PfMonthlySnapshotModel>().ToTable("tablepfmonthlysnapshot");
             modelBuilder.Entity<PfMonthlySnapshotModel>()
@@ -648,6 +697,8 @@ namespace AryamanBMS.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<PfDocumentModel>().ToTable("tablepfdocument");
+            modelBuilder.Entity<PfDocumentModel>()
+                .HasIndex(x => x.IsActive);
             modelBuilder.Entity<PfDocumentModel>()
                 .HasOne(x => x.Snapshot)
                 .WithMany(x => x.Documents)
@@ -668,6 +719,8 @@ namespace AryamanBMS.Data
 
             modelBuilder.Entity<EsicDocumentModel>().ToTable("tableesicdocument");
             modelBuilder.Entity<EsicDocumentModel>()
+                .HasIndex(x => x.IsActive);
+            modelBuilder.Entity<EsicDocumentModel>()
                 .HasOne(x => x.Snapshot)
                 .WithMany(x => x.Documents)
                 .HasForeignKey(x => x.EsicSnapshotId)
@@ -687,14 +740,20 @@ namespace AryamanBMS.Data
 
             modelBuilder.Entity<PtDocumentModel>().ToTable("tableptdocument");
             modelBuilder.Entity<PtDocumentModel>()
+                .HasIndex(x => x.IsActive);
+            modelBuilder.Entity<PtDocumentModel>()
                 .HasOne(x => x.Snapshot)
                 .WithMany(x => x.Documents)
                 .HasForeignKey(x => x.PtSnapshotId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<NoticeModel>().ToTable("tablenotice");
+            modelBuilder.Entity<NoticeModel>()
+                .HasIndex(x => x.IsActive);
 
             modelBuilder.Entity<NoticeDocumentModel>().ToTable("tablenoticedocument");
+            modelBuilder.Entity<NoticeDocumentModel>()
+                .HasIndex(x => x.IsActive);
             modelBuilder.Entity<NoticeDocumentModel>()
                 .HasOne(x => x.Notice)
                 .WithMany(x => x.Documents)

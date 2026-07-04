@@ -59,6 +59,158 @@
 
 </div>
 
+<div class="app-card table-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Documents</h2>
+            <p class="card-subtitle">
+                Upload and manage bills, GST documents and supporting files.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        <form asp-action="UploadDocument"
+              method="post"
+              enctype="multipart/form-data">
+
+            @Html.AntiForgeryToken()
+
+            <input type="hidden"
+                   name="voucherId"
+                   value="@Model.ExpenseVoucherId" />
+
+            <div class="form-grid-4">
+
+                <div class="form-group">
+                    <label class="form-label">Document Type</label>
+
+                    <select name="documentType"
+                            class="app-select"
+                            required>
+                        <option value="">Select Type</option>
+                        <option value="VendorInvoice">Vendor Invoice</option>
+                        <option value="GSTInvoice">GST Invoice</option>
+                        <option value="PaymentProof">Payment Proof</option>
+                        <option value="ApprovalNote">Approval Note</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">File</label>
+
+                    <input type="file"
+                           name="file"
+                           class="app-input"
+                           required />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Remarks</label>
+
+                    <input type="text"
+                           name="remarks"
+                           class="app-input"
+                           maxlength="500"
+                           placeholder="Optional remarks" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">&nbsp;</label>
+
+                    <button type="submit"
+                            class="btn-app btn-primary-app">
+                        <i class="bi bi-upload"></i>
+                        Upload
+                    </button>
+                </div>
+
+            </div>
+
+        </form>
+
+        <div class="table-responsive">
+
+            <table class="app-table">
+
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>File Name</th>
+                        <th>Uploaded By</th>
+                        <th>Uploaded On</th>
+                        <th>Remarks</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (Model.Documents.Any())
+                    {
+                        foreach (var document in Model.Documents.OrderByDescending(x => x.UploadedOn))
+                        {
+                            <tr>
+                                <td>@document.DocumentType</td>
+                                <td>@document.OriginalFileName</td>
+                                <td>@document.UploadedByUserId</td>
+                                <td>@document.UploadedOn.ToString("dd-MMM-yyyy")</td>
+                                <td>@(string.IsNullOrWhiteSpace(document.Remarks) ? "-" : document.Remarks)</td>
+                                <td>
+                                    <div class="table-actions">
+                                        <a asp-action="DownloadDocument"
+                                           asp-route-id="@document.ExpenseVoucherDocumentId"
+                                           class="btn-app btn-icon btn-primary-app"
+                                           title="Download">
+                                            <i class="bi bi-download"></i>
+                                        </a>
+
+                                        @if (Model.Status == FinancialConstants.ExpenseVoucherStatus.Draft)
+                                        {
+                                            <form asp-action="DeleteDocument"
+                                                  method="post">
+
+                                                @Html.AntiForgeryToken()
+
+                                                <input type="hidden"
+                                                       name="id"
+                                                       value="@document.ExpenseVoucherDocumentId" />
+
+                                                <button type="submit"
+                                                        class="btn-app btn-icon btn-danger-app"
+                                                        onclick="return confirm('Delete this document?')"
+                                                        title="Delete">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6"
+                                class="empty-state">
+                                No documents uploaded.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
 <div class="app-card">
 
     <div class="card-header">
@@ -143,6 +295,25 @@
             <div class="form-group">
                 <label class="form-label">GST Rate</label>
                 <strong>@Model.GSTRate.ToString("N2")%</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    Supply Type
+                </label>
+
+                @if (Model.IsInterState)
+                {
+                    <span class="badge-info">
+                        Interstate
+                    </span>
+                }
+                else
+                {
+                    <span class="badge-secondary">
+                        Intrastate
+                    </span>
+                }
             </div>
 
             <div class="form-group">
@@ -330,4 +501,3 @@
     </div>
 }
     
-

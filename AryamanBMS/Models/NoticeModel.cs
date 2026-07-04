@@ -53,6 +53,8 @@ namespace AryamanBMS.Models
         [StringLength(500)]
         public string? Remarks { get; set; }
 
+        public bool IsActive { get; set; } = true;
+
         public DateTime CreatedOn { get; set; } = DateTime.Now;
 
         public DateTime? UpdatedOn { get; set; }

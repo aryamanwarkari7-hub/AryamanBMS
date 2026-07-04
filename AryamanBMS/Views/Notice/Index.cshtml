@@ -153,6 +153,7 @@
                         <th>Notice Date</th>
                         <th>Due Date</th>
                         <th>Status</th>
+                        <th>Record</th>
                         <th class="text-center">Documents</th>
                         <th class="text-center">Actions</th>
                     </tr>
@@ -220,6 +221,17 @@
                                     </span>
                                 </td>
 
+                                <td>
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-secondary">Archived</span>
+                                    }
+                                </td>
+
                                 <td class="text-center">
                                     <span class="badge-secondary">
                                         @(item.Documents?.Count ?? 0)
@@ -256,7 +268,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="8"
+                            <td colspan="9"
                                 class="empty-state">
                                 No statutory notices found.
                             </td>

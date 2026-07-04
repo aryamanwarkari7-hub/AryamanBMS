@@ -26,7 +26,6 @@ namespace AryamanBMS.Repositories
         public async Task<ExpenseCategoryModel?> GetByIdAsync(int id)
         {
             return await _context.ExpenseCategories
-                .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.ExpenseCategoryId == id && x.IsActive);
         }
 
@@ -57,7 +56,6 @@ namespace AryamanBMS.Repositories
         public Task UpdateAsync(ExpenseCategoryModel model)
         {
             model.UpdatedOn = DateTime.Now;
-            _context.ExpenseCategories.Update(model);
             return Task.CompletedTask;
         }
 
@@ -68,7 +66,6 @@ namespace AryamanBMS.Repositories
             {
                 category.IsActive = false;
                 category.UpdatedOn = DateTime.Now;
-                _context.ExpenseCategories.Update(category);
             }
         }
 

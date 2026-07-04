@@ -3,6 +3,7 @@ using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace AryamanBMS.Controllers
 {
@@ -59,7 +60,8 @@ namespace AryamanBMS.Controllers
             {
                 NoticeDate = DateTime.Today,
                 ReceivedDate = DateTime.Today,
-                Status = FinancialConstants.NoticeStatus.Open
+                Status = FinancialConstants.NoticeStatus.Open,
+                IsActive = true
             };
 
             return View(model);
@@ -109,7 +111,24 @@ namespace AryamanBMS.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            await _noticeRepository.UpdateAsync(model);
+            var existing = await _noticeRepository.GetByIdAsync(model.NoticeId);
+
+            if (existing == null)
+                return NotFound();
+
+            existing.NoticeNumber = model.NoticeNumber;
+            existing.Department = model.Department;
+            existing.NoticeDate = model.NoticeDate;
+            existing.ReceivedDate = model.ReceivedDate;
+            existing.DueDate = model.DueDate;
+            existing.Subject = model.Subject;
+            existing.Description = model.Description;
+            existing.Status = model.Status;
+            existing.ReplyDate = model.ReplyDate;
+            existing.ReplyDetails = model.ReplyDetails;
+            existing.Remarks = model.Remarks;
+
+            await _noticeRepository.UpdateAsync(existing);
             await _noticeRepository.SaveAsync();
 
             TempData["Success"] = "Notice updated successfully.";
@@ -150,9 +169,19 @@ namespace AryamanBMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            await _noticeRepository.DeleteAsync(id);
+            var notice = await _noticeRepository.GetByIdAsync(id);
 
-            TempData["Success"] = "Notice deleted successfully.";
+            if (notice == null)
+                return NotFound();
+
+            notice.IsActive = !notice.IsActive;
+
+            await _noticeRepository.UpdateAsync(notice);
+            await _noticeRepository.SaveAsync();
+
+            TempData["Success"] = notice.IsActive
+                ? "Notice activated successfully."
+                : "Notice archived successfully.";
 
             return RedirectToAction(nameof(Index));
         }
@@ -203,11 +232,22 @@ namespace AryamanBMS.Controllers
                 DocumentType = documentType,
                 FileName = upload.OriginalFileName,
                 FilePath = upload.RelativePath,
-                Remarks = remarks
+                Remarks = remarks,
+                UploadedByUserId = GetCurrentUserId(),
+                IsActive = true
             };
 
-            await _noticeRepository.AddDocumentAsync(document);
-            await _noticeRepository.SaveAsync();
+            try
+            {
+                await _noticeRepository.AddDocumentAsync(document);
+                await _noticeRepository.SaveAsync();
+            }
+            catch
+            {
+                await _fileStorageService.DeleteAsync(upload.RelativePath);
+                TempData["Error"] = "Document could not be saved. Please try again.";
+                return RedirectToAction(nameof(Details), new { id = noticeId });
+            }
 
             TempData["Success"] = "Document uploaded successfully.";
 
@@ -221,6 +261,12 @@ namespace AryamanBMS.Controllers
 
             if (document == null)
                 return NotFound();
+
+            if (!document.IsActive)
+            {
+                TempData["Error"] = "Archived documents cannot be downloaded.";
+                return RedirectToAction(nameof(Details), new { id = document.NoticeId });
+            }
 
             var fileBytes =
                 await _fileStorageService.DownloadAsync(document.FilePath);
@@ -249,13 +295,15 @@ namespace AryamanBMS.Controllers
             if (document == null)
                 return NotFound();
 
-            await _fileStorageService.DeleteAsync(document.FilePath);
+            document.IsActive = !document.IsActive;
+            await _noticeRepository.DeleteDocumentAsync(document);
+            await _noticeRepository.SaveAsync();
 
-            await _noticeRepository.DeleteDocumentAsync(id);
+            TempData["Success"] = document.IsActive
+                ? "Document activated successfully."
+                : "Document archived successfully.";
 
-            TempData["Success"] = "Document deleted successfully.";
-
-            return RedirectToAction(nameof(Details), new { id = noticeId });
+            return RedirectToAction(nameof(Details), new { id = document.NoticeId });
         }
 
         #endregion
@@ -284,6 +332,14 @@ namespace AryamanBMS.Controllers
                 ModelState.AddModelError(
                     nameof(model.DueDate),
                     "Due date cannot be before received date.");
+            }
+
+            if (model.DueDate.HasValue &&
+                model.DueDate.Value.Date < model.NoticeDate.Date)
+            {
+                ModelState.AddModelError(
+                    nameof(model.DueDate),
+                    "Due date cannot be before notice date.");
             }
 
             if (model.Status == FinancialConstants.NoticeStatus.Replied &&
@@ -327,6 +383,12 @@ namespace AryamanBMS.Controllers
 
                 _ => "application/octet-stream"
             };
+        }
+
+        private string GetCurrentUserId()
+        {
+            return User.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? string.Empty;
         }
 
     }

@@ -12,11 +12,15 @@ namespace AryamanBMS.Repositories.Interfaces
 
         Task<List<FinancialAuditDocumentModel>> GetByCategoryAsync(string documentCategory);
 
+        Task<bool> ActiveDuplicateExistsAsync(
+            string documentCategory,
+            string financialYear,
+            string fileName,
+            int? excludeId = null);
+
         Task AddAsync(FinancialAuditDocumentModel model);
 
         Task UpdateAsync(FinancialAuditDocumentModel model);
-
-        Task DeleteAsync(FinancialAuditDocumentModel model);
 
         Task SaveAsync();
     }

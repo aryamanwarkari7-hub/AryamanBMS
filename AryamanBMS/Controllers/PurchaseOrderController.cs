@@ -259,58 +259,185 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> Edit(int id)
         {
             var order = await _orderRepo.GetByIdAsync(id);
-            if (order == null) return NotFound();
 
-            var vm = new PurchaseOrderViewModel { Order = order };
+            if (order == null)
+                return NotFound();
+
+            if (!order.IsActive)
+            {
+                TempData["Error"] =
+                    "Inactive orders cannot be edited.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
+            }
+
+            if (IsFinalOrderStatus(order.Status))
+            {
+                TempData["Error"] =
+                    "Delivered, closed, or cancelled orders cannot be edited.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
+            }
+
+            var vm = new PurchaseOrderViewModel
+            {
+                Order = order
+            };
+
             await LoadDropdownsAsync(vm);
+
             return View(vm);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, PurchaseOrderViewModel vm)
+        public async Task<IActionResult> Edit(int id,
+          PurchaseOrderViewModel vm)
         {
-            if (id != vm.Order.PurchaseOrderId) return NotFound();
+            if (id != vm.Order.PurchaseOrderId)
+                return NotFound();
+
+            var existing =
+                await _orderRepo.GetByIdAsync(id);
+
+            if (existing == null)
+                return NotFound();
+
+            if (!existing.IsActive)
+            {
+                TempData["Error"] =
+                    "Inactive orders cannot be edited.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
+            }
+
+            if (IsFinalOrderStatus(existing.Status))
+            {
+                TempData["Error"] =
+                    "Delivered, closed, or cancelled orders cannot be edited.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
+            }
+
+            if (!IsAllowedStatusTransition(
+                    existing.Status,
+                    vm.Order.Status))
+            {
+                ModelState.AddModelError(
+                    "Order.Status",
+                    $"Status cannot change from {existing.Status} " +
+                    $"to {vm.Order.Status}.");
+            }
+
+            if (vm.Order.DeliveryDueDate.HasValue &&
+                vm.Order.DeliveryDueDate.Value.Date <
+                vm.Order.OrderDate.Date)
+            {
+                ModelState.AddModelError(
+                    "Order.DeliveryDueDate",
+                    "Delivery due date cannot be before order date.");
+            }
+
+            if (vm.Order.OrderAmount.HasValue &&
+                vm.Order.OrderAmount.Value < 0)
+            {
+                ModelState.AddModelError(
+                    "Order.OrderAmount",
+                    "Order amount cannot be negative.");
+            }
+
+            bool linkedToInvoice =
+                await HasLinkedInvoiceAsync(id);
+
+            if (existing.ProposalId.HasValue)
+            {
+                vm.Order.ProposalId = existing.ProposalId;
+                vm.Order.ClientId = existing.ClientId;
+            }
+
+            if (linkedToInvoice)
+            {
+                vm.Order.ClientId = existing.ClientId;
+                vm.Order.ProposalId = existing.ProposalId;
+            }
 
             await LoadDropdownsAsync(vm);
 
             if (!ModelState.IsValid)
                 return View(vm);
 
-            var existing = await _orderRepo.GetByIdAsync(id);
-            if (existing == null) return NotFound();
+            string? oldFilePath = existing.FilePath;
+            FileUploadResult? uploadedFile = null;
 
-            existing.ClientId         = vm.Order.ClientId;
-            existing.ProposalId       = vm.Order.ProposalId;
-            existing.OrderTitle       = vm.Order.OrderTitle;
-            existing.OrderType        = vm.Order.OrderType;
-            existing.OrderDate        = vm.Order.OrderDate;
-            existing.DeliveryDueDate  = vm.Order.DeliveryDueDate;
-            existing.OrderAmount      = vm.Order.OrderAmount;
-            existing.Currency         = vm.Order.Currency;
-            existing.Status           = vm.Order.Status;
-            existing.VendorReference  = vm.Order.VendorReference;
-            existing.Remarks          = vm.Order.Remarks;
+            existing.ClientId = vm.Order.ClientId;
+            existing.ProposalId = vm.Order.ProposalId;
+            existing.OrderTitle = vm.Order.OrderTitle;
+            existing.OrderType = vm.Order.OrderType;
+            existing.OrderDate = vm.Order.OrderDate;
+            existing.DeliveryDueDate = vm.Order.DeliveryDueDate;
+            existing.OrderAmount = vm.Order.OrderAmount;
+            existing.Currency = vm.Order.Currency;
+            existing.Status = vm.Order.Status;
+            existing.VendorReference = vm.Order.VendorReference;
+            existing.Remarks = vm.Order.Remarks;
 
             if (vm.UploadFile != null)
             {
-                string folder = $"Orders/{existing.OrderType}";
-                var upload    = await _fileStorage.UploadAsync(vm.UploadFile, folder);
-                if (!upload.Success)
+                string folder =
+                    $"Orders/{existing.OrderType}";
+
+                uploadedFile =
+                    await _fileStorage.UploadAsync(
+                        vm.UploadFile,
+                        folder);
+
+                if (!uploadedFile.Success)
                 {
-                    ModelState.AddModelError("", upload.ErrorMessage);
+                    ModelState.AddModelError(
+                        nameof(vm.UploadFile),
+                        uploadedFile.ErrorMessage);
+
                     return View(vm);
                 }
 
-                // Safe: upload succeeded before deleting old file
-                await _fileStorage.DeleteAsync(existing.FilePath);
-                ApplyFileFields(existing, upload);
+                ApplyFileFields(
+                    existing,
+                    uploadedFile);
             }
 
-            await _orderRepo.UpdateAsync(existing);
-            await _orderRepo.SaveAsync();
+            try
+            {
+                await _orderRepo.UpdateAsync(existing);
+                await _orderRepo.SaveAsync();
+            }
+            catch
+            {
+                if (uploadedFile != null)
+                {
+                    await _fileStorage.DeleteAsync(
+                        uploadedFile.RelativePath);
+                }
 
-            TempData["Success"] = "Order updated successfully.";
+                throw;
+            }
+
+            if (uploadedFile != null &&
+                !string.IsNullOrWhiteSpace(oldFilePath))
+            {
+                await _fileStorage.DeleteAsync(oldFilePath);
+            }
+
+            TempData["Success"] =
+                "Order updated successfully.";
+
             return RedirectToAction(nameof(Index));
         }
 
@@ -353,10 +480,20 @@ namespace AryamanBMS.Controllers
 
         public async Task<IActionResult> Delete(int id)
         {
-            var order = await _orderRepo.GetByIdAsync(id);
+            var order =
+                await _orderRepo.GetByIdAsync(id);
+
             if (order == null)
-            {
                 return NotFound();
+
+            if (await HasLinkedInvoiceAsync(id))
+            {
+                TempData["Error"] =
+                    "Orders linked to invoices cannot be activated or deactivated.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
             }
 
             return View(order);
@@ -366,10 +503,27 @@ namespace AryamanBMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var order = await _orderRepo.GetByIdAsync(id);
+            var order =
+                await _orderRepo.GetByIdAsync(id);
+
             if (order == null)
-            {
                 return NotFound();
+
+            if (await HasLinkedInvoiceAsync(id))
+            {
+                TempData["Error"] =
+                    "Orders linked to invoices cannot be activated or deactivated.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (order.Status == "Closed" ||
+                order.Status == "Cancelled")
+            {
+                TempData["Error"] =
+                    "Closed or cancelled orders cannot be deactivated.";
+
+                return RedirectToAction(nameof(Index));
             }
 
             order.IsActive = !order.IsActive;
@@ -391,24 +545,98 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdateStatus(int id, string status)
+        public async Task<IActionResult> UpdateStatus(
+    int id,
+    string status)
         {
-            var order = await _orderRepo.GetByIdAsync(id);
-            if (order == null) return NotFound();
+            var order =
+                await _orderRepo.GetByIdAsync(id);
 
-            order.Status    = status;
+            if (order == null)
+                return NotFound();
+
+            if (!order.IsActive)
+            {
+                TempData["Error"] =
+                    "Inactive orders cannot change status.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (!IsAllowedStatusTransition(
+                    order.Status,
+                    status))
+            {
+                TempData["Error"] =
+                    $"Status cannot change from {order.Status} to {status}.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            order.Status = status;
             order.UpdatedOn = DateTime.Now;
 
             await _orderRepo.UpdateAsync(order);
             await _orderRepo.SaveAsync();
 
-            TempData["Success"] = $"Status updated to '{status}'.";
+            TempData["Success"] =
+                $"Status updated to '{status}'.";
+
             return RedirectToAction(nameof(Index));
         }
 
         #endregion
 
         #region Helpers
+
+        private static bool IsFinalOrderStatus(string status)
+        {
+            return status is "Delivered" or "Closed" or "Cancelled";
+        }
+
+        private static bool IsAllowedStatusTransition(
+            string currentStatus,
+            string newStatus)
+        {
+            if (string.Equals(
+                    currentStatus,
+                    newStatus,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return currentStatus switch
+            {
+                "Open" => newStatus is
+                    "Acknowledged" or
+                    "Cancelled",
+
+                "Acknowledged" => newStatus is
+                    "InProgress" or
+                    "Cancelled",
+
+                "InProgress" => newStatus is
+                    "Delivered" or
+                    "Cancelled",
+
+                "Delivered" => newStatus is "Closed",
+
+                "Closed" => false,
+
+                "Cancelled" => false,
+
+                _ => false
+            };
+        }
+
+        private async Task<bool> HasLinkedInvoiceAsync(int purchaseOrderId)
+        {
+            return await _context.Invoices.AnyAsync(x =>
+                x.PurchaseWorkOrderId == purchaseOrderId &&
+                !x.IsDeleted);
+        }
+
 
         private async Task LoadDropdownsAsync(PurchaseOrderViewModel vm)
         {

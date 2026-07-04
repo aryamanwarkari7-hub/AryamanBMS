@@ -1,30 +1,35 @@
 @model AryamanBMS.Models.FinancialAuditDocumentModel
 
 @{
-    ViewData["Title"] = "Upload Audit Document";
+    ViewData["Title"] = "Edit Audit Document";
 }
 
 <div class="module-header">
     <div>
-        <h1 class="module-title">UPLOAD AUDIT DOCUMENT</h1>
+        <h1 class="module-title">EDIT AUDIT DOCUMENT</h1>
         <p class="module-subtitle">
-            Upload bank statements, audit reports, CA documents and CS records.
+            Update audit document details or replace the uploaded file.
         </p>
     </div>
 
     <div class="module-header-actions">
-        <a asp-action="Index" class="btn-app btn-secondary-app">
+        <a asp-action="Details"
+           asp-route-id="@Model.FinancialAuditDocumentId"
+           class="btn-app btn-secondary-app">
             <i class="bi bi-arrow-left"></i>
             Back
         </a>
     </div>
 </div>
 
-<form asp-action="Create"
+<form asp-action="Edit"
+      asp-route-id="@Model.FinancialAuditDocumentId"
       method="post"
       enctype="multipart/form-data">
 
     @Html.AntiForgeryToken()
+
+    <input type="hidden" asp-for="FinancialAuditDocumentId" />
 
     <div asp-validation-summary="ModelOnly" class="app-alert-danger"></div>
 
@@ -33,7 +38,7 @@
             <div>
                 <h2 class="card-title">Document Details</h2>
                 <p class="card-subtitle">
-                    Enter audit document details and select file to upload.
+                    Finalized audit documents cannot be edited.
                 </p>
             </div>
         </div>
@@ -70,21 +75,25 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="uploadFile" class="form-label">
-                        File <span class="validation-message">*</span>
-                    </label>
-
-                    <input type="file"
-                           id="uploadFile"
-                           name="uploadFile"
-                           class="app-input"
-                           accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-                           required />
-
-                    <p class="card-subtitle">
-                        PDF, Word, Excel or image files.
-                    </p>
+                    <label class="form-label">Current File</label>
+                    <strong>@Model.FileName</strong>
                 </div>
+            </div>
+
+            <div class="form-group">
+                <label for="uploadFile" class="form-label">
+                    Replace File
+                </label>
+
+                <input type="file"
+                       id="uploadFile"
+                       name="uploadFile"
+                       class="app-input"
+                       accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" />
+
+                <p class="card-subtitle">
+                    Leave blank to keep the existing file.
+                </p>
             </div>
 
             <div class="form-group">
@@ -104,10 +113,12 @@
         <div class="card-body form-actions">
             <button type="submit" class="btn-app btn-primary-app">
                 <i class="bi bi-check-circle"></i>
-                Upload Document
+                Update Document
             </button>
 
-            <a asp-action="Index" class="btn-app btn-secondary-app">
+            <a asp-action="Details"
+               asp-route-id="@Model.FinancialAuditDocumentId"
+               class="btn-app btn-secondary-app">
                 Cancel
             </a>
         </div>

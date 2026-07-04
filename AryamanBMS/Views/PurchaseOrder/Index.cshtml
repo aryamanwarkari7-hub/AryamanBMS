@@ -180,22 +180,34 @@
                                             <i class="bi bi-eye"></i>
                                         </a>
 
-                                        <a asp-action="Edit" asp-route-id="@item.PurchaseOrderId"
-                                           class="btn-app btn-icon btn-secondary-app" title="Edit">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
+                                        @if (item.IsActive &&
+                                                                        item.Status != "Delivered" &&
+                                                                        item.Status != "Closed" &&
+                                                                        item.Status != "Cancelled")
+                                        {
+                                            <a asp-action="Edit"
+                                               asp-route-id="@item.PurchaseOrderId"
+                                               class="btn-app btn-icon btn-secondary-app"
+                                               title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        }
 
                                         <a asp-action="Download" asp-route-id="@item.PurchaseOrderId"
                                            class="btn-app btn-icon btn-success-app" title="Download">
                                             <i class="bi bi-download"></i>
                                         </a>
 
-                                        <a asp-action="Delete"
-                                           asp-route-id="@item.PurchaseOrderId"
-                                           class="btn-app btn-icon btn-danger-app"
-                                           title="Deactivate">
-                                            <i class="bi bi-trash"></i>
-                                        </a>
+                                        @if (item.Status != "Closed" &&
+                                                                        item.Status != "Cancelled")
+                                        {
+                                            <a asp-action="Delete"
+                                               asp-route-id="@item.PurchaseOrderId"
+                                               class="btn-app btn-icon btn-danger-app"
+                                               title="Deactivate">
+                                                <i class="bi bi-power"></i>
+                                            </a>
+                                        }
 
                                     </td>
 

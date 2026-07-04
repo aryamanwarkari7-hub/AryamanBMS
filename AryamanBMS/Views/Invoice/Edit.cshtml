@@ -13,6 +13,8 @@
                 GSTPercent = 18
             }
         };
+
+    bool lockRelationships = Model.PaidAmount > 0;
 }
 
 <div class="module-header">
@@ -67,13 +69,26 @@
 
                 <div class="form-group">
                     <label asp-for="ClientId" class="form-label">Client</label>
-                    <select asp-for="ClientId" class="app-select">
+                    <select asp-for="ClientId"
+                            class="app-select"
+                            disabled="@lockRelationships">
+
                         <option value="">Select Client</option>
+
                         @foreach (var client in ViewBag.Clients)
                         {
-                            <option value="@client.ClientId">@client.ClientName</option>
+                            <option value="@client.ClientId">
+                                @client.ClientName
+                            </option>
                         }
+
                     </select>
+
+                    @if (lockRelationships)
+                    {
+                        <input asp-for="ClientId"
+                               type="hidden" />
+                    }
                     <span asp-validation-for="ClientId" class="validation-message"></span>
                 </div>
 
@@ -83,19 +98,25 @@
                     </label>
 
                     <select asp-for="ProjectId"
-                            class="app-select">
+                            class="app-select"
+                            disabled="@lockRelationships">
 
                         <option value="">Select Project</option>
 
                         @foreach (var project in ViewBag.Projects)
                         {
-                            <option value="@project.Id"
-                                    selected="@(Model.ProjectId == project.Id)">
+                            <option value="@project.Id">
                                 @project.ProjectCode - @project.ProjectName
                             </option>
                         }
 
                     </select>
+
+                    @if (lockRelationships)
+                    {
+                        <input asp-for="ProjectId"
+                               type="hidden" />
+                    }
 
                     <span asp-validation-for="ProjectId"
                           class="validation-message"></span>
@@ -141,13 +162,12 @@
 
                 <div class="form-group">
                     <label asp-for="InvoiceStatus" class="form-label">Invoice Status</label>
-                    <select asp-for="InvoiceStatus" class="app-select">
-                        <option>Draft</option>
-                        <option>Generated</option>
-                        <option>Sent</option>
-                        <option>Partially Paid</option>
-                        <option>Paid</option>
-                        <option>Cancelled</option>
+                    <select asp-for="InvoiceStatus"
+                            class="app-select">
+
+                        <option value="Draft">Draft</option>
+                        <option value="Issued">Issued</option>
+
                     </select>
                     <span asp-validation-for="InvoiceStatus" class="validation-message"></span>
                 </div>

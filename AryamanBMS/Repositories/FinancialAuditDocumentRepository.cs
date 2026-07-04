@@ -15,7 +15,7 @@ namespace AryamanBMS.Repositories
         }
 
         private IQueryable<FinancialAuditDocumentModel> Documents =>
-    _context.FinancialAuditDocuments;
+            _context.FinancialAuditDocuments;
 
         public async Task<List<FinancialAuditDocumentModel>> GetAllAsync()
         {
@@ -46,6 +46,21 @@ namespace AryamanBMS.Repositories
                 .ToListAsync();
         }
 
+        public async Task<bool> ActiveDuplicateExistsAsync(
+            string documentCategory,
+            string financialYear,
+            string fileName,
+            int? excludeId = null)
+        {
+            return await Documents.AnyAsync(x =>
+                x.IsActive &&
+                x.DocumentCategory == documentCategory &&
+                x.FinancialYear == financialYear &&
+                x.FileName == fileName &&
+                (!excludeId.HasValue ||
+                    x.FinancialAuditDocumentId != excludeId.Value));
+        }
+
         public async Task AddAsync(FinancialAuditDocumentModel model)
         {
             model.UploadedOn = DateTime.Now;
@@ -55,15 +70,6 @@ namespace AryamanBMS.Repositories
 
         public Task UpdateAsync(FinancialAuditDocumentModel model)
         {
-            _context.FinancialAuditDocuments.Update(model);
-
-            return Task.CompletedTask;
-        }
-
-        public Task DeleteAsync(FinancialAuditDocumentModel model)
-        {
-            _context.FinancialAuditDocuments.Remove(model);
-
             return Task.CompletedTask;
         }
 

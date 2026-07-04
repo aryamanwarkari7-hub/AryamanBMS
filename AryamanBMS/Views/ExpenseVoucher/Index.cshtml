@@ -122,6 +122,7 @@
                         <th>Date</th>
                         <th>Category</th>
                         <th>Vendor</th>
+                            <th>GST Type</th>
                         <th class="text-end amount-column">Amount</th>
                         <th class="text-end amount-column">Total(with GST)</th>
                         <th class="text-center">Status</th>
@@ -140,6 +141,20 @@
                             <td>@voucher.VoucherDate.ToString("dd MMM yyyy")</td>
                             <td>@voucher.Category?.CategoryName</td>
                             <td>@voucher.VendorName</td>
+                                <td>
+                                    @if (voucher.IsInterState)
+                                    {
+                                        <span class="badge-info">
+                                            Interstate
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-secondary">
+                                            Intrastate
+                                        </span>
+                                    }
+                                </td>
                             <td class="text-end amount-column">₹ @voucher.Amount.ToString("N2")</td>
                             <td class="text-end amount-column">₹ @voucher.TotalAmount.ToString("N2")</td>
                             <td class="text-center">

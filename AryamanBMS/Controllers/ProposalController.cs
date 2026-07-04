@@ -129,62 +129,162 @@ namespace AryamanBMS.Controllers
 
         public async Task<IActionResult> Edit(int id)
         {
-            var proposal = await _proposalRepo.GetByIdAsync(id);
-            if (proposal == null) return NotFound();
+            var proposal =
+                await _proposalRepo.GetByIdAsync(id);
 
-            var vm = new ProposalViewModel { Proposal = proposal };
+            if (proposal == null)
+                return NotFound();
+
+            if (proposal.IsConverted)
+            {
+                TempData["Error"] =
+                    "Converted proposals cannot be edited.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
+            }
+
+            if (!proposal.IsActive)
+            {
+                TempData["Error"] =
+                    "Inactive proposals cannot be edited.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
+            }
+
+            var vm = new ProposalViewModel
+            {
+                Proposal = proposal
+            };
+
             await LoadDropdownsAsync(vm);
+
             return View(vm);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, ProposalViewModel vm)
+        public async Task<IActionResult> Edit( int id, ProposalViewModel vm)
         {
-            if (id != vm.Proposal.ProposalId) return NotFound();
+            if (id != vm.Proposal.ProposalId)
+                return NotFound();
+
+            var existing =
+                await _proposalRepo.GetByIdAsync(id);
+
+            if (existing == null)
+                return NotFound();
+
+            if (existing.IsConverted)
+            {
+                TempData["Error"] =
+                    "Converted proposals cannot be edited.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
+            }
+
+            if (!existing.IsActive)
+            {
+                TempData["Error"] =
+                    "Inactive proposals cannot be edited.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
+            }
+
+            if (!IsAllowedStatusTransition(
+                    existing.Status,
+                    vm.Proposal.Status))
+            {
+                ModelState.AddModelError(
+                    "Proposal.Status",
+                    $"Status cannot change from {existing.Status} " +
+                    $"to {vm.Proposal.Status}.");
+            }
+
+            if (vm.Proposal.ValidUntil.HasValue &&
+                vm.Proposal.ValidUntil.Value.Date <
+                vm.Proposal.ProposalDate.Date)
+            {
+                ModelState.AddModelError(
+                    "Proposal.ValidUntil",
+                    "Valid Until cannot be before Proposal Date.");
+            }
 
             await LoadDropdownsAsync(vm);
 
             if (!ModelState.IsValid)
                 return View(vm);
 
-            var existing = await _proposalRepo.GetByIdAsync(id);
-            if (existing == null) return NotFound();
+            string? oldFilePath = existing.FilePath;
+            FileUploadResult? uploadedFile = null;
 
-            // Update metadata fields
-            existing.ClientId       = vm.Proposal.ClientId;
-            existing.ProjectId      = vm.Proposal.ProjectId;
-            existing.ProposalTitle  = vm.Proposal.ProposalTitle;
-            existing.ProposalDate   = vm.Proposal.ProposalDate;
-            existing.ValidUntil     = vm.Proposal.ValidUntil;
+            existing.ClientId = vm.Proposal.ClientId;
+            existing.ProjectId = vm.Proposal.ProjectId;
+            existing.ProposalTitle = vm.Proposal.ProposalTitle;
+            existing.ProposalDate = vm.Proposal.ProposalDate;
+            existing.ValidUntil = vm.Proposal.ValidUntil;
             existing.ProposalAmount = vm.Proposal.ProposalAmount;
-            existing.Currency       = vm.Proposal.Currency;
-            existing.Scope          = vm.Proposal.Scope;
-            existing.Terms          = vm.Proposal.Terms;
-            existing.Remarks        = vm.Proposal.Remarks;
-            existing.Status         = vm.Proposal.Status;
+            existing.Currency = vm.Proposal.Currency;
+            existing.Scope = vm.Proposal.Scope;
+            existing.Terms = vm.Proposal.Terms;
+            existing.Remarks = vm.Proposal.Remarks;
+            existing.Status = vm.Proposal.Status;
 
-            
-
-            // Replace file only if a new one is uploaded
             if (vm.UploadFile != null)
             {
-                var upload = await _fileStorage.UploadAsync(vm.UploadFile, "Proposals");
-                if (!upload.Success)
+                uploadedFile =
+                    await _fileStorage.UploadAsync(
+                        vm.UploadFile,
+                        "Proposals");
+
+                if (!uploadedFile.Success)
                 {
-                    ModelState.AddModelError("", upload.ErrorMessage);
+                    ModelState.AddModelError(
+                        nameof(vm.UploadFile),
+                        uploadedFile.ErrorMessage);
+
                     return View(vm);
                 }
 
-                // Delete old file after successful upload
-                await _fileStorage.DeleteAsync(existing.FilePath);
-                ApplyFileFields(existing, upload);
+                ApplyFileFields(
+                    existing,
+                    uploadedFile);
+
+                existing.VersionNo++;
             }
 
-            await _proposalRepo.UpdateAsync(existing);
-            await _proposalRepo.SaveAsync();
+            try
+            {
+                await _proposalRepo.UpdateAsync(existing);
+                await _proposalRepo.SaveAsync();
+            }
+            catch
+            {
+                if (uploadedFile != null)
+                {
+                    await _fileStorage.DeleteAsync(
+                        uploadedFile.RelativePath);
+                }
 
-            TempData["Success"] = "Proposal updated successfully.";
+                throw;
+            }
+
+            if (uploadedFile != null &&
+                !string.IsNullOrWhiteSpace(oldFilePath))
+            {
+                await _fileStorage.DeleteAsync(oldFilePath);
+            }
+
+            TempData["Success"] =
+                "Proposal updated successfully.";
+
             return RedirectToAction(nameof(Index));
         }
 
@@ -227,8 +327,21 @@ namespace AryamanBMS.Controllers
 
         public async Task<IActionResult> Delete(int id)
         {
-            var proposal = await _proposalRepo.GetByIdAsync(id);
-            if (proposal == null) return NotFound();
+            var proposal =
+                await _proposalRepo.GetByIdAsync(id);
+
+            if (proposal == null)
+                return NotFound();
+
+            if (proposal.IsConverted)
+            {
+                TempData["Error"] =
+                    "Converted proposals cannot be activated or deactivated.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
+            }
 
             return View(proposal);
         }
@@ -237,12 +350,17 @@ namespace AryamanBMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var proposal = await _proposalRepo.GetByIdAsync(id);
-            if (proposal == null) return NotFound();
+            var proposal =
+                await _proposalRepo.GetByIdAsync(id);
 
-            if (proposal.IsConverted && proposal.IsActive)
+            if (proposal == null)
+                return NotFound();
+
+            if (proposal.IsConverted)
             {
-                TempData["Error"] = "Converted proposals cannot be deactivated.";
+                TempData["Error"] =
+                    "Converted proposals cannot be activated or deactivated.";
+
                 return RedirectToAction(nameof(Index));
             }
 
@@ -268,8 +386,54 @@ namespace AryamanBMS.Controllers
         /// </summary>
         public async Task<IActionResult> ConvertToOrder(int id)
         {
-            var proposal = await _proposalRepo.GetByIdAsync(id);
-            if (proposal == null) return NotFound();
+            var proposal =
+                await _proposalRepo.GetByIdAsync(id);
+
+            if (proposal == null)
+                return NotFound();
+
+            if (!proposal.IsActive)
+            {
+                TempData["Error"] =
+                    "Inactive proposals cannot be converted.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
+            }
+
+            if (proposal.IsConverted)
+            {
+                TempData["Error"] =
+                    "This proposal has already been converted.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
+            }
+
+            if (!string.Equals(
+                    proposal.Status,
+                    "Accepted",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["Error"] =
+                    "Only accepted proposals can be converted.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
+            }
+
+            if (IsExpired(proposal))
+            {
+                TempData["Error"] =
+                    "Expired proposals cannot be converted.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
+            }
 
             return RedirectToAction(
                 "Create",
@@ -280,6 +444,49 @@ namespace AryamanBMS.Controllers
         #endregion
 
         #region Helpers
+
+        private static bool IsExpired(ProposalModel proposal)
+        {
+            return proposal.ValidUntil.HasValue &&
+                   proposal.ValidUntil.Value.Date < DateTime.Today;
+        }
+
+        private static bool IsAllowedStatusTransition(
+            string currentStatus,
+            string newStatus)
+        {
+            if (string.Equals(
+                    currentStatus,
+                    newStatus,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return currentStatus switch
+            {
+                "Draft" => newStatus is "Sent" or "Rejected",
+
+                "Sent" => newStatus is
+                    "UnderReview" or
+                    "Accepted" or
+                    "Rejected" or
+                    "Expired",
+
+                "UnderReview" => newStatus is
+                    "Accepted" or
+                    "Rejected" or
+                    "Expired",
+
+                "Accepted" => newStatus is "Expired",
+
+                "Rejected" => false,
+
+                "Expired" => false,
+
+                _ => false
+            };
+        }
 
         private async Task LoadDropdownsAsync(ProposalViewModel vm)
         {

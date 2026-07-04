@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace AryamanBMS.Models
 {
@@ -85,10 +86,16 @@ namespace AryamanBMS.Models
         public virtual ExpenseCategoryModel? Category { get; set; }
 
         // Reject
+        [StringLength(500)]
         public string? RejectionReason { get; set; }
 
+        [StringLength(450)]
         public string? RejectedByUserId { get; set; }
 
         public DateTime? RejectedOn { get; set; }
+
+        [ValidateNever]
+        public virtual ICollection<ExpenseVoucherDocumentModel> Documents { get; set; }
+            = new List<ExpenseVoucherDocumentModel>();
     }
 }

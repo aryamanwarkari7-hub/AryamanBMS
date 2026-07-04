@@ -18,7 +18,7 @@ namespace AryamanBMS.Repositories
         {
             return await _context.PtMonthlySnapshots
                 .Include(x => x.Challans)
-                .Include(x => x.Documents)
+                .Include(x => x.Documents.Where(d => d.IsActive))
                 .OrderByDescending(x => x.Year)
                 .ThenByDescending(x => x.Month)
                 .ToListAsync();
@@ -28,7 +28,7 @@ namespace AryamanBMS.Repositories
         {
             return await _context.PtMonthlySnapshots
                 .Include(x => x.Challans)
-                .Include(x => x.Documents)
+                .Include(x => x.Documents.Where(d => d.IsActive))
                 .FirstOrDefaultAsync(x => x.PtSnapshotId == id);
         }
 
@@ -36,12 +36,24 @@ namespace AryamanBMS.Repositories
         {
             return await _context.PtMonthlySnapshots
                 .Include(x => x.Challans)
-                .Include(x => x.Documents)
+                .Include(x => x.Documents.Where(d => d.IsActive))
                 .FirstOrDefaultAsync(x => x.Month == month && x.Year == year);
         }
 
         public async Task<PtMonthlySnapshotModel> GenerateSnapshotAsync(int month, int year)
         {
+            if (month < 1 || month > 12)
+            {
+                throw new InvalidOperationException(
+                    "PT month must be between 1 and 12.");
+            }
+
+            if (year < 2000 ||
+                year > DateTime.Today.Year + 1)
+            {
+                throw new InvalidOperationException(
+                    "Invalid PT snapshot year.");
+            }
             var existing = await _context.PtMonthlySnapshots
                 .FirstOrDefaultAsync(x => x.Month == month && x.Year == year);
 
@@ -101,15 +113,67 @@ namespace AryamanBMS.Repositories
             return snapshot;
         }
 
-        public async Task UpdateSnapshotStatusAsync(int snapshotId, string status)
+        public async Task<bool> MarkFiledAsync(
+    int snapshotId,
+    string filedByUserId)
         {
-            var snapshot = await _context.PtMonthlySnapshots.FindAsync(snapshotId);
-            if (snapshot != null)
+            var snapshot = await _context.PtMonthlySnapshots
+                .FirstOrDefaultAsync(x =>
+                    x.PtSnapshotId == snapshotId);
+
+            if (snapshot == null)
+                return false;
+
+            if (snapshot.Status !=
+                FinancialConstants.StatutoryStatus.Pending)
             {
-                snapshot.Status = status;
-                _context.PtMonthlySnapshots.Update(snapshot);
-                await _context.SaveChangesAsync();
+                return false;
             }
+
+            snapshot.Status =
+                FinancialConstants.StatutoryStatus.Filed;
+
+            snapshot.FiledByUserId = filedByUserId;
+            snapshot.FiledOn = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<bool> MarkPaidAsync(
+            int snapshotId,
+            string paidByUserId)
+        {
+            var snapshot = await _context.PtMonthlySnapshots
+                .Include(x => x.Challans)
+                .FirstOrDefaultAsync(x =>
+                    x.PtSnapshotId == snapshotId);
+
+            if (snapshot == null)
+                return false;
+
+            if (snapshot.Status !=
+                FinancialConstants.StatutoryStatus.Filed)
+            {
+                return false;
+            }
+
+            decimal paidAmount =
+                snapshot.Challans.Sum(x => x.AmountPaid);
+
+            if (paidAmount < snapshot.TotalPayable)
+                return false;
+
+            snapshot.Status =
+                FinancialConstants.StatutoryStatus.Paid;
+
+            snapshot.PaidByUserId = paidByUserId;
+            snapshot.PaidOn = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
+            return true;
         }
 
         public async Task AddChallanAsync(PtChallanModel challan)
@@ -135,23 +199,21 @@ namespace AryamanBMS.Repositories
         public async Task AddDocumentAsync(PtDocumentModel document)
         {
             document.UploadedOn = DateTime.Now;
+            document.IsActive = true;
             await _context.PtDocuments.AddAsync(document);
         }
 
         public async Task<PtDocumentModel?> GetDocumentByIdAsync(int id)
         {
             return await _context.PtDocuments
+                .Include(x => x.Snapshot)
                 .FirstOrDefaultAsync(x => x.PtDocumentId == id);
         }
 
-        public async Task DeleteDocumentAsync(int id)
+        public Task DeleteDocumentAsync(PtDocumentModel document)
         {
-            var doc = await _context.PtDocuments.FindAsync(id);
-            if (doc != null)
-            {
-                _context.PtDocuments.Remove(doc);
-                await _context.SaveChangesAsync();
-            }
+            document.IsActive = false;
+            return Task.CompletedTask;
         }
 
         public async Task SaveAsync()

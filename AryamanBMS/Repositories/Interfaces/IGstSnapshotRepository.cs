@@ -18,7 +18,16 @@ namespace AryamanBMS.Repositories.Interfaces
         Task DeleteAsync(GstMonthlySnapshotModel snapshot);
 
 
-        Task<bool> LockAsync(int month, int year);
+        Task<bool> LockAsync(
+          int month,
+          int year,
+          string filedByUserId);
+
+        Task<bool> ReopenAsync(
+          int month,
+          int year,
+          string reopenedByUserId,
+          string reason);
 
         Task SaveAsync();
 

@@ -2,6 +2,11 @@
 
 <input asp-for="Order.PurchaseOrderId" type="hidden" />
 
+@{
+    bool isEdit = Model.Order.PurchaseOrderId > 0;
+    bool isProposalLinked = Model.Order.ProposalId.HasValue;
+}
+
 <div class="row">
 
     <!-- Order Type -->
@@ -19,9 +24,18 @@
         <label asp-for="Order.ClientId" class="form-label">
             Client <span class="validation-message">*</span>
         </label>
-        <select asp-for="Order.ClientId" asp-items="Model.Clients" class="app-select">
+        <select asp-for="Order.ClientId"
+                asp-items="Model.Clients"
+                class="app-select"
+                disabled="@(isEdit && isProposalLinked)">
             <option value="">-- Select Client --</option>
         </select>
+
+        @if (isEdit && isProposalLinked)
+        {
+            <input asp-for="Order.ClientId"
+                   type="hidden" />
+        }
         <span asp-validation-for="Order.ClientId" class="validation-message"></span>
     </div>
 
@@ -93,14 +107,23 @@
 
 <div class="row">
 
-    <!-- Link to Proposal (optional) -->
+    <!-- Proposal-->
     <div class="col-md-6 mb-3">
         <label asp-for="Order.ProposalId" class="form-label">
             Link to Proposal <small class="card-subtitle">(optional — Accepted proposals only)</small>
         </label>
-        <select asp-for="Order.ProposalId" asp-items="Model.AcceptedProposals" class="app-select">
+        <select asp-for="Order.ProposalId"
+                asp-items="Model.AcceptedProposals"
+                class="app-select"
+                disabled="@(isEdit && isProposalLinked)">
             <option value="">-- None / Standalone --</option>
         </select>
+
+        @if (isEdit && isProposalLinked)
+        {
+            <input asp-for="Order.ProposalId"
+                   type="hidden" />
+        }
         <span asp-validation-for="Order.ProposalId" class="validation-message"></span>
     </div>
 

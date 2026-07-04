@@ -66,13 +66,15 @@ namespace AryamanBMS.Repositories
         public Task UpdateAsync(PurchaseOrderModel order)
         {
             order.UpdatedOn = DateTime.Now;
-            _context.PurchaseOrders.Update(order);
+
             return Task.CompletedTask;
         }
 
         public Task DeleteAsync(PurchaseOrderModel order)
         {
-            _context.PurchaseOrders.Remove(order);
+            order.IsActive = false;
+            order.UpdatedOn = DateTime.Now;
+
             return Task.CompletedTask;
         }
 

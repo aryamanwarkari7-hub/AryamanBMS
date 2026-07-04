@@ -1027,7 +1027,11 @@ namespace AryamanBMS.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching GST snapshot data");
-                return StatusCode(500, new { success = false, message = ex.Message });
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Unable to fetch GST snapshot details."
+                });
             }
         }
 
@@ -1038,8 +1042,8 @@ namespace AryamanBMS.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> LockSnapshot(
-    int month,
-    int year)
+          int month,
+          int year)
         {
             if (month < 1 || month > 12)
             {
@@ -1105,10 +1109,23 @@ namespace AryamanBMS.Controllers
                     new { month, year });
             }
 
+            string? filedByUserId = _userManager.GetUserId(User);
+
+            if (string.IsNullOrWhiteSpace(filedByUserId))
+            {
+                TempData["Error"] =
+                    "Current user could not be identified.";
+
+                return RedirectToAction(
+                    nameof(Dashboard),
+                    new { month, year });
+            }
+
             bool locked =
                 await _snapshotRepository.LockAsync(
                     month,
-                    year);
+                    year,
+                    filedByUserId);
 
             if (!locked)
             {
@@ -1123,6 +1140,106 @@ namespace AryamanBMS.Controllers
             TempData["Success"] =
                 $"GST snapshot for {GetMonthName(month)} {year} " +
                 "was filed and locked successfully.";
+
+            return RedirectToAction(
+                nameof(Dashboard),
+                new { month, year });
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReopenSnapshot(
+    int month,
+    int year,
+    string reason)
+        {
+            if (month < 1 || month > 12)
+            {
+                TempData["Error"] = "Invalid month.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (year < 2000 ||
+                year > DateTime.Now.Year + 1)
+            {
+                TempData["Error"] = "Invalid year.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (string.IsNullOrWhiteSpace(reason))
+            {
+                TempData["Error"] =
+                    "A reason is required to reopen a filed GST period.";
+
+                return RedirectToAction(
+                    nameof(Dashboard),
+                    new { month, year });
+            }
+
+            if (reason.Trim().Length > 500)
+            {
+                TempData["Error"] =
+                    "Reopen reason cannot exceed 500 characters.";
+
+                return RedirectToAction(
+                    nameof(Dashboard),
+                    new { month, year });
+            }
+
+            var snapshot =
+                await _snapshotRepository.GetByMonthYearAsync(
+                    month,
+                    year);
+
+            if (snapshot == null)
+                return NotFound();
+
+            if (!string.Equals(
+                    snapshot.Status,
+                    "Filed",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["Error"] =
+                    "Only a filed GST snapshot can be reopened.";
+
+                return RedirectToAction(
+                    nameof(Dashboard),
+                    new { month, year });
+            }
+
+            string? reopenedByUserId =
+                _userManager.GetUserId(User);
+
+            if (string.IsNullOrWhiteSpace(reopenedByUserId))
+            {
+                TempData["Error"] =
+                    "Current user could not be identified.";
+
+                return RedirectToAction(
+                    nameof(Dashboard),
+                    new { month, year });
+            }
+
+            bool reopened =
+                await _snapshotRepository.ReopenAsync(
+                    month,
+                    year,
+                    reopenedByUserId,
+                    reason);
+
+            if (!reopened)
+            {
+                TempData["Error"] =
+                    "GST snapshot could not be reopened.";
+
+                return RedirectToAction(
+                    nameof(Dashboard),
+                    new { month, year });
+            }
+
+            TempData["Success"] =
+                $"GST snapshot for {GetMonthName(month)} {year} reopened successfully.";
 
             return RedirectToAction(
                 nameof(Dashboard),

@@ -15,8 +15,6 @@ namespace AryamanBMS.Repositories.Interfaces
 
             Task UpdateAsync(CompanyDocumentModel document);
 
-            Task DeleteAsync(CompanyDocumentModel document);
-
             Task SaveAsync();
         }
     }

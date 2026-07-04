@@ -17,14 +17,12 @@ namespace AryamanBMS.Repositories.Interfaces
 
         Task UpdateAsync(NoticeModel notice);
 
-        Task DeleteAsync(int id);
-
         // Documents
         Task AddDocumentAsync(NoticeDocumentModel document);
 
         Task<NoticeDocumentModel?> GetDocumentByIdAsync(int id);
 
-        Task DeleteDocumentAsync(int id);
+        Task DeleteDocumentAsync(NoticeDocumentModel document);
 
         Task SaveAsync();
     }

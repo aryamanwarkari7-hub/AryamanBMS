@@ -35,6 +35,8 @@ namespace AryamanBMS.Models
         [StringLength(200)]
         public string? AssignedTo { get; set; }
 
+        public int? AssignedEmployeeId { get; set; }
+
         [Required]
         [StringLength(10)]
         public string FinancialYear { get; set; } = string.Empty;
@@ -46,6 +48,12 @@ namespace AryamanBMS.Models
         [StringLength(20)]
         public string Status { get; set; } = "InUse";
 
+        public DateTime? WarrantyStartDate { get; set; }
+
+        public DateTime? WarrantyEndDate { get; set; }
+
+        public DateTime? DisposalDate { get; set; }
+
         public bool IsActive { get; set; } = true;
 
         [StringLength(500)]
@@ -54,5 +62,10 @@ namespace AryamanBMS.Models
         public DateTime CreatedOn { get; set; } = DateTime.Now;
 
         public DateTime? UpdatedOn { get; set; }
+
+        public EmployeeModel? AssignedEmployee { get; set; }
+
+        public ICollection<OfficeAssetAssignmentHistoryModel> AssignmentHistory
+        { get; set; } = new List<OfficeAssetAssignmentHistoryModel>();
     }
 }

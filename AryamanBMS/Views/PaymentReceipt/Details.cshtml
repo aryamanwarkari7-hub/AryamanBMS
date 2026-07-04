@@ -147,6 +147,37 @@
                 <strong>@(string.IsNullOrWhiteSpace(Model.ReceivedBy) ? "-" : Model.ReceivedBy)</strong>
             </div>
 
+            @if (Model.IsCancelled)
+            {
+                <div class="form-group">
+                    <label class="form-label">
+                        Cancellation Reason
+                    </label>
+                    <div>
+                        @(Model.CancellationReason ?? "-")
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        Cancelled On
+                    </label>
+                    <div>
+                        @(Model.CancelledOn?
+                                            .ToString("dd MMM yyyy HH:mm") ?? "-")
+                </div>
+            </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        Cancelled By User ID
+                    </label>
+                    <div>
+                        @(Model.CancelledByUserId ?? "-")
+                    </div>
+                </div>
+                        }
+
         </div>
 
     </div>

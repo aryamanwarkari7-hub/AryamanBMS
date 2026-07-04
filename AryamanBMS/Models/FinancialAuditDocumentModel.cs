@@ -30,11 +30,22 @@ namespace AryamanBMS.Models
         [StringLength(500)]
         public string FilePath { get; set; } = string.Empty;
 
+        [Required]
+        [StringLength(450)]
+        public string UploadedByUserId { get; set; } = string.Empty;
+
         [StringLength(500)]
         public string? Remarks { get; set; }
 
         public DateTime UploadedOn { get; set; } = DateTime.Now;
 
         public bool IsActive { get; set; } = true;
+
+        public bool IsFinalized { get; set; }
+
+        [StringLength(450)]
+        public string? FinalizedByUserId { get; set; }
+
+        public DateTime? FinalizedOn { get; set; }
     }
 }

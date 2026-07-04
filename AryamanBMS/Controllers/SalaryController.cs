@@ -435,6 +435,8 @@ namespace AryamanBMS.Controllers
 
             var selectedPeriodEnd =
                 new DateTime(year, month, DateTime.DaysInMonth(year, month));
+            var selectedPeriodStart =
+                new DateTime(year, month, 1);
 
             var salaryStructures =
               await _context.EmployeeSalaryStructures
@@ -505,12 +507,18 @@ namespace AryamanBMS.Controllers
               salaryStructures
                   .Where(x =>
                       x.EmployeeId == employee.Id &&
-                      x.EffectiveFrom.Date <= selectedPeriodEnd)
+                      x.EffectiveFrom.Date <= selectedPeriodEnd &&
+                      (!x.EffectiveTo.HasValue ||
+                       x.EffectiveTo.Value.Date >= selectedPeriodStart) &&
+                      x.IsActive)
                   .OrderByDescending(x => x.EffectiveFrom)
                   .ThenByDescending(x => x.Id)
                   .FirstOrDefault()
               ?? salaryStructures
-                  .Where(x => x.EmployeeId == employee.Id)
+                  .Where(x =>
+                      x.EmployeeId == employee.Id &&
+                      x.IsActive &&
+                      x.EffectiveFrom.Date <= selectedPeriodEnd)
                   .OrderByDescending(x => x.EffectiveFrom)
                   .ThenByDescending(x => x.Id)
                   .FirstOrDefault();

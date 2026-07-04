@@ -4,6 +4,8 @@ using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+using Microsoft.AspNetCore.Identity;
+
 namespace AryamanBMS.Controllers
 {
     [Authorize(Roles = "Admin,Finance")]
@@ -11,15 +13,18 @@ namespace AryamanBMS.Controllers
     {
         private readonly IPtRepository _ptRepository;
         private readonly IFileStorageService _fileStorageService;
+        private readonly UserManager<ApplicationUserModel> _userManager;
 
         private const string DocumentFolder = "PtDocuments";
 
         public PtController(
-            IPtRepository ptRepository,
-            IFileStorageService fileStorageService)
+             IPtRepository ptRepository,
+             IFileStorageService fileStorageService,
+             UserManager<ApplicationUserModel> userManager)
         {
             _ptRepository = ptRepository;
             _fileStorageService = fileStorageService;
+            _userManager = userManager;
         }
 
         public async Task<IActionResult> Index()
@@ -93,9 +98,33 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction(nameof(Details), new { id });
             }
 
-            await _ptRepository.UpdateSnapshotStatusAsync(
-                id,
-                FinancialConstants.StatutoryStatus.Filed);
+            string? userId =
+    _userManager.GetUserId(User);
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                TempData["Error"] =
+                    "Current user could not be identified.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
+            }
+
+            bool updated =
+                await _ptRepository.MarkFiledAsync(
+                    id,
+                    userId);
+
+            if (!updated)
+            {
+                TempData["Error"] =
+                    "PT snapshot could not be marked as filed.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
+            }
 
             TempData["Success"] = "PT snapshot marked as Filed.";
             return RedirectToAction(nameof(Details), new { id });
@@ -132,9 +161,32 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction(nameof(Details), new { id });
             }
 
-            await _ptRepository.UpdateSnapshotStatusAsync(
-                id,
-                FinancialConstants.StatutoryStatus.Paid);
+            string? userId = _userManager.GetUserId(User);
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                TempData["Error"] =
+                    "Current user could not be identified.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
+            }
+
+            bool updated =
+                await _ptRepository.MarkPaidAsync(
+                    id,
+                    userId);
+
+            if (!updated)
+            {
+                TempData["Error"] =
+                    "PT snapshot could not be marked as paid.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
+            }
 
             TempData["Success"] = "PT snapshot marked as Paid.";
             return RedirectToAction(nameof(Details), new { id });
@@ -220,11 +272,22 @@ namespace AryamanBMS.Controllers
                 DocumentType = documentType,
                 FileName = uploadResult.OriginalFileName,
                 FilePath = uploadResult.RelativePath,
-                Remarks = remarks
+                Remarks = remarks,
+                UploadedByUserId = _userManager.GetUserId(User),
+                IsActive = true
             };
 
-            await _ptRepository.AddDocumentAsync(document);
-            await _ptRepository.SaveAsync();
+            try
+            {
+                await _ptRepository.AddDocumentAsync(document);
+                await _ptRepository.SaveAsync();
+            }
+            catch
+            {
+                await _fileStorageService.DeleteAsync(uploadResult.RelativePath);
+                TempData["Error"] = "Document could not be saved. Please try again.";
+                return RedirectToAction(nameof(Details), new { id = snapshotId });
+            }
 
             TempData["Success"] = "Document uploaded successfully.";
             return RedirectToAction(nameof(Details), new { id = snapshotId });
@@ -237,6 +300,12 @@ namespace AryamanBMS.Controllers
 
             if (document == null)
                 return NotFound();
+
+            if (!document.IsActive)
+            {
+                TempData["Error"] = "Archived documents cannot be downloaded.";
+                return RedirectToAction(nameof(Details), new { id = document.PtSnapshotId });
+            }
 
             var fileBytes =
                 await _fileStorageService.DownloadAsync(document.FilePath);
@@ -264,11 +333,20 @@ namespace AryamanBMS.Controllers
             if (document == null)
                 return NotFound();
 
-            await _fileStorageService.DeleteAsync(document.FilePath);
-            await _ptRepository.DeleteDocumentAsync(id);
+            if (document.Snapshot == null)
+                return NotFound();
 
-            TempData["Success"] = "Document deleted successfully.";
-            return RedirectToAction(nameof(Details), new { id = snapshotId });
+            if (document.Snapshot.Status != FinancialConstants.StatutoryStatus.Pending)
+            {
+                TempData["Error"] = "Documents linked to filed or paid PT snapshots cannot be deleted.";
+                return RedirectToAction(nameof(Details), new { id = document.PtSnapshotId });
+            }
+
+            await _ptRepository.DeleteDocumentAsync(document);
+            await _ptRepository.SaveAsync();
+
+            TempData["Success"] = "Document archived successfully.";
+            return RedirectToAction(nameof(Details), new { id = document.PtSnapshotId });
         }
 
         private static string GetContentType(string fileName)

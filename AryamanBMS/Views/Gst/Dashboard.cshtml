@@ -605,6 +605,89 @@
 
 </div>
 
+@if (Model.SnapshotStatus == "Filed")
+{
+    <div class="app-card">
+
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">GST Filing Audit</h2>
+                <p class="card-subtitle">
+                    Filing and lock information for this GST period.
+                </p>
+            </div>
+        </div>
+
+        <div class="card-body">
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+                    <label class="form-label">Filed By User ID</label>
+                    <strong>
+                        @(string.IsNullOrWhiteSpace(Model.FiledByUserId)
+                                            ? "-"
+                                            : Model.FiledByUserId)
+                                                              </strong>
+                                                          </div>
+
+                <div class="form-group">
+                    <label class="form-label">Filed On</label>
+                    <strong>
+                        @(Model.FiledOn?.ToString("dd MMM yyyy HH:mm")
+                                            ?? "-")
+                </strong>
+            </div>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+
+@if (Model.SnapshotStatus == "Filed" &&
+     User.IsInRole("Admin"))
+{
+    <form asp-controller="Gst"
+          asp-action="ReopenSnapshot"
+          method="post"
+          class="w-100 mt-3">
+
+        @Html.AntiForgeryToken()
+
+        <input type="hidden"
+               name="month"
+               value="@Model.Month" />
+
+        <input type="hidden"
+               name="year"
+               value="@Model.Year" />
+
+        <div class="form-group">
+            <label class="form-label">
+                Reopen Reason
+            </label>
+
+            <textarea name="reason"
+                  class="app-textarea"
+                  maxlength="500"
+                  required></textarea>
+        </div>
+
+        <button type="submit"
+                class="btn-app btn-warning-app"
+                onclick="return confirm('Reopen this filed GST period?')">
+
+            <i class="bi bi-unlock"></i>
+            Reopen GST Period
+
+        </button>
+
+    </form>
+}
+
 <div class="app-card">
 
     <div class="card-header">
@@ -658,6 +741,7 @@
                       enctype="multipart/form-data">
 
                     @Html.AntiForgeryToken()
+
 
                     <input type="hidden"
                            name="snapshotId"
@@ -871,6 +955,47 @@
             <span class="badge-warning">
                 Complete GSTR-1, GSTR-3B and Challan before locking
             </span>
+        }
+
+        @if (Model.SnapshotStatus == "Filed" &&
+                User.IsInRole("Admin"))
+        {
+            <form asp-controller="Gst"
+                  asp-action="ReopenSnapshot"
+                  method="post"
+                  class="w-100 mt-3">
+
+                @Html.AntiForgeryToken()
+
+                <input type="hidden"
+                       name="month"
+                       value="@Model.Month" />
+
+                <input type="hidden"
+                       name="year"
+                       value="@Model.Year" />
+
+                <div class="form-group">
+                    <label class="form-label">
+                        Reopen Reason
+                    </label>
+
+                    <textarea name="reason"
+                          class="app-textarea"
+                          maxlength="500"
+                          required></textarea>
+                </div>
+
+                <button type="submit"
+                        class="btn-app btn-warning-app"
+                        onclick="return confirm('Reopen this filed GST period?')">
+
+                    <i class="bi bi-unlock"></i>
+                    Reopen GST Period
+
+                </button>
+
+            </form>
         }
 
     </div>

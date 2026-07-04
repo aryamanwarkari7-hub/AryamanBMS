@@ -3,6 +3,7 @@ using System.Data;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Text.RegularExpressions;
 
 namespace AryamanBMS.Repositories
 {
@@ -59,6 +60,7 @@ namespace AryamanBMS.Repositories
         {
             return await _context.ExpenseVouchers
                 .Include(x => x.Category)
+                .Include(x => x.Documents.Where(d => d.IsActive))
                 .FirstOrDefaultAsync(x => x.ExpenseVoucherId == id && x.IsActive);
         }
 
@@ -106,8 +108,6 @@ namespace AryamanBMS.Repositories
             sequence.LastNumber += 1;
             sequence.UpdatedOn = DateTime.Now;
 
-            _context.FinancialSequences.Update(sequence);
-
             return sequence.LastNumber;
         }
         public async Task AddAsync(ExpenseVoucherModel model)
@@ -120,51 +120,113 @@ namespace AryamanBMS.Repositories
         public Task UpdateAsync(ExpenseVoucherModel model)
         {
             model.UpdatedOn = DateTime.Now;
-            _context.ExpenseVouchers.Update(model);
+
             return Task.CompletedTask;
         }
 
-        public async Task ApproveAsync(int id,string approvedByUserId)
+        public async Task<bool> ApproveAsync(
+    int id,
+    string approvedByUserId)
         {
-            var voucher = await _context.ExpenseVouchers
-                .FindAsync(id);
+            await using var transaction =
+                await _context.Database.BeginTransactionAsync(
+                    IsolationLevel.Serializable);
 
-            if (voucher != null)
+            try
             {
+                var voucher =
+                    await _context.ExpenseVouchers
+                        .FirstOrDefaultAsync(x =>
+                            x.ExpenseVoucherId == id &&
+                            x.IsActive);
+
+                if (voucher == null)
+                    return false;
+
+                if (voucher.Status !=
+                    FinancialConstants.ExpenseVoucherStatus.Draft)
+                {
+                    return false;
+                }
+
                 voucher.Status =
                     FinancialConstants.ExpenseVoucherStatus.Posted;
 
-                voucher.ApprovedByUserId = approvedByUserId;
-                voucher.ApprovedOn = DateTime.Now;
+                voucher.ApprovedByUserId =
+                    approvedByUserId;
+
+                voucher.ApprovedOn =
+                    DateTime.Now;
 
                 voucher.RejectionReason = null;
                 voucher.RejectedByUserId = null;
                 voucher.RejectedOn = null;
-
                 voucher.UpdatedOn = DateTime.Now;
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return true;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
             }
         }
 
-        public async Task RejectAsync(
-          int id,
-          string rejectedByUserId,
-          string rejectionReason)
+        public async Task<bool> RejectAsync(
+    int id,
+    string rejectedByUserId,
+    string rejectionReason)
         {
-            var voucher = await _context.ExpenseVouchers
-                .FirstOrDefaultAsync(x =>
-                    x.ExpenseVoucherId == id &&
-                    x.IsActive);
+            await using var transaction =
+                await _context.Database.BeginTransactionAsync(
+                    IsolationLevel.Serializable);
 
-            if (voucher == null)
-                return;
+            try
+            {
+                var voucher =
+                    await _context.ExpenseVouchers
+                        .FirstOrDefaultAsync(x =>
+                            x.ExpenseVoucherId == id &&
+                            x.IsActive);
 
-            voucher.Status =
-                FinancialConstants.ExpenseVoucherStatus.Rejected;
+                if (voucher == null)
+                    return false;
 
-            voucher.RejectionReason = rejectionReason.Trim();
-            voucher.RejectedByUserId = rejectedByUserId;
-            voucher.RejectedOn = DateTime.Now;
-            voucher.UpdatedOn = DateTime.Now;
+                if (voucher.Status !=
+                    FinancialConstants.ExpenseVoucherStatus.Draft)
+                {
+                    return false;
+                }
+
+                voucher.Status =
+                    FinancialConstants.ExpenseVoucherStatus.Rejected;
+
+                voucher.RejectionReason =
+                    rejectionReason.Trim();
+
+                voucher.RejectedByUserId =
+                    rejectedByUserId;
+
+                voucher.RejectedOn =
+                    DateTime.Now;
+
+                voucher.ApprovedByUserId = null;
+                voucher.ApprovedOn = null;
+                voucher.UpdatedOn = DateTime.Now;
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return true;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task SoftDeleteAsync(int id)
@@ -174,7 +236,6 @@ namespace AryamanBMS.Repositories
             {
                 voucher.IsActive = false;
                 voucher.UpdatedOn = DateTime.Now;
-                _context.ExpenseVouchers.Update(voucher);
             }
         }
 
@@ -242,21 +303,82 @@ namespace AryamanBMS.Repositories
         }
 
         public async Task<bool> VendorInvoiceExistsAsync(
-             string? vendorName,
-             string invoiceNumber,
-             int? excludeId = null)
+            string? vendorName,
+            string invoiceNumber,
+            int? excludeId = null)
         {
             string normalizedVendor =
-                (vendorName ?? string.Empty).Trim().ToLower();
+                NormalizeLookupValue(vendorName);
 
             string normalizedInvoice =
-                invoiceNumber.Trim().ToLower();
+                NormalizeLookupValue(invoiceNumber);
 
-            return await _context.ExpenseVouchers.AnyAsync(x =>
-                x.IsActive &&
-                x.ExpenseVoucherId != excludeId &&
-                x.VendorName.ToLower() == normalizedVendor &&
-                x.InvoiceNumber.ToLower() == normalizedInvoice);
+            if (string.IsNullOrWhiteSpace(
+                    normalizedInvoice))
+            {
+                return false;
+            }
+
+            var vouchers =
+                await _context.ExpenseVouchers
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.IsActive &&
+                        x.InvoiceNumber != null)
+                    .Select(x => new
+                    {
+                        x.ExpenseVoucherId,
+                        x.VendorName,
+                        x.InvoiceNumber
+                    })
+                    .ToListAsync();
+
+            return vouchers.Any(x =>
+                (!excludeId.HasValue ||
+                 x.ExpenseVoucherId != excludeId.Value) &&
+
+                NormalizeLookupValue(x.VendorName) ==
+                    normalizedVendor &&
+
+                NormalizeLookupValue(x.InvoiceNumber) ==
+                    normalizedInvoice);
+        }
+
+        public async Task<ExpenseVoucherDocumentModel?> GetDocumentByIdAsync(int id)
+        {
+            return await _context.ExpenseVoucherDocuments
+                .Include(x => x.ExpenseVoucher)
+                .FirstOrDefaultAsync(x =>
+                    x.ExpenseVoucherDocumentId == id &&
+                    x.IsActive);
+        }
+
+        public async Task AddDocumentAsync(ExpenseVoucherDocumentModel document)
+        {
+            document.UploadedOn = DateTime.Now;
+            document.IsActive = true;
+
+            await _context.ExpenseVoucherDocuments.AddAsync(document);
+        }
+
+        public Task DeleteDocumentAsync(ExpenseVoucherDocumentModel document)
+        {
+            document.IsActive = false;
+
+            return Task.CompletedTask;
+        }
+
+        private static string NormalizeLookupValue(
+            string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return string.Empty;
+
+            return string.Concat(
+                value
+                    .Trim()
+                    .ToUpperInvariant()
+                    .Where(x => !char.IsWhiteSpace(x)));
         }
     }
 }

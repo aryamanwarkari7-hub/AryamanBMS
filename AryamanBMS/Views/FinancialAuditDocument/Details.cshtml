@@ -41,12 +41,15 @@
             </a>
         }
 
-        <a asp-action="Edit"
-           asp-route-id="@Model.FinancialAuditDocumentId"
-           class="btn-app btn-primary-app">
-            <i class="bi bi-pencil"></i>
-            Edit Details
-        </a>
+        @if (!Model.IsFinalized)
+        {
+            <a asp-action="Edit"
+               asp-route-id="@Model.FinancialAuditDocumentId"
+               class="btn-app btn-primary-app">
+                <i class="bi bi-pencil"></i>
+                Edit Details
+            </a>
+        }
 
         <a asp-action="Index" class="btn-app btn-secondary-app">
             <i class="bi bi-arrow-left"></i>
@@ -91,7 +94,11 @@
 
             <div class="form-group">
                 <label class="form-label">Status</label>
-                @if (Model.IsActive)
+                @if (Model.IsFinalized)
+                {
+                    <span class="badge-primary">Finalized</span>
+                }
+                else if (Model.IsActive)
                 {
                     <span class="badge-success">Active</span>
                 }
@@ -99,6 +106,16 @@
                 {
                     <span class="badge-secondary">Archived</span>
                 }
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Finalized By</label>
+                <strong>@(string.IsNullOrWhiteSpace(Model.FinalizedByUserId) ? "-" : Model.FinalizedByUserId)</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Finalized On</label>
+                <strong>@(Model.FinalizedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")</strong>
             </div>
         </div>
     </div>
@@ -131,14 +148,34 @@
             </a>
         }
 
-        
+        @if (Model.IsActive && !Model.IsFinalized)
+        {
+            <form asp-action="Finalize"
+                  method="post">
+                @Html.AntiForgeryToken()
 
-        <button type="button"
-                class="btn-app @(Model.IsActive ? "btn-danger-app" : "btn-success-app")"
-                onclick="changeDocumentStatus(@Model.FinancialAuditDocumentId)">
-            <i class="bi @(Model.IsActive ? "bi-archive" : "bi-arrow-counterclockwise")"></i>
-            @(Model.IsActive ? "Archive" : "Activate")
-        </button>
+                <input type="hidden"
+                       name="id"
+                       value="@Model.FinancialAuditDocumentId" />
+
+                <button type="submit"
+                        class="btn-app btn-primary-app"
+                        onclick="return confirm('Finalize this audit document? Finalized documents cannot be edited, archived, activated or replaced.')">
+                    <i class="bi bi-lock"></i>
+                    Finalize
+                </button>
+            </form>
+        }
+
+        @if (!Model.IsFinalized)
+        {
+            <button type="button"
+                    class="btn-app @(Model.IsActive ? "btn-danger-app" : "btn-success-app")"
+                    onclick="changeDocumentStatus(@Model.FinancialAuditDocumentId)">
+                <i class="bi @(Model.IsActive ? "bi-archive" : "bi-arrow-counterclockwise")"></i>
+                @(Model.IsActive ? "Archive" : "Activate")
+            </button>
+        }
     </div>
 </div>
 

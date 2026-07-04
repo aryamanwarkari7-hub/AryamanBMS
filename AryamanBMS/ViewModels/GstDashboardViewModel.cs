@@ -12,6 +12,16 @@ namespace AryamanBMS.ViewModels
 
         public string SnapshotStatus { get; set; } = "Pending";
 
+        public string? FiledByUserId { get; set; }
+
+        public DateTime? FiledOn { get; set; }
+
+        public string? ReopenedByUserId { get; set; }
+
+        public DateTime? ReopenedOn { get; set; }
+
+        public string? ReopenReason { get; set; }
+
         public decimal SalesTaxable { get; set; }
 
         public decimal OutputGST { get; set; }

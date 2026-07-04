@@ -116,3 +116,82 @@
 -- ALTER TABLE TableExpenseVouchers
 -- MODIFY COLUMN CreatedByUserId VARCHAR(450) NOT NULL,
 -- MODIFY COLUMN ApprovedByUserId VARCHAR(450) NULL;
+
+-- ALTER TABLE TableExpenseVouchers
+-- ADD UNIQUE INDEX UX_TableExpenseVoucher_VoucherNumber
+-- (VoucherNumber);
+
+-- ALTER TABLE TableFinancialSequence
+-- ADD UNIQUE INDEX UX_TableFinancialSequence_TypeYear
+-- (DocumentType, FinancialYear);
+
+-- ALTER TABLE TableExpenseVouchers
+-- ADD COLUMN IsInterState TINYINT(1) NOT NULL DEFAULT 0
+-- AFTER GSTRate;
+
+-- ALTER TABLE TableExpenseVouchers
+-- ADD COLUMN RejectionReason VARCHAR(500) NULL,
+-- ADD COLUMN RejectedByUserId VARCHAR(450) NULL,
+-- ADD COLUMN RejectedOn DATETIME NULL;
+
+-- ALTER TABLE TableInvoicemaster
+-- ADD COLUMN ProjectId INT NULL AFTER ClientId,
+-- ADD CONSTRAINT FK_TableInvoice_TableProject
+-- FOREIGN KEY (ProjectId)
+-- REFERENCES TableProject(Id)
+-- ON DELETE RESTRICT;
+
+-- ALTER TABLE TableGstMonthlySnapshot
+-- ADD UNIQUE INDEX UX_TableGstMonthlySnapshot_MonthYear
+-- (Month, Year);
+
+-- ALTER TABLE TableGstReturn
+-- ADD UNIQUE INDEX UX_TableGstReturn_SnapshotType
+-- (SnapshotId, ReturnType);
+
+-- ALTER TABLE TableGstChallan
+-- ADD UNIQUE INDEX UX_TableGstChallan_ChallanNumber
+-- (ChallanNumber);
+
+-- ALTER TABLE TableInvoicemaster
+-- ADD COLUMN IsInterState TINYINT(1) NOT NULL DEFAULT 0
+-- AFTER GSTNo;
+
+-- ALTER TABLE TableGstMonthlySnapshot
+-- ADD COLUMN FiledByUserId VARCHAR(450) NULL
+-- AFTER FiledOn;
+
+-- ALTER TABLE tablegstmonthlysnapshot
+-- ADD COLUMN ReopenedByUserId VARCHAR(450) NULL AFTER FiledByUserId,
+-- ADD COLUMN ReopenedOn DATETIME NULL AFTER ReopenedByUserId,
+-- ADD COLUMN ReopenReason VARCHAR(500) NULL AFTER ReopenedOn;
+
+-- ALTER TABLE tablepfmonthlysnapshot
+-- ADD COLUMN FiledByUserId VARCHAR(450) NULL AFTER GeneratedOn,
+-- ADD COLUMN FiledOn DATETIME NULL AFTER FiledByUserId,
+-- ADD COLUMN PaidByUserId VARCHAR(450) NULL AFTER FiledOn,
+-- ADD COLUMN PaidOn DATETIME NULL AFTER PaidByUserId,
+-- ADD UNIQUE INDEX UX_PfMonthlySnapshot_MonthYear (Month, Year);
+
+-- ALTER TABLE tableesicmonthlysnapshot
+-- ADD COLUMN FiledByUserId VARCHAR(450) NULL AFTER GeneratedOn,
+-- ADD COLUMN FiledOn DATETIME NULL AFTER FiledByUserId,
+-- ADD COLUMN PaidByUserId VARCHAR(450) NULL AFTER FiledOn,
+-- ADD COLUMN PaidOn DATETIME NULL AFTER PaidByUserId,
+-- ADD UNIQUE INDEX UX_EsicMonthlySnapshot_MonthYear (Month, Year);
+
+-- ALTER TABLE tableptmonthlysnapshot
+-- ADD COLUMN FiledByUserId VARCHAR(450) NULL AFTER GeneratedOn,
+-- ADD COLUMN FiledOn DATETIME NULL AFTER FiledByUserId,
+-- ADD COLUMN PaidByUserId VARCHAR(450) NULL AFTER FiledOn,
+-- ADD COLUMN PaidOn DATETIME NULL AFTER PaidByUserId,
+-- ADD UNIQUE INDEX UX_PtMonthlySnapshot_MonthYear (Month, Year);
+
+-- ALTER TABLE tablepaymentreceipt
+-- ADD COLUMN CancellationReason VARCHAR(500) NULL AFTER IsCancelled,
+-- ADD COLUMN CancelledByUserId VARCHAR(450) NULL AFTER CancellationReason,
+-- ADD COLUMN CancelledOn DATETIME NULL AFTER CancelledByUserId;
+
+ALTER TABLE `TableEmployeeSalaryStructure`
+    ADD COLUMN `EffectiveTo` DATE NULL AFTER `EffectiveFrom`;
+

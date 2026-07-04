@@ -10,7 +10,10 @@ public interface IPaymentReceiptRepository
 
     Task UpdateAsync(PaymentReceiptModel model);
 
-    Task DeleteAsync(PaymentReceiptModel model);
+    Task<bool> CancelAsync(
+    int paymentReceiptId,
+    string cancelledByUserId,
+    string cancellationReason);
 
     Task<string> GenerateReceiptNoAsync();
 

@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Data;
+using AryamanBMS.Data;
 using AryamanBMS.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -6,17 +6,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,HR")]
+    [Authorize(Roles = "Admin,HR,Finance")]
     public class SalaryStructureController : Controller
     {
         private readonly ApplicationDbContext _context;
 
-        public SalaryStructureController(
-            ApplicationDbContext context)
+        public SalaryStructureController(ApplicationDbContext context)
         {
             _context = context;
         }
 
+        [HttpGet]
         public async Task<IActionResult> Index()
         {
             var salaryStructures =
@@ -30,6 +30,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Create()
         {
             await LoadEmployeesAsync();
@@ -43,29 +44,26 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(
-            EmployeeSalaryStructureModel model)
+        [Authorize(Roles = "Admin,HR")]
+        public async Task<IActionResult> Create(EmployeeSalaryStructureModel model)
         {
-            if (model.EffectiveFrom == default)
-            {
-                ModelState.AddModelError(
-                    nameof(model.EffectiveFrom),
-                    "Effective from date is required.");
-            }
+            NormalizeModel(model);
 
-            bool duplicateExists =
+            var closablePreviousStructure =
                 await _context.EmployeeSalaryStructures
-                    .AnyAsync(x =>
+                    .Where(x =>
                         x.EmployeeId == model.EmployeeId &&
-                        x.EffectiveFrom.Date ==
-                        model.EffectiveFrom.Date);
+                        x.IsActive &&
+                        x.EffectiveFrom.Date < model.EffectiveFrom.Date &&
+                        (!x.EffectiveTo.HasValue ||
+                         x.EffectiveTo.Value.Date >= model.EffectiveFrom.Date))
+                    .OrderByDescending(x => x.EffectiveFrom)
+                    .FirstOrDefaultAsync();
 
-            if (duplicateExists)
-            {
-                ModelState.AddModelError(
-                    "",
-                    "Salary structure already exists for this employee and effective date.");
-            }
+            await ValidateStructureAsync(
+                model,
+                null,
+                closablePreviousStructure?.Id);
 
             if (!ModelState.IsValid)
             {
@@ -73,11 +71,22 @@ namespace AryamanBMS.Controllers
                 return View(model);
             }
 
+            await using var transaction =
+                await _context.Database.BeginTransactionAsync();
+
+            if (closablePreviousStructure != null)
+            {
+                closablePreviousStructure.EffectiveTo =
+                    model.EffectiveFrom.Date.AddDays(-1);
+                closablePreviousStructure.UpdatedOn = DateTime.Now;
+            }
+
             model.CreatedOn = DateTime.Now;
             model.UpdatedOn = null;
 
             _context.EmployeeSalaryStructures.Add(model);
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
 
             TempData["Success"] =
                 "Salary structure added successfully.";
@@ -86,6 +95,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Edit(int id)
         {
             var salaryStructure =
@@ -104,36 +114,10 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(
-            EmployeeSalaryStructureModel model)
+        [Authorize(Roles = "Admin,HR")]
+        public async Task<IActionResult> Edit(EmployeeSalaryStructureModel model)
         {
-            if (model.EffectiveFrom == default)
-            {
-                ModelState.AddModelError(
-                    nameof(model.EffectiveFrom),
-                    "Effective from date is required.");
-            }
-
-            bool duplicateExists =
-                await _context.EmployeeSalaryStructures
-                    .AnyAsync(x =>
-                        x.Id != model.Id &&
-                        x.EmployeeId == model.EmployeeId &&
-                        x.EffectiveFrom.Date ==
-                        model.EffectiveFrom.Date);
-
-            if (duplicateExists)
-            {
-                ModelState.AddModelError(
-                    "",
-                    "Salary structure already exists for this employee and effective date.");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                await LoadEmployeesAsync();
-                return View(model);
-            }
+            NormalizeModel(model);
 
             var salaryStructure =
                 await _context.EmployeeSalaryStructures
@@ -144,8 +128,33 @@ namespace AryamanBMS.Controllers
                 return NotFound();
             }
 
+            bool hasPayrollHistory =
+                await HasLinkedSalaryRecordsAsync(salaryStructure);
+
+            bool structureChanged =
+                salaryStructure.EmployeeId != model.EmployeeId ||
+                salaryStructure.EffectiveFrom.Date != model.EffectiveFrom.Date ||
+                salaryStructure.EffectiveTo?.Date != model.EffectiveTo?.Date ||
+                salaryStructure.ActualSalary != model.ActualSalary;
+
+            if (hasPayrollHistory && structureChanged)
+            {
+                ModelState.AddModelError(
+                    "",
+                    "This salary structure is already used in payroll history and cannot be changed.");
+            }
+
+            await ValidateStructureAsync(model, model.Id);
+
+            if (!ModelState.IsValid)
+            {
+                await LoadEmployeesAsync();
+                return View(model);
+            }
+
             salaryStructure.EmployeeId = model.EmployeeId;
-            salaryStructure.EffectiveFrom = model.EffectiveFrom;
+            salaryStructure.EffectiveFrom = model.EffectiveFrom.Date;
+            salaryStructure.EffectiveTo = model.EffectiveTo?.Date;
             salaryStructure.ActualSalary = model.ActualSalary;
             salaryStructure.IsActive = model.IsActive;
             salaryStructure.UpdatedOn = DateTime.Now;
@@ -160,6 +169,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> ToggleActive(int id)
         {
             var salaryStructure =
@@ -182,6 +192,89 @@ namespace AryamanBMS.Controllers
                     : "Salary structure deactivated successfully.";
 
             return RedirectToAction(nameof(Index));
+        }
+
+        private async Task ValidateStructureAsync(
+            EmployeeSalaryStructureModel model,
+            int? excludeId = null,
+            int? closableOverlapId = null)
+        {
+            if (model.EffectiveFrom == default)
+            {
+                ModelState.AddModelError(
+                    nameof(model.EffectiveFrom),
+                    "Effective from date is required.");
+            }
+
+            if (model.ActualSalary < 0)
+            {
+                ModelState.AddModelError(
+                    nameof(model.ActualSalary),
+                    "Actual salary cannot be negative.");
+            }
+
+            if (model.EffectiveTo.HasValue &&
+                model.EffectiveTo.Value.Date < model.EffectiveFrom.Date)
+            {
+                ModelState.AddModelError(
+                    nameof(model.EffectiveTo),
+                    "Effective to date cannot be earlier than effective from date.");
+            }
+
+            bool exactDuplicateExists =
+                await _context.EmployeeSalaryStructures
+                    .AnyAsync(x =>
+                        x.Id != excludeId &&
+                        x.EmployeeId == model.EmployeeId &&
+                        x.EffectiveFrom.Date == model.EffectiveFrom.Date);
+
+            if (exactDuplicateExists)
+            {
+                ModelState.AddModelError(
+                    "",
+                    "Salary structure already exists for this employee and effective from date.");
+            }
+
+            var overlapExists =
+                await _context.EmployeeSalaryStructures
+                    .Where(x =>
+                        x.Id != excludeId &&
+                        x.Id != closableOverlapId &&
+                        x.EmployeeId == model.EmployeeId &&
+                        x.IsActive)
+                    .AnyAsync(x =>
+                        x.EffectiveFrom.Date <= (model.EffectiveTo ?? DateTime.MaxValue).Date &&
+                        model.EffectiveFrom.Date <= (x.EffectiveTo ?? DateTime.MaxValue).Date);
+
+            if (overlapExists)
+            {
+                ModelState.AddModelError(
+                    "",
+                    "This date range overlaps with another active salary structure for the same employee.");
+            }
+        }
+
+        private async Task<bool> HasLinkedSalaryRecordsAsync(
+            EmployeeSalaryStructureModel structure)
+        {
+            var salaryPeriods =
+                await _context.SalaryRecords
+                    .AsNoTracking()
+                    .Where(x => x.EmployeeId == structure.EmployeeId)
+                    .Select(x => new DateTime(x.Year, x.Month, 1))
+                    .ToListAsync();
+
+            var rangeEnd = structure.EffectiveTo?.Date ?? DateTime.MaxValue.Date;
+
+            return salaryPeriods.Any(x =>
+                x.Date >= structure.EffectiveFrom.Date &&
+                x.Date <= rangeEnd);
+        }
+
+        private void NormalizeModel(EmployeeSalaryStructureModel model)
+        {
+            model.EffectiveFrom = model.EffectiveFrom.Date;
+            model.EffectiveTo = model.EffectiveTo?.Date;
         }
 
         private async Task LoadEmployeesAsync()

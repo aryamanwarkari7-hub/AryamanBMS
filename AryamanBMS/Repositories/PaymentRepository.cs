@@ -115,7 +115,10 @@ namespace AryamanBMS.Repositories
             }
         }
 
-        public async Task DeleteAsync(PaymentReceiptModel model)
+        public async Task<bool> CancelAsync(
+    int paymentReceiptId,
+    string cancelledByUserId,
+    string cancellationReason)
         {
             await using var transaction =
                 await _context.Database.BeginTransactionAsync(
@@ -123,18 +126,39 @@ namespace AryamanBMS.Repositories
 
             try
             {
-                int invoiceId = model.InvoiceId;
+                var payment =
+                    await _context.PaymentReceipts
+                        .FirstOrDefaultAsync(x =>
+                            x.PaymentReceiptId ==
+                            paymentReceiptId);
 
-                model.IsCancelled = true;
-                model.IsActive = false;
-                model.UpdatedOn = DateTime.Now;
+                if (payment == null ||
+                    payment.IsCancelled)
+                {
+                    return false;
+                }
+
+                payment.IsCancelled = true;
+                payment.IsActive = false;
+                payment.CancellationReason =
+                    cancellationReason.Trim();
+                payment.CancelledByUserId =
+                    cancelledByUserId;
+                payment.CancelledOn =
+                    DateTime.Now;
+                payment.UpdatedOn =
+                    DateTime.Now;
 
                 await _context.SaveChangesAsync();
 
-                await RecalculateInvoicePaymentAsync(invoiceId);
+                await RecalculateInvoicePaymentAsync(
+                    payment.InvoiceId);
 
                 await _context.SaveChangesAsync();
+
                 await transaction.CommitAsync();
+
+                return true;
             }
             catch
             {
@@ -143,7 +167,7 @@ namespace AryamanBMS.Repositories
             }
         }
 
-       public async Task<List<ClientModel>> GetClientsAsync()
+        public async Task<List<ClientModel>> GetClientsAsync()
         {
             return await _context.Clients
                 .Where(x => x.IsActive)
@@ -151,22 +175,30 @@ namespace AryamanBMS.Repositories
                 .ToListAsync();
         }
 
-        public async Task<List<InvoiceModel>> GetInvoicesAsync()
+        public async Task<List<InvoiceModel>>GetInvoicesAsync()
         {
             return await _context.Invoices
                 .Include(x => x.Client)
-                .Where(x => !x.IsDeleted)
-                .OrderByDescending(x => x.InvoiceDate)
+                .Where(x =>
+                    !x.IsDeleted &&
+                    x.InvoiceStatus == "Issued" &&
+                    x.BalanceAmount > 0)
+                .OrderByDescending(x =>
+                    x.InvoiceDate)
                 .ToListAsync();
         }
 
-        public async Task<List<InvoiceModel>> GetInvoicesByClientAsync(int clientId)
+        public async Task<List<InvoiceModel>> GetInvoicesByClientAsync
+            (int clientId)
         {
             return await _context.Invoices
-                .Where(x => x.ClientId == clientId &&
-                            !x.IsDeleted &&
-                            x.BalanceAmount > 0)
-                .OrderByDescending(x => x.InvoiceDate)
+                .Where(x =>
+                    x.ClientId == clientId &&
+                    !x.IsDeleted &&
+                    x.InvoiceStatus == "Issued" &&
+                    x.BalanceAmount > 0)
+                .OrderByDescending(x =>
+                    x.InvoiceDate)
                 .ToListAsync();
         }
 

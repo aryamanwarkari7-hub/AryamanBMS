@@ -48,12 +48,18 @@
             Download
         </a>
 
-        <a asp-action="Edit"
-           asp-route-id="@Model.PurchaseOrderId"
-           class="btn-app btn-primary-app">
-            <i class="bi bi-pencil"></i>
-            Edit PO / WO
-        </a>
+        @if (Model.IsActive &&
+             Model.Status != "Delivered" &&
+             Model.Status != "Closed" &&
+             Model.Status != "Cancelled")
+        {
+            <a asp-action="Edit"
+               asp-route-id="@Model.PurchaseOrderId"
+               class="btn-app btn-primary-app">
+                <i class="bi bi-pencil"></i>
+                Edit PO / WO
+            </a>
+        }
 
         <a asp-action="Index"
            class="btn-app btn-secondary-app">

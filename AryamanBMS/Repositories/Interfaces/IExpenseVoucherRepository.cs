@@ -24,12 +24,14 @@ namespace AryamanBMS.Repositories.Interfaces
 
         Task UpdateAsync(ExpenseVoucherModel model);
 
-        Task ApproveAsync(int id, string approvedByUserId);
+        Task<bool> ApproveAsync(
+            int id,
+            string approvedByUserId);
 
-        Task RejectAsync(
-          int id,
-          string rejectedByUserId,
-          string rejectionReason);
+        Task<bool> RejectAsync(
+            int id,
+            string rejectedByUserId,
+            string rejectionReason);
 
         Task SoftDeleteAsync(int id);
 
@@ -38,6 +40,12 @@ namespace AryamanBMS.Repositories.Interfaces
         Task CreateWithSequenceAsync(ExpenseVoucherModel model);
 
         Task<bool> VendorInvoiceExistsAsync(string? vendorName,string invoiceNumber,int? excludeId = null);
+
+        Task<ExpenseVoucherDocumentModel?> GetDocumentByIdAsync(int id);
+
+        Task AddDocumentAsync(ExpenseVoucherDocumentModel document);
+
+        Task DeleteDocumentAsync(ExpenseVoucherDocumentModel document);
 
 
     }

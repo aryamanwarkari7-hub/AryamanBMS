@@ -52,6 +52,7 @@
                         <tr>
                             <th>Employee</th>
                             <th>Effective From</th>
+                            <th>Effective To</th>
                             <th>Actual Salary</th>
                             <th>Status</th>
                             <th>Updated On</th>
@@ -79,6 +80,10 @@
 
                                 <td>
                                     @item.EffectiveFrom.ToString("dd-MMM-yyyy")
+                                </td>
+
+                                <td>
+                                    @(item.EffectiveTo?.ToString("dd-MMM-yyyy") ?? "Open")
                                 </td>
 
                                 <td>

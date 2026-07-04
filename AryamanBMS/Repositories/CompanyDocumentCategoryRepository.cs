@@ -42,9 +42,6 @@ namespace AryamanBMS.Repositories
         public Task UpdateAsync(
             CompanyDocumentCategoryModel category)
         {
-            _context.CompanyDocumentCategories
-                .Update(category);
-
             return Task.CompletedTask;
         }
 

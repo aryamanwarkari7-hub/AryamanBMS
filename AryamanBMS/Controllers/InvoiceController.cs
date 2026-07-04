@@ -1,5 +1,6 @@
 ﻿using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
+using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,69 +10,82 @@ namespace AryamanBMS.Controllers
     public class InvoiceController : Controller
     {
         private readonly IInvoiceRepository _invoiceRepository;
+        private readonly IFileStorageService _fileStorageService;
 
-        public InvoiceController(IInvoiceRepository invoiceRepository)
+        public InvoiceController(
+            IInvoiceRepository invoiceRepository,
+            IFileStorageService fileStorageService)
         {
             _invoiceRepository = invoiceRepository;
+            _fileStorageService = fileStorageService;
         }
 
-
         #region Index
+
         public async Task<IActionResult> Index(
-          string? search,
-          int? clientId,
-          string? invoiceStatus,
-          string? paymentStatus)
+            string? search,
+            int? clientId,
+            string? invoiceStatus,
+            string? paymentStatus)
         {
-            var allInvoices = await _invoiceRepository.GetAllAsync();
+            var allInvoices =
+                await _invoiceRepository.GetAllAsync();
 
             var activeInvoices = allInvoices
                 .Where(x => !x.IsDeleted)
                 .ToList();
 
-            var filteredInvoices = activeInvoices.AsEnumerable();
+            var filteredInvoices =
+                activeInvoices.AsEnumerable();
 
             if (!string.IsNullOrWhiteSpace(search))
             {
                 search = search.Trim();
 
-                filteredInvoices = filteredInvoices.Where(x =>
-                    x.InvoiceNo.Contains(
-                        search,
-                        StringComparison.OrdinalIgnoreCase) ||
-                    (x.Client?.ClientName?.Contains(
-                        search,
-                        StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (x.Project?.ProjectName?.Contains(
-                        search,
-                        StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (x.ProjectName?.Contains(
-                        search,
-                        StringComparison.OrdinalIgnoreCase) ?? false));
+                filteredInvoices =
+                    filteredInvoices.Where(x =>
+                        x.InvoiceNo.Contains(
+                            search,
+                            StringComparison.OrdinalIgnoreCase) ||
+
+                        (x.Client?.ClientName?.Contains(
+                            search,
+                            StringComparison.OrdinalIgnoreCase) ?? false) ||
+
+                        (x.Project?.ProjectName?.Contains(
+                            search,
+                            StringComparison.OrdinalIgnoreCase) ?? false) ||
+
+                        (x.ProjectName?.Contains(
+                            search,
+                            StringComparison.OrdinalIgnoreCase) ?? false));
             }
 
             if (clientId.HasValue)
             {
-                filteredInvoices = filteredInvoices
-                    .Where(x => x.ClientId == clientId.Value);
+                filteredInvoices =
+                    filteredInvoices.Where(x =>
+                        x.ClientId == clientId.Value);
             }
 
             if (!string.IsNullOrWhiteSpace(invoiceStatus))
             {
-                filteredInvoices = filteredInvoices.Where(x =>
-                    string.Equals(
-                        x.InvoiceStatus,
-                        invoiceStatus,
-                        StringComparison.OrdinalIgnoreCase));
+                filteredInvoices =
+                    filteredInvoices.Where(x =>
+                        string.Equals(
+                            x.InvoiceStatus,
+                            invoiceStatus,
+                            StringComparison.OrdinalIgnoreCase));
             }
 
             if (!string.IsNullOrWhiteSpace(paymentStatus))
             {
-                filteredInvoices = filteredInvoices.Where(x =>
-                    string.Equals(
-                        x.PaymentStatus,
-                        paymentStatus,
-                        StringComparison.OrdinalIgnoreCase));
+                filteredInvoices =
+                    filteredInvoices.Where(x =>
+                        string.Equals(
+                            x.PaymentStatus,
+                            paymentStatus,
+                            StringComparison.OrdinalIgnoreCase));
             }
 
             var model = new InvoiceTrackerViewModel
@@ -81,36 +95,48 @@ namespace AryamanBMS.Controllers
                     .ThenByDescending(x => x.InvoiceId)
                     .ToList(),
 
-                Clients = await _invoiceRepository.GetClientsAsync(),
+                Clients =
+                    await _invoiceRepository.GetClientsAsync(),
 
-                TotalInvoices = activeInvoices.Count,
+                TotalInvoices =
+                    activeInvoices.Count,
 
-                DraftCount = activeInvoices.Count(x =>
-                    x.InvoiceStatus == "Draft"),
+                DraftCount =
+                    activeInvoices.Count(x =>
+                        x.InvoiceStatus == "Draft"),
 
-                IssuedCount = activeInvoices.Count(x =>
-                    x.InvoiceStatus == "Issued"),
+                IssuedCount =
+                    activeInvoices.Count(x =>
+                        x.InvoiceStatus == "Issued"),
 
-                CancelledCount = allInvoices.Count(x =>
-                    x.InvoiceStatus == "Cancelled" || x.IsDeleted),
+                CancelledCount =
+                    allInvoices.Count(x =>
+                        x.InvoiceStatus == "Cancelled" ||
+                        x.IsDeleted),
 
-                UnpaidCount = activeInvoices.Count(x =>
-                    x.PaymentStatus == "Unpaid"),
+                UnpaidCount =
+                    activeInvoices.Count(x =>
+                        x.PaymentStatus == "Unpaid"),
 
-                PartiallyPaidCount = activeInvoices.Count(x =>
-                    x.PaymentStatus == "Partially Paid"),
+                PartiallyPaidCount =
+                    activeInvoices.Count(x =>
+                        x.PaymentStatus == "Partially Paid"),
 
-                PaidCount = activeInvoices.Count(x =>
-                    x.PaymentStatus == "Paid"),
+                PaidCount =
+                    activeInvoices.Count(x =>
+                        x.PaymentStatus == "Paid"),
 
-                TotalInvoiceAmount = activeInvoices.Sum(x =>
-                    x.GrandTotal),
+                TotalInvoiceAmount =
+                    activeInvoices.Sum(x =>
+                        x.GrandTotal),
 
-                TotalReceivedAmount = activeInvoices.Sum(x =>
-                    x.PaidAmount),
+                TotalReceivedAmount =
+                    activeInvoices.Sum(x =>
+                        x.PaidAmount),
 
-                TotalOutstandingAmount = activeInvoices.Sum(x =>
-                    x.BalanceAmount)
+                TotalOutstandingAmount =
+                    activeInvoices.Sum(x =>
+                        x.BalanceAmount)
             };
 
             return View(model);
@@ -126,8 +152,13 @@ namespace AryamanBMS.Controllers
             var model = new InvoiceModel
             {
                 InvoiceDate = DateTime.Today,
-                InvoiceNo = await _invoiceRepository.GenerateInvoiceNoAsync(),
+
+                InvoiceNo =
+                    await _invoiceRepository
+                        .GenerateInvoiceNoAsync(),
+
                 InvoiceStatus = "Draft",
+                PaymentStatus = "Unpaid",
                 PaidAmount = 0
             };
 
@@ -138,23 +169,69 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(InvoiceModel model)
+        public async Task<IActionResult> Create(
+            InvoiceModel model,
+            IFormFile? Attachment)
         {
-            ModelState.Remove(nameof(model.InvoiceNo));
+            ModelState.Remove(
+                nameof(model.InvoiceNo));
 
             NormalizeInvoice(model);
+
+            ValidateInvoiceBusinessRules(model);
 
             await ValidateAndAssignProjectAsync(model);
 
             if (!ModelState.IsValid)
             {
                 await LoadDropdownsAsync();
+
                 return View(model);
             }
 
-            await _invoiceRepository.CreateWithSequenceAsync(model);
+            FileUploadResult? uploadedFile = null;
 
-            TempData["Success"] = "Invoice created successfully.";
+            if (Attachment != null)
+            {
+                uploadedFile =
+                    await _fileStorageService.UploadAsync(
+                        Attachment,
+                        "InvoiceDocuments");
+
+                if (!uploadedFile.Success)
+                {
+                    ModelState.AddModelError(
+                        nameof(Attachment),
+                        uploadedFile.ErrorMessage ??
+                        "Invoice attachment could not be uploaded.");
+
+                    await LoadDropdownsAsync();
+
+                    return View(model);
+                }
+
+                model.AttachmentPath =
+                    uploadedFile.RelativePath;
+            }
+
+            try
+            {
+                await _invoiceRepository
+                    .CreateWithSequenceAsync(model);
+            }
+            catch
+            {
+                if (uploadedFile != null)
+                {
+                    await _fileStorageService.DeleteAsync(
+                        uploadedFile.RelativePath);
+                }
+
+                throw;
+            }
+
+            TempData["Success"] =
+                "Invoice created successfully.";
 
             return RedirectToAction(nameof(Index));
         }
@@ -166,23 +243,29 @@ namespace AryamanBMS.Controllers
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            var invoice = await _invoiceRepository.GetByIdAsync(id);
+            var invoice =
+                await _invoiceRepository.GetByIdAsync(id);
+
+            if (invoice == null ||
+                invoice.IsDeleted)
+            {
+                return NotFound();
+            }
 
             if (invoice.InvoiceStatus == "Cancelled")
             {
-                TempData["Error"] = "Cancelled invoices cannot be edited.";
+                TempData["Error"] =
+                    "Cancelled invoices cannot be edited.";
+
                 return RedirectToAction(nameof(Index));
             }
 
             if (invoice.PaymentStatus == "Paid")
             {
-                TempData["Error"] = "Paid invoices cannot be edited.";
-                return RedirectToAction(nameof(Index));
-            }
+                TempData["Error"] =
+                    "Paid invoices cannot be edited.";
 
-            if (invoice == null || invoice.IsDeleted)
-            {
-                return NotFound();
+                return RedirectToAction(nameof(Index));
             }
 
             await LoadDropdownsAsync();
@@ -192,24 +275,18 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, InvoiceModel model)
+        public async Task<IActionResult> Edit(
+            int id,
+            InvoiceModel model,
+            IFormFile? Attachment)
         {
             if (id != model.InvoiceId)
+            {
                 return NotFound();
-
-            var existingInvoice = await _invoiceRepository.GetByIdAsync(id);
-
-            if (existingInvoice.InvoiceStatus == "Cancelled")
-            {
-                TempData["Error"] = "Cancelled invoices cannot be edited.";
-                return RedirectToAction(nameof(Index));
             }
 
-            if (existingInvoice.PaymentStatus == "Paid")
-            {
-                TempData["Error"] = "Paid invoices cannot be edited.";
-                return RedirectToAction(nameof(Index));
-            }
+            var existingInvoice =
+                await _invoiceRepository.GetByIdAsync(id);
 
             if (existingInvoice == null ||
                 existingInvoice.IsDeleted)
@@ -217,37 +294,150 @@ namespace AryamanBMS.Controllers
                 return NotFound();
             }
 
-            model.PaidAmount = existingInvoice.PaidAmount;
+            if (existingInvoice.InvoiceStatus ==
+                "Cancelled")
+            {
+                TempData["Error"] =
+                    "Cancelled invoices cannot be edited.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (existingInvoice.PaymentStatus ==
+                "Paid")
+            {
+                TempData["Error"] =
+                    "Paid invoices cannot be edited.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            model.InvoiceNo =
+                existingInvoice.InvoiceNo;
+
+            model.PaidAmount =
+                existingInvoice.PaidAmount;
+
+            model.PaymentStatus =
+                existingInvoice.PaymentStatus;
+
+            model.AttachmentPath =
+                existingInvoice.AttachmentPath;
+
+            if (existingInvoice.PaidAmount > 0)
+            {
+                model.ClientId =
+                    existingInvoice.ClientId;
+
+                model.ProjectId =
+                    existingInvoice.ProjectId;
+
+                model.ProjectName =
+                    existingInvoice.ProjectName;
+            }
 
             NormalizeInvoice(model);
+
+            ValidateInvoiceBusinessRules(model);
+
+            if (!IsAllowedInvoiceStatusTransition(
+                    existingInvoice.InvoiceStatus,
+                    model.InvoiceStatus))
+            {
+                ModelState.AddModelError(
+                    nameof(model.InvoiceStatus),
+                    $"Invoice status cannot change from " +
+                    $"{existingInvoice.InvoiceStatus} to " +
+                    $"{model.InvoiceStatus}.");
+            }
 
             await ValidateAndAssignProjectAsync(model);
 
             if (!ModelState.IsValid)
             {
                 await LoadDropdownsAsync();
+
                 return View(model);
             }
 
-            existingInvoice.ClientId = model.ClientId;
-            existingInvoice.ProjectId = model.ProjectId;
-            existingInvoice.ProjectName = model.ProjectName;
+            string? oldAttachmentPath =
+                existingInvoice.AttachmentPath;
 
-            existingInvoice.InvoiceNo = model.InvoiceNo;
-            existingInvoice.InvoiceDate = model.InvoiceDate;
-            existingInvoice.DueDate = model.DueDate;
+            FileUploadResult? uploadedFile = null;
 
-            existingInvoice.BillingAddress = model.BillingAddress;
-            existingInvoice.GSTNo = model.GSTNo;
-            existingInvoice.IsInterState = model.IsInterState;
-            existingInvoice.PaymentTerms = model.PaymentTerms;
-            existingInvoice.InvoiceStatus = model.InvoiceStatus;
-            existingInvoice.Remarks = model.Remarks;
+            if (Attachment != null)
+            {
+                uploadedFile =
+                    await _fileStorageService.UploadAsync(
+                        Attachment,
+                        "InvoiceDocuments");
 
-            existingInvoice.Discount = model.Discount;
-            existingInvoice.SubTotal = model.SubTotal;
-            existingInvoice.GSTAmount = model.GSTAmount;
-            existingInvoice.GrandTotal = model.GrandTotal;
+                if (!uploadedFile.Success)
+                {
+                    ModelState.AddModelError(
+                        nameof(Attachment),
+                        uploadedFile.ErrorMessage ??
+                        "Invoice attachment could not be uploaded.");
+
+                    await LoadDropdownsAsync();
+
+                    return View(model);
+                }
+
+                existingInvoice.AttachmentPath =
+                    uploadedFile.RelativePath;
+            }
+
+            existingInvoice.ClientId =
+                model.ClientId;
+
+            existingInvoice.ProjectId =
+                model.ProjectId;
+
+            existingInvoice.ProjectName =
+                model.ProjectName;
+
+            existingInvoice.InvoiceDate =
+                model.InvoiceDate;
+
+            existingInvoice.DueDate =
+                model.DueDate;
+
+            existingInvoice.BillingAddress =
+                model.BillingAddress;
+
+            existingInvoice.GSTNo =
+                model.GSTNo;
+
+            existingInvoice.IsInterState =
+                model.IsInterState;
+
+            existingInvoice.PaymentTerms =
+                model.PaymentTerms;
+
+            existingInvoice.InvoiceStatus =
+                model.InvoiceStatus;
+
+            existingInvoice.Remarks =
+                model.Remarks;
+
+            existingInvoice.Discount =
+                model.Discount;
+
+            existingInvoice.SubTotal =
+                model.SubTotal;
+
+            existingInvoice.GSTAmount =
+                model.GSTAmount;
+
+            existingInvoice.GrandTotal =
+                model.GrandTotal;
+
+            existingInvoice.BalanceAmount =
+                Math.Max(
+                    0,
+                    model.GrandTotal -
+                    existingInvoice.PaidAmount);
 
             existingInvoice.InvoiceDetails.Clear();
 
@@ -256,20 +446,61 @@ namespace AryamanBMS.Controllers
                 existingInvoice.InvoiceDetails.Add(
                     new InvoiceDetailsModel
                     {
-                        ItemName = detail.ItemName,
-                        Description = detail.Description,
-                        Qty = detail.Qty,
-                        Unit = detail.Unit,
-                        Rate = detail.Rate,
-                        GSTPercent = detail.GSTPercent,
-                        GSTAmount = detail.GSTAmount,
-                        Amount = detail.Amount,
-                        SortOrder = detail.SortOrder
+                        ItemName =
+                            detail.ItemName,
+
+                        Description =
+                            detail.Description,
+
+                        Qty =
+                            detail.Qty,
+
+                        Unit =
+                            detail.Unit,
+
+                        Rate =
+                            detail.Rate,
+
+                        GSTPercent =
+                            detail.GSTPercent,
+
+                        GSTAmount =
+                            detail.GSTAmount,
+
+                        Amount =
+                            detail.Amount,
+
+                        SortOrder =
+                            detail.SortOrder
                     });
             }
 
-            await _invoiceRepository.UpdateAsync(existingInvoice);
-            await _invoiceRepository.SaveAsync();
+            try
+            {
+                await _invoiceRepository
+                    .UpdateAsync(existingInvoice);
+
+                await _invoiceRepository
+                    .SaveAsync();
+            }
+            catch
+            {
+                if (uploadedFile != null)
+                {
+                    await _fileStorageService.DeleteAsync(
+                        uploadedFile.RelativePath);
+                }
+
+                throw;
+            }
+
+            if (uploadedFile != null &&
+                !string.IsNullOrWhiteSpace(
+                    oldAttachmentPath))
+            {
+                await _fileStorageService.DeleteAsync(
+                    oldAttachmentPath);
+            }
 
             TempData["Success"] =
                 "Invoice updated successfully.";
@@ -281,16 +512,84 @@ namespace AryamanBMS.Controllers
 
         #region Details
 
+        [HttpGet]
         public async Task<IActionResult> Details(int id)
         {
-            var invoice = await _invoiceRepository.GetByIdAsync(id);
+            var invoice =
+                await _invoiceRepository.GetByIdAsync(id);
 
-            if (invoice == null || invoice.IsDeleted)
+            if (invoice == null ||
+                invoice.IsDeleted)
             {
                 return NotFound();
             }
 
             return View(invoice);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DownloadAttachment(
+            int id)
+        {
+            var invoice =
+                await _invoiceRepository.GetByIdAsync(id);
+
+            if (invoice == null ||
+                invoice.IsDeleted ||
+                string.IsNullOrWhiteSpace(
+                    invoice.AttachmentPath))
+            {
+                return NotFound();
+            }
+
+            byte[]? fileBytes =
+                await _fileStorageService.DownloadAsync(
+                    invoice.AttachmentPath);
+
+            if (fileBytes == null)
+            {
+                return NotFound();
+            }
+
+            string fileName =
+                Path.GetFileName(
+                    invoice.AttachmentPath);
+
+            string extension =
+                Path.GetExtension(fileName)
+                    .ToLowerInvariant();
+
+            string contentType = extension switch
+            {
+                ".pdf" =>
+                    "application/pdf",
+
+                ".doc" =>
+                    "application/msword",
+
+                ".docx" =>
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+
+                ".xls" =>
+                    "application/vnd.ms-excel",
+
+                ".xlsx" =>
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+
+                ".jpg" or ".jpeg" =>
+                    "image/jpeg",
+
+                ".png" =>
+                    "image/png",
+
+                _ =>
+                    "application/octet-stream"
+            };
+
+            return File(
+                fileBytes,
+                contentType,
+                fileName);
         }
 
         #endregion
@@ -300,9 +599,11 @@ namespace AryamanBMS.Controllers
         [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {
-            var invoice = await _invoiceRepository.GetByIdAsync(id);
+            var invoice =
+                await _invoiceRepository.GetByIdAsync(id);
 
-            if (invoice == null || invoice.IsDeleted)
+            if (invoice == null ||
+                invoice.IsDeleted)
             {
                 return NotFound();
             }
@@ -312,11 +613,14 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(
+            int id)
         {
-            var invoice = await _invoiceRepository.GetByIdAsync(id);
+            var invoice =
+                await _invoiceRepository.GetByIdAsync(id);
 
-            if (invoice == null || invoice.IsDeleted)
+            if (invoice == null ||
+                invoice.IsDeleted)
             {
                 return NotFound();
             }
@@ -329,7 +633,8 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            if (invoice.InvoiceStatus == "Cancelled")
+            if (invoice.InvoiceStatus ==
+                "Cancelled")
             {
                 TempData["Error"] =
                     "Invoice is already cancelled.";
@@ -337,50 +642,183 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            await _invoiceRepository.DeleteAsync(invoice);
-            await _invoiceRepository.SaveAsync();
+            await _invoiceRepository
+                .DeleteAsync(invoice);
 
-            TempData["Success"] = "Invoice cancelled successfully.";
+            await _invoiceRepository
+                .SaveAsync();
+
+            TempData["Success"] =
+                "Invoice cancelled successfully.";
+
             return RedirectToAction(nameof(Index));
         }
 
         #endregion
 
         #region Print
+
+        [HttpGet]
         public async Task<IActionResult> Print(int id)
         {
-            var invoice = await _invoiceRepository.GetByIdAsync(id);
+            var invoice =
+                await _invoiceRepository.GetByIdAsync(id);
 
-            if (invoice == null || invoice.IsDeleted)
+            if (invoice == null ||
+                invoice.IsDeleted)
             {
                 return NotFound();
             }
 
             return View(invoice);
         }
+
         #endregion
 
         #region Helpers
-        private async Task LoadDropdownsAsync()
+
+        private static bool IsAllowedInvoiceStatusTransition(
+            string currentStatus,
+            string newStatus)
         {
-            ViewBag.Clients = await _invoiceRepository.GetClientsAsync();
-            ViewBag.Projects = await _invoiceRepository.GetProjectsAsync();
+            if (string.Equals(
+                    currentStatus,
+                    newStatus,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return currentStatus switch
+            {
+                "Draft" =>
+                    newStatus is
+                        "Issued" or
+                        "Cancelled",
+
+                "Issued" =>
+                    newStatus is
+                        "Cancelled",
+
+                "Cancelled" =>
+                    false,
+
+                _ =>
+                    false
+            };
         }
 
-        private async Task<bool> ValidateAndAssignProjectAsync(
-    InvoiceModel model)
+        private void ValidateInvoiceBusinessRules(
+            InvoiceModel model)
+        {
+            if (model.DueDate.HasValue &&
+                model.DueDate.Value.Date <
+                model.InvoiceDate.Date)
+            {
+                ModelState.AddModelError(
+                    nameof(model.DueDate),
+                    "Due date cannot be before invoice date.");
+            }
+
+            if (model.InvoiceDetails == null ||
+                model.InvoiceDetails.Count == 0)
+            {
+                ModelState.AddModelError(
+                    nameof(model.InvoiceDetails),
+                    "At least one valid invoice item is required.");
+
+                return;
+            }
+
+            for (int index = 0;
+                 index < model.InvoiceDetails.Count;
+                 index++)
+            {
+                // Convert ICollection to IList for indexing
+                var detail = model.InvoiceDetails.ElementAt(index);
+
+                if (string.IsNullOrWhiteSpace(detail.ItemName))
+                {
+                    ModelState.AddModelError(
+                        $"InvoiceDetails[{index}].ItemName",
+                        "Item name is required.");
+                }
+
+                if (detail.Qty <= 0)
+                {
+                    ModelState.AddModelError(
+                        $"InvoiceDetails[{index}].Qty",
+                        "Quantity must be greater than zero.");
+                }
+
+                if (detail.Rate < 0)
+                {
+                    ModelState.AddModelError(
+                        $"InvoiceDetails[{index}].Rate",
+                        "Rate cannot be negative.");
+                }
+
+                if (detail.GSTPercent < 0 ||
+                    detail.GSTPercent > 100)
+                {
+                    ModelState.AddModelError(
+                        $"InvoiceDetails[{index}].GSTPercent",
+                        "GST percentage must be between 0 and 100.");
+                }
+            }
+
+            if (model.Discount < 0)
+            {
+                ModelState.AddModelError(
+                    nameof(model.Discount),
+                    "Discount cannot be negative.");
+            }
+
+            if (model.Discount > model.SubTotal)
+            {
+                ModelState.AddModelError(
+                    nameof(model.Discount),
+                    "Discount cannot exceed the subtotal.");
+            }
+
+            if (model.InvoiceStatus != "Draft" &&
+                model.InvoiceStatus != "Issued")
+            {
+                ModelState.AddModelError(
+                    nameof(model.InvoiceStatus),
+                    "Invoice status must be Draft or Issued.");
+            }
+        }
+
+        private async Task LoadDropdownsAsync()
+        {
+            ViewBag.Clients =
+                await _invoiceRepository
+                    .GetClientsAsync();
+
+            ViewBag.Projects =
+                await _invoiceRepository
+                    .GetProjectsAsync();
+        }
+
+        private async Task<bool>
+            ValidateAndAssignProjectAsync(
+                InvoiceModel model)
         {
             if (!model.ProjectId.HasValue)
             {
                 model.ProjectName = null;
+
                 return true;
             }
 
             var projects =
-                await _invoiceRepository.GetProjectsAsync();
+                await _invoiceRepository
+                    .GetProjectsAsync();
 
-            var project = projects.FirstOrDefault(x =>
-                x.Id == model.ProjectId.Value);
+            var project =
+                projects.FirstOrDefault(x =>
+                    x.Id == model.ProjectId.Value);
 
             if (project == null)
             {
@@ -391,35 +829,62 @@ namespace AryamanBMS.Controllers
                 return false;
             }
 
-            model.ProjectName = project.ProjectName;
+            model.ProjectName =
+                project.ProjectName;
 
             return true;
         }
 
-        private static void NormalizeInvoice(InvoiceModel model)
+        private static void NormalizeInvoice(
+            InvoiceModel model)
         {
-            model.InvoiceDetails = model.InvoiceDetails
-                .Where(x =>
-                    !string.IsNullOrWhiteSpace(x.ItemName) ||
-                    x.Qty > 0 ||
-                    x.Rate > 0)
-                .ToList();
+            model.InvoiceDetails ??=
+                new List<InvoiceDetailsModel>();
+
+            model.InvoiceDetails =
+                model.InvoiceDetails
+                    .Where(x =>
+                        !string.IsNullOrWhiteSpace(
+                            x.ItemName) ||
+                        x.Qty > 0 ||
+                        x.Rate > 0)
+                    .ToList();
 
             decimal subTotal = 0;
             decimal gstTotal = 0;
-
             int sortOrder = 1;
 
-            foreach (var item in model.InvoiceDetails)
+            foreach (var item in
+                     model.InvoiceDetails)
             {
-                item.SortOrder = sortOrder++;
+                item.ItemName =
+                    item.ItemName?.Trim();
 
-                decimal taxableAmount = item.Qty * item.Rate;
-                item.GSTAmount = taxableAmount * item.GSTPercent / 100;
-                item.Amount = taxableAmount + item.GSTAmount;
+                item.Description =
+                    item.Description?.Trim();
 
-                subTotal += taxableAmount;
-                gstTotal += item.GSTAmount;
+                item.Unit =
+                    item.Unit?.Trim();
+
+                item.SortOrder =
+                    sortOrder++;
+
+                decimal taxableAmount =
+                    item.Qty * item.Rate;
+
+                item.GSTAmount =
+                    taxableAmount *
+                    item.GSTPercent / 100;
+
+                item.Amount =
+                    taxableAmount +
+                    item.GSTAmount;
+
+                subTotal +=
+                    taxableAmount;
+
+                gstTotal +=
+                    item.GSTAmount;
             }
 
             if (model.Discount < 0)
@@ -432,16 +897,29 @@ namespace AryamanBMS.Controllers
                 model.PaidAmount = 0;
             }
 
-            model.SubTotal = subTotal;
-            model.GSTAmount = gstTotal;
-            model.GrandTotal = subTotal - model.Discount + gstTotal;
+            model.SubTotal =
+                subTotal;
 
-            if (model.PaidAmount > model.GrandTotal)
+            model.GSTAmount =
+                gstTotal;
+
+            model.GrandTotal =
+                subTotal -
+                model.Discount +
+                gstTotal;
+
+            if (model.PaidAmount >
+                model.GrandTotal)
             {
-                model.PaidAmount = model.GrandTotal;
+                model.PaidAmount =
+                    model.GrandTotal;
             }
 
-            model.BalanceAmount = model.GrandTotal - model.PaidAmount;
+            model.BalanceAmount =
+                Math.Max(
+                    0,
+                    model.GrandTotal -
+                    model.PaidAmount);
         }
 
         #endregion
