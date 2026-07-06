@@ -30,5 +30,11 @@ namespace AryamanBMS.ViewModels
                 new SelectListItem("Rejected", "Rejected"),
                 new SelectListItem("Expired", "Expired")
             };
+
+        public IEnumerable<SelectListItem> ProposalTemplates
+        {
+            get;
+            set;
+        } = Enumerable.Empty<SelectListItem>();
     }
 }

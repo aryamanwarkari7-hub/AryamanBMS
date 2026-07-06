@@ -227,31 +227,33 @@
     </div>
 
     <div class="card-body">
+        <div class="table-actions">
 
-        <a asp-controller="Proposal"
-           asp-action="Index"
-           asp-route-clientId="@Model.ClientId"
-           class="btn-app btn-primary-app">
-            <i class="bi bi-file-earmark-text-contract"></i>
-            View Proposals
-        </a>
+            <a asp-controller="Proposal"
+               asp-action="Index"
+               asp-route-clientId="@Model.ClientId"
+               class="btn-app btn-secondary-app">
+                <i class="bi bi-eye-fill"></i>
+                View Proposals
+            </a>
 
-        <a asp-controller="Proposal"
-           asp-action="Create"
-           asp-route-clientId="@Model.ClientId"
-           class="btn-app btn-primary-app">
-            <i class="bi bi-plus-circle"></i>
-            New Proposal
-        </a>
+            <a asp-controller="Proposal"
+               asp-action="Create"
+               asp-route-clientId="@Model.ClientId"
+               class="btn-app btn-primary-app">
+                <i class="bi bi-plus-circle"></i>
+                New Proposal
+            </a>
 
-        <a asp-controller="PurchaseOrder"
-           asp-action="Index"
-           asp-route-clientId="@Model.ClientId"
-           class="btn-app btn-secondary-app">
-            <i class="bi bi-file-earmark-text-invoice"></i>
-            View PO / WO
-        </a>
+            <a asp-controller="PurchaseOrder"
+               asp-action="Index"
+               asp-route-clientId="@Model.ClientId"
+               class="btn-app btn-secondary-app">
+                <i class="bi bi-file-earmark-text"></i>
+                View PO / WO
+            </a>
 
+        </div>
     </div>
 
 

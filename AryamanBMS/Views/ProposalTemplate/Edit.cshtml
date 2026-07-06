@@ -1,0 +1,194 @@
+﻿@model AryamanBMS.ViewModels.ProposalTemplateEditViewModel
+
+@{
+    ViewData["Title"] = "Edit Proposal Template";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">
+            Edit Proposal Template
+        </h1>
+
+        <p class="module-subtitle">
+            Update template name, version and availability
+        </p>
+    </div>
+
+    <a asp-action="Details"
+       asp-route-id="@Model.ProposalTemplateId"
+       class="btn-app btn-secondary-app">
+
+        <i class="bi bi-arrow-left"></i>
+        Back
+
+    </a>
+
+</div>
+
+<form asp-action="Edit"
+      method="post">
+
+    @Html.AntiForgeryToken()
+
+    <input asp-for="ProposalTemplateId"
+           type="hidden" />
+
+    <input asp-for="CanEditVersion"
+           type="hidden" />
+
+    <input asp-for="OriginalFileName"
+           type="hidden" />
+
+    <div asp-validation-summary="ModelOnly"
+         class="app-alert-danger">
+    </div>
+
+    <div class="app-card">
+
+        <div class="card-header">
+            <h5 class="card-title">
+                Template Information
+            </h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+
+                    <label asp-for="TemplateName"
+                           class="form-label">
+                        Template Name
+                    </label>
+
+                    <input asp-for="TemplateName"
+                           class="app-input" />
+
+                    <span asp-validation-for="TemplateName"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="VersionNumber"
+                           class="form-label">
+                        Version Number
+                    </label>
+
+                    @if (Model.CanEditVersion)
+                    {
+                        <input asp-for="VersionNumber"
+                               class="app-input"
+                               type="number"
+                               min="1" />
+                    }
+                    else
+                    {
+                        <input asp-for="VersionNumber"
+                               class="app-input"
+                               readonly />
+
+                        <small class="form-text">
+                            Version cannot be changed because this
+                            template has already generated proposals.
+                        </small>
+                    }
+
+                    <span asp-validation-for="VersionNumber"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        File
+                    </label>
+
+                    <input value="@Model.OriginalFileName"
+                           class="app-input"
+                           readonly />
+
+                </div>
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Availability
+                    </label>
+
+                    <div class="form-check mt-2">
+
+                        <input asp-for="IsActive"
+                               class="form-check-input" />
+
+                        <label asp-for="IsActive"
+                               class="form-check-label">
+
+                            Available for new proposals
+
+                        </label>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="form-group mt-3">
+
+                <label asp-for="Remarks"
+                       class="form-label">
+                    Remarks
+                </label>
+
+                <textarea asp-for="Remarks"
+                          class="app-textarea"
+                          rows="4"></textarea>
+
+                <span asp-validation-for="Remarks"
+                      class="validation-message">
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="app-card">
+
+        <div class="card-body form-actions">
+
+            <button type="submit"
+                    class="btn-app btn-primary-app">
+
+                <i class="bi bi-check-lg"></i>
+                Save Changes
+
+            </button>
+
+            <a asp-action="Details"
+               asp-route-id="@Model.ProposalTemplateId"
+               class="btn-app btn-secondary-app">
+
+                Cancel
+
+            </a>
+
+        </div>
+
+    </div>
+
+</form>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

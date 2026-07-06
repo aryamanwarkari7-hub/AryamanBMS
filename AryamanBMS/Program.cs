@@ -106,6 +106,7 @@ builder.Services.AddScoped<IPfRepository, PfRepository>();
 builder.Services.AddScoped<IEsicRepository, EsicRepository>();
 builder.Services.AddScoped<IPtRepository, PtRepository>();
 builder.Services.AddScoped<INoticeRepository, NoticeRepository>();
+builder.Services.AddScoped<IProposalTemplateRepository,ProposalTemplateRepository>();
 
 // SALARY SERVICE
 builder.Services.AddScoped<ISalaryExcelImportService, SalaryExcelImportService>();
@@ -127,6 +128,9 @@ builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 builder.Services.AddScoped<IFinancialYearService, FinancialYearService>();
 builder.Services.AddScoped<IGstCalculationService, GstCalculationService>();
 builder.Services.AddScoped<IGstDashboardService, GstDashboardService>();
+
+// PROPOSAL SERVICE
+builder.Services.AddScoped< IProposalDocumentService,ProposalDocumentService>();
 
 var app = builder.Build();
 

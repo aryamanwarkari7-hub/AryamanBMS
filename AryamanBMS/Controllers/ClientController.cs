@@ -11,10 +11,14 @@ namespace AryamanBMS.Controllers
     public class ClientController : Controller
     {
         private readonly IClientRepository _repository;
+        private readonly ILocationRepository _locationRepository;
 
-        public ClientController(IClientRepository repository)
+        public ClientController(
+           IClientRepository repository,
+           ILocationRepository locationRepository)
         {
             _repository = repository;
+            _locationRepository = locationRepository;
         }
 
         #region Index
@@ -29,8 +33,10 @@ namespace AryamanBMS.Controllers
 
         #region Create
 
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
+            await LoadLocationDropdownsAsync();
+
             return View(new ClientViewModel());
         }
 
@@ -39,7 +45,10 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> Create(ClientViewModel vm)
         {
             if (!ModelState.IsValid)
+            {
+                await LoadLocationDropdownsAsync();
                 return View(vm);
+            }
 
             vm.Client.ClientCode  = await GenerateClientCodeAsync();
             vm.Client.CreatedOn   = DateTime.Now;
@@ -59,9 +68,16 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> Edit(int id)
         {
             var client = await _repository.GetByIdAsync(id);
-            if (client == null) return NotFound();
 
-            return View(new ClientViewModel { Client = client });
+            if (client == null)
+                return NotFound();
+
+            await LoadLocationDropdownsAsync();
+
+            return View(new ClientViewModel
+            {
+                Client = client
+            });
         }
 
         [HttpPost]
@@ -71,7 +87,10 @@ namespace AryamanBMS.Controllers
             if (id != vm.Client.ClientId) return NotFound();
 
             if (!ModelState.IsValid)
+            {
+                await LoadLocationDropdownsAsync();
                 return View(vm);
+            }
 
             var existing = await _repository.GetByIdAsync(id);
             if (existing == null) return NotFound();
@@ -207,6 +226,11 @@ namespace AryamanBMS.Controllers
             return $"CLT-{(lastNumber + 1):D4}";
         }
 
+        private async Task LoadLocationDropdownsAsync()
+        {
+            ViewBag.States =
+                await _locationRepository.GetActiveStatesAsync();
+        }
         #endregion
     }
 }

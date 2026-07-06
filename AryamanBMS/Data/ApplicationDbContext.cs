@@ -71,6 +71,10 @@ namespace AryamanBMS.Data
 
         public DbSet<ClientModel> Clients { get; set; }
         public DbSet<ProposalModel> Proposals { get; set; }
+        public DbSet<ProposalTemplateModel>ProposalTemplates
+        { get; set; }
+        public DbSet<ProposalDocumentVersionModel>ProposalDocumentVersions
+        { get; set; }
         public DbSet<PurchaseOrderModel> PurchaseOrders { get; set; }
 
         public DbSet<InvoiceModel> Invoices { get; set; }
@@ -537,6 +541,43 @@ namespace AryamanBMS.Data
                 .WithMany()
                 .HasForeignKey(x => x.ProjectId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<ProposalTemplateModel>()
+                 .HasKey(x => x.ProposalTemplateId);
+
+            modelBuilder.Entity<ProposalDocumentVersionModel>()
+                .HasKey(x => x.ProposalDocumentVersionId);
+            modelBuilder.Entity<ProposalTemplateModel>()
+                .ToTable("TableProposalTemplate");
+
+            modelBuilder.Entity<ProposalDocumentVersionModel>()
+                .ToTable("TableProposalDocumentVersion");
+
+            modelBuilder.Entity<ProposalTemplateModel>()
+                .HasIndex(x => new
+                {
+                    x.TemplateName,
+                    x.VersionNumber
+                })
+                .IsUnique();
+
+            modelBuilder.Entity<ProposalDocumentVersionModel>()
+                .HasOne(x => x.Proposal)
+                .WithMany(x => x.DocumentVersions)
+                .HasForeignKey(x => x.ProposalId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ProposalDocumentVersionModel>()
+                .HasOne(x => x.ProposalTemplate)
+                .WithMany(x => x.ProposalDocuments)
+                .HasForeignKey(x => x.ProposalTemplateId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ProposalModel>()
+                .HasOne(x => x.ProposalTemplate)
+                .WithMany()
+                .HasForeignKey(x => x.ProposalTemplateId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<PurchaseOrderModel>().ToTable("tablepurchaseorder");
             modelBuilder.Entity<PurchaseOrderModel>()

@@ -192,6 +192,28 @@
 -- ADD COLUMN CancelledByUserId VARCHAR(450) NULL AFTER CancellationReason,
 -- ADD COLUMN CancelledOn DATETIME NULL AFTER CancelledByUserId;
 
-ALTER TABLE `TableEmployeeSalaryStructure`
-    ADD COLUMN `EffectiveTo` DATE NULL AFTER `EffectiveFrom`;
+-- ALTER TABLE `TableEmployeeSalaryStructure`
+--     ADD COLUMN `EffectiveTo` DATE NULL AFTER `EffectiveFrom`;
+
+-- ALTER TABLE TableProposal
+-- ADD COLUMN ProposalTemplateId INT NULL;
+
+-- ALTER TABLE TableProposal
+-- ADD COLUMN RevisionNumber VARCHAR(10) NOT NULL DEFAULT '00',
+-- ADD COLUMN PreparedBy VARCHAR(150) NOT NULL DEFAULT '',
+-- ADD COLUMN PreparedByDesignation VARCHAR(150) NULL,
+-- ADD COLUMN ProblemStatement TEXT NULL,
+-- ADD COLUMN Timeline VARCHAR(250) NULL,
+-- ADD COLUMN TechnicalSolution TEXT NULL,
+-- ADD COLUMN OutOfScope TEXT NULL,
+-- ADD COLUMN CustomerResponsibilities TEXT NULL,
+-- ADD COLUMN Deliverables TEXT NULL,
+-- ADD COLUMN Dependencies TEXT NULL,
+-- ADD COLUMN Assumptions TEXT NULL,
+-- ADD COLUMN Risks TEXT NULL,
+-- ADD COLUMN Warranty TEXT NULL,
+-- ADD COLUMN CommercialDescription TEXT NULL,
+-- ADD COLUMN PaymentTerms TEXT NULL;
+
+
 

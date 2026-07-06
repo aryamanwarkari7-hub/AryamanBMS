@@ -27,7 +27,7 @@
                       class="validation-message"></span>
             </div>
 
-            <div class="form-group">
+            @* <div class="form-group">
                 <label asp-for="Proposal.ProjectId" class="form-label">
                     Linked Project
                 </label>
@@ -40,7 +40,7 @@
 
                 <span asp-validation-for="Proposal.ProjectId"
                       class="validation-message"></span>
-            </div>
+            </div> *@
 
         </div>
 
@@ -59,6 +59,27 @@
         <div class="form-grid-2">
 
             <div class="form-group">
+                <label asp-for="Proposal.ProposalTemplateId"
+                       class="form-label">
+                    Proposal Template
+                </label>
+
+                <select asp-for="Proposal.ProposalTemplateId"
+                        asp-items="Model.ProposalTemplates"
+                        class="app-select">
+
+                    <option value="">
+                        Select proposal template
+                    </option>
+
+                </select>
+
+                <span asp-validation-for="Proposal.ProposalTemplateId"
+                      class="validation-message">
+                </span>
+            </div>
+
+            <div class="form-group">
                 <label asp-for="Proposal.ProposalTitle" class="form-label">
                     Proposal Title
                 </label>
@@ -71,17 +92,58 @@
             </div>
 
             <div class="form-group">
-                <label asp-for="Proposal.Status" class="form-label">
+                <label asp-for="Proposal.Status"
+                       class="form-label">
                     Status
                 </label>
 
-                <select asp-for="Proposal.Status"
-                        asp-items="Model.Statuses"
-                        class="app-select">
-                </select>
+                @if (Model.Proposal.ProposalId == 0)
+                {
+                    <div>
+                        <span class="badge-secondary">
+                            Draft
+                        </span>
+                    </div>
+                }
+                else
+                {
+                    <select asp-for="Proposal.Status"
+                            class="app-select">
 
-                <span asp-validation-for="Proposal.Status"
-                      class="validation-message"></span>
+                        @if (Model.Proposal.Status == "Draft")
+                        {
+                            <option value="Draft">Draft</option>
+                            <option value="Sent">Sent</option>
+                            <option value="Rejected">Rejected</option>
+                        }
+                        else if (Model.Proposal.Status == "Sent")
+                        {
+                            <option value="Sent">Sent</option>
+                            <option value="UnderReview">Under Review</option>
+                            <option value="Accepted">Accepted</option>
+                            <option value="Rejected">Rejected</option>
+                            <option value="Expired">Expired</option>
+                        }
+                        else if (Model.Proposal.Status == "UnderReview")
+                        {
+                            <option value="UnderReview">Under Review</option>
+                            <option value="Accepted">Accepted</option>
+                            <option value="Rejected">Rejected</option>
+                            <option value="Expired">Expired</option>
+                        }
+                        else
+                        {
+                            <option value="@Model.Proposal.Status">
+                                @Model.Proposal.Status
+                            </option>
+                        }
+
+                    </select>
+
+                    <span asp-validation-for="Proposal.Status"
+                          class="validation-message"></span>
+                }
+
             </div>
 
             <div class="form-group">
@@ -94,6 +156,62 @@
                        class="app-input" />
 
                 <span asp-validation-for="Proposal.ProposalDate"
+                      class="validation-message"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Proposal.RevisionNumber"
+                       class="form-label">
+                    Revision Number
+                </label>
+
+                <input asp-for="Proposal.RevisionNumber"
+                       class="app-input"
+                       placeholder="00" />
+
+                <span asp-validation-for="Proposal.RevisionNumber"
+                      class="validation-message"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Proposal.PreparedBy"
+                       class="form-label">
+                    Prepared By
+                </label>
+
+                <input asp-for="Proposal.PreparedBy"
+                       class="app-input"
+                       placeholder="Employee or authorized person name" />
+
+                <span asp-validation-for="Proposal.PreparedBy"
+                      class="validation-message"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Proposal.PreparedByDesignation"
+                       class="form-label">
+                    Prepared By Designation
+                </label>
+
+                <input asp-for="Proposal.PreparedByDesignation"
+                       class="app-input"
+                       placeholder="Technical Head / Manager" />
+
+                <span asp-validation-for="Proposal.PreparedByDesignation"
+                      class="validation-message"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Proposal.Timeline"
+                       class="form-label">
+                    Estimated Timeline
+                </label>
+
+                <input asp-for="Proposal.Timeline"
+                       class="app-input"
+                       placeholder="Example: 2 working months" />
+
+                <span asp-validation-for="Proposal.Timeline"
                       class="validation-message"></span>
             </div>
 
@@ -150,7 +268,51 @@
 <div class="app-card">
 
     <div class="card-header">
-        <h5 class="card-title">Scope & Terms</h5>
+        <h5 class="card-title">
+            Technical Proposal
+        </h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-group">
+            <label asp-for="Proposal.ProblemStatement"
+                   class="form-label">
+                Problem Statement
+            </label>
+
+            <textarea asp-for="Proposal.ProblemStatement"
+                      class="app-textarea"
+                      rows="5"></textarea>
+
+            <span asp-validation-for="Proposal.ProblemStatement"
+                  class="validation-message"></span>
+        </div>
+
+        <div class="form-group mt-3">
+            <label asp-for="Proposal.TechnicalSolution"
+                   class="form-label">
+                Technical Solution
+            </label>
+
+            <textarea asp-for="Proposal.TechnicalSolution"
+                      class="app-textarea"
+                      rows="5"></textarea>
+
+            <span asp-validation-for="Proposal.TechnicalSolution"
+                  class="validation-message"></span>
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">
+            Scope and Responsibilities
+        </h5>
     </div>
 
     <div class="card-body">
@@ -158,40 +320,177 @@
         <div class="form-grid-2">
 
             <div class="form-group">
-                <label asp-for="Proposal.Scope" class="form-label">
+                <label asp-for="Proposal.Scope"
+                       class="form-label">
                     Scope of Work
                 </label>
 
                 <textarea asp-for="Proposal.Scope"
-                          class="app-textarea"></textarea>
+                          class="app-textarea"
+                          rows="8"></textarea>
 
                 <span asp-validation-for="Proposal.Scope"
                       class="validation-message"></span>
             </div>
 
             <div class="form-group">
-                <label asp-for="Proposal.Terms" class="form-label">
-                    Terms & Conditions
+                <label asp-for="Proposal.OutOfScope"
+                       class="form-label">
+                    Out of Scope
                 </label>
 
-                <textarea asp-for="Proposal.Terms"
-                          class="app-textarea"></textarea>
+                <textarea asp-for="Proposal.OutOfScope"
+                          class="app-textarea"
+                          rows="8"></textarea>
 
-                <span asp-validation-for="Proposal.Terms"
+                <span asp-validation-for="Proposal.OutOfScope"
+                      class="validation-message"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Proposal.CustomerResponsibilities"
+                       class="form-label">
+                    Customer Responsibilities
+                </label>
+
+                <textarea asp-for="Proposal.CustomerResponsibilities"
+                          class="app-textarea"
+                          rows="6"></textarea>
+
+                <span asp-validation-for="Proposal.CustomerResponsibilities"
+                      class="validation-message"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Proposal.Deliverables"
+                       class="form-label">
+                    Deliverables
+                </label>
+
+                <textarea asp-for="Proposal.Deliverables"
+                          class="app-textarea"
+                          rows="6"></textarea>
+
+                <span asp-validation-for="Proposal.Deliverables"
                       class="validation-message"></span>
             </div>
 
         </div>
 
-        <div class="form-group mt-3">
-            <label asp-for="Proposal.Remarks" class="form-label">
-                Remarks
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">
+            Dependencies, Assumptions and Risks
+        </h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-grid-2">
+
+            <div class="form-group">
+                <label asp-for="Proposal.Dependencies"
+                       class="form-label">
+                    Dependencies
+                </label>
+
+                <textarea asp-for="Proposal.Dependencies"
+                          class="app-textarea"
+                          rows="6"></textarea>
+
+                <span asp-validation-for="Proposal.Dependencies"
+                      class="validation-message"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Proposal.Assumptions"
+                       class="form-label">
+                    Assumptions
+                </label>
+
+                <textarea asp-for="Proposal.Assumptions"
+                          class="app-textarea"
+                          rows="6"></textarea>
+
+                <span asp-validation-for="Proposal.Assumptions"
+                      class="validation-message"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Proposal.Risks"
+                       class="form-label">
+                    Risks
+                </label>
+
+                <textarea asp-for="Proposal.Risks"
+                          class="app-textarea"
+                          rows="6"></textarea>
+
+                <span asp-validation-for="Proposal.Risks"
+                      class="validation-message"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Proposal.Warranty"
+                       class="form-label">
+                    Warranty
+                </label>
+
+                <textarea asp-for="Proposal.Warranty"
+                          class="app-textarea"
+                          rows="6"></textarea>
+
+                <span asp-validation-for="Proposal.Warranty"
+                      class="validation-message"></span>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">
+            Commercial Details
+        </h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="form-group">
+            <label asp-for="Proposal.CommercialDescription"
+                   class="form-label">
+                Commercial Deliverable Description
             </label>
 
-            <textarea asp-for="Proposal.Remarks"
-                      class="app-textarea"></textarea>
+            <textarea asp-for="Proposal.CommercialDescription"
+                      class="app-textarea"
+                      rows="5"></textarea>
 
-            <span asp-validation-for="Proposal.Remarks"
+            <span asp-validation-for="Proposal.CommercialDescription"
+                  class="validation-message"></span>
+        </div>
+
+        <div class="form-group mt-3">
+            <label asp-for="Proposal.PaymentTerms"
+                   class="form-label">
+                Terms and Mode of Payment
+            </label>
+
+            <textarea asp-for="Proposal.PaymentTerms"
+                      class="app-textarea"
+                      rows="7"
+                      placeholder="Example: 40% advance, 30% after milestone..."></textarea>
+
+            <span asp-validation-for="Proposal.PaymentTerms"
                   class="validation-message"></span>
         </div>
 
@@ -213,26 +512,36 @@
             </label>
 
             <input asp-for="UploadFile"
+                   type="file"
                    class="app-input"
-                   accept=".pdf,.doc,.docx,.xls,.xlsx" />
+                   accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" />
 
             <span asp-validation-for="UploadFile"
                   class="validation-message"></span>
         </div>
 
-        @if (Model.Proposal.ProposalId > 0 &&
-                !string.IsNullOrWhiteSpace(Model.Proposal.FileName))
+        @if (Model.Proposal.ProposalId == 0)
         {
-            <div class="app-alert-info mt-3">
-                <strong>Current File:</strong>
-                @Model.Proposal.FileName
+            <div class="app-alert-info">
+                The proposal Word document will be generated automatically
+                from the active proposal template after saving.
+            </div>
+        }
+        else
+        {
+            <div class="form-group">
+                <label asp-for="UploadFile"
+                       class="form-label">
+                    Replace Generated Document
+                </label>
 
-                <a asp-action="Download"
-                   asp-route-id="@Model.Proposal.ProposalId"
-                   class="btn-app btn-secondary-app">
-                    <i class="bi bi-download"></i>
-                    Download
-                </a>
+                <input asp-for="UploadFile"
+                       type="file"
+                       class="app-input"
+                       accept=".docx,.pdf" />
+
+                <span asp-validation-for="UploadFile"
+                      class="validation-message"></span>
             </div>
         }
 

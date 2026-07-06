@@ -1,0 +1,147 @@
+﻿@model IEnumerable<AryamanBMS.Models.ProposalDocumentVersionModel>
+
+@{
+    ViewData["Title"] = "Proposal Document History";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">
+            Document History
+        </h1>
+
+        <p class="module-subtitle">
+            @ViewBag.ProposalNumber — @ViewBag.ProposalTitle
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+
+        <a asp-controller="Proposal"
+           asp-action="Details"
+           asp-route-id="@ViewBag.ProposalId"
+           class="btn-app btn-secondary-app">
+
+            <i class="bi bi-arrow-left"></i>
+            Back
+
+        </a>
+
+    </div>
+
+</div>
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+        <h5 class="card-title">
+            Generated Document Versions
+        </h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="table-responsive">
+
+            <table class="app-table">
+
+                <thead>
+                    <tr>
+                        <th>Version</th>
+                        <th>File</th>
+                        <th>Template</th>
+                        <th>Generated On</th>
+                        <th>Status</th>
+                        <th class="text-center">Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @if (Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr>
+
+                                <td>
+                                    @($"V{item.VersionNumber}")
+                                </td>
+
+                                <td>
+                                    @item.OriginalFileName
+                                </td>
+
+                                <td>
+                                    @if (item.ProposalTemplate != null)
+                                    {
+                                        <span>
+                                            @item.ProposalTemplate.TemplateName
+                                            — Rev @item.ProposalTemplate.VersionNumber
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span>-</span>
+                                    }
+                                </td>
+
+                                <td>
+                                    @item.GeneratedOn.ToString(
+                                    "dd-MMM-yyyy hh:mm tt")
+                        </td>
+
+                        <td>
+                            @if (item.IsCurrent)
+                                    {
+                                        <span class="badge-success">
+                                            Current
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-secondary">
+                                            Previous
+                                        </span>
+                                    }
+                                </td>
+
+                                <td class="text-center">
+
+                                    <a asp-controller="Proposal"
+                                       asp-action="DownloadDocumentVersion"
+                                       asp-route-id="@item.ProposalDocumentVersionId"
+                                       class="btn-app btn-icon btn-primary-app"
+                                       title="Download">
+
+                                        <i class="bi bi-download"></i>
+
+                                    </a>
+
+                                </td>
+
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6"
+                                class="empty-state">
+
+                                No generated proposal documents found.
+
+                            </td>
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>

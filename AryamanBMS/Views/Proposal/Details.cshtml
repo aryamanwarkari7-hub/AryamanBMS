@@ -30,44 +30,55 @@
 
         @if (Model.IsActive && !Model.IsConverted)
         {
-            <a asp-action="Edit"
-               asp-route-id="@Model.ProposalId"
-               class="btn-app btn-primary-app">
-                <i class="bi bi-pencil-square"></i>
-                Edit Proposal
-            </a>
+            <form asp-controller="Proposal"
+                  asp-action="RegenerateDocument"
+                  asp-route-id="@Model.ProposalId"
+                  method="post"
+                  class="d-inline">
+
+                @Html.AntiForgeryToken()
+
+                <button type="submit"
+                        class="btn-app btn-success-app"
+                        onclick="return confirm('Generate a new proposal document version?');">
+
+                    <i class="bi bi-arrow-repeat"></i>
+                    Regenerate Document
+
+                </button>
+            </form>
         }
 
-        <a asp-action="Download"
+        <a asp-controller="Proposal"
+           asp-action="DocumentHistory"
            asp-route-id="@Model.ProposalId"
-           class="btn-app btn-success-app">
-            <i class="bi bi-download"></i>
-            Download
+           class="btn-app btn-secondary-app">
+
+            <i class="bi bi-clock-history"></i>
+            Document History
+
         </a>
 
-        
-
-        @if (Model.IsActive && !Model.IsConverted)
+        @if (!string.IsNullOrWhiteSpace(Model.FilePath))
         {
-            <a asp-action="Edit"
+            <a asp-controller="Proposal"
+               asp-action="Download"
                asp-route-id="@Model.ProposalId"
                class="btn-app btn-primary-app">
-                <i class="bi bi-pencil-square"></i>
-                Edit Proposal
+
+                <i class="bi bi-download"></i>
+                Download Current
+
             </a>
         }
 
-        @* <a asp-action="Delete"
-           asp-route-id="@Model.ProposalId"
-           class="btn-app @(Model.IsActive ? "btn-danger-app" : "btn-success-app")">
-            <i class="bi bi-power"></i>
-            @(Model.IsActive ? "Deactivate" : "Activate")
-        </a> *@
-
-        <a asp-action="Index"
+        <a asp-controller="Proposal"
+           asp-action="Index"
            class="btn-app btn-secondary-app">
+
             <i class="bi bi-arrow-left"></i>
             Back
+
         </a>
 
     </div>

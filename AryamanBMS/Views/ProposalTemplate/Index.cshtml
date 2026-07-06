@@ -1,0 +1,178 @@
+@model IEnumerable<AryamanBMS.Models.ProposalTemplateModel>
+
+@{
+    ViewData["Title"] = "Proposal Templates";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">
+            Proposal Templates
+        </h1>
+
+        <p class="module-subtitle">
+            Manage versioned Word templates used
+            for proposal generation
+        </p>
+    </div>
+
+    <a asp-action="Create"
+       class="btn-app btn-primary-app">
+        <i class="bi bi-upload"></i>
+        Upload New Template
+    </a>
+
+</div>
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+        <h5 class="card-title">
+            Template Versions
+        </h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="table-responsive">
+
+            <table class="app-table">
+
+                <thead>
+                    <tr>
+                        <th>Template</th>
+                        <th>Version</th>
+                        <th>File</th>
+                        <th>Uploaded On</th>
+                        <th>Status</th>
+                        <th class="text-center">
+                            Actions
+                        </th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @if (Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr>
+
+                                <td>
+                                    @item.TemplateName
+                                </td>
+
+                                <td>
+                                    Rev
+                                    @item.VersionNumber
+                                </td>
+
+                                <td>
+                                    @item.OriginalFileName
+                                </td>
+
+                                <td>
+                                    @(item.UploadedOn.ToString("dd-MMM-yyyy hh:mm tt"))
+                                </td>
+
+                                <td>
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge-success">
+                                            Available
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-secondary">
+                                            Archived
+                                        </span>
+                                    }
+                                </td>
+
+                                <td class="text-center">
+
+                                    <div class="table-actions">
+
+                                        <a asp-action="Details"
+                                           asp-route-id="@item.ProposalTemplateId"
+                                           class="btn-app btn-icon btn-secondary-app"
+                                           title="Details">
+
+                                            <i class="bi bi-eye"></i>
+
+                                        </a>
+
+                                        @if (User.IsInRole("Admin"))
+                                        {
+                                            <a asp-action="Edit"
+                                               asp-route-id="@item.ProposalTemplateId"
+                                               class="btn-app btn-icon btn-warning-app"
+                                               title="Edit">
+
+                                                <i class="bi bi-pencil"></i>
+
+                                            </a>
+                                        }
+
+                                        <a asp-action="Download"
+                                           asp-route-id="@item.ProposalTemplateId"
+                                           class="btn-app btn-icon btn-primary-app"
+                                           title="Download">
+
+                                            <i class="bi bi-download"></i>
+
+                                        </a>
+
+                                        @if (!item.IsActive &&
+                                                                        User.IsInRole("Admin"))
+                                        {
+                                            <form asp-action="Activate"
+                                                  asp-route-id="@item.ProposalTemplateId"
+                                                  method="post"
+                                                  class="d-inline">
+
+                                                @Html.AntiForgeryToken()
+
+                                                <button type="submit"
+                                                        class="btn-app btn-icon btn-success-app"
+                                                        title="Activate"
+                                                        onclick="return confirm('Activate this template version?');">
+
+                                                    <i class="bi bi-check-circle"></i>
+
+                                                </button>
+
+                                            </form>
+                                        }
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6"
+                                class="empty-state">
+
+                                No proposal templates uploaded.
+
+                            </td>
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>

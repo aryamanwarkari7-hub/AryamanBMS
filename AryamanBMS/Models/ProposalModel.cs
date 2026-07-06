@@ -40,6 +40,40 @@ namespace AryamanBMS.Models
 
         public string? Remarks { get; set; }
 
+        [StringLength(10)]
+        public string RevisionNumber { get; set; } = "00";
+
+        [StringLength(150)]
+        public string PreparedBy { get; set; } = string.Empty;
+
+        [StringLength(150)]
+        public string? PreparedByDesignation { get; set; }
+
+        public string? ProblemStatement { get; set; }
+
+        [StringLength(250)]
+        public string? Timeline { get; set; }
+
+        public string? TechnicalSolution { get; set; }
+
+        public string? OutOfScope { get; set; }
+
+        public string? CustomerResponsibilities { get; set; }
+
+        public string? Deliverables { get; set; }
+
+        public string? Dependencies { get; set; }
+
+        public string? Assumptions { get; set; }
+
+        public string? Risks { get; set; }
+
+        public string? Warranty { get; set; }
+
+        public string? CommercialDescription { get; set; }
+
+        public string? PaymentTerms { get; set; }
+
         [Required]
         [StringLength(30)]
         public string Status { get; set; } = "Draft";
@@ -69,5 +103,18 @@ namespace AryamanBMS.Models
         [ValidateNever]
         public virtual ICollection<PurchaseOrderModel> PurchaseOrders { get; set; }
             = new List<PurchaseOrderModel>();
+
+        public int? ProposalTemplateId { get; set; }
+
+        public ProposalTemplateModel? ProposalTemplate
+        {
+            get;
+            set;
+        }
+
+        public ICollection<ProposalDocumentVersionModel>
+            DocumentVersions
+        { get; set; } =
+                new List<ProposalDocumentVersionModel>();
     }
 }

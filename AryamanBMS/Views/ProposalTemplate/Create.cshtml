@@ -1,0 +1,138 @@
+﻿@model AryamanBMS.ViewModels.ProposalTemplateViewModel
+
+@{
+    ViewData["Title"] =
+        "Upload Proposal Template";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">
+            Upload Proposal Template
+        </h1>
+
+        <p class="module-subtitle">
+            Upload a new Word template version
+        </p>
+    </div>
+
+    <a asp-action="Index"
+       class="btn-app btn-secondary-app">
+        <i class="bi bi-arrow-left"></i>
+        Back
+    </a>
+
+</div>
+
+<form asp-action="Create"
+      method="post"
+      enctype="multipart/form-data">
+
+    @Html.AntiForgeryToken()
+
+    <div asp-validation-summary="ModelOnly"
+         class="app-alert-danger">
+    </div>
+
+    <div class="app-card form-card">
+
+        <div class="card-header">
+            <h5 class="card-title">
+                Template Information
+            </h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+
+                    <label asp-for="TemplateName"
+                           class="form-label">
+                        Template Name
+                    </label>
+
+                    <input asp-for="TemplateName"
+                           class="app-input" />
+
+                    <span asp-validation-for="TemplateName"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="TemplateFile"
+                           class="form-label">
+                        Word Template
+                    </label>
+
+                    <input asp-for="TemplateFile"
+                           type="file"
+                           class="app-input"
+                           accept=".docx" />
+
+                    <span asp-validation-for="TemplateFile"
+                          class="validation-message">
+                    </span>
+
+                    <small class="form-text">
+                        Only automation-ready DOCX templates
+                        are accepted.
+                    </small>
+
+                </div>
+
+            </div>
+
+            <div class="form-group mt-3">
+
+                <label asp-for="Remarks"
+                       class="form-label">
+                    Remarks
+                </label>
+
+                <textarea asp-for="Remarks"
+                          class="app-textarea">
+                </textarea>
+
+                <span asp-validation-for="Remarks"
+                      class="validation-message">
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="app-card">
+
+        <div class="card-body form-actions">
+
+            <button type="submit"
+                    class="btn-app btn-primary-app">
+
+                <i class="bi bi-upload"></i>
+                Upload Template
+
+            </button>
+
+            <a asp-action="Index"
+               class="btn-app btn-secondary-app">
+                Cancel
+            </a>
+
+        </div>
+
+    </div>
+
+</form>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}
