@@ -36,6 +36,10 @@
 
     @Html.AntiForgeryToken()
 
+    <input type="hidden"
+           asp-for="InvoiceStatus"
+           value="Draft" />
+
     <input type="hidden" asp-for="InvoiceId" />
     <input type="hidden" asp-for="CreatedOn" />
     <input type="hidden" asp-for="CreatedBy" />

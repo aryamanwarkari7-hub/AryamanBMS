@@ -35,10 +35,12 @@ namespace AryamanBMS.Controllers
         #region Index
 
         public async Task<IActionResult> Index(
-            string? search,
-            int? clientId,
-            string? invoiceStatus,
-            string? paymentStatus)
+               string? search,
+               int? clientId,
+               string? invoiceStatus,
+               string? paymentStatus,
+               int? month,
+               int? year)
         {
             var allInvoices =
                 await _invoiceRepository.GetAllAsync();
@@ -47,58 +49,85 @@ namespace AryamanBMS.Controllers
                 .Where(x => !x.IsDeleted)
                 .ToList();
 
-            var filteredInvoices =
-                activeInvoices.AsEnumerable();
+            IEnumerable<InvoiceModel> filteredInvoices =
+                activeInvoices;
 
             if (!string.IsNullOrWhiteSpace(search))
             {
                 search = search.Trim();
 
-                filteredInvoices =
-                    filteredInvoices.Where(x =>
-                        x.InvoiceNo.Contains(
-                            search,
-                            StringComparison.OrdinalIgnoreCase) ||
+                filteredInvoices = filteredInvoices.Where(x =>
+                    x.InvoiceNo.Contains(
+                        search,
+                        StringComparison.OrdinalIgnoreCase) ||
 
-                        (x.Client?.ClientName?.Contains(
-                            search,
-                            StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (x.Client?.ClientName?.Contains(
+                        search,
+                        StringComparison.OrdinalIgnoreCase) ?? false) ||
 
-                        (x.Project?.ProjectName?.Contains(
-                            search,
-                            StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (x.Project?.ProjectName?.Contains(
+                        search,
+                        StringComparison.OrdinalIgnoreCase) ?? false) ||
 
-                        (x.ProjectName?.Contains(
-                            search,
-                            StringComparison.OrdinalIgnoreCase) ?? false));
+                    (x.ProjectName?.Contains(
+                        search,
+                        StringComparison.OrdinalIgnoreCase) ?? false));
             }
 
             if (clientId.HasValue)
             {
-                filteredInvoices =
-                    filteredInvoices.Where(x =>
-                        x.ClientId == clientId.Value);
+                filteredInvoices = filteredInvoices.Where(x =>
+                    x.ClientId == clientId.Value);
             }
 
             if (!string.IsNullOrWhiteSpace(invoiceStatus))
             {
-                filteredInvoices =
-                    filteredInvoices.Where(x =>
-                        string.Equals(
-                            x.InvoiceStatus,
-                            invoiceStatus,
-                            StringComparison.OrdinalIgnoreCase));
+                filteredInvoices = filteredInvoices.Where(x =>
+                    string.Equals(
+                        x.InvoiceStatus,
+                        invoiceStatus,
+                        StringComparison.OrdinalIgnoreCase));
             }
 
             if (!string.IsNullOrWhiteSpace(paymentStatus))
             {
-                filteredInvoices =
-                    filteredInvoices.Where(x =>
-                        string.Equals(
-                            x.PaymentStatus,
-                            paymentStatus,
-                            StringComparison.OrdinalIgnoreCase));
+                filteredInvoices = filteredInvoices.Where(x =>
+                    string.Equals(
+                        x.PaymentStatus,
+                        paymentStatus,
+                        StringComparison.OrdinalIgnoreCase));
             }
+
+            // Month filter
+            if (month.HasValue &&
+                month.Value >= 1 &&
+                month.Value <= 12)
+            {
+                filteredInvoices = filteredInvoices.Where(x =>
+                    x.InvoiceDate.Month == month.Value);
+            }
+
+            // Year filter
+            if (year.HasValue && year.Value > 0)
+            {
+                filteredInvoices = filteredInvoices.Where(x =>
+                    x.InvoiceDate.Year == year.Value);
+            }
+
+            // Years available in existing invoice records
+            var availableYears = activeInvoices
+                .Select(x => x.InvoiceDate.Year)
+                .Distinct()
+                .OrderByDescending(x => x)
+                .ToList();
+
+            // Ensure current year is always available
+            if (!availableYears.Contains(DateTime.Today.Year))
+            {
+                availableYears.Insert(0, DateTime.Today.Year);
+            }
+
+            ViewBag.AvailableYears = availableYears;
 
             var model = new InvoiceTrackerViewModel
             {
@@ -153,7 +182,6 @@ namespace AryamanBMS.Controllers
 
             return View(model);
         }
-
         #endregion
 
         #region Create
@@ -266,20 +294,14 @@ namespace AryamanBMS.Controllers
                 return NotFound();
             }
 
-            if (invoice.InvoiceStatus == "Cancelled")
+            if (invoice.InvoiceStatus != "Draft")
             {
                 TempData["Error"] =
-                    "Cancelled invoices cannot be edited.";
+                    "Only draft invoices can be edited.";
 
-                return RedirectToAction(nameof(Index));
-            }
-
-            if (invoice.PaymentStatus == "Paid")
-            {
-                TempData["Error"] =
-                    "Paid invoices cannot be edited.";
-
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
             }
 
             await LoadDropdownsAsync();
@@ -308,22 +330,14 @@ namespace AryamanBMS.Controllers
                 return NotFound();
             }
 
-            if (existingInvoice.InvoiceStatus ==
-                "Cancelled")
+            if (existingInvoice.InvoiceStatus != "Draft")
             {
                 TempData["Error"] =
-                    "Cancelled invoices cannot be edited.";
+                    "Only draft invoices can be edited.";
 
-                return RedirectToAction(nameof(Index));
-            }
-
-            if (existingInvoice.PaymentStatus ==
-                "Paid")
-            {
-                TempData["Error"] =
-                    "Paid invoices cannot be edited.";
-
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
             }
 
             model.InvoiceNo = existingInvoice.InvoiceNo;
@@ -331,6 +345,8 @@ namespace AryamanBMS.Controllers
             model.PaidAmount =  existingInvoice.PaidAmount;
 
             model.PaymentStatus = existingInvoice.PaymentStatus;
+
+            model.InvoiceStatus = existingInvoice.InvoiceStatus;
 
             model.AttachmentPath =  existingInvoice.AttachmentPath;
 
@@ -346,16 +362,6 @@ namespace AryamanBMS.Controllers
             NormalizeInvoice(model);
 
             ValidateInvoiceBusinessRules(model);
-
-            if (!IsAllowedInvoiceStatusTransition(
-                    existingInvoice.InvoiceStatus,
-                    model.InvoiceStatus))
-            {
-                ModelState.AddModelError(nameof(model.InvoiceStatus),
-                    $"Invoice status cannot change from " +
-                    $"{existingInvoice.InvoiceStatus} to " +
-                    $"{model.InvoiceStatus}.");
-            }
 
             await ValidateAndAssignProjectAsync(model);
             await ValidatePurchaseOrderAsync(model);
@@ -408,7 +414,6 @@ namespace AryamanBMS.Controllers
             existingInvoice.GSTNo = model.GSTNo;
             existingInvoice.IsInterState = model.IsInterState;
             existingInvoice.PaymentTerms = model.PaymentTerms;
-            existingInvoice.InvoiceStatus = model.InvoiceStatus;
             existingInvoice.Remarks =  model.Remarks;
             existingInvoice.Discount =  model.Discount;
             existingInvoice.SubTotal =  model.SubTotal;
@@ -747,6 +752,78 @@ namespace AryamanBMS.Controllers
                     .ToListAsync();
 
             return View(documents);
+        }
+
+        #endregion
+
+        #region Issue Invoice
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Issue(int id)
+        {
+            var invoice =
+                await _invoiceRepository.GetByIdAsync(id);
+
+            if (invoice == null ||
+                invoice.IsDeleted)
+            {
+                return NotFound();
+            }
+
+            if (invoice.InvoiceStatus != "Draft")
+            {
+                TempData["Error"] =
+                    "Only draft invoices can be issued.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
+            }
+
+            if (invoice.InvoiceDetails == null ||
+                invoice.InvoiceDetails.Count == 0)
+            {
+                TempData["Error"] =
+                    "Invoice must contain at least one item before it can be issued.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
+            }
+
+            if (invoice.GrandTotal <= 0)
+            {
+                TempData["Error"] =
+                    "Invoice total must be greater than zero before issue.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
+            }
+
+            string? userId =
+                User.FindFirstValue(
+                    ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Unauthorized();
+            }
+
+            invoice.InvoiceStatus = "Issued";
+            invoice.IssuedByUserId = userId;
+            invoice.IssuedOn = DateTime.Now;
+            invoice.ModifiedOn = DateTime.Now;
+
+            await _invoiceRepository.SaveAsync();
+
+            TempData["Success"] =
+                "Invoice issued successfully.";
+
+            return RedirectToAction(
+                nameof(Details),
+                new { id });
         }
 
         #endregion

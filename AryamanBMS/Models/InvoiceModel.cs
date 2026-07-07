@@ -55,6 +55,21 @@ namespace AryamanBMS.Models
 
         public string PaymentStatus { get; set; } = "Unpaid";
 
+        [StringLength(450)]
+        public string? IssuedByUserId { get; set; }
+
+        public DateTime? IssuedOn { get; set; }
+
+        [StringLength(450)]
+        public string? CancelledByUserId { get; set; }
+
+        public DateTime? CancelledOn { get; set; }
+
+        [StringLength(500)]
+        public string? CancellationReason { get; set; }
+
+        public int? ReplacementInvoiceId { get; set; }
+
         public string? Remarks { get; set; }
 
         public string? AttachmentPath { get; set; }

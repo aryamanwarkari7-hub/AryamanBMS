@@ -9,6 +9,13 @@
         Context.Request.Query["invoiceStatus"];
     string currentPaymentStatus =
         Context.Request.Query["paymentStatus"];
+
+    string currentMonth = Context.Request.Query["month"];
+    string currentYear = Context.Request.Query["year"];
+
+    var availableYears =
+        ViewBag.AvailableYears as IEnumerable<int>
+        ?? Enumerable.Empty<int>();
 }
 
 <div class="module-header">
@@ -69,11 +76,13 @@
 
     <div class="card-body">
 
-        <form method="get">
+        <form method="get" asp-action="Index">
 
-            <div class="form-grid-3">
+            <div class="row g-3">
 
-                <div class="form-group">
+                <div class="col-md-4">
+                    <label class="form-label">Search</label>
+
                     <input type="text"
                            name="search"
                            value="@currentSearch"
@@ -81,84 +90,133 @@
                            placeholder="Invoice, client or project" />
                 </div>
 
-                <div class="form-group">
-                    <select name="clientId"
-                            class="app-select">
+                <div class="col-md-3">
+                    <label class="form-label">Client</label>
 
+                    <select name="clientId" class="app-select">
                         <option value="">All Clients</option>
 
                         @foreach (var client in Model.Clients)
                         {
-                            <option value="@client.ClientId"
-                                    selected="@(currentClientId == client.ClientId.ToString())">
-                                @client.ClientName
-                            </option>
+                            if (currentClientId == client.ClientId.ToString())
+                            {
+                                <option value="@client.ClientId" selected>
+                                    @client.ClientName
+                                </option>
+                            }
+                            else
+                            {
+                                <option value="@client.ClientId">
+                                    @client.ClientName
+                                </option>
+                            }
                         }
-
                     </select>
                 </div>
 
-                <div class="form-group">
-                    <select name="invoiceStatus"
-                            class="app-select">
+                <div class="col-md-2">
+                    <label class="form-label">Invoice Status</label>
 
-                        <option value="">All Invoice Statuses</option>
+                    <select name="invoiceStatus" class="app-select">
+                        <option value="">All Statuses</option>
 
-                        <option value="Draft"
-                                selected="@(currentInvoiceStatus == "Draft")">
-                            Draft
-                        </option>
-
-                        <option value="Issued"
-                                selected="@(currentInvoiceStatus == "Issued")">
-                            Issued
-                        </option>
-
-                        <option value="Cancelled"
-                                selected="@(currentInvoiceStatus == "Cancelled")">
-                            Cancelled
-                        </option>
-
+                        @foreach (var status in new[] { "Draft", "Issued", "Cancelled" })
+                        {
+                            if (currentInvoiceStatus == status)
+                            {
+                                <option value="@status" selected>@status</option>
+                            }
+                            else
+                            {
+                                <option value="@status">@status</option>
+                            }
+                        }
                     </select>
                 </div>
 
-                <div class="form-group">
-                    <select name="paymentStatus"
-                            class="app-select">
+                <div class="col-md-3">
+                    <label class="form-label">Payment Status</label>
 
-                        <option value="">All Payment Statuses</option>
+                    <select name="paymentStatus" class="app-select">
+                        <option value="">All Statuses</option>
 
-                        <option value="Unpaid"
-                                selected="@(currentPaymentStatus == "Unpaid")">
-                            Unpaid
-                        </option>
-
-                        <option value="Partially Paid"
-                                selected="@(currentPaymentStatus == "Partially Paid")">
-                            Partially Paid
-                        </option>
-
-                        <option value="Paid"
-                                selected="@(currentPaymentStatus == "Paid")">
-                            Paid
-                        </option>
-
+                        @foreach (var status in new[] { "Unpaid", "Partially Paid", "Paid" })
+                        {
+                            if (currentPaymentStatus == status)
+                            {
+                                <option value="@status" selected>@status</option>
+                            }
+                            else
+                            {
+                                <option value="@status">@status</option>
+                            }
+                        }
                     </select>
                 </div>
 
-                <div class="form-group">
+                <div class="col-md-2">
+                    <label class="form-label">Month</label>
+
+                    <select name="month" class="app-select">
+                        <option value="">All Months</option>
+
+                        @for (int month = 1; month <= 12; month++)
+                        {
+                            var monthName =
+                            System.Globalization.CultureInfo
+                            .CurrentCulture
+                            .DateTimeFormat
+                            .GetMonthName(month);
+
+                            if (currentMonth == month.ToString())
+                            {
+                                <option value="@month" selected>
+                                    @monthName
+                                </option>
+                            }
+                            else
+                            {
+                                <option value="@month">
+                                    @monthName
+                                </option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Year</label>
+
+                    <select name="year" class="app-select">
+                        <option value="">All Years</option>
+
+                        @foreach (var year in availableYears)
+                        {
+                            if (currentYear == year.ToString())
+                            {
+                                <option value="@year" selected>@year</option>
+                            }
+                            else
+                            {
+                                <option value="@year">@year</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-8 d-flex align-items-end justify-content-end gap-2">
+
                     <button type="submit"
-                            class="btn-app btn-primary-app w-100">
+                            class="btn-app btn-primary-app">
                         <i class="bi bi-search"></i>
                         Apply
                     </button>
-                </div>
 
-                <div class="form-group">
                     <a asp-action="Index"
-                       class="btn-app btn-secondary-app w-100">
+                       class="btn-app btn-secondary-app">
                         Reset
                     </a>
+
                 </div>
 
             </div>

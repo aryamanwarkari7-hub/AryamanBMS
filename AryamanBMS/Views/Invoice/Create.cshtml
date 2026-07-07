@@ -22,6 +22,11 @@
 
     @Html.AntiForgeryToken()
 
+    <input type="hidden"
+           asp-for="InvoiceStatus"
+           value="Draft" />
+
+
     <div class="app-card">
         <div class="card-header">
             <h5 class="card-title">Invoice Information</h5>
