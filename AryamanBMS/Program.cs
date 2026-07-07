@@ -9,6 +9,8 @@ using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
+using QuestPDF.Infrastructure;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -131,6 +133,11 @@ builder.Services.AddScoped<IGstDashboardService, GstDashboardService>();
 
 // PROPOSAL SERVICE
 builder.Services.AddScoped< IProposalDocumentService,ProposalDocumentService>();
+
+// INVOICE SERVICE
+builder.Services.AddScoped<IInvoiceDocumentService,InvoiceDocumentService>();
+
+QuestPDF.Settings.License =LicenseType.Evaluation;
 
 var app = builder.Build();
 

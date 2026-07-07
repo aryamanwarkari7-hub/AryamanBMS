@@ -38,6 +38,26 @@ namespace AryamanBMS.Controllers
             model.Address = model.Address?.Trim();
             model.Email = model.Email?.Trim();
             model.Phone = model.Phone?.Trim();
+            model.VendorRegistrationNumber =
+            model.VendorRegistrationNumber?.Trim();
+
+            model.BankName =
+                model.BankName?.Trim();
+
+            model.AccountName =
+                model.AccountName?.Trim();
+
+            model.AccountNumber =
+                model.AccountNumber?.Trim();
+
+            model.IFSCCode =
+                model.IFSCCode?.Trim().ToUpper();
+
+            model.BankBranch =
+                model.BankBranch?.Trim();
+
+            model.AuthorizedSignatory =
+                model.AuthorizedSignatory?.Trim();
 
             if (!ModelState.IsValid)
             {

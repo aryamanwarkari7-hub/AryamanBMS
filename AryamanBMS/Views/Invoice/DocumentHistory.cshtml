@@ -1,0 +1,145 @@
+﻿@model IEnumerable<AryamanBMS.Models.InvoiceDocumentVersionModel>
+
+@{
+    ViewData["Title"] = "Invoice Document History";
+
+    var invoice =
+        ViewBag.Invoice as AryamanBMS.Models.InvoiceModel;
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">
+            Invoice Document History
+        </h1>
+
+        <p class="module-subtitle">
+            @(invoice?.InvoiceNo ?? "Invoice")
+        </p>
+    </div>
+
+    <a asp-action="Details"
+       asp-route-id="@invoice?.InvoiceId"
+       class="btn-app btn-secondary-app">
+        <i class="bi bi-arrow-left"></i>
+        Back to Invoice
+    </a>
+</div>
+
+<div class="app-card table-card">
+    <div class="card-header">
+        <h5 class="card-title">
+            Generated Documents
+        </h5>
+    </div>
+
+    <div class="card-body">
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                No generated invoice documents found.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="app-table">
+                    <thead>
+                        <tr>
+                            <th>Version</th>
+                            <th>Format</th>
+                            <th>File Name</th>
+                            <th>Generated On</th>
+                            <th>File Size</th>
+                            <th>Status</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var document in Model)
+                        {
+                            string formatBadge =
+                            document.DocumentFormat == "PDF"
+                            ? "badge-danger"
+                            : "badge-primary";
+
+                            <tr>
+                                <td>
+                                    V@document.VersionNumber
+                                </td>
+
+                                <td>
+                                    <span class="@formatBadge">
+                                        @document.DocumentFormat
+                                    </span>
+                                </td>
+
+                                <td>
+                                    @document.OriginalFileName
+                                </td>
+
+                                <td>
+                                    @document.GeneratedOn
+                                    .ToString("dd-MMM-yyyy hh:mm tt")
+                                </td>
+
+                                <td>
+                                    @FormatFileSize(
+                                    document.FileSize)
+                        </td>
+
+                        <td>
+                            @if (document.IsCurrent)
+                                    {
+                                        <span class="badge-success">
+                                            Current
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-secondary">
+                                            Previous
+                                        </span>
+                                    }
+                                </td>
+
+                                <td class="text-center">
+                                    <a asp-action="DownloadDocumentVersion"
+                                       asp-route-id="@document.InvoiceDocumentVersionId"
+                                       class="btn-app btn-icon btn-primary-app"
+                                       title="Download">
+
+                                        <i class="bi bi-download"></i>
+
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+    </div>
+</div>
+
+@functions
+{
+    private static string FormatFileSize(
+        long fileSize)
+    {
+        if (fileSize < 1024)
+        {
+            return $"{fileSize} B";
+        }
+
+        if (fileSize < 1024 * 1024)
+        {
+            return $"{fileSize / 1024d:N1} KB";
+        }
+
+        return $"{fileSize / (1024d * 1024d):N1} MB";
+    }
+}

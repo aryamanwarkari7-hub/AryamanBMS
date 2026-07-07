@@ -26,6 +26,27 @@ namespace AryamanBMS.Models
         [StringLength(20)]
         public string? Phone { get; set; }
 
+        [StringLength(100)]
+        public string? VendorRegistrationNumber { get; set; }
+
+        [StringLength(150)]
+        public string? BankName { get; set; }
+
+        [StringLength(100)]
+        public string? AccountName { get; set; }
+
+        [StringLength(50)]
+        public string? AccountNumber { get; set; }
+
+        [StringLength(20)]
+        public string? IFSCCode { get; set; }
+
+        [StringLength(150)]
+        public string? BankBranch { get; set; }
+
+        [StringLength(150)]
+        public string? AuthorizedSignatory { get; set; }
+
         public bool IsActive { get; set; } = true;
 
         public DateTime CreatedOn { get; set; } = DateTime.Now;

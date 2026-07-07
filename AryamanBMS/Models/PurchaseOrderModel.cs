@@ -65,6 +65,7 @@ namespace AryamanBMS.Models
 
         [ForeignKey(nameof(ProposalId))]
         [ValidateNever]
+
         public virtual ProposalModel? Proposal { get; set; }
     }
 }

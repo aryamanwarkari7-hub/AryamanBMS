@@ -215,5 +215,13 @@
 -- ADD COLUMN CommercialDescription TEXT NULL,
 -- ADD COLUMN PaymentTerms TEXT NULL;
 
+-- ALTER TABLE TableInvoiceMaster
+-- ADD COLUMN InvoiceType VARCHAR(30) NOT NULL DEFAULT 'Tax Invoice'
+-- AFTER InvoiceNo;
+
+ALTER TABLE TableInvoiceMaster
+ADD COLUMN SACCode VARCHAR(50) NULL AFTER GSTNo,
+ADD COLUMN KindAttention VARCHAR(200) NULL AFTER SACCode,
+ADD COLUMN ReceiverName VARCHAR(200) NULL AFTER KindAttention;
 
 

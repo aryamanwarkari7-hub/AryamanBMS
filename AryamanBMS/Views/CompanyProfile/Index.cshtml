@@ -128,6 +128,154 @@
                       class="validation-message"></span>
             </div>
 
+
+
+        </div>
+
+    </div>
+
+    <div class="app-card form-card">
+
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">
+                    Registration Details
+                </h2>
+
+                <p class="card-subtitle">
+                    Additional statutory and vendor details used in invoices.
+                </p>
+            </div>
+        </div>
+
+        <div class="card-body">
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+                    <label asp-for="VendorRegistrationNumber"
+                           class="form-label">
+                        Vendor Registration Number
+                    </label>
+
+                    <input asp-for="VendorRegistrationNumber"
+                           class="app-input"
+                           placeholder="Enter vendor registration number" />
+
+                    <span asp-validation-for="VendorRegistrationNumber"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="AuthorizedSignatory"
+                           class="form-label">
+                        Authorized Signatory
+                    </label>
+
+                    <input asp-for="AuthorizedSignatory"
+                           class="app-input"
+                           placeholder="Enter authorized signatory name" />
+
+                    <span asp-validation-for="AuthorizedSignatory"
+                          class="validation-message"></span>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="app-card form-card">
+
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">
+                    Bank Details
+                </h2>
+
+                <p class="card-subtitle">
+                    These values are displayed on generated invoices.
+                </p>
+            </div>
+        </div>
+
+        <div class="card-body">
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+                    <label asp-for="AccountName"
+                           class="form-label">
+                        Account Name
+                    </label>
+
+                    <input asp-for="AccountName"
+                           class="app-input"
+                           placeholder="Enter account holder name" />
+
+                    <span asp-validation-for="AccountName"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="BankName"
+                           class="form-label">
+                        Bank Name
+                    </label>
+
+                    <input asp-for="BankName"
+                           class="app-input"
+                           placeholder="Enter bank name" />
+
+                    <span asp-validation-for="BankName"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="AccountNumber"
+                           class="form-label">
+                        Account Number
+                    </label>
+
+                    <input asp-for="AccountNumber"
+                           class="app-input"
+                           placeholder="Enter account number" />
+
+                    <span asp-validation-for="AccountNumber"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="IFSCCode"
+                           class="form-label">
+                        IFSC Code
+                    </label>
+
+                    <input asp-for="IFSCCode"
+                           class="app-input"
+                           placeholder="Enter IFSC code" />
+
+                    <span asp-validation-for="IFSCCode"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="BankBranch"
+                           class="form-label">
+                        Branch
+                    </label>
+
+                    <input asp-for="BankBranch"
+                           class="app-input"
+                           placeholder="Enter branch name" />
+
+                    <span asp-validation-for="BankBranch"
+                          class="validation-message"></span>
+                </div>
+
+            </div>
+
         </div>
 
     </div>

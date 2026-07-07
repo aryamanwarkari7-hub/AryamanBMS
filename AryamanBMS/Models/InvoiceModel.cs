@@ -12,6 +12,10 @@ namespace AryamanBMS.Models
         public string InvoiceNo { get; set; } = string.Empty;
 
         [Required]
+        [StringLength(30)]
+        public string InvoiceType { get; set; } = "Tax Invoice";
+
+        [Required]
         public DateTime InvoiceDate { get; set; }
 
         public int? ProposalId { get; set; }
@@ -48,6 +52,7 @@ namespace AryamanBMS.Models
         public decimal BalanceAmount { get; set; }
 
         public string InvoiceStatus { get; set; } = "Draft";
+
         public string PaymentStatus { get; set; } = "Unpaid";
 
         public string? Remarks { get; set; }
@@ -83,9 +88,18 @@ namespace AryamanBMS.Models
         [ValidateNever]
         public virtual PurchaseOrderModel? PurchaseOrder { get; set; }
 
+        [StringLength(50)]
+        public string? SACCode { get; set; }
+
+        
 
 
         [ValidateNever]
-        public virtual ICollection<InvoiceDetailsModel> InvoiceDetails { get; set; } = new List<InvoiceDetailsModel>();
+        public virtual ICollection<InvoiceDetailsModel> InvoiceDetails 
+        { get; set; } = new List<InvoiceDetailsModel>();
+
+        [ValidateNever]
+        public virtual ICollection<InvoiceDocumentVersionModel>
+        DocumentVersions{ get; set; } = new List<InvoiceDocumentVersionModel>();
     }
 }

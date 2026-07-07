@@ -62,6 +62,31 @@
                 </div>
 
                 <div class="form-group">
+                    <label asp-for="InvoiceType"
+                           class="form-label">
+                        Invoice Type
+                    </label>
+
+                    <select asp-for="InvoiceType"
+                            id="InvoiceType"
+                            class="app-select">
+
+                        <option value="Tax Invoice">
+                            Tax Invoice
+                        </option>
+
+                        <option value="Proforma Invoice">
+                            Proforma Invoice
+                        </option>
+
+                    </select>
+
+                    <span asp-validation-for="InvoiceType"
+                          class="validation-message">
+                    </span>
+                </div>
+
+                <div class="form-group">
                     <label asp-for="InvoiceDate" class="form-label">Invoice Date</label>
                     <input asp-for="InvoiceDate" type="date" class="app-input" />
                     <span asp-validation-for="InvoiceDate" class="validation-message"></span>
@@ -122,13 +147,68 @@
                           class="validation-message"></span>
                 </div>
 
-                <div class="form-group">
-                    <label asp-for="GSTNo" class="form-label">GST No</label>
-                    <input asp-for="GSTNo" class="app-input" />
-                    <span asp-validation-for="GSTNo" class="validation-message"></span>
+                <div class="form-group gst-section">
+                    <label asp-for="GSTNo"
+                           class="form-label">
+                        PO/WO
+                    </label>
+                <select asp-for="PurchaseWorkOrderId"
+                        id="PurchaseWorkOrderId"
+                        class="app-select">
+
+                    <option value="">Select Purchase / Work Order</option>
+
+                    @if (ViewBag.PurchaseOrders != null)
+                    {
+                        foreach (var order in ViewBag.PurchaseOrders)
+                        {
+                            <option value="@order.PurchaseOrderId">
+                                @order.OrderNumber - @order.OrderTitle
+                            </option>
+                        }
+                    }
+
+                </select>
+                    <span asp-validation-for="PurchaseWorkOrderId"
+                          class="validation-message">
+                    </span>
                 </div>
 
-                <div class="form-group">
+                <span asp-validation-for="PurchaseWorkOrderId"
+                      class="validation-message"></span>
+
+                <div class="form-group gst-section">
+                    <label asp-for="GSTNo"
+                           class="form-label">
+                        GST No
+                    </label>
+
+                    <input asp-for="GSTNo"
+                           class="app-input" />
+
+                    <span asp-validation-for="GSTNo"
+                          class="validation-message">
+                    </span>
+                </div>
+
+                
+
+                <div class="form-group gst-section">
+                    <label asp-for="SACCode"
+                           class="form-label">
+                        SAC Code
+                    </label>
+
+                    <input asp-for="SACCode"
+                           class="app-input" />
+
+                    <span asp-validation-for="SACCode"
+                          class="validation-message"></span>
+                </div>
+
+                
+
+                <div class="form-group gst-section">
                     <div class="form-check">
 
                         <input asp-for="IsInterState"
@@ -216,8 +296,8 @@
                             <th>Qty</th>
                             <th>Unit</th>
                             <th>Rate</th>
-                            <th>GST %</th>
-                            <th>GST Amt</th>
+                            <th class="gst-column">GST %</th>
+                            <th class="gst-column">GST Amt</th>
                             <th>Amount</th>
                             <th></th>
                         </tr>
@@ -274,7 +354,7 @@
                                            step="0.01" />
                                 </td>
 
-                                <td>
+                                <td class="gst-column">
                                     <input name="InvoiceDetails[@i].GSTPercent"
                                            value="@details[i].GSTPercent"
                                            class="app-input gst"
@@ -282,7 +362,7 @@
                                            step="0.01" />
                                 </td>
 
-                                <td>
+                                <td class="gst-column">
                                     <input name="InvoiceDetails[@i].GSTAmount"
                                            value="@details[i].GSTAmount"
                                            class="app-input gstAmount"
@@ -347,7 +427,7 @@
                         </td>
                     </tr>
 
-                    <tr>
+                    <tr class="gst-summary-row">
                         <th>GST</th>
                         <td>
                             <input asp-for="GSTAmount"
@@ -401,111 +481,285 @@
 
     <script>
         $(function () {
-            var rowIndex = $("#itemTable tbody tr").length;
+
+            var rowIndex =
+                $("#itemTable tbody tr").length;
+
+            function isProforma() {
+                return $("#InvoiceType").val() ===
+                    "Proforma Invoice";
+            }
+
+            function updateInvoiceTypeUI() {
+                var proforma = isProforma();
+
+                $(".gst-section").toggle(!proforma);
+                $(".gst-column").toggle(!proforma);
+                $(".gst-summary-row").toggle(!proforma);
+
+                if (proforma) {
+                    $("#IsInterState").prop(
+                        "checked",
+                        false);
+
+                    $(".gst").val("0");
+                    $(".gstAmount").val("0.00");
+                    $("#GSTAmount").val("0.00");
+                }
+
+                calculateTotals();
+            }
+
+            $("#InvoiceType").on(
+                "change",
+                updateInvoiceTypeUI);
 
             $("#btnAddRow").click(function () {
+
+                var defaultGst =
+                    isProforma() ? 0 : 18;
+
+                var gstDisplay =
+                    isProforma()
+                        ? "display:none;"
+                        : "";
+
                 var html = `
                     <tr>
                         <td>
-                            <input name="InvoiceDetails[` + rowIndex + `].ItemName" class="app-input" />
+                            <input name="InvoiceDetails[${rowIndex}].ItemName"
+                                   class="app-input" />
                         </td>
+
                         <td>
-                            <input name="InvoiceDetails[` + rowIndex + `].Description" class="app-input" />
+                            <input name="InvoiceDetails[${rowIndex}].Description"
+                                   class="app-input" />
                         </td>
+
                         <td>
-                            <input name="InvoiceDetails[` + rowIndex + `].Qty" class="app-input qty" type="number" step="0.01" value="1" />
+                            <input name="InvoiceDetails[${rowIndex}].Qty"
+                                   class="app-input qty"
+                                   type="number"
+                                   step="0.01"
+                                   value="1" />
                         </td>
+
                         <td>
-                                    <select name="InvoiceDetails[` + rowIndex + `].Unit" class="app-select">
-                                        <option value="Service">Service</option>
-                                        <option value="Hour">Hour</option>
-                                        <option value="Day">Day</option>
-                                        <option value="Month">Month</option>
-                                        <option value="Project">Project</option>
-                                        <option value="Job">Job</option>
-                                        <option value="User">User</option>
-                                        <option value="License">License</option>
-                                        <option value="Milestone">Milestone</option>
-                                    </select>
+                            <select name="InvoiceDetails[${rowIndex}].Unit"
+                                    class="app-select">
+
+                                <option value="Service">Service</option>
+                                <option value="Hour">Hour</option>
+                                <option value="Day">Day</option>
+                                <option value="Month">Month</option>
+                                <option value="Project">Project</option>
+                                <option value="Job">Job</option>
+                                <option value="User">User</option>
+                                <option value="License">License</option>
+                                <option value="Milestone">Milestone</option>
+
+                            </select>
                         </td>
+
                         <td>
-                            <input name="InvoiceDetails[` + rowIndex + `].Rate" class="app-input rate" type="number" step="0.01" value="0" />
+                            <input name="InvoiceDetails[${rowIndex}].Rate"
+                                   class="app-input rate"
+                                   type="number"
+                                   step="0.01"
+                                   value="0" />
                         </td>
-                        <td>
-                            <input name="InvoiceDetails[` + rowIndex + `].GSTPercent" class="app-input gst" type="number" step="0.01" value="18" />
+
+                        <td class="gst-column"
+                            style="${gstDisplay}">
+
+                            <input name="InvoiceDetails[${rowIndex}].GSTPercent"
+                                   class="app-input gst"
+                                   type="number"
+                                   step="0.01"
+                                   value="${defaultGst}" />
                         </td>
-                        <td>
-                            <input name="InvoiceDetails[` + rowIndex + `].GSTAmount" class="app-input gstAmount" readonly />
+
+                        <td class="gst-column"
+                            style="${gstDisplay}">
+
+                            <input name="InvoiceDetails[${rowIndex}].GSTAmount"
+                                   class="app-input gstAmount"
+                                   value="0.00"
+                                   readonly />
                         </td>
+
                         <td>
-                            <input name="InvoiceDetails[` + rowIndex + `].Amount" class="app-input amount" readonly />
+                            <input name="InvoiceDetails[${rowIndex}].Amount"
+                                   class="app-input amount"
+                                   value="0.00"
+                                   readonly />
                         </td>
+
                         <td>
-                            <button type="button" class="btn-app btn-icon btn-danger-app removeRow">
+                            <button type="button"
+                                    class="btn-app btn-icon btn-danger-app removeRow">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </td>
                     </tr>`;
 
                 $("#itemTable tbody").append(html);
+
                 rowIndex++;
-            });
-
-            $(document).on("click", ".removeRow", function () {
-                if ($("#itemTable tbody tr").length > 1) {
-                    $(this).closest("tr").remove();
-                    calculateTotals();
-                    reIndex();
-                }
-            });
-
-            $(document).on("keyup change", ".qty,.rate,.gst,#Discount", function () {
                 calculateTotals();
             });
 
-            function reIndex() {
-                $("#itemTable tbody tr").each(function (i) {
-                    $(this).find("input").each(function () {
-                        var name = $(this).attr("name");
+            $(document).on(
+                "click",
+                ".removeRow",
+                function () {
 
-                        if (name) {
-                            name = name.replace(/InvoiceDetails\[\d+\]/, "InvoiceDetails[" + i + "]");
-                            $(this).attr("name", name);
-                        }
-                    });
+                    if ($("#itemTable tbody tr").length > 1) {
+                        $(this).closest("tr").remove();
+
+                        reIndex();
+                        calculateTotals();
+                    }
                 });
 
-                rowIndex = $("#itemTable tbody tr").length;
+            $(document).on(
+                "keyup change",
+                ".qty,.rate,.gst,#Discount",
+                calculateTotals);
+
+            function reIndex() {
+                $("#itemTable tbody tr").each(
+                    function (index) {
+
+                        $(this)
+                            .find("input, select")
+                            .each(function () {
+
+                                var name =
+                                    $(this).attr("name");
+
+                                if (name) {
+                                    name = name.replace(
+                                        /InvoiceDetails\[\d+\]/,
+                                        "InvoiceDetails[" +
+                                        index +
+                                        "]");
+
+                                    $(this).attr(
+                                        "name",
+                                        name);
+                                }
+                            });
+                    });
+
+                rowIndex =
+                    $("#itemTable tbody tr").length;
             }
 
             function calculateTotals() {
                 var subTotal = 0;
                 var gstTotal = 0;
+                var proforma = isProforma();
 
-                $("#itemTable tbody tr").each(function () {
-                    var qty = parseFloat($(this).find(".qty").val()) || 0;
-                    var rate = parseFloat($(this).find(".rate").val()) || 0;
-                    var gst = parseFloat($(this).find(".gst").val()) || 0;
+                $("#itemTable tbody tr").each(
+                    function () {
 
-                    var lineAmount = qty * rate;
-                    var gstAmount = lineAmount * gst / 100;
+                        var row = $(this);
 
-                    $(this).find(".gstAmount").val(gstAmount.toFixed(2));
-                    $(this).find(".amount").val((lineAmount + gstAmount).toFixed(2));
+                        var qty =
+                            parseFloat(
+                                row.find(".qty").val()) || 0;
 
-                    subTotal += lineAmount;
-                    gstTotal += gstAmount;
-                });
+                        var rate =
+                            parseFloat(
+                                row.find(".rate").val()) || 0;
 
-                var discount = parseFloat($("#Discount").val()) || 0;
-                var grandTotal = subTotal - discount + gstTotal;
+                        var gstPercent =
+                            proforma
+                                ? 0
+                                : parseFloat(
+                                    row.find(".gst").val()) || 0;
 
-                $("#SubTotal").val(subTotal.toFixed(2));
-                $("#GSTAmount").val(gstTotal.toFixed(2));
-                $("#GrandTotal").val(grandTotal.toFixed(2));
+                        var taxableAmount =
+                            qty * rate;
+
+                        var gstAmount =
+                            taxableAmount *
+                            gstPercent / 100;
+
+                        if (proforma) {
+                            row.find(".gst").val("0");
+                        }
+
+                        row.find(".gstAmount")
+                            .val(gstAmount.toFixed(2));
+
+                        row.find(".amount")
+                            .val(taxableAmount.toFixed(2));
+
+                        subTotal += taxableAmount;
+                        gstTotal += gstAmount;
+                    });
+
+                var discount =
+                    parseFloat(
+                        $("#Discount").val()) || 0;
+
+                if (discount < 0) {
+                    discount = 0;
+                }
+
+                if (discount > subTotal) {
+                    discount = subTotal;
+                }
+
+                var grandTotal =
+                    subTotal -
+                    discount +
+                    (proforma ? 0 : gstTotal);
+
+                $("#SubTotal")
+                    .val(subTotal.toFixed(2));
+
+                $("#GSTAmount")
+                    .val(
+                        proforma
+                            ? "0.00"
+                            : gstTotal.toFixed(2));
+
+                $("#GrandTotal")
+                    .val(grandTotal.toFixed(2));
             }
 
-            calculateTotals();
+            updateInvoiceTypeUI();
+        });
+
+                $("#PurchaseWorkOrderId").on("change", function () {
+            var orderId = $(this).val();
+
+            if (!orderId) {
+                return;
+            }
+
+            $.get(
+                '@Url.Action("GetPurchaseOrderDetails", "Invoice")',
+                { id: orderId },
+                function (data) {
+                    $("#ClientId").val(data.clientId);
+                    $("#ProposalId").val(data.proposalId || "");
+                    $("#DueDate").val(
+                        data.deliveryDueDate
+                            ? data.deliveryDueDate.substring(0, 10)
+                            : ""
+                    );
+
+                    if (data.remarks) {
+                        $("#Remarks").val(data.remarks);
+                    }
+                }
+            ).fail(function () {
+                alert("Purchase Order details could not be loaded.");
+            });
         });
     </script>
 }

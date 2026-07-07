@@ -79,6 +79,8 @@ namespace AryamanBMS.Data
 
         public DbSet<InvoiceModel> Invoices { get; set; }
         public DbSet<InvoiceDetailsModel> InvoiceDetails { get; set; }
+
+        public DbSet<InvoiceDocumentVersionModel> InvoiceDocumentVersions { get; set; }
         public DbSet<PaymentReceiptModel> PaymentReceipts { get; set; }
 
         public DbSet<ExpenseCategoryModel> ExpenseCategories { get; set; }
@@ -611,6 +613,24 @@ namespace AryamanBMS.Data
             
 
             modelBuilder.Entity<InvoiceDetailsModel>().ToTable("tableinvoicedetails");
+
+            modelBuilder.Entity<InvoiceDocumentVersionModel>()
+                 .ToTable("TableInvoiceDocumentVersion");
+
+            modelBuilder.Entity<InvoiceDocumentVersionModel>()
+                .HasOne(x => x.Invoice)
+                .WithMany(x => x.DocumentVersions)
+                .HasForeignKey(x => x.InvoiceId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<InvoiceDocumentVersionModel>()
+                .HasIndex(x => new
+                {
+                    x.InvoiceId,
+                    x.VersionNumber,
+                    x.DocumentFormat
+                })
+                .IsUnique();
 
             modelBuilder.Entity<PaymentReceiptModel>().ToTable("tablepaymentreceipt");
             modelBuilder.Entity<PaymentReceiptModel>()
