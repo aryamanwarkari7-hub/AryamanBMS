@@ -141,9 +141,23 @@ namespace AryamanBMS.Controllers
                 return View(model);
             }
 
-            await _paymentRepository.AddAsync(model);
+            try
+            {
+                await _paymentRepository.AddAsync(model);
+            }
+            catch (InvalidOperationException ex)
+            {
+                ModelState.AddModelError(
+                    nameof(model.AmountReceived),
+                    ex.Message);
 
-            TempData["Success"] = "Payment receipt created successfully.";
+                await LoadFormDataAsync(model.ClientId);
+
+                return View(model);
+            }
+
+            TempData["Success"] =
+                "Payment receipt created successfully.";
 
             return RedirectToAction(nameof(Index));
         }
@@ -236,7 +250,20 @@ namespace AryamanBMS.Controllers
                 return View(model);
             }
 
-            await _paymentRepository.UpdateAsync(payment);
+            try
+            {
+                await _paymentRepository.UpdateAsync(payment);
+            }
+            catch (InvalidOperationException ex)
+            {
+                ModelState.AddModelError(
+                    nameof(model.AmountReceived),
+                    ex.Message);
+
+                await LoadFormDataAsync(payment.ClientId);
+
+                return View(model);
+            }
 
             TempData["Success"] =
                 "Payment receipt updated successfully.";
@@ -358,9 +385,11 @@ namespace AryamanBMS.Controllers
 
             var result = invoices
                 .Where(x =>
-                    !x.IsDeleted &&
-                    (x.BalanceAmount > 0 ||
-                     x.InvoiceId == selectedInvoiceId))
+                   !x.IsDeleted &&
+                   x.InvoiceStatus == "Issued" &&
+                   x.InvoiceStatus != "Cancelled" &&
+                   (x.BalanceAmount > 0 ||
+                    x.InvoiceId == selectedInvoiceId))
                 .OrderByDescending(x => x.InvoiceDate)
                 .Select(x => new
                 {
@@ -389,9 +418,12 @@ namespace AryamanBMS.Controllers
                 : await _paymentRepository.GetInvoicesAsync();
 
             ViewBag.Invoices = new SelectList(
-                invoices.Where(x => !x.IsDeleted && x.BalanceAmount > 0),
-                "InvoiceId",
-                "InvoiceNo");
+                 invoices.Where(x =>
+                     !x.IsDeleted &&
+                     x.InvoiceStatus == "Issued" &&
+                     x.BalanceAmount > 0),
+                 "InvoiceId",
+                 "InvoiceNo");
         }
 
         private async Task<InvoiceModel?> GetSelectedInvoiceAsync(
@@ -399,7 +431,10 @@ namespace AryamanBMS.Controllers
             int invoiceId)
         {
             return (await _paymentRepository.GetInvoicesByClientAsync(clientId))
-                .FirstOrDefault(x => x.InvoiceId == invoiceId && !x.IsDeleted);
+    .         FirstOrDefault(x =>
+                 x.InvoiceId == invoiceId &&
+                 !x.IsDeleted &&
+                 x.InvoiceStatus == "Issued");
         }
 
         private static readonly string[] AllowedPaymentModes =
@@ -445,10 +480,9 @@ namespace AryamanBMS.Controllers
                     : model.Remarks.Trim();
         }
 
-        private bool ValidateReceipt(
-            PaymentReceiptModel model,
-            InvoiceModel? invoice,
-            decimal availableBalance)
+        private bool ValidateReceipt(PaymentReceiptModel model,
+                                     InvoiceModel? invoice,
+                                     decimal availableBalance)
         {
             if (invoice == null)
             {
@@ -473,6 +507,13 @@ namespace AryamanBMS.Controllers
                 ModelState.AddModelError(
                     nameof(model.InvoiceId),
                     "Payments can only be recorded against issued invoices.");
+            }
+
+            if (invoice.PaymentStatus == "Paid" ||invoice.BalanceAmount <= 0)
+            {
+                ModelState.AddModelError(
+                    nameof(model.InvoiceId),
+                    "This invoice is already fully paid.");
             }
 
             if (model.AmountReceived <= 0)
@@ -510,9 +551,8 @@ namespace AryamanBMS.Controllers
                     "Payment mode is required.");
             }
 
-            if (!AllowedPaymentModes.Contains(
-        model.PaymentMode,
-        StringComparer.OrdinalIgnoreCase))
+            if (!AllowedPaymentModes.Contains( model.PaymentMode,
+                   StringComparer.OrdinalIgnoreCase))
             {
                 ModelState.AddModelError(
                     nameof(model.PaymentMode),
@@ -550,18 +590,7 @@ namespace AryamanBMS.Controllers
                     "Transaction or reference number is required for non-cash payments.");
             }
 
-            if (model.PaymentMode != "Cash" &&
-                string.IsNullOrWhiteSpace(model.TransactionNo) &&
-                string.IsNullOrWhiteSpace(model.ReferenceNo))
-            {
-                ModelState.AddModelError(
-                    nameof(model.TransactionNo),
-                    "Transaction or reference number is required for non-cash payments.");
-            }
-
-
-
-            return ModelState.IsValid;
+           return ModelState.IsValid;
         }
 
         #endregion

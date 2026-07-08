@@ -18,24 +18,63 @@ namespace AryamanBMS.Repositories
 
         public IQueryable<InvoiceModel> Invoices => _context.Invoices;
 
-
         public async Task<List<InvoiceModel>> GetAllAsync()
         {
-            return await Invoices
+            var invoices = await Invoices
                 .Include(i => i.Client)
                 .Include(i => i.Project)
+                .Include(i => i.InvoiceDetails)
                 .Where(i => !i.IsDeleted)
                 .OrderByDescending(i => i.InvoiceDate)
                 .ToListAsync();
+
+            bool statusChanged = false;
+
+            foreach (var invoice in invoices)
+            {
+                string oldStatus = invoice.PaymentStatus;
+
+                RefreshPaymentStatus(invoice);
+
+                if (oldStatus != invoice.PaymentStatus)
+                {
+                    statusChanged = true;
+                }
+            }
+
+            if (statusChanged)
+            {
+                await _context.SaveChangesAsync();
+            }
+
+            return invoices;
         }
 
         public async Task<InvoiceModel?> GetByIdAsync(int id)
         {
-            return await Invoices
+            var invoice = await Invoices
                 .Include(i => i.Client)
                 .Include(i => i.Project)
                 .Include(i => i.InvoiceDetails)
-                .FirstOrDefaultAsync(i => i.InvoiceId == id);
+                .FirstOrDefaultAsync(i =>
+                    i.InvoiceId == id &&
+                    !i.IsDeleted);
+
+            if (invoice == null)
+            {
+                return null;
+            }
+
+            string oldStatus = invoice.PaymentStatus;
+
+            RefreshPaymentStatus(invoice);
+
+            if (oldStatus != invoice.PaymentStatus)
+            {
+                await _context.SaveChangesAsync();
+            }
+
+            return invoice;
         }
 
         public async Task<List<ClientModel>> GetClientsAsync()
@@ -88,7 +127,6 @@ namespace AryamanBMS.Repositories
             return Task.CompletedTask;
         }
 
-
         public Task DeleteAsync(InvoiceModel invoice)
         {
             invoice.InvoiceStatus = "Cancelled";
@@ -97,7 +135,6 @@ namespace AryamanBMS.Repositories
 
             return Task.CompletedTask;
         }
-
 
         public async Task<string> GenerateInvoiceNoAsync()
         {
@@ -175,6 +212,32 @@ namespace AryamanBMS.Repositories
             {
                 await transaction.RollbackAsync();
                 throw;
+            }
+        }
+
+        private static void RefreshPaymentStatus( InvoiceModel invoice)
+        {
+            if (invoice.InvoiceStatus == "Cancelled")
+            {
+                return;
+            }
+
+            if (invoice.BalanceAmount <= 0)
+            {
+                invoice.PaymentStatus = "Paid";
+            }
+            else if (invoice.DueDate.HasValue &&
+                     invoice.DueDate.Value.Date < DateTime.Today)
+            {
+                invoice.PaymentStatus = "Overdue";
+            }
+            else if (invoice.PaidAmount > 0)
+            {
+                invoice.PaymentStatus = "Partially Paid";
+            }
+            else
+            {
+                invoice.PaymentStatus = "Unpaid";
             }
         }
     }

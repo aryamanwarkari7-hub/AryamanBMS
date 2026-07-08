@@ -8,13 +8,16 @@ namespace AryamanBMS.ViewModels
 
         public string UserName { get; set; } = string.Empty;
 
-        [Required]
+        [Required(ErrorMessage = "Please enter your new password.")]
         [DataType(DataType.Password)]
         public string NewPassword { get; set; } = string.Empty;
 
-        [Required]
+        [Required(ErrorMessage = "Please confirm your new password.")]
         [DataType(DataType.Password)]
-        [Compare("NewPassword")]
+        [Compare("NewPassword", ErrorMessage = "The password and confirmation password do not match.")]
         public string ConfirmPassword { get; set; } = string.Empty;
+
+        // Add this missing property so Identity can validate the security token from the email link!
+        public string Token { get; set; } = string.Empty;
     }
 }

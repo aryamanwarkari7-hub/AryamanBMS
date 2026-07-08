@@ -782,7 +782,7 @@ namespace AryamanBMS.Controllers
             }
 
             if (invoice.InvoiceDetails == null ||
-                invoice.InvoiceDetails.Count == 0)
+                !invoice.InvoiceDetails.Any())
             {
                 TempData["Error"] =
                     "Invoice must contain at least one item before it can be issued.";
@@ -795,14 +795,14 @@ namespace AryamanBMS.Controllers
             if (invoice.GrandTotal <= 0)
             {
                 TempData["Error"] =
-                    "Invoice total must be greater than zero before issue.";
+                    "Invoice total must be greater than zero before it can be issued.";
 
                 return RedirectToAction(
                     nameof(Details),
                     new { id });
             }
 
-            string? userId =
+            var userId =
                 User.FindFirstValue(
                     ClaimTypes.NameIdentifier);
 
@@ -816,10 +816,130 @@ namespace AryamanBMS.Controllers
             invoice.IssuedOn = DateTime.Now;
             invoice.ModifiedOn = DateTime.Now;
 
+            await _invoiceRepository.UpdateAsync(invoice);
             await _invoiceRepository.SaveAsync();
 
             TempData["Success"] =
                 "Invoice issued successfully.";
+
+            return RedirectToAction(
+                nameof(Details),
+                new { id });
+        }
+
+        #endregion
+
+        #region Cancel Invoice
+
+        [HttpGet]
+        public async Task<IActionResult> Cancel(int id)
+        {
+            var invoice =
+                await _invoiceRepository.GetByIdAsync(id);
+
+            if (invoice == null || invoice.IsDeleted)
+            {
+                return NotFound();
+            }
+
+            if (invoice.InvoiceStatus == "Cancelled")
+            {
+                TempData["Error"] =
+                    "This invoice is already cancelled.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
+            }
+
+            if (invoice.PaymentStatus == "Paid")
+            {
+                TempData["Error"] =
+                    "A paid invoice cannot be cancelled directly.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
+            }
+
+            return View(invoice);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Cancel(
+            int id,
+            string cancellationReason)
+        {
+            var invoice =
+                await _invoiceRepository.GetByIdAsync(id);
+
+            if (invoice == null || invoice.IsDeleted)
+            {
+                return NotFound();
+            }
+
+            if (invoice.InvoiceStatus == "Cancelled")
+            {
+                TempData["Error"] =
+                    "This invoice is already cancelled.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
+            }
+
+            if (invoice.PaymentStatus == "Paid")
+            {
+                TempData["Error"] =
+                    "A paid invoice cannot be cancelled directly.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
+            }
+
+            if (string.IsNullOrWhiteSpace(cancellationReason))
+            {
+                ModelState.AddModelError(
+                    nameof(cancellationReason),
+                    "Cancellation reason is required.");
+
+                invoice.CancellationReason =
+                    cancellationReason;
+
+                return View(invoice);
+            }
+
+            var userId =
+                User.FindFirstValue(
+                    ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Unauthorized();
+            }
+
+            invoice.InvoiceStatus =
+                "Cancelled";
+
+            invoice.CancelledByUserId =
+                userId;
+
+            invoice.CancelledOn =
+                DateTime.Now;
+
+            invoice.CancellationReason =
+                cancellationReason.Trim();
+
+            invoice.ModifiedOn =
+                DateTime.Now;
+
+            await _invoiceRepository.UpdateAsync(invoice);
+            await _invoiceRepository.SaveAsync();
+
+            TempData["Success"] =
+                "Invoice cancelled successfully.";
 
             return RedirectToAction(
                 nameof(Details),
@@ -1146,6 +1266,8 @@ namespace AryamanBMS.Controllers
             decimal subTotal = 0;
             decimal gstTotal = 0;
             int sortOrder = 1;
+            var normalizedItems =
+                new List<(InvoiceDetailsModel Item, decimal LineAmount)>();
 
             foreach (var item in model.InvoiceDetails)
             {
@@ -1180,23 +1302,17 @@ namespace AryamanBMS.Controllers
                             item.GSTPercent,
                             0,
                             100);
-
-                    item.GSTAmount =
-                        Math.Round(
-                            taxableAmount *
-                            item.GSTPercent / 100m,
-                            2);
                 }
 
                 /*
-                 * Amount stores the taxable line amount.
-                 * GST remains separate.
+                 * Amount stores the taxable line amount before any
+                 * invoice-level discount. The discount is allocated
+                 * proportionately below before calculating GST.
                  */
                 item.Amount =  taxableAmount;
 
                 subTotal +=  taxableAmount;
-
-                gstTotal +=  item.GSTAmount;
+                normalizedItems.Add((item, taxableAmount));
             }
 
             model.Discount =  Math.Max(0,Math.Round(
@@ -1213,6 +1329,54 @@ namespace AryamanBMS.Controllers
                         2));
 
             model.SubTotal = Math.Round(subTotal,2);
+
+            decimal allocatedDiscountTotal = 0;
+
+            for (int index = 0;
+                 index < normalizedItems.Count;
+                 index++)
+            {
+                var (item, lineAmount) = normalizedItems[index];
+
+                decimal allocatedDiscount = 0;
+
+                if (model.Discount > 0 &&
+                    subTotal > 0)
+                {
+                    bool isLastItem =
+                        index == normalizedItems.Count - 1;
+
+                    allocatedDiscount = isLastItem
+                        ? model.Discount - allocatedDiscountTotal
+                        : Math.Round(
+                            model.Discount *
+                            lineAmount /
+                            subTotal,
+                            2);
+
+                    allocatedDiscount =
+                        Math.Clamp(
+                            allocatedDiscount,
+                            0,
+                            lineAmount);
+
+                    allocatedDiscountTotal += allocatedDiscount;
+                }
+
+                decimal taxableAfterDiscount =
+                    Math.Max(
+                        0,
+                        lineAmount - allocatedDiscount);
+
+                item.GSTAmount = isProforma
+                    ? 0
+                    : Math.Round(
+                        taxableAfterDiscount *
+                        item.GSTPercent / 100m,
+                        2);
+
+                gstTotal += item.GSTAmount;
+            }
 
             model.GSTAmount = isProforma
                     ? 0

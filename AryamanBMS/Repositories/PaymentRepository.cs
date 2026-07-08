@@ -40,6 +40,50 @@ namespace AryamanBMS.Repositories
             {
                 DateTime now = DateTime.Now;
 
+                var invoice = await _context.Invoices
+    .FirstOrDefaultAsync(x =>
+        x.InvoiceId == model.InvoiceId);
+
+                if (invoice == null ||
+                    invoice.IsDeleted ||
+                    invoice.InvoiceStatus != "Issued")
+                {
+                    throw new InvalidOperationException(
+                        "Payments can only be recorded against a valid issued invoice.");
+                }
+
+                if (invoice.ClientId != model.ClientId)
+                {
+                    throw new InvalidOperationException(
+                        "The selected invoice does not belong to this client.");
+                }
+
+                decimal alreadyReceived =
+                    await _context.PaymentReceipts
+                        .Where(x =>
+                            x.InvoiceId == model.InvoiceId &&
+                            x.IsActive &&
+                            !x.IsCancelled)
+                        .SumAsync(x =>
+                            (decimal?)x.AmountReceived) ?? 0;
+
+                decimal availableBalance =
+                    Math.Max(
+                        0,
+                        invoice.GrandTotal - alreadyReceived);
+
+                if (model.AmountReceived <= 0)
+                {
+                    throw new InvalidOperationException(
+                        "Payment amount must be greater than zero.");
+                }
+
+                if (model.AmountReceived > availableBalance)
+                {
+                    throw new InvalidOperationException(
+                        $"Payment amount cannot exceed the available balance of ₹{availableBalance:N2}.");
+                }
+
                 const string documentType = "PaymentReceipt";
                 string sequencePeriod = now.ToString("yyyyMM");
 
@@ -91,7 +135,8 @@ namespace AryamanBMS.Repositories
             }
         }
 
-        public async Task UpdateAsync(PaymentReceiptModel model)
+        public async Task UpdateAsync(
+    PaymentReceiptModel model)
         {
             await using var transaction =
                 await _context.Database.BeginTransactionAsync(
@@ -99,13 +144,55 @@ namespace AryamanBMS.Repositories
 
             try
             {
+                var invoice = await _context.Invoices
+                    .FirstOrDefaultAsync(x =>
+                        x.InvoiceId == model.InvoiceId);
+
+                if (invoice == null ||
+                    invoice.IsDeleted ||
+                    invoice.InvoiceStatus != "Issued")
+                {
+                    throw new InvalidOperationException(
+                        "Payments can only be recorded against a valid issued invoice.");
+                }
+
+                decimal otherReceiptsTotal =
+                    await _context.PaymentReceipts
+                        .Where(x =>
+                            x.InvoiceId == model.InvoiceId &&
+                            x.PaymentReceiptId != model.PaymentReceiptId &&
+                            x.IsActive &&
+                            !x.IsCancelled)
+                        .SumAsync(x =>
+                            (decimal?)x.AmountReceived) ?? 0;
+
+                decimal availableBalance =
+                    Math.Max(
+                        0,
+                        invoice.GrandTotal -
+                        otherReceiptsTotal);
+
+                if (model.AmountReceived <= 0)
+                {
+                    throw new InvalidOperationException(
+                        "Payment amount must be greater than zero.");
+                }
+
+                if (model.AmountReceived > availableBalance)
+                {
+                    throw new InvalidOperationException(
+                        $"Payment amount cannot exceed the available balance of ₹{availableBalance:N2}.");
+                }
+
                 model.UpdatedOn = DateTime.Now;
 
                 await _context.SaveChangesAsync();
 
-                await RecalculateInvoicePaymentAsync(model.InvoiceId);
+                await RecalculateInvoicePaymentAsync(
+                    model.InvoiceId);
 
                 await _context.SaveChangesAsync();
+
                 await transaction.CommitAsync();
             }
             catch
@@ -116,9 +203,9 @@ namespace AryamanBMS.Repositories
         }
 
         public async Task<bool> CancelAsync(
-    int paymentReceiptId,
-    string cancelledByUserId,
-    string cancellationReason)
+            int paymentReceiptId,
+            string cancelledByUserId,
+            string cancellationReason)
         {
             await using var transaction =
                 await _context.Database.BeginTransactionAsync(
@@ -188,17 +275,14 @@ namespace AryamanBMS.Repositories
                 .ToListAsync();
         }
 
-        public async Task<List<InvoiceModel>> GetInvoicesByClientAsync
-            (int clientId)
+        public async Task<List<InvoiceModel>> GetInvoicesByClientAsync(int clientId)
         {
             return await _context.Invoices
                 .Where(x =>
                     x.ClientId == clientId &&
                     !x.IsDeleted &&
-                    x.InvoiceStatus == "Issued" &&
-                    x.BalanceAmount > 0)
-                .OrderByDescending(x =>
-                    x.InvoiceDate)
+                    x.InvoiceStatus == "Issued")
+                .OrderByDescending(x => x.InvoiceDate)
                 .ToListAsync();
         }
 
@@ -228,32 +312,47 @@ namespace AryamanBMS.Repositories
             if (invoice == null)
                 return;
 
-            decimal paidAmount = await _context.PaymentReceipts
-                .Where(x =>
-                    x.InvoiceId == invoiceId &&
-                    x.IsActive &&
-                    !x.IsCancelled)
-                .SumAsync(x => (decimal?)x.AmountReceived) ?? 0;
+            decimal paidAmount =
+                await _context.PaymentReceipts
+                    .Where(x =>
+                        x.InvoiceId == invoiceId &&
+                        x.IsActive &&
+                        !x.IsCancelled)
+                    .SumAsync(x =>
+                        (decimal?)x.AmountReceived) ?? 0;
 
             invoice.PaidAmount = paidAmount;
 
             invoice.BalanceAmount =
-                Math.Max(0, invoice.GrandTotal - paidAmount);
+                Math.Max(
+                    0,
+                    invoice.GrandTotal - paidAmount);
 
-            invoice.PaymentStatus =
-           invoice.BalanceAmount <= 0
-               ? "Paid"
-               : paidAmount > 0
-               ? "Partially Paid"
-               : "Unpaid";
-           
-               invoice.ModifiedOn = DateTime.Now;
+            if (invoice.BalanceAmount <= 0)
+            {
+                invoice.PaymentStatus = "Paid";
+            }
+            else if (invoice.DueDate.HasValue &&
+             invoice.DueDate.Value.Date < DateTime.Today)
+            {
+                invoice.PaymentStatus = "Overdue";
+            }
+            else if (paidAmount > 0)
+            {
+                invoice.PaymentStatus = "Partially Paid";
+            }
+            else
+            {
+                invoice.PaymentStatus = "Unpaid";
+            }
+
+            invoice.ModifiedOn = DateTime.Now;
         }
 
         public async Task<bool> TransactionReferenceExistsAsync(
-    string? transactionNo,
-    string? referenceNo,
-    int? excludePaymentReceiptId = null)
+             string? transactionNo,
+             string? referenceNo,
+             int? excludePaymentReceiptId = null)
         {
             string normalizedTransaction =
                 (transactionNo ?? string.Empty).Trim().ToLower();

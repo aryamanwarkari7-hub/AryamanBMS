@@ -1,0 +1,89 @@
+﻿@model AryamanBMS.Models.InvoiceModel
+
+@{
+    ViewData["Title"] = "Cancel Invoice";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Cancel Invoice</h1>
+
+        <p class="module-subtitle">
+            Cancel invoice @Model.InvoiceNo
+        </p>
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Cancellation Details</h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="app-alert app-alert-danger">
+            This invoice will be marked as cancelled.
+            It will not be permanently deleted.
+        </div>
+
+        <form asp-action="Cancel"
+              asp-route-id="@Model.InvoiceId"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <div class="form-group">
+                <label class="form-label">
+                    Invoice Number
+                </label>
+
+                <input type="text"
+                       class="app-input"
+                       value="@Model.InvoiceNo"
+                       readonly />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    Cancellation Reason
+                    <span class="text-danger">*</span>
+                </label>
+
+                <textarea name="cancellationReason"
+                          class="app-input"
+                          rows="4"
+                          maxlength="500">@Model.CancellationReason</textarea>
+
+                @Html.ValidationMessage(
+                "cancellationReason",
+                                null,
+                                new { @class = "validation-message" })
+            </div>
+
+            <div class="form-actions">
+
+                <button type="submit"
+                        class="btn-app btn-danger-app"
+                        onclick="return confirm('Are you sure you want to cancel this invoice?');">
+
+                    <i class="bi bi-x-circle"></i>
+                    Cancel Invoice
+                </button>
+
+                <a asp-action="Details"
+                   asp-route-id="@Model.InvoiceId"
+                   class="btn-app btn-secondary-app">
+
+                    Back
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>

@@ -110,7 +110,7 @@
                 </button>
 
             </form>
-        }
+        }     
 
         @if (Model.InvoiceStatus == "Draft")
         {
@@ -120,6 +120,17 @@
 
                 <i class="bi bi-pencil"></i>
                 Edit Invoice
+            </a>
+        }
+        @if (Model.InvoiceStatus != "Cancelled" &&
+                Model.PaymentStatus != "Paid")
+        {
+            <a asp-action="Cancel"
+               asp-route-id="@Model.InvoiceId"
+               class="btn-app btn-danger-app">
+
+                <i class="bi bi-x-circle"></i>
+                Cancel Invoice
             </a>
         }
 

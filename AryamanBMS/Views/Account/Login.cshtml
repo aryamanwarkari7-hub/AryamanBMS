@@ -7,153 +7,138 @@
 
 <div class="auth-page corporate-login">
 
-    <section class="login-brand-panel">
-
+    <section class="login-brand-panel" aria-label="Enterprise Branding">
         <div class="login-brand-content">
 
             <div class="login-logo-wrap">
                 <img src="~/images/aryaman_logo.svg"
                      asp-append-version="true"
-                     alt="Aryaman Technologies Private Limited"
+                     alt="Aryaman Technologies Logo"
                      class="login-logo" />
             </div>
 
-            <div>
+            <div class="login-brand-text">
                 <p class="login-eyebrow">
                     Aryaman Technologies Private Limited
                 </p>
-
                 <h1>
                     Business Management System
                 </h1>
-
                 <p class="login-copy">
-                    Secure access for HR, payroll, attendance, employee records,
-                    projects and business operations.
+                    Secure unified access for HR workflows, payroll cycles, attendance tracking, master employee matrices, projects, and automated operations.
                 </p>
             </div>
 
             <div class="login-highlights">
-
                 <div>
-                    <i class="bi bi-shield-check"></i>
+                    <i class="bi bi-shield-check" aria-hidden="true"></i>
                     <span>Role-based access</span>
                 </div>
-
                 <div>
-                    <i class="bi bi-people"></i>
+                    <i class="bi bi-people" aria-hidden="true"></i>
                     <span>Employee lifecycle</span>
                 </div>
-
                 <div>
-                    <i class="bi bi-graph-up-arrow"></i>
+                    <i class="bi bi-graph-up-arrow" aria-hidden="true"></i>
                     <span>Operational visibility</span>
                 </div>
-
             </div>
 
         </div>
-
     </section>
 
-    <section class="login-form-panel">
-
+    <main class="login-form-panel">
         <div class="login-card">
 
-            <div class="login-card-header">
+            <header class="login-card-header">
+                <p class="login-card-kicker">Secure sign in</p>
+                <h2>Welcome back</h2>
+                <p>Enter your system credentials to access your secure profile workspace.</p>
+            </header>
 
-                <p class="login-card-kicker">
-                    Secure sign in
-                </p>
-
-                <h2>
-                    Welcome back
-                </h2>
-
-                <p>
-                    Enter your credentials to continue to Aryaman BMS.
-                </p>
-
-            </div>
-
-            <form asp-action="Login"
-                  method="post"
-                  class="login-form">
-
+            <form asp-action="Login" method="post" class="login-form">
                 @Html.AntiForgeryToken()
 
-                <div asp-validation-summary="ModelOnly"
-                     class="app-alert-danger">
-                </div>
+                <div asp-validation-summary="ModelOnly" class="app-alert-danger"></div>
 
                 <div class="form-group">
-
-                    <label asp-for="UserName"
-                           class="form-label">
-                        Username
-                    </label>
-
+                    <label asp-for="UserName" class="form-label">Username</label>
                     <input asp-for="UserName"
                            class="app-input"
                            autocomplete="username"
                            placeholder="Enter username" />
-
-                    <span asp-validation-for="UserName"
-                          class="validation-message"></span>
-
+                    <span asp-validation-for="UserName" class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
-
-                    <label asp-for="Password"
-                           class="form-label">
-                        Password
-                    </label>
-
-                    <input asp-for="Password"
-                           class="app-input"
-                           autocomplete="current-password"
-                           placeholder="Enter password" />
-
-                    <span asp-validation-for="Password"
-                          class="validation-message"></span>
-
+                    <div class="login-label-row">
+                        <label asp-for="Password" class="form-label">Password</label>
+                        <a asp-action="ForgotPassword" asp-controller="Account" class="login-inline-link" tabindex="-1">Forgot password?</a>
+                    </div>
+                    <div class="app-input-action-wrapper">
+                        <input asp-for="Password"
+                               type="password"
+                               class="app-input"
+                               autocomplete="current-password"
+                               placeholder="Enter password" />
+                        <button type="button" class="btn-input-action" id="passwordToggle" aria-label="Toggle password visibility">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    <span asp-validation-for="Password" class="validation-message"></span>
                 </div>
 
                 <div class="login-form-options">
-
-                    <label class="form-check">
-
-                        <input asp-for="RememberMe"
-                               class="form-check-input" />
-
-                        <span class="form-check-label">
-                            Remember me
-                        </span>
-
+                    <label class="form-check d-flex align-items-center gap-2 m-0">
+                        <input asp-for="RememberMe" class="form-check-input" />
+                        <span class="form-check-label">Remember me</span>
                     </label>
-
                 </div>
 
-                <button type="submit"
-                        class="btn-app btn-primary-app login-submit">
+                <button type="submit" class="btn-app btn-primary-app login-submit">
                     <i class="bi bi-box-arrow-in-right"></i>
-                    Sign in
+                    <span>Sign in</span>
                 </button>
+
+                <div class="auth-divider">
+                    <span>or corporate identity provider</span>
+                </div>
+
+                <div class="sso-providers">
+                    <button type="button" class="btn-app btn-secondary-app w-100 gap-2">
+                        <i class="bi bi-microsoft text-primary"></i> Single Sign-On (SSO)
+                    </button>
+                </div>
 
             </form>
 
-            <p class="login-support">
-                Need access? Contact your system administrator.
-            </p>
+            <footer class="login-support">
+                Need account workspace initialization assistance?<br />
+                <span class="text-dark font-weight-bold">Contact your system administrator.</span>
+            </footer>
 
         </div>
-
-    </section>
+    </main>
 
 </div>
 
 @section Scripts
 {
     <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        // Native password field unmask script execution
+        document.getElementById('passwordToggle').addEventListener('click', function () {
+            const passwordInput = document.querySelector('input[name="Password"]');
+            const toggleIcon = this.querySelector('i');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.classList.replace('bi-eye', 'bi-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.classList.replace('bi-eye-slash', 'bi-eye');
+            }
+        });
+    </script>
 }

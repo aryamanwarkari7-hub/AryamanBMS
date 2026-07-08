@@ -78,7 +78,7 @@
     line-height: 1.35;
     letter-spacing: 0;
     text-transform: uppercase;
-    max-width: 360px;
+    max-width: 400px;
 }
 
 .corporate-login .login-highlights {
@@ -324,6 +324,159 @@
     color: #64748b;
     font-size: 14px;
     text-align: center;
+}
+
+/* ==========================================
+   ADVANCED AUTH COMPONENT ADAPTERS
+========================================== */
+
+/* Split field utility layout */
+.login-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.login-inline-link {
+    font-size: var(--font-xs, 0.85rem);
+    color: var(--primary-color, #1d4ed8);
+    text-decoration: none;
+    font-weight: var(--fw-medium, 600);
+    transition: opacity 140ms ease;
+}
+
+    .login-inline-link:hover {
+        text-decoration: underline;
+        opacity: 0.8;
+    }
+
+/* Action Field Input Wrapping */
+.app-input-action-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+    .app-input-action-wrapper .app-input {
+        padding-right: 46px; /* Protect inputs from running into action button */
+    }
+
+.btn-input-action {
+    position: absolute;
+    right: 6px;
+    height: 80%;
+    width: 36px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted, #64748b);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: var(--radius-md, 6px);
+    transition: color 140ms ease, background-color 140ms ease;
+}
+
+    .btn-input-action:hover {
+        color: var(--text-primary, #0f172a);
+        background-color: rgba(15, 23, 42, 0.04);
+    }
+
+/* Styled Enterprise Separation Lines */
+.auth-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: var(--space-md, 16px) 0;
+    color: var(--text-muted, #64748b);
+    font-size: var(--font-xs, 12px);
+    font-weight: var(--fw-medium, 500);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+    .auth-divider::before,
+    .auth-divider::after {
+        content: '';
+        flex: 1;
+        border-bottom: 1px solid var(--border-color, rgba(15, 23, 42, 0.08));
+    }
+
+    .auth-divider:not(:empty)::before {
+        margin-right: .75em;
+    }
+
+    .auth-divider:not(:empty)::after {
+        margin-left: .75em;
+    }
+
+.sso-providers {
+    display: flex;
+    gap: var(--space-sm, 8px);
+}
+
+/* ==========================================
+   FIX FOR SMALL ENTERPRISE LOGO
+========================================== */
+..corporate-login .login-logo-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 24px;
+    margin-bottom: var(--space-xl, 32px);
+    /* Premium glass layer providing background separation */
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+}
+
+.corporate-login .login-logo {
+    width: 220px;
+    height: auto;
+    display: block;
+    filter: none; /* Keeps original color scheme intact safely */
+}
+
+/* ==========================================
+   PASSWORD RECOVERY COMPONENT UTILITIES
+========================================== */
+
+.login-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm, 8px);
+    font-size: var(--font-sm, 0.9rem);
+    color: var(--text-secondary, #64748b);
+    text-decoration: none;
+    font-weight: var(--fw-medium, 600);
+    transition: color 140ms ease;
+}
+
+    .login-back-link:hover {
+        color: var(--primary-color, #1d4ed8);
+    }
+
+/* Success notice modifier to align with app-alert structure */
+.app-alert-success {
+    padding: 12px 16px;
+    background-color: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #16a34a;
+    border-radius: var(--radius-md, 8px);
+    font-size: var(--font-sm, 0.88rem);
+    display: flex;
+    align-items: center;
+}
+
+/* Adjust size for smaller screen layouts dynamically */
+@media (max-width: 576px) {
+    .corporate-login .login-logo {
+        max-width: 180px; /* Perfectly scales down on mobile viewports */
+    }
 }
 
 @media (max-width: 1100px) {

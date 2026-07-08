@@ -650,6 +650,7 @@
                 var subTotal = 0;
                 var gstTotal = 0;
                 var proforma = isProforma();
+                var rows = [];
 
                 $("#itemTable tbody tr").each(
                     function () {
@@ -673,25 +674,23 @@
                         var taxableAmount =
                             qty * rate;
 
-                        var gstAmount =
-                            taxableAmount *
-                            gstPercent / 100;
-
                         if (proforma) {
                             row.find(".gst").val("0");
                         }
 
-                        row.find(".gstAmount")
-                            .val(gstAmount.toFixed(2));
-
                         /*
-                         * Amount contains taxable amount only.
-                         * GST is stored separately.
+                         * Amount contains taxable amount before any
+                         * invoice-level discount. GST is calculated
+                         * after proportional discount allocation below.
                          */
                              row.find(".amount").val(taxableAmount.toFixed(2));
 
                         subTotal += taxableAmount;
-                        gstTotal += gstAmount;
+                        rows.push({
+                            row: row,
+                            taxableAmount: taxableAmount,
+                            gstPercent: gstPercent
+                        });
                     });
 
                 var discount =
@@ -705,6 +704,46 @@
                 if (discount > subTotal) {
                     discount = subTotal;
                 }
+
+                var allocatedDiscountTotal = 0;
+
+                rows.forEach(function (item, index) {
+                    var allocatedDiscount = 0;
+
+                    if (discount > 0 && subTotal > 0) {
+                        var isLastItem =
+                            index === rows.length - 1;
+
+                        allocatedDiscount = isLastItem
+                            ? discount - allocatedDiscountTotal
+                            : Math.round(
+                                (
+                                    discount *
+                                    item.taxableAmount /
+                                    subTotal
+                                ) * 100) / 100;
+
+                        allocatedDiscount = Math.min(
+                            Math.max(allocatedDiscount, 0),
+                            item.taxableAmount);
+
+                        allocatedDiscountTotal += allocatedDiscount;
+                    }
+
+                    var taxableAfterDiscount = Math.max(
+                        0,
+                        item.taxableAmount - allocatedDiscount);
+
+                    var gstAmount = proforma
+                        ? 0
+                        : taxableAfterDiscount *
+                            item.gstPercent / 100;
+
+                    item.row.find(".gstAmount")
+                        .val(gstAmount.toFixed(2));
+
+                    gstTotal += gstAmount;
+                });
 
                 var grandTotal =
                     subTotal -
