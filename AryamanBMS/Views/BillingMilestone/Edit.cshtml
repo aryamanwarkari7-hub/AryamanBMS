@@ -1,0 +1,43 @@
+@model AryamanBMS.Models.BillingMilestoneModel
+
+@{
+    ViewData["Title"] = "Edit Billing Milestone";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Edit Billing Milestone</h1>
+        <p class="module-subtitle">Update milestone value, status, or billing stage details</p>
+    </div>
+
+    <a asp-action="Index" class="btn-app btn-secondary-app">
+        <i class="bi bi-arrow-left"></i>
+        Back
+    </a>
+</div>
+
+<form asp-action="Edit" asp-route-id="@Model.BillingMilestoneId" method="post">
+    @Html.AntiForgeryToken()
+
+    <div asp-validation-summary="ModelOnly" class="app-alert-danger"></div>
+
+    <partial name="_Form" model="Model" />
+
+    <div class="app-card">
+        <div class="card-body">
+            <button type="submit" class="btn-app btn-primary-app">
+                <i class="bi bi-check-circle"></i>
+                Update Milestone
+            </button>
+
+            <a asp-action="Index" class="btn-app btn-secondary-app">
+                Cancel
+            </a>
+        </div>
+    </div>
+</form>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

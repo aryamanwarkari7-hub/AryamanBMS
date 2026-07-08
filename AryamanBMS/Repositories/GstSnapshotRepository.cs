@@ -60,7 +60,7 @@ public class GstSnapshotRepository : IGstSnapshotRepository
     {
         if (string.Equals(
                 snapshot.Status,
-                "Filed",
+                FinancialConstants.GstSnapshotStatus.Locked,
                 StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException(
@@ -86,15 +86,62 @@ public class GstSnapshotRepository : IGstSnapshotRepository
 
         if (string.Equals(
                 snapshot.Status,
-                "Filed",
+                FinancialConstants.GstSnapshotStatus.Locked,
                 StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
 
-        snapshot.Status = "Filed";
-        snapshot.FiledOn = DateTime.Now;
+        snapshot.Status = FinancialConstants.GstSnapshotStatus.Locked;
+        snapshot.LockedOn = DateTime.Now;
+        snapshot.LockedByUserId = filedByUserId;
+        snapshot.IsFiledPeriodLocked = true;
+
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+
+    public async Task<bool> VerifyAsync(
+    int month,
+    int year,
+    string verifiedByUserId)
+    {
+        var snapshot = await _context.GstMonthlySnapshots
+            .FirstOrDefaultAsync(x => x.Month == month && x.Year == year);
+
+        if (snapshot == null ||
+            snapshot.Status != FinancialConstants.GstSnapshotStatus.Calculated)
+        {
+            return false;
+        }
+
+        snapshot.Status = FinancialConstants.GstSnapshotStatus.Verified;
+        snapshot.VerifiedByUserId = verifiedByUserId;
+        snapshot.VerifiedOn = DateTime.Now;
+
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+
+    public async Task<bool> MarkFiledAsync(
+    int month,
+    int year,
+    string filedByUserId)
+    {
+        var snapshot = await _context.GstMonthlySnapshots
+            .FirstOrDefaultAsync(x => x.Month == month && x.Year == year);
+
+        if (snapshot == null ||
+            snapshot.Status == FinancialConstants.GstSnapshotStatus.Locked)
+        {
+            return false;
+        }
+
+        snapshot.Status = FinancialConstants.GstSnapshotStatus.Filed;
         snapshot.FiledByUserId = filedByUserId;
+        snapshot.FiledOn = DateTime.Now;
 
         await _context.SaveChangesAsync();
 
@@ -117,16 +164,17 @@ public class GstSnapshotRepository : IGstSnapshotRepository
 
         if (!string.Equals(
                 snapshot.Status,
-                "Filed",
+                FinancialConstants.GstSnapshotStatus.Locked,
                 StringComparison.OrdinalIgnoreCase))
         {
             return false;
         }
 
-        snapshot.Status = "Calculated";
+        snapshot.Status = FinancialConstants.GstSnapshotStatus.Calculated;
         snapshot.ReopenedByUserId = reopenedByUserId;
         snapshot.ReopenedOn = DateTime.Now;
         snapshot.ReopenReason = reason.Trim();
+        snapshot.IsFiledPeriodLocked = false;
 
         await _context.SaveChangesAsync();
 

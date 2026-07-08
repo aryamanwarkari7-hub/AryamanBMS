@@ -219,9 +219,67 @@
 -- ADD COLUMN InvoiceType VARCHAR(30) NOT NULL DEFAULT 'Tax Invoice'
 -- AFTER InvoiceNo;
 
-ALTER TABLE TableInvoiceMaster
-ADD COLUMN SACCode VARCHAR(50) NULL AFTER GSTNo,
-ADD COLUMN KindAttention VARCHAR(200) NULL AFTER SACCode,
-ADD COLUMN ReceiverName VARCHAR(200) NULL AFTER KindAttention;
+-- ALTER TABLE TableInvoiceMaster
+-- ADD COLUMN SACCode VARCHAR(50) NULL AFTER GSTNo,
+-- ADD COLUMN KindAttention VARCHAR(200) NULL AFTER SACCode,
+-- ADD COLUMN ReceiverName VARCHAR(200) NULL AFTER KindAttention;
 
+-- ALTER TABLE TableInvoiceMaster
+-- DROP COLUMN KindAttention,
+-- DROP COLUMN ReceiverName;
+
+-- ALTER TABLE TableCompanyProfile
+-- ADD COLUMN VendorRegistrationNumber VARCHAR(100) NULL AFTER Phone,
+-- ADD COLUMN BankName VARCHAR(150) NULL AFTER VendorRegistrationNumber,
+-- ADD COLUMN AccountName VARCHAR(100) NULL AFTER BankName,
+-- ADD COLUMN AccountNumber VARCHAR(50) NULL AFTER AccountName,
+-- ADD COLUMN IFSCCode VARCHAR(20) NULL AFTER AccountNumber,
+-- ADD COLUMN BankBranch VARCHAR(150) NULL AFTER IFSCCode,
+-- ADD COLUMN AuthorizedSignatory VARCHAR(150) NULL AFTER BankBranch;
+
+-- ALTER TABLE TableInvoiceMaster
+--     ADD COLUMN IssuedByUserId VARCHAR(450) NULL,
+--     ADD COLUMN IssuedOn DATETIME NULL,
+--     ADD COLUMN CancelledByUserId VARCHAR(450) NULL,
+--     ADD COLUMN CancelledOn DATETIME NULL,
+--     ADD COLUMN CancellationReason VARCHAR(500) NULL,
+--     ADD COLUMN ReplacementInvoiceId INT NULL;
+
+-- ALTER TABLE tableinvoicemaster
+-- ADD COLUMN SupplierStateCode VARCHAR(2) NULL,
+-- ADD COLUMN CustomerStateCode VARCHAR(2) NULL,
+-- ADD COLUMN PlaceOfSupplyStateCode VARCHAR(2) NULL,
+-- ADD COLUMN IsGstStateOverride TINYINT(1) NOT NULL DEFAULT 0,
+-- ADD COLUMN GstStateOverrideReason VARCHAR(500) NULL;
+
+-- ALTER TABLE tableinvoicemaster
+-- ADD COLUMN BillingMilestoneId INT NULL;
+
+-- ALTER TABLE tableproposal
+-- ADD AcceptedByUserId VARCHAR(450) NULL,
+-- ADD AcceptedOn DATETIME NULL,
+-- ADD RejectedByUserId VARCHAR(450) NULL,
+-- ADD RejectedOn DATETIME NULL,
+-- ADD RejectionReason VARCHAR(500) NULL,
+-- ADD ExpiredOn DATETIME NULL,
+-- ADD RevisionReason VARCHAR(500) NULL,
+-- ADD RevisedByUserId VARCHAR(450) NULL,
+-- ADD RevisedOn DATETIME NULL,
+-- ADD CustomerApprovalReference VARCHAR(150) NULL,
+-- ADD CreatedByUserId VARCHAR(450) NULL,
+-- ADD UpdatedByUserId VARCHAR(450) NULL,
+-- ADD SubmittedByUserId VARCHAR(450) NULL,
+-- ADD SubmittedOn DATETIME NULL,
+-- ADD ApprovedByUserId VARCHAR(450) NULL,
+-- ADD ApprovedOn DATETIME NULL,
+-- ADD IssuedByUserId VARCHAR(450) NULL,
+-- ADD IssuedOn DATETIME NULL,
+-- ADD CancelledByUserId VARCHAR(450) NULL,
+-- ADD CancelledOn DATETIME NULL,
+-- ADD CancellationReason VARCHAR(500) NULL;
+
+ALTER TABLE tableemployee
+ADD ResignationDate DATETIME NULL,
+ADD LastWorkingDate DATETIME NULL,
+ADD RelievingDate DATETIME NULL;
 

@@ -1,0 +1,106 @@
+@model VendorModel
+
+@{
+    string title = Model.VendorId == 0 ? "Create Vendor" : "Edit Vendor";
+    ViewData["Title"] = title;
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">@title.ToUpper()</h1>
+        <p class="module-subtitle">Maintain vendor GST, PAN, address and payment defaults.</p>
+    </div>
+    <div class="module-header-actions">
+        <a asp-action="Index" class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
+</div>
+
+<form method="post">
+    @Html.AntiForgeryToken()
+    @if (Model.VendorId != 0)
+    {
+        <input type="hidden" asp-for="VendorId" />
+    }
+
+    <div asp-validation-summary="ModelOnly" class="app-alert-danger"></div>
+
+    <div class="app-card form-card">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Vendor Details</h2>
+                <p class="card-subtitle">Basic identity and registration information.</p>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label asp-for="VendorCode" class="form-label">Vendor Code</label>
+                    <input asp-for="VendorCode" class="app-input" maxlength="30" />
+                    <span asp-validation-for="VendorCode" class="validation-message"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="VendorName" class="form-label">Vendor Name</label>
+                    <input asp-for="VendorName" class="app-input" maxlength="150" />
+                    <span asp-validation-for="VendorName" class="validation-message"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="GSTIN" class="form-label">GSTIN</label>
+                    <input asp-for="GSTIN" class="app-input" maxlength="15" />
+                    <span asp-validation-for="GSTIN" class="validation-message"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="PAN" class="form-label">PAN</label>
+                    <input asp-for="PAN" class="app-input" maxlength="10" />
+                    <span asp-validation-for="PAN" class="validation-message"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="State" class="form-label">State</label>
+                    <input asp-for="State" class="app-input" maxlength="100" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="StateCode" class="form-label">State Code</label>
+                    <input asp-for="StateCode" class="app-input" maxlength="2" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="RegistrationType" class="form-label">Registration Type</label>
+                    <select asp-for="RegistrationType" class="app-select">
+                        <option value="">Select</option>
+                        <option value="Registered">Registered</option>
+                        <option value="Composition">Composition</option>
+                        <option value="Unregistered">Unregistered</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label asp-for="PaymentTerms" class="form-label">Payment Terms</label>
+                    <input asp-for="PaymentTerms" class="app-input" maxlength="100" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Address" class="form-label">Address</label>
+                <textarea asp-for="Address" class="app-input" rows="3" maxlength="500"></textarea>
+            </div>
+            <div class="form-group">
+                <label asp-for="BankDetails" class="form-label">Bank Details</label>
+                <textarea asp-for="BankDetails" class="app-input" rows="3" maxlength="1000"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-card">
+        <div class="card-body form-actions">
+            <button type="submit" class="btn-app btn-primary-app">
+                <i class="bi bi-check-circle"></i>
+                Save
+            </button>
+            <a asp-action="Index" class="btn-app btn-secondary-app">Cancel</a>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -34,6 +34,46 @@ namespace AryamanBMS.Controllers
 
         private const string DocumentFolder = "GstDocuments";
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> VerifySnapshot(
+          int month,
+          int year)
+        {
+            var snapshot =
+                await _snapshotRepository.GetByMonthYearAsync(
+                    month,
+                    year);
+
+            if (snapshot == null)
+                return NotFound();
+
+            if (IsGstPeriodClosed(snapshot))
+            {
+                TempData["Error"] =
+                    "Locked GST periods cannot be verified again.";
+
+                return RedirectToAction(
+                    nameof(Dashboard),
+                    new { month, year });
+            }
+
+            bool verified =
+                await _snapshotRepository.VerifyAsync(
+                    month,
+                    year,
+                    _userManager.GetUserId(User) ?? string.Empty);
+
+            TempData[verified ? "Success" : "Error"] =
+                verified
+                    ? "GST snapshot verified successfully."
+                    : "Only calculated GST snapshots can be verified.";
+
+            return RedirectToAction(
+                nameof(Dashboard),
+                new { month, year });
+        }
+
         /// <summary>
         /// Constructor with dependency injection
         /// </summary>
@@ -423,10 +463,10 @@ namespace AryamanBMS.Controllers
             if (snapshot == null)
                 return NotFound();
 
-            if (snapshot.Status == "Filed")
+            if (IsGstPeriodClosed(snapshot))
             {
                 TempData["Error"] =
-                    "Filed GST periods cannot be edited.";
+                    "Locked GST periods cannot be edited.";
 
                 return RedirectToAction(
                     nameof(Dashboard),
@@ -549,10 +589,23 @@ namespace AryamanBMS.Controllers
                     ? User.Identity?.Name
                     : null;
 
+            gstReturn.FiledByUserId =
+                status == "Filed"
+                    ? _userManager.GetUserId(User)
+                    : null;
+
             gstReturn.Remarks = remarks;
             gstReturn.UpdatedOn = DateTime.Now;
 
             await _returnRepository.SaveAsync();
+
+            if (status == "Filed")
+            {
+                await _snapshotRepository.MarkFiledAsync(
+                    snapshot.Month,
+                    snapshot.Year,
+                    _userManager.GetUserId(User) ?? string.Empty);
+            }
 
             TempData["Success"] =
                 $"{returnType} status updated successfully.";
@@ -582,10 +635,10 @@ namespace AryamanBMS.Controllers
             if (snapshot == null)
                 return NotFound();
 
-            if (snapshot.Status == "Filed")
+            if (IsGstPeriodClosed(snapshot))
             {
                 TempData["Error"] =
-                    "Filed GST periods cannot be edited.";
+                    "Locked GST periods cannot be edited.";
 
                 return RedirectToAction(
                     nameof(Dashboard),
@@ -886,6 +939,15 @@ namespace AryamanBMS.Controllers
             return new DateTime(year, month, 1);
         }
 
+        private static bool IsGstPeriodClosed(GstMonthlySnapshotModel snapshot)
+        {
+            return snapshot.IsFiledPeriodLocked ||
+                   string.Equals(
+                       snapshot.Status,
+                       FinancialConstants.GstSnapshotStatus.Locked,
+                       StringComparison.OrdinalIgnoreCase);
+        }
+
         /// <summary>
         /// Get financial year from month and calendar year
         /// Financial year in India: April (Month 4) to March (Month 3)
@@ -1077,11 +1139,11 @@ namespace AryamanBMS.Controllers
 
             if (string.Equals(
                     snapshot.Status,
-                    "Filed",
+                    FinancialConstants.GstSnapshotStatus.Locked,
                     StringComparison.OrdinalIgnoreCase))
             {
                 TempData["Error"] =
-                    "This GST snapshot is already filed and locked.";
+                    "This GST snapshot is already locked.";
 
                 return RedirectToAction(
                     nameof(Dashboard),
@@ -1098,6 +1160,17 @@ namespace AryamanBMS.Controllers
 
             bool challanPaid = snapshot.Challans.Any(x =>
                 x.Status == "Paid");
+
+            if (snapshot.Status != FinancialConstants.GstSnapshotStatus.Filed &&
+                snapshot.Status != FinancialConstants.GstSnapshotStatus.Verified)
+            {
+                TempData["Error"] =
+                    "GST snapshot must be verified and filed before locking.";
+
+                return RedirectToAction(
+                    nameof(Dashboard),
+                    new { month, year });
+            }
 
             if (!gstr1Filed || !gstr3bFiled || !challanPaid)
             {
@@ -1139,7 +1212,7 @@ namespace AryamanBMS.Controllers
 
             TempData["Success"] =
                 $"GST snapshot for {GetMonthName(month)} {year} " +
-                "was filed and locked successfully.";
+                "was locked successfully.";
 
             return RedirectToAction(
                 nameof(Dashboard),
@@ -1197,11 +1270,11 @@ namespace AryamanBMS.Controllers
 
             if (!string.Equals(
                     snapshot.Status,
-                    "Filed",
+                    FinancialConstants.GstSnapshotStatus.Locked,
                     StringComparison.OrdinalIgnoreCase))
             {
                 TempData["Error"] =
-                    "Only a filed GST snapshot can be reopened.";
+                    "Only a locked GST snapshot can be reopened.";
 
                 return RedirectToAction(
                     nameof(Dashboard),

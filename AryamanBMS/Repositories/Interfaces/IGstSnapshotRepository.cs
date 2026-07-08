@@ -23,6 +23,16 @@ namespace AryamanBMS.Repositories.Interfaces
           int year,
           string filedByUserId);
 
+        Task<bool> VerifyAsync(
+          int month,
+          int year,
+          string verifiedByUserId);
+
+        Task<bool> MarkFiledAsync(
+          int month,
+          int year,
+          string filedByUserId);
+
         Task<bool> ReopenAsync(
           int month,
           int year,

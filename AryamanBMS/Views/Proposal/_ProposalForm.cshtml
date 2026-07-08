@@ -146,6 +146,23 @@
 
             </div>
 
+            @if (Model.Proposal.ProposalId != 0)
+            {
+                <div class="form-group">
+                    <label asp-for="Proposal.RejectionReason"
+                           class="form-label">
+                        Rejection Reason
+                    </label>
+
+                    <textarea asp-for="Proposal.RejectionReason"
+                              class="app-textarea"
+                              rows="3"></textarea>
+
+                    <span asp-validation-for="Proposal.RejectionReason"
+                          class="validation-message"></span>
+                </div>
+            }
+
             <div class="form-group">
                 <label asp-for="Proposal.ProposalDate" class="form-label">
                     Proposal Date
@@ -172,6 +189,38 @@
                 <span asp-validation-for="Proposal.RevisionNumber"
                       class="validation-message"></span>
             </div>
+
+            @if (Model.Proposal.ProposalId != 0 &&
+                        Model.Proposal.Status == "Accepted")
+            {
+                <div class="form-group">
+                    <label asp-for="Proposal.RevisionReason"
+                           class="form-label">
+                        Revision Reason
+                    </label>
+
+                    <textarea asp-for="Proposal.RevisionReason"
+                              class="app-textarea"
+                              rows="3"></textarea>
+
+                    <span asp-validation-for="Proposal.RevisionReason"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Proposal.CustomerApprovalReference"
+                           class="form-label">
+                        Customer Approval Reference
+                    </label>
+
+                    <input asp-for="Proposal.CustomerApprovalReference"
+                           class="app-input"
+                           placeholder="Email / PO reference / approval note" />
+
+                    <span asp-validation-for="Proposal.CustomerApprovalReference"
+                          class="validation-message"></span>
+                </div>
+            }
 
             <div class="form-group">
                 <label asp-for="Proposal.PreparedBy"

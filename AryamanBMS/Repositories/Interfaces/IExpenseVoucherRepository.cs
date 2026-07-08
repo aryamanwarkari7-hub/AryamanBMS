@@ -33,13 +33,22 @@ namespace AryamanBMS.Repositories.Interfaces
             string rejectedByUserId,
             string rejectionReason);
 
+        Task<bool> SubmitAsync(int id, string submittedByUserId);
+
+        Task<bool> PostAsync(int id, string postedByUserId);
+
         Task SoftDeleteAsync(int id);
 
         Task SaveAsync();
 
         Task CreateWithSequenceAsync(ExpenseVoucherModel model);
 
-        Task<bool> VendorInvoiceExistsAsync(string? vendorName,string invoiceNumber,int? excludeId = null);
+        Task<bool> VendorInvoiceExistsAsync(
+            int? vendorId,
+            string? vendorGstin,
+            string invoiceNumber,
+            string financialYear,
+            int? excludeId = null);
 
         Task<ExpenseVoucherDocumentModel?> GetDocumentByIdAsync(int id);
 

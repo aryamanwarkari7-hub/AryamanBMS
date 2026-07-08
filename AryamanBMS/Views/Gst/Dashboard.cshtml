@@ -22,7 +22,11 @@
         : "Regenerate Snapshot";
 
     bool canRegenerateSnapshot =
-    Model.SnapshotStatus != "Filed";
+    Model.SnapshotStatus != "Filed" &&
+    Model.SnapshotStatus != "Locked";
+
+    bool isLocked =
+    Model.SnapshotStatus == "Locked";
 }
 
 <div class="module-header">
@@ -64,6 +68,65 @@
     <div class="stats-card">
         <div class="stats-label">ITC Carry Forward</div>
         <div class="stats-number">₹ @Model.InputCreditCarryForward.ToString("N2")</div>
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">GST Head-Wise Breakup</h2>
+            <p class="card-subtitle">
+                Output tax, input credit, utilization and cash payable by GST head.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="app-table">
+                <thead>
+                    <tr>
+                        <th>GST Head</th>
+                        <th class="text-end">Output</th>
+                        <th class="text-end">Input</th>
+                        <th class="text-end">ITC Utilized</th>
+                        <th class="text-end">Cash Payable</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>IGST</td>
+                        <td class="text-end">₹ @Model.OutputIGSTBalance.ToString("N2")</td>
+                        <td class="text-end">₹ @Model.InputIGSTBalance.ToString("N2")</td>
+                        <td class="text-end">₹ @Model.ITCUtilizedForIGST.ToString("N2")</td>
+                        <td class="text-end">₹ @Model.CashPayableIGST.ToString("N2")</td>
+                    </tr>
+                    <tr>
+                        <td>CGST</td>
+                        <td class="text-end">₹ @Model.OutputCGSTBalance.ToString("N2")</td>
+                        <td class="text-end">₹ @Model.InputCGSTBalance.ToString("N2")</td>
+                        <td class="text-end">₹ @Model.ITCUtilizedForCGST.ToString("N2")</td>
+                        <td class="text-end">₹ @Model.CashPayableCGST.ToString("N2")</td>
+                    </tr>
+                    <tr>
+                        <td>SGST</td>
+                        <td class="text-end">₹ @Model.OutputSGSTBalance.ToString("N2")</td>
+                        <td class="text-end">₹ @Model.InputSGSTBalance.ToString("N2")</td>
+                        <td class="text-end">₹ @Model.ITCUtilizedForSGST.ToString("N2")</td>
+                        <td class="text-end">₹ @Model.CashPayableSGST.ToString("N2")</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Carry Forward</strong></td>
+                        <td class="text-end">-</td>
+                        <td class="text-end">₹ @Model.PreviousITCCarryForward.ToString("N2")</td>
+                        <td class="text-end">-</td>
+                        <td class="text-end">₹ @Model.InputCreditCarryForward.ToString("N2")</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
 </div>
@@ -204,7 +267,7 @@
     </div>
 
     @if (Model.SnapshotId > 0 &&
-        Model.SnapshotStatus != "Filed")
+        !isLocked)
     {
         <div class="app-card">
 
@@ -605,7 +668,7 @@
 
 </div>
 
-@if (Model.SnapshotStatus == "Filed")
+@if (Model.SnapshotStatus == "Filed" || Model.SnapshotStatus == "Locked")
 {
     <div class="app-card">
 
@@ -647,7 +710,7 @@
 }
 
 
-@if (Model.SnapshotStatus == "Filed" &&
+@if (Model.SnapshotStatus == "Locked" &&
      User.IsInRole("Admin"))
 {
     <form asp-controller="Gst"
@@ -734,7 +797,7 @@
 
         <div class="card-body">
 
-            @if (Model.SnapshotStatus != "Filed")
+            @if (!isLocked)
             {
                 <form asp-action="UploadDocument"
                       method="post"
@@ -834,7 +897,7 @@
                                                 <i class="bi bi-download"></i>
                                             </a>
 
-                                            @if (Model.SnapshotStatus != "Filed")
+                                            @if (!isLocked)
                                             {
                                                 <form asp-action="DeleteDocument"
                                                       method="post">
@@ -921,7 +984,31 @@
 
         }
 
-        @if (Model.SnapshotStatus != "Filed" &&
+        @if (Model.SnapshotStatus == "Calculated")
+        {
+            <form method="post"
+                  asp-action="VerifySnapshot">
+
+                @Html.AntiForgeryToken()
+
+                <input type="hidden"
+                       name="month"
+                       value="@Model.Month" />
+
+                <input type="hidden"
+                       name="year"
+                       value="@Model.Year" />
+
+                <button type="submit"
+                        class="btn-app btn-success-app">
+                    <i class="bi bi-check-circle"></i>
+                    Verify Snapshot
+                </button>
+
+            </form>
+        }
+
+        @if (!isLocked &&
                 Model.Gstr1Status == "Filed" &&
                 Model.Gstr3BStatus == "Filed" &&
                 Model.ChallanStatus == "Paid")
@@ -944,7 +1031,7 @@
                         onclick="return confirm('File and permanently lock this GST period?')">
 
                     <i class="bi bi-lock"></i>
-                    File & Lock
+                    Lock GST Period
 
                 </button>
 
@@ -957,7 +1044,7 @@
             </span>
         }
 
-        @if (Model.SnapshotStatus == "Filed" &&
+        @if (Model.SnapshotStatus == "Locked" &&
                 User.IsInRole("Admin"))
         {
             <form asp-controller="Gst"

@@ -1,0 +1,67 @@
+@model IEnumerable<AryamanBMS.Models.DebitNoteModel>
+
+@{
+    ViewData["Title"] = "Debit Notes";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Debit Notes</h1>
+        <p class="module-subtitle">Additional billing, underbilling and tax undercharge adjustments</p>
+    </div>
+
+    <a asp-action="Create" class="btn-app btn-primary-app">
+        <i class="bi bi-plus-circle"></i>
+        New Debit Note
+    </a>
+</div>
+
+<div class="app-card table-card">
+    <div class="card-header">
+        <h5 class="card-title">Debit Notes</h5>
+    </div>
+
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="app-table">
+                <thead>
+                    <tr>
+                        <th>Debit Note No</th>
+                        <th>Invoice</th>
+                        <th>Client</th>
+                        <th>Reason</th>
+                        <th>Taxable</th>
+                        <th>CGST</th>
+                        <th>SGST</th>
+                        <th>IGST</th>
+                        <th>Total Debit</th>
+                        <th>Approved On</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.DebitNoteNo</td>
+                            <td>
+                                <a asp-controller="Invoice"
+                                   asp-action="Details"
+                                   asp-route-id="@item.OriginalInvoiceId">
+                                    @item.OriginalInvoice?.InvoiceNo
+                                </a>
+                            </td>
+                            <td>@item.OriginalInvoice?.Client?.ClientName</td>
+                            <td>@item.Reason</td>
+                            <td>@item.AdditionalTaxableValue.ToString("N2")</td>
+                            <td>@item.CGST.ToString("N2")</td>
+                            <td>@item.SGST.ToString("N2")</td>
+                            <td>@item.IGST.ToString("N2")</td>
+                            <td>@item.TotalDebit.ToString("N2")</td>
+                            <td>@(item.ApprovedOn?.ToString("dd-MMM-yyyy") ?? "-")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

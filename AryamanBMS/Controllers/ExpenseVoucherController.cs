@@ -1,10 +1,12 @@
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
+using AryamanBMS.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
 
 namespace AryamanBMS.Controllers
@@ -16,6 +18,7 @@ namespace AryamanBMS.Controllers
         private readonly IExpenseCategoryRepository _categoryRepository;
         private readonly IFileStorageService _fileStorageService;
         private readonly UserManager<ApplicationUserModel> _userManager;
+        private readonly ApplicationDbContext _context;
 
         private const string DocumentFolder = "ExpenseVoucherDocuments";
 
@@ -23,12 +26,14 @@ namespace AryamanBMS.Controllers
             IExpenseVoucherRepository voucherRepository,
             IExpenseCategoryRepository categoryRepository,
             IFileStorageService fileStorageService,
-            UserManager<ApplicationUserModel> userManager)
+            UserManager<ApplicationUserModel> userManager,
+            ApplicationDbContext context)
         {
             _voucherRepository = voucherRepository;
             _categoryRepository = categoryRepository;
             _fileStorageService = fileStorageService;
             _userManager = userManager;
+            _context = context;
         }
 
         public async Task<IActionResult> Index(string? status, int? categoryId, string? search)
@@ -66,6 +71,7 @@ namespace AryamanBMS.Controllers
                     .Where(x =>
                         (!string.IsNullOrWhiteSpace(x.VoucherNumber) && x.VoucherNumber.ToLower().Contains(keyword)) ||
                         (!string.IsNullOrWhiteSpace(x.VendorName) && x.VendorName.ToLower().Contains(keyword)) ||
+                        (x.Vendor != null && x.Vendor.VendorName.ToLower().Contains(keyword)) ||
                         (!string.IsNullOrWhiteSpace(x.InvoiceNumber) && x.InvoiceNumber.ToLower().Contains(keyword)) ||
                         (!string.IsNullOrWhiteSpace(x.Description) && x.Description.ToLower().Contains(keyword)))
                     .ToList();
@@ -75,7 +81,7 @@ namespace AryamanBMS.Controllers
             ViewBag.CategoryId = categoryId;
             ViewBag.Search = search;
 
-            await LoadCategories();
+            await LoadLookups();
 
             return View(vouchers);
         }
@@ -84,7 +90,7 @@ namespace AryamanBMS.Controllers
         {
             return RedirectToAction(nameof(Index), new
             {
-                status = FinancialConstants.ExpenseVoucherStatus.Draft
+                status = FinancialConstants.ExpenseVoucherStatus.Submitted
             });
         }
 
@@ -96,7 +102,7 @@ namespace AryamanBMS.Controllers
                 FinancialYear = GetCurrentFinancialYear()
             };
 
-            await LoadCategories();
+            await LoadLookups();
             return View(model);
         }
 
@@ -130,6 +136,7 @@ namespace AryamanBMS.Controllers
             }
 
             ValidateVoucherBusinessRules(model);
+            await ValidateGstPeriodOpen(model.VoucherDate);
 
             if (!string.IsNullOrWhiteSpace(
                     model.InvoiceNumber))
@@ -137,8 +144,10 @@ namespace AryamanBMS.Controllers
                 bool duplicateExists =
                     await _voucherRepository
                         .VendorInvoiceExistsAsync(
-                            model.VendorName,
-                            model.InvoiceNumber);
+                            model.VendorId,
+                            model.VendorGSTIN,
+                            model.InvoiceNumber,
+                            model.FinancialYear);
 
                 if (duplicateExists)
                 {
@@ -150,7 +159,7 @@ namespace AryamanBMS.Controllers
 
             if (!ModelState.IsValid)
             {
-                await LoadCategories();
+                await LoadLookups();
                 return View(model);
             }
 
@@ -166,6 +175,10 @@ namespace AryamanBMS.Controllers
 
             model.FinancialYear =
                 GetCurrentFinancialYear();
+
+            await ApplyVendorDefaults(model);
+            ApplyCategoryDefaults(model, category);
+            RefreshPaymentFields(model);
 
             await _voucherRepository
                 .CreateWithSequenceAsync(model);
@@ -190,7 +203,7 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            await LoadCategories();
+            await LoadLookups();
             return View(voucher);
         }
 
@@ -234,6 +247,7 @@ namespace AryamanBMS.Controllers
             }
 
             ValidateVoucherBusinessRules(model);
+            await ValidateGstPeriodOpen(model.VoucherDate);
 
             if (!string.IsNullOrWhiteSpace(
                     model.InvoiceNumber))
@@ -241,8 +255,10 @@ namespace AryamanBMS.Controllers
                 bool duplicateExists =
                     await _voucherRepository
                         .VendorInvoiceExistsAsync(
-                            model.VendorName,
+                            model.VendorId,
+                            model.VendorGSTIN,
                             model.InvoiceNumber,
+                            existing.FinancialYear,
                             existing.ExpenseVoucherId);
 
                 if (duplicateExists)
@@ -255,7 +271,7 @@ namespace AryamanBMS.Controllers
 
             if (!ModelState.IsValid)
             {
-                await LoadCategories();
+                await LoadLookups();
                 return View(model);
             }
 
@@ -264,24 +280,45 @@ namespace AryamanBMS.Controllers
             existing.VoucherDate =  model.VoucherDate;
 
             existing.Description =  model.Description;
+            existing.BusinessPurpose = model.BusinessPurpose;
+            existing.BeneficiaryName = model.BeneficiaryName;
+            existing.SupportingReference = model.SupportingReference;
 
             existing.Amount = model.Amount;
 
             existing.GSTRate =  model.GSTRate;
 
             existing.IsInterState =model.IsInterState;
+            existing.CompanyStateCode = model.CompanyStateCode;
+            existing.VendorStateCode = model.VendorStateCode;
+            existing.PlaceOfSupplyStateCode = model.PlaceOfSupplyStateCode;
+            existing.IsGstStateOverride = model.IsGstStateOverride;
+            existing.GstStateOverrideReason = model.GstStateOverrideReason;
 
+            existing.VendorId = model.VendorId;
             existing.VendorName = model.VendorName;
 
             existing.VendorGSTIN = model.VendorGSTIN;
 
             existing.InvoiceNumber = model.InvoiceNumber;
+            existing.VendorInvoiceDate = model.VendorInvoiceDate;
 
             existing.ITCEligible = model.ITCEligible;
+            existing.ITCStatus = model.ITCStatus;
+            existing.ProjectId = model.ProjectId;
+            existing.DepartmentId = model.DepartmentId;
+            existing.CostCentreId = model.CostCentreId;
+            existing.ExpenseClassification = model.ExpenseClassification;
+            existing.IsEmployeeReimbursement = model.IsEmployeeReimbursement;
+            existing.ReimbursementEmployeeId = model.ReimbursementEmployeeId;
+            existing.ReimbursementStatus = model.ReimbursementStatus;
 
             existing.Remarks = model.Remarks;
 
+            await ApplyVendorDefaults(existing);
+            ApplyCategoryDefaults(existing, category);
             CalculateGSTAmounts(existing);
+            RefreshPaymentFields(existing);
 
             await _voucherRepository.UpdateAsync(
                 existing);
@@ -312,6 +349,30 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Submit(int id)
+        {
+            var voucher = await _voucherRepository.GetByIdAsync(id);
+            if (voucher == null)
+                return NotFound();
+
+            if (!CanModifyDraftVoucher(voucher))
+            {
+                TempData["Error"] = "Only accessible draft vouchers can be submitted.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            bool submitted = await _voucherRepository.SubmitAsync(id, GetCurrentUserId());
+
+            TempData[submitted ? "Success" : "Error"] =
+                submitted
+                    ? $"Expense Voucher '{voucher.VoucherNumber}' submitted for approval."
+                    : "Expense voucher could not be submitted.";
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Approve(int id)
         {
 
@@ -323,9 +384,9 @@ namespace AryamanBMS.Controllers
             if (voucher == null)
                 return NotFound();
 
-            if (voucher.Status != FinancialConstants.ExpenseVoucherStatus.Draft)
+            if (voucher.Status != FinancialConstants.ExpenseVoucherStatus.Submitted)
             {
-                TempData["Error"] = "Only draft expense vouchers can be approved.";
+                TempData["Error"] = "Only submitted expense vouchers can be approved.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -350,6 +411,71 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Post(int id)
+        {
+            if (!IsFinanceUser())
+                return Forbid();
+
+            var voucher = await _voucherRepository.GetByIdAsync(id);
+            if (voucher == null)
+                return NotFound();
+
+            bool posted = await _voucherRepository.PostAsync(id, GetCurrentUserId());
+
+            TempData[posted ? "Success" : "Error"] =
+                posted
+                    ? $"Expense Voucher '{voucher.VoucherNumber}' posted successfully."
+                    : "Only approved expense vouchers can be posted.";
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Reverse(int id, string reversalReason)
+        {
+            if (!IsFinanceUser())
+                return Forbid();
+
+            var voucher = await _voucherRepository.GetByIdAsync(id);
+            if (voucher == null)
+                return NotFound();
+
+            if (voucher.Status != FinancialConstants.ExpenseVoucherStatus.Posted)
+            {
+                TempData["Error"] = "Only posted expense vouchers can be reversed.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            if (voucher.IsReversed)
+            {
+                TempData["Error"] = "This expense voucher is already reversed.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            if (string.IsNullOrWhiteSpace(reversalReason))
+            {
+                TempData["Error"] = "Reversal reason is required.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            voucher.IsReversed = true;
+            voucher.ReversalReason = reversalReason.Trim();
+            voucher.ReversedByUserId = GetCurrentUserId();
+            voucher.ReversedOn = DateTime.Now;
+            voucher.Status = FinancialConstants.ExpenseVoucherStatus.Reversed;
+            voucher.ApprovalStatus = FinancialConstants.ExpenseVoucherStatus.Reversed;
+            voucher.UpdatedOn = DateTime.Now;
+
+            await _voucherRepository.UpdateAsync(voucher);
+            await _voucherRepository.SaveAsync();
+
+            TempData["Success"] = $"Expense Voucher '{voucher.VoucherNumber}' reversed.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Reject(int id,string rejectionReason)
         {
             if (!IsFinanceUser())
@@ -362,10 +488,10 @@ namespace AryamanBMS.Controllers
                 return NotFound();
 
             if (voucher.Status !=
-                FinancialConstants.ExpenseVoucherStatus.Draft)
+                FinancialConstants.ExpenseVoucherStatus.Submitted)
             {
                 TempData["Error"] =
-                    "Only draft expense vouchers can be rejected.";
+                    "Only submitted expense vouchers can be rejected.";
 
                 return RedirectToAction(nameof(Index));
             }
@@ -611,9 +737,22 @@ namespace AryamanBMS.Controllers
             return voucher.Status == FinancialConstants.ExpenseVoucherStatus.Draft &&
                    CanAccessVoucher(voucher);
         }
-        private async Task LoadCategories()
+        private async Task LoadLookups()
         {
             ViewBag.Categories = await _categoryRepository.GetAllActiveAsync();
+            ViewBag.Vendors = await _context.Vendors
+                .AsNoTracking()
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.VendorName)
+                .ToListAsync();
+            ViewBag.Projects = await _context.Projects
+                .AsNoTracking()
+                .OrderBy(x => x.ProjectName)
+                .ToListAsync();
+            ViewBag.Departments = await _context.Departments
+                .AsNoTracking()
+                .OrderBy(x => x.DepartmentName)
+                .ToListAsync();
         }
 
         private string GetCurrentFinancialYear()
@@ -676,6 +815,21 @@ namespace AryamanBMS.Controllers
                 string.IsNullOrWhiteSpace(model.Remarks)
                     ? null
                     : model.Remarks.Trim();
+
+            model.BusinessPurpose =
+                string.IsNullOrWhiteSpace(model.BusinessPurpose)
+                    ? null
+                    : model.BusinessPurpose.Trim();
+
+            model.BeneficiaryName =
+                string.IsNullOrWhiteSpace(model.BeneficiaryName)
+                    ? null
+                    : model.BeneficiaryName.Trim();
+
+            model.SupportingReference =
+                string.IsNullOrWhiteSpace(model.SupportingReference)
+                    ? null
+                    : model.SupportingReference.Trim();
         }
 
         private void ValidateVoucherBusinessRules(
@@ -751,6 +905,8 @@ namespace AryamanBMS.Controllers
                 2,
                 MidpointRounding.AwayFromZero);
 
+            model.TaxableAmount = model.Amount;
+
             if (model.GSTRate <= 0)
             {
                 model.CGSTAmount = 0;
@@ -791,6 +947,96 @@ namespace AryamanBMS.Controllers
                 model.Amount + totalGst,
                 2,
                 MidpointRounding.AwayFromZero);
+        }
+
+        private async Task ValidateGstPeriodOpen(DateTime voucherDate)
+        {
+            bool isClosed =
+                await _context.GstMonthlySnapshots
+                    .AnyAsync(x =>
+                        x.Month == voucherDate.Month &&
+                        x.Year == voucherDate.Year &&
+                        (x.Status == FinancialConstants.GstSnapshotStatus.Filed ||
+                         x.Status == FinancialConstants.GstSnapshotStatus.Locked ||
+                         x.IsFiledPeriodLocked));
+
+            if (isClosed)
+            {
+                ModelState.AddModelError(
+                    nameof(ExpenseVoucherModel.VoucherDate),
+                    "This GST period is filed or locked. Reopen the GST period before changing expenses.");
+            }
+        }
+
+        private async Task ApplyVendorDefaults(ExpenseVoucherModel model)
+        {
+            if (!model.VendorId.HasValue)
+                return;
+
+            var vendor = await _context.Vendors
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.VendorId == model.VendorId.Value && x.IsActive);
+
+            if (vendor == null)
+                return;
+
+            model.VendorName = vendor.VendorName;
+            model.VendorGSTIN = vendor.GSTIN;
+            model.VendorStateCode = vendor.StateCode;
+
+            if (string.IsNullOrWhiteSpace(model.PlaceOfSupplyStateCode))
+            {
+                model.PlaceOfSupplyStateCode = vendor.StateCode;
+            }
+
+            if (!model.IsGstStateOverride &&
+                !string.IsNullOrWhiteSpace(model.CompanyStateCode) &&
+                !string.IsNullOrWhiteSpace(model.PlaceOfSupplyStateCode))
+            {
+                model.IsInterState =
+                    model.CompanyStateCode != model.PlaceOfSupplyStateCode;
+            }
+        }
+
+        private static void ApplyCategoryDefaults(
+            ExpenseVoucherModel model,
+            ExpenseCategoryModel? category)
+        {
+            if (category == null)
+                return;
+
+            model.GLAccountCode = category.GLAccountCode;
+            model.PayableGLAccountCode = category.PayableGLAccountCode;
+            model.InputGSTGLAccountCode = category.InputGSTGLAccountCode;
+
+            if (string.IsNullOrWhiteSpace(model.ExpenseClassification))
+            {
+                model.ExpenseClassification = category.ExpenseType;
+            }
+
+            model.ITCStatus =
+                model.ITCEligible
+                    ? model.ITCStatus
+                    : "Not Applicable";
+        }
+
+        private static void RefreshPaymentFields(ExpenseVoucherModel model)
+        {
+            model.PaidAmount = Math.Round(model.PaidAmount, 2, MidpointRounding.AwayFromZero);
+            model.BalanceAmount = Math.Max(model.TotalAmount - model.PaidAmount, 0);
+
+            if (model.PaidAmount <= 0)
+            {
+                model.PaymentStatus = FinancialConstants.PaymentStatus.Unpaid;
+            }
+            else if (model.BalanceAmount <= 0)
+            {
+                model.PaymentStatus = FinancialConstants.PaymentStatus.Paid;
+            }
+            else
+            {
+                model.PaymentStatus = FinancialConstants.PaymentStatus.PartiallyPaid;
+            }
         }
         private static string GetContentType(string fileName)
         {

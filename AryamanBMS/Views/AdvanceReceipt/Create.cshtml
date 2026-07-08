@@ -1,0 +1,110 @@
+﻿@model AryamanBMS.Models.AdvanceReceiptModel
+
+@{
+    ViewData["Title"] = "Advance Receipt";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Advance Receipt</h1>
+        <p class="module-subtitle">Record customer advance separately from invoice payments</p>
+    </div>
+
+    <a asp-action="Index" class="btn-app btn-secondary-app">
+        <i class="bi bi-arrow-left"></i>
+        Back
+    </a>
+</div>
+
+<form asp-action="Create" method="post">
+    @Html.AntiForgeryToken()
+
+    <div asp-validation-summary="ModelOnly" class="app-alert-danger"></div>
+
+    <div class="app-card">
+        <div class="card-body">
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label asp-for="ClientId" class="form-label">Client</label>
+                    <select asp-for="ClientId" class="app-select">
+                        <option value="">Select Client</option>
+                        @foreach (var client in ViewBag.Clients)
+                        {
+                            <option value="@client.ClientId">
+                                @client.ClientName
+                            </option>
+                        }
+                    </select>
+                    <span asp-validation-for="ClientId" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ProjectId" class="form-label">Project</label>
+                    <select asp-for="ProjectId" class="app-select">
+                        <option value="">Select Project</option>
+                        @foreach (var project in ViewBag.Projects)
+                        {
+                            <option value="@project.Id">
+                                @project.ProjectCode - @project.ProjectName
+                            </option>
+                        }
+                    </select>
+                    <span asp-validation-for="ProjectId" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Amount" class="form-label">Amount</label>
+                    <input asp-for="Amount" class="app-input" type="number" step="0.01" />
+                    <span asp-validation-for="Amount" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ReceiptDate" class="form-label">Receipt Date</label>
+                    <input asp-for="ReceiptDate" class="app-input" type="date" />
+                    <span asp-validation-for="ReceiptDate" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="PaymentMode" class="form-label">Payment Mode</label>
+                    <select asp-for="PaymentMode" class="app-select">
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Cheque">Cheque</option>
+                        <option value="UPI">UPI</option>
+                        <option value="Cash">Cash</option>
+                    </select>
+                    <span asp-validation-for="PaymentMode" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="PaymentReference" class="form-label">Payment Reference</label>
+                    <input asp-for="PaymentReference" class="app-input" />
+                    <span asp-validation-for="PaymentReference" class="validation-message"></span>
+                </div>
+            </div>
+
+            <div class="form-group mt-3">
+                <label asp-for="Remarks" class="form-label">Remarks</label>
+                <textarea asp-for="Remarks" class="app-textarea"></textarea>
+                <span asp-validation-for="Remarks" class="validation-message"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-card">
+        <div class="card-body">
+            <button type="submit" class="btn-app btn-primary-app">
+                <i class="bi bi-check-circle"></i>
+                Save Advance
+            </button>
+
+            <a asp-action="Index" class="btn-app btn-secondary-app">
+                Cancel
+            </a>
+        </div>
+    </div>
+</form>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

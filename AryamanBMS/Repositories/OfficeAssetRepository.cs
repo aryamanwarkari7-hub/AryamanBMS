@@ -15,12 +15,17 @@ namespace AryamanBMS.Repositories
         }
 
         private IQueryable<OfficeAssetModel> Assets =>
-            _context.OfficeAssets;
+            _context.OfficeAssets
+                .Include(x => x.AssignedEmployee)
+                .Include(x => x.Vendor)
+                .Include(x => x.ExpenseVoucher)
+                .Include(x => x.Documents.Where(d => d.IsActive))
+                .Include(x => x.MaintenanceHistory)
+                .Include(x => x.VerificationHistory);
 
         public async Task<List<OfficeAssetModel>> GetAllAsync()
         {
             return await Assets
-                .Include(x => x.AssignedEmployee)
                 .OrderByDescending(x => x.PurchaseDate)
                 .ToListAsync();
         }
@@ -28,7 +33,6 @@ namespace AryamanBMS.Repositories
         public async Task<OfficeAssetModel?> GetByIdAsync(int id)
         {
             return await Assets
-                .Include(x => x.AssignedEmployee)
                 .FirstOrDefaultAsync(x => x.OfficeAssetId == id);
         }
 
@@ -42,11 +46,29 @@ namespace AryamanBMS.Repositories
                 (!excludeId.HasValue || x.OfficeAssetId != excludeId.Value));
         }
 
+        public async Task<string> GenerateAssetCodeAsync(string assetCategory)
+        {
+            string prefix = string.IsNullOrWhiteSpace(assetCategory)
+                ? "AST"
+                : new string(assetCategory
+                    .Where(char.IsLetterOrDigit)
+                    .Take(3)
+                    .ToArray())
+                    .ToUpperInvariant()
+                    .PadRight(3, 'X');
+
+            int count = await _context.OfficeAssets
+                .CountAsync(x =>
+                    x.AssetCode != null &&
+                    x.AssetCode.StartsWith(prefix));
+
+            return $"{prefix}-{DateTime.Now:yyyy}-{count + 1:0000}";
+        }
+
         public async Task<List<OfficeAssetModel>> GetByFinancialYearAsync(
             string financialYear)
         {
             return await Assets
-                .Include(x => x.AssignedEmployee)
                 .Where(x => x.FinancialYear == financialYear)
                 .OrderByDescending(x => x.PurchaseDate)
                 .ToListAsync();
@@ -56,7 +78,6 @@ namespace AryamanBMS.Repositories
             string assetCategory)
         {
             return await Assets
-                .Include(x => x.AssignedEmployee)
                 .Where(x => x.AssetCategory == assetCategory)
                 .OrderByDescending(x => x.PurchaseDate)
                 .ToListAsync();
@@ -65,7 +86,6 @@ namespace AryamanBMS.Repositories
         public async Task<List<OfficeAssetModel>> GetByStatusAsync(string status)
         {
             return await Assets
-                .Include(x => x.AssignedEmployee)
                 .Where(x => x.Status == status)
                 .OrderByDescending(x => x.PurchaseDate)
                 .ToListAsync();

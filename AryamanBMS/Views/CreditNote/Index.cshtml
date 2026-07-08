@@ -1,0 +1,69 @@
+@model IEnumerable<AryamanBMS.Models.CreditNoteModel>
+
+@{
+    ViewData["Title"] = "Credit Notes";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Credit Notes</h1>
+        <p class="module-subtitle">Overbilling, service cancellation and post-invoice GST adjustments</p>
+    </div>
+
+    <a asp-action="Create" class="btn-app btn-primary-app">
+        <i class="bi bi-plus-circle"></i>
+        New Credit Note
+    </a>
+</div>
+
+<div class="app-card table-card">
+    <div class="card-header">
+        <h5 class="card-title">Credit Notes</h5>
+    </div>
+
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="app-table">
+                <thead>
+                    <tr>
+                        <th>Credit Note No</th>
+                        <th>Invoice</th>
+                        <th>Client</th>
+                        <th>Reason</th>
+                        <th>Taxable Reduction</th>
+                        <th>CGST</th>
+                        <th>SGST</th>
+                        <th>IGST</th>
+                        <th>Total Credit</th>
+                        <th>GST Period</th>
+                        <th>Approved On</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.CreditNoteNo</td>
+                            <td>
+                                <a asp-controller="Invoice"
+                                   asp-action="Details"
+                                   asp-route-id="@item.OriginalInvoiceId">
+                                    @item.OriginalInvoice?.InvoiceNo
+                                </a>
+                            </td>
+                            <td>@item.OriginalInvoice?.Client?.ClientName</td>
+                            <td>@item.Reason</td>
+                            <td>@item.TaxableValueReduction.ToString("N2")</td>
+                            <td>@item.CGSTAdjustment.ToString("N2")</td>
+                            <td>@item.SGSTAdjustment.ToString("N2")</td>
+                            <td>@item.IGSTAdjustment.ToString("N2")</td>
+                            <td>@item.TotalCredit.ToString("N2")</td>
+                            <td>@(item.GSTPeriod ?? "-")</td>
+                            <td>@(item.ApprovedOn?.ToString("dd-MMM-yyyy") ?? "-")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

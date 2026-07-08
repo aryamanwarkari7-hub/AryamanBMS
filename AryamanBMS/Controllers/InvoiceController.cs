@@ -216,13 +216,16 @@ namespace AryamanBMS.Controllers
             ModelState.Remove(
                 nameof(model.InvoiceNo));
 
+            await AssignGstStateDecisionAsync(model);
+
             NormalizeInvoice(model);
 
             ValidateInvoiceBusinessRules(model);
+            await ValidateGstPeriodOpen(model.InvoiceDate);
 
             await ValidateAndAssignProjectAsync(model);
-
             await ValidatePurchaseOrderAsync(model);
+            await ValidateBillingMilestoneAsync(model);
 
             if (!ModelState.IsValid)
             {
@@ -321,8 +324,7 @@ namespace AryamanBMS.Controllers
                 return NotFound();
             }
 
-            var existingInvoice =
-                await _invoiceRepository.GetByIdAsync(id);
+            var existingInvoice =  await _invoiceRepository.GetByIdAsync(id);
 
             if (existingInvoice == null ||
                 existingInvoice.IsDeleted)
@@ -359,12 +361,16 @@ namespace AryamanBMS.Controllers
                 model.ProjectName =  existingInvoice.ProjectName;
             }
 
+            await AssignGstStateDecisionAsync(model);
+
             NormalizeInvoice(model);
 
             ValidateInvoiceBusinessRules(model);
+            await ValidateGstPeriodOpen(model.InvoiceDate);
 
             await ValidateAndAssignProjectAsync(model);
             await ValidatePurchaseOrderAsync(model);
+            await ValidateBillingMilestoneAsync(model);
 
             if (!ModelState.IsValid)
             {
@@ -407,12 +413,19 @@ namespace AryamanBMS.Controllers
             existingInvoice.InvoiceType =  model.InvoiceType;
             existingInvoice.InvoiceDate =  model.InvoiceDate;
             existingInvoice.PurchaseWorkOrderId = model.PurchaseWorkOrderId;
+            existingInvoice.BillingMilestoneId = model.BillingMilestoneId;
             existingInvoice.ProposalId = model.ProposalId;
             existingInvoice.SACCode = model.SACCode;
             existingInvoice.DueDate =  model.DueDate;
             existingInvoice.BillingAddress =  model.BillingAddress;
             existingInvoice.GSTNo = model.GSTNo;
             existingInvoice.IsInterState = model.IsInterState;
+            existingInvoice.SupplierStateCode = model.SupplierStateCode;
+            existingInvoice.CustomerStateCode = model.CustomerStateCode;
+            existingInvoice.PlaceOfSupplyStateCode = model.PlaceOfSupplyStateCode;
+            existingInvoice.IsGstStateOverride = model.IsGstStateOverride;
+            existingInvoice.GstStateOverrideReason =
+                model.GstStateOverrideReason;
             existingInvoice.PaymentTerms = model.PaymentTerms;
             existingInvoice.Remarks =  model.Remarks;
             existingInvoice.Discount =  model.Discount;
@@ -1206,6 +1219,136 @@ namespace AryamanBMS.Controllers
             .Where(x => x.IsActive)
             .OrderByDescending(x => x.OrderDate)
             .ToListAsync();
+
+             ViewBag.BillingMilestones =
+               await _context.BillingMilestones
+                   .AsNoTracking()
+                   .Where(x => x.IsActive)
+                   .OrderBy(x => x.PurchaseWorkOrderId)
+                   .ThenBy(x => x.SortOrder)
+                   .ThenBy(x => x.MilestoneName)
+                   .ToListAsync();
+        }
+
+        private async Task AssignGstStateDecisionAsync(
+            InvoiceModel model)
+        {
+            if (string.Equals(
+                    model.InvoiceType,
+                    "Proforma Invoice",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                model.SupplierStateCode = null;
+                model.CustomerStateCode = null;
+                model.PlaceOfSupplyStateCode = null;
+                model.IsInterState = false;
+                model.IsGstStateOverride = false;
+                model.GstStateOverrideReason = null;
+
+                return;
+            }
+
+            var gstConfiguration =
+                await _context.GstConfigurations
+                    .AsNoTracking()
+                    .Where(x => x.IsActive)
+                    .OrderByDescending(x => x.UpdatedOn)
+                    .FirstOrDefaultAsync();
+
+            var client =
+                await _context.Clients
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x =>
+                        x.ClientId == model.ClientId);
+
+            string? supplierStateCode =
+                ExtractStateCodeFromGstin(
+                    gstConfiguration?.CompanyGstin);
+
+            string? customerStateCode =
+                ExtractStateCodeFromGstin(model.GSTNo) ??
+                ExtractStateCodeFromGstin(client?.GSTNumber);
+
+            string? placeOfSupplyStateCode =
+                NormalizeStateCode(
+                    model.PlaceOfSupplyStateCode) ??
+                customerStateCode;
+
+            model.SupplierStateCode = supplierStateCode;
+            model.CustomerStateCode = customerStateCode;
+            model.PlaceOfSupplyStateCode =
+                placeOfSupplyStateCode;
+
+            if (model.IsGstStateOverride)
+            {
+                model.GstStateOverrideReason =
+                    model.GstStateOverrideReason?.Trim();
+
+                if (string.IsNullOrWhiteSpace(
+                        model.GstStateOverrideReason))
+                {
+                    ModelState.AddModelError(
+                        nameof(model.GstStateOverrideReason),
+                        "GST state override reason is required.");
+                }
+
+                return;
+            }
+
+            model.GstStateOverrideReason = null;
+
+            if (!string.IsNullOrWhiteSpace(supplierStateCode) &&
+                !string.IsNullOrWhiteSpace(placeOfSupplyStateCode))
+            {
+                model.IsInterState =
+                    supplierStateCode != placeOfSupplyStateCode;
+            }
+        }
+
+        private static string? ExtractStateCodeFromGstin(
+            string? gstin)
+        {
+            gstin = gstin?.Trim();
+
+            if (string.IsNullOrWhiteSpace(gstin) ||
+                gstin.Length < 2)
+            {
+                return null;
+            }
+
+            return NormalizeStateCode(gstin[..2]);
+        }
+
+        private static string? NormalizeStateCode(
+            string? stateCode)
+        {
+            stateCode = stateCode?.Trim();
+
+            if (string.IsNullOrWhiteSpace(stateCode))
+            {
+                return null;
+            }
+
+            return stateCode.PadLeft(2, '0')[..2];
+        }
+
+        private async Task ValidateGstPeriodOpen(DateTime invoiceDate)
+        {
+            bool isClosed =
+                await _context.GstMonthlySnapshots
+                    .AnyAsync(x =>
+                        x.Month == invoiceDate.Month &&
+                        x.Year == invoiceDate.Year &&
+                        (x.Status == FinancialConstants.GstSnapshotStatus.Filed ||
+                         x.Status == FinancialConstants.GstSnapshotStatus.Locked ||
+                         x.IsFiledPeriodLocked));
+
+            if (isClosed)
+            {
+                ModelState.AddModelError(
+                    nameof(InvoiceModel.InvoiceDate),
+                    "This GST period is filed or locked. Reopen the GST period before changing invoices.");
+            }
         }
 
         private async Task<bool> ValidateAndAssignProjectAsync(
@@ -1294,6 +1437,11 @@ namespace AryamanBMS.Controllers
                     item.GSTAmount = 0;
                     model.SACCode = null;
                     model.IsInterState = false;
+                    model.SupplierStateCode = null;
+                    model.CustomerStateCode = null;
+                    model.PlaceOfSupplyStateCode = null;
+                    model.IsGstStateOverride = false;
+                    model.GstStateOverrideReason = null;
                 }
                 else
                 {
@@ -1405,8 +1553,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetPurchaseOrderDetails(
-    int id)
+        public async Task<IActionResult> GetPurchaseOrderDetails(int id)
         {
             var order =
                 await _context.PurchaseOrders
@@ -1435,8 +1582,8 @@ namespace AryamanBMS.Controllers
                 order.Remarks
             });
         }
-        private async Task ValidatePurchaseOrderAsync(
-    InvoiceModel model)
+
+        private async Task ValidatePurchaseOrderAsync(InvoiceModel model)
         {
             if (!model.PurchaseWorkOrderId.HasValue)
             {
@@ -1456,6 +1603,7 @@ namespace AryamanBMS.Controllers
                 ModelState.AddModelError(
                     nameof(model.PurchaseWorkOrderId),
                     "Selected Purchase Order is invalid.");
+
                 return;
             }
 
@@ -1467,6 +1615,99 @@ namespace AryamanBMS.Controllers
             }
 
             model.ProposalId = order.ProposalId;
+
+            if (!order.OrderAmount.HasValue ||
+                order.OrderAmount.Value <= 0)
+            {
+                ModelState.AddModelError(
+                    nameof(model.PurchaseWorkOrderId),
+                    "Purchase Order approved value is required before billing.");
+
+                return;
+            }
+
+            decimal alreadyBilled =
+                await _context.Invoices
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.PurchaseWorkOrderId == order.PurchaseOrderId &&
+                        x.InvoiceId != model.InvoiceId &&
+                        !x.IsDeleted &&
+                        x.InvoiceStatus != "Cancelled")
+                    .SumAsync(x => x.GrandTotal);
+
+            decimal availableBilling =
+                order.OrderAmount.Value - alreadyBilled;
+
+            if (model.GrandTotal > availableBilling)
+            {
+                ModelState.AddModelError(
+                    nameof(model.PurchaseWorkOrderId),
+                    $"Billing exceeds Purchase Order value. Available billable amount is {availableBilling:N2}.");
+            }
+        }
+
+        private async Task ValidateBillingMilestoneAsync(InvoiceModel model)
+        {
+            if (!model.BillingMilestoneId.HasValue)
+            {
+                return;
+            }
+
+            var milestone =
+                await _context.BillingMilestones
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x =>
+                        x.BillingMilestoneId == model.BillingMilestoneId.Value &&
+                        x.IsActive);
+
+            if (milestone == null)
+            {
+                ModelState.AddModelError(
+                    nameof(model.BillingMilestoneId),
+                    "Selected billing milestone is invalid.");
+
+                return;
+            }
+
+            if (model.PurchaseWorkOrderId != milestone.PurchaseWorkOrderId)
+            {
+                ModelState.AddModelError(
+                    nameof(model.BillingMilestoneId),
+                    "Selected milestone does not belong to the selected Purchase / Work Order.");
+            }
+
+            if (model.ProjectId.HasValue &&
+                milestone.ProjectId.HasValue &&
+                model.ProjectId.Value != milestone.ProjectId.Value)
+            {
+                ModelState.AddModelError(
+                    nameof(model.BillingMilestoneId),
+                    "Selected milestone does not belong to the selected project.");
+            }
+
+            bool alreadyInvoiced =
+                await _context.Invoices
+                    .AsNoTracking()
+                    .AnyAsync(x =>
+                        x.BillingMilestoneId == milestone.BillingMilestoneId &&
+                        x.InvoiceId != model.InvoiceId &&
+                        !x.IsDeleted &&
+                        x.InvoiceStatus != "Cancelled");
+
+            if (alreadyInvoiced)
+            {
+                ModelState.AddModelError(
+                    nameof(model.BillingMilestoneId),
+                    "This milestone has already been invoiced.");
+            }
+
+            if (model.GrandTotal > milestone.MilestoneValue)
+            {
+                ModelState.AddModelError(
+                    nameof(model.BillingMilestoneId),
+                    $"Invoice total cannot exceed milestone value {milestone.MilestoneValue:N2}.");
+            }
         }
 
         #endregion

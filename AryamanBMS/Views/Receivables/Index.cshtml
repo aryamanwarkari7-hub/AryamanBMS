@@ -1,0 +1,129 @@
+@model AryamanBMS.ViewModels.ReceivablesReportViewModel
+
+@{
+    ViewData["Title"] = "Accounts Receivable";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Accounts Receivable</h1>
+        <p class="module-subtitle">Outstanding receivables by client, project and invoice</p>
+    </div>
+
+    <a asp-action="Ageing" class="btn-app btn-primary-app">
+        <i class="bi bi-hourglass-split"></i>
+        Ageing Report
+    </a>
+</div>
+
+<div class="dashboard-grid">
+
+    <div class="stats-card">
+        <div class="stats-label">Total Invoiced</div>
+        <div class="stats-number">
+            ₹ @Model.TotalInvoiced.ToString("N2")
+        </div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Collected</div>
+        <div class="stats-number">
+            ₹ @Model.TotalCollected.ToString("N2")
+        </div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Outstanding</div>
+        <div class="stats-number">
+            ₹ @Model.TotalOutstanding.ToString("N2")
+        </div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Overdue</div>
+        <div class="stats-number">
+            ₹ @Model.OverdueAmount.ToString("N2")
+        </div>
+    </div>
+
+</div>
+
+<div class="app-card table-card">
+    <div class="card-header">
+        <h5 class="card-title">Client-wise Outstanding</h5>
+    </div>
+
+   <div class="card-body">
+    <div class="table-responsive">
+        <table class="app-table">
+            <thead>
+                <tr>
+                    <th>Client</th>
+                    <th>Total Invoiced</th>
+                    <th>Collected</th>
+                    <th>Outstanding</th>
+                    <th>Overdue</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.ClientRows)
+                {
+                    <tr>
+                        <td>@row.ClientName</td>
+                        <td>@row.TotalInvoiced.ToString("N2")</td>
+                        <td>@row.TotalCollected.ToString("N2")</td>
+                        <td>@row.Outstanding.ToString("N2")</td>
+                        <td>@row.Overdue.ToString("N2")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+</div>
+
+<div class="app-card table-card">
+    <div class="card-header">
+        <h5 class="card-title">Invoice-wise Balance</h5>
+    </div>
+
+    <div class="card-body">
+    <div class="table-responsive">
+        <table class="app-table">
+            <thead>
+                <tr>
+                    <th>Invoice</th>
+                    <th>Client</th>
+                    <th>Project</th>
+                    <th>Due Date</th>
+                    <th>Total</th>
+                    <th>Received</th>
+                    <th>Outstanding</th>
+                    <th>Ageing Days</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.InvoiceRows)
+                {
+                    <tr>
+                        <td>
+                            <a asp-controller="Invoice"
+                               asp-action="Details"
+                               asp-route-id="@row.InvoiceId">
+                                @row.InvoiceNo
+                            </a>
+                        </td>
+                        <td>@row.ClientName</td>
+                        <td>@row.ProjectName</td>
+                        <td>@(row.DueDate?.ToString("dd-MMM-yyyy") ?? "-")</td>
+                        <td>@row.InvoiceTotal.ToString("N2")</td>
+                        <td>@row.AmountReceived.ToString("N2")</td>
+                        <td>@row.OutstandingBalance.ToString("N2")</td>
+                        <td>@row.AgeingDays</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+</div>

@@ -3,6 +3,7 @@ using AryamanBMS.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace AryamanBMS.Controllers
 {
@@ -83,6 +84,10 @@ namespace AryamanBMS.Controllers
 
             model.CreatedOn = DateTime.Now;
             model.UpdatedOn = null;
+            model.CreatedByUserId =
+                User.FindFirstValue(ClaimTypes.NameIdentifier);
+            model.RevisedSalary = model.ActualSalary;
+            model.RevisionEffectiveDate = model.EffectiveFrom;
 
             _context.EmployeeSalaryStructures.Add(model);
             await _context.SaveChangesAsync();
@@ -135,7 +140,15 @@ namespace AryamanBMS.Controllers
                 salaryStructure.EmployeeId != model.EmployeeId ||
                 salaryStructure.EffectiveFrom.Date != model.EffectiveFrom.Date ||
                 salaryStructure.EffectiveTo?.Date != model.EffectiveTo?.Date ||
-                salaryStructure.ActualSalary != model.ActualSalary;
+                salaryStructure.ActualSalary != model.ActualSalary ||
+                salaryStructure.BasicSalary != model.BasicSalary ||
+                salaryStructure.HRA != model.HRA ||
+                salaryStructure.DA != model.DA ||
+                salaryStructure.Conveyance != model.Conveyance ||
+                salaryStructure.MedicalAllowance != model.MedicalAllowance ||
+                salaryStructure.EducationAllowance != model.EducationAllowance ||
+                salaryStructure.SpecialAllowance != model.SpecialAllowance ||
+                salaryStructure.OtherAllowances != model.OtherAllowances;
 
             if (hasPayrollHistory && structureChanged)
             {
@@ -155,7 +168,41 @@ namespace AryamanBMS.Controllers
             salaryStructure.EmployeeId = model.EmployeeId;
             salaryStructure.EffectiveFrom = model.EffectiveFrom.Date;
             salaryStructure.EffectiveTo = model.EffectiveTo?.Date;
+            decimal previousSalary = salaryStructure.ActualSalary;
             salaryStructure.ActualSalary = model.ActualSalary;
+            salaryStructure.BasicSalary = model.BasicSalary;
+            salaryStructure.HRA = model.HRA;
+            salaryStructure.DA = model.DA;
+            salaryStructure.Conveyance = model.Conveyance;
+            salaryStructure.MedicalAllowance = model.MedicalAllowance;
+            salaryStructure.EducationAllowance = model.EducationAllowance;
+            salaryStructure.SpecialAllowance = model.SpecialAllowance;
+            salaryStructure.OtherAllowances = model.OtherAllowances;
+            salaryStructure.IsPfApplicable = model.IsPfApplicable;
+            salaryStructure.IsEsicApplicable = model.IsEsicApplicable;
+            salaryStructure.IsPtApplicable = model.IsPtApplicable;
+            salaryStructure.IsTdsApplicable = model.IsTdsApplicable;
+            salaryStructure.RevisionReason = model.RevisionReason?.Trim();
+            salaryStructure.UpdatedByUserId =
+                User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (previousSalary != model.ActualSalary)
+            {
+                salaryStructure.PreviousSalary = previousSalary;
+                salaryStructure.RevisedSalary = model.ActualSalary;
+                salaryStructure.RevisionEffectiveDate = model.EffectiveFrom;
+                salaryStructure.RevisionPercentage =
+                    previousSalary > 0
+                        ? Math.Round(
+                            (model.ActualSalary - previousSalary) /
+                            previousSalary * 100,
+                            2)
+                        : 0;
+                salaryStructure.ApprovedByUserId =
+                    salaryStructure.UpdatedByUserId;
+                salaryStructure.ApprovedOn = DateTime.Now;
+            }
+
             salaryStructure.IsActive = model.IsActive;
             salaryStructure.UpdatedOn = DateTime.Now;
 
@@ -211,6 +258,32 @@ namespace AryamanBMS.Controllers
                 ModelState.AddModelError(
                     nameof(model.ActualSalary),
                     "Actual salary cannot be negative.");
+            }
+
+            decimal breakupTotal =
+                model.BasicSalary +
+                model.HRA +
+                model.DA +
+                model.Conveyance +
+                model.MedicalAllowance +
+                model.EducationAllowance +
+                model.SpecialAllowance +
+                model.OtherAllowances;
+
+            if (breakupTotal < 0)
+            {
+                ModelState.AddModelError(
+                    "",
+                    "Salary breakup values cannot be negative.");
+            }
+
+            if (breakupTotal > 0 &&
+                model.ActualSalary > 0 &&
+                breakupTotal != model.ActualSalary)
+            {
+                ModelState.AddModelError(
+                    nameof(model.ActualSalary),
+                    $"Salary breakup total {breakupTotal:N2} must match actual salary {model.ActualSalary:N2}.");
             }
 
             if (model.EffectiveTo.HasValue &&
@@ -275,6 +348,35 @@ namespace AryamanBMS.Controllers
         {
             model.EffectiveFrom = model.EffectiveFrom.Date;
             model.EffectiveTo = model.EffectiveTo?.Date;
+            model.ActualSalary = Math.Round(model.ActualSalary, 2);
+            model.BasicSalary = Math.Round(model.BasicSalary, 2);
+            model.HRA = Math.Round(model.HRA, 2);
+            model.DA = Math.Round(model.DA, 2);
+            model.Conveyance = Math.Round(model.Conveyance, 2);
+            model.MedicalAllowance = Math.Round(model.MedicalAllowance, 2);
+            model.EducationAllowance = Math.Round(model.EducationAllowance, 2);
+            model.SpecialAllowance = Math.Round(model.SpecialAllowance, 2);
+            model.OtherAllowances = Math.Round(model.OtherAllowances, 2);
+            model.RevisionReason =
+                string.IsNullOrWhiteSpace(model.RevisionReason)
+                    ? null
+                    : model.RevisionReason.Trim();
+
+            decimal breakupTotal =
+                model.BasicSalary +
+                model.HRA +
+                model.DA +
+                model.Conveyance +
+                model.MedicalAllowance +
+                model.EducationAllowance +
+                model.SpecialAllowance +
+                model.OtherAllowances;
+
+            if (model.ActualSalary == 0 &&
+                breakupTotal > 0)
+            {
+                model.ActualSalary = breakupTotal;
+            }
         }
 
         private async Task LoadEmployeesAsync()

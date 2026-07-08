@@ -266,7 +266,8 @@
                             <th>Deductions</th>
                             <th>Net Salary</th>
                             <th>CTC</th>
-                            <th>Status</th>
+                            <th>Payroll</th>
+                            <th>Payment</th>
                             <th>Paid On</th>
                             <th class="text-end">Actions</th>
                         </tr>
@@ -322,6 +323,12 @@
                                 </td>
 
                                 <td>
+                                    <span class="badge-secondary">
+                                        @salary.PayrollStatus
+                                    </span>
+                                </td>
+
+                                <td>
 
                                     @if (salary.PaymentStatus == "Paid")
                                     {
@@ -367,7 +374,96 @@
 
                                         </a>
 
-                                        @if (salary.PaymentStatus != "Paid")
+                                        @if (salary.PayrollStatus != "Finalized")
+                                        {
+                                            <a asp-action="Edit"
+                                               asp-route-id="@salary.Id"
+                                               class="btn-app btn-secondary-app btn-icon"
+                                               title="Edit salary"
+                                               aria-label="Edit salary">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        }
+
+                                        @if (salary.PayrollStatus != "Verified" &&
+                                             salary.PayrollStatus != "Finalized")
+                                        {
+                                            <form asp-action="Verify"
+                                                  method="post"
+                                                  class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@salary.Id" />
+                                                <input type="hidden" name="month" value="@selectedMonth" />
+                                                <input type="hidden" name="year" value="@selectedYear" />
+                                                <input type="hidden" name="page" value="@Model.Pagination.CurrentPage" />
+                                                <button type="submit"
+                                                        class="btn-app btn-info-app btn-icon"
+                                                        title="Verify payroll">
+                                                    <i class="bi bi-shield-check"></i>
+                                                </button>
+                                            </form>
+                                        }
+
+                                        @if (salary.PayrollStatus == "Verified")
+                                        {
+                                            <form asp-action="FinalizePayroll"
+                                                  method="post"
+                                                  class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@salary.Id" />
+                                                <input type="hidden" name="month" value="@selectedMonth" />
+                                                <input type="hidden" name="year" value="@selectedYear" />
+                                                <input type="hidden" name="page" value="@Model.Pagination.CurrentPage" />
+                                                <button type="submit"
+                                                        class="btn-app btn-primary-app btn-icon"
+                                                        title="Finalize payroll"
+                                                        onclick="return confirm('Finalize this salary record?');">
+                                                    <i class="bi bi-lock"></i>
+                                                </button>
+                                            </form>
+                                        }
+
+                                        @if (salary.PayrollStatus == "Finalized" &&
+                                             !salary.IsPayslipReleased)
+                                        {
+                                            <form asp-action="ReleasePayslip"
+                                                  method="post"
+                                                  class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@salary.Id" />
+                                                <input type="hidden" name="month" value="@selectedMonth" />
+                                                <input type="hidden" name="year" value="@selectedYear" />
+                                                <input type="hidden" name="page" value="@Model.Pagination.CurrentPage" />
+                                                <button type="submit"
+                                                        class="btn-app btn-outline-app btn-icon"
+                                                        title="Release payslip">
+                                                    <i class="bi bi-send-check"></i>
+                                                </button>
+                                            </form>
+                                        }
+
+                                        @if (salary.PayrollStatus == "Finalized")
+                                        {
+                                            <form asp-action="Reopen"
+                                                  method="post"
+                                                  class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@salary.Id" />
+                                                <input type="hidden" name="month" value="@selectedMonth" />
+                                                <input type="hidden" name="year" value="@selectedYear" />
+                                                <input type="hidden" name="page" value="@Model.Pagination.CurrentPage" />
+                                                <input type="hidden" name="reopenReason" value="Payroll correction required" />
+                                                <button type="submit"
+                                                        class="btn-app btn-warning-app btn-icon"
+                                                        title="Reopen payroll"
+                                                        onclick="return confirm('Reopen this finalized salary record?');">
+                                                    <i class="bi bi-unlock"></i>
+                                                </button>
+                                            </form>
+                                        }
+
+                                        @if (salary.PaymentStatus != "Paid" &&
+                                             salary.PayrollStatus == "Finalized")
                                         {
                                             <form asp-action="MarkPaid"
                                                   method="post"

@@ -42,6 +42,15 @@ namespace AryamanBMS.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal SalesIGST { get; set; }
 
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal OutputCGSTBalance { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal OutputSGSTBalance { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal OutputIGSTBalance { get; set; }
+
         // -----------------------------
         // Purchase Summary
         // -----------------------------
@@ -58,6 +67,15 @@ namespace AryamanBMS.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal PurchaseIGST { get; set; }
 
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal InputCGSTBalance { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal InputSGSTBalance { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal InputIGSTBalance { get; set; }
+
         // -----------------------------
         // GST Totals
         // -----------------------------
@@ -73,6 +91,27 @@ namespace AryamanBMS.Models
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal InputCreditCarryForward { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal PreviousITCCarryForward { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal ITCUtilizedForIGST { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal ITCUtilizedForCGST { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal ITCUtilizedForSGST { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal CashPayableIGST { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal CashPayableCGST { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal CashPayableSGST { get; set; }
 
         // -----------------------------
         // Statistics
@@ -101,6 +140,9 @@ namespace AryamanBMS.Models
 
         public DateTime? VerifiedOn { get; set; }
 
+        [StringLength(450)]
+        public string? VerifiedByUserId { get; set; }
+
         public DateTime? FiledOn { get; set; }
 
         [StringLength(450)]
@@ -113,6 +155,13 @@ namespace AryamanBMS.Models
 
         [StringLength(500)]
         public string? ReopenReason { get; set; }
+
+        [StringLength(450)]
+        public string? LockedByUserId { get; set; }
+
+        public DateTime? LockedOn { get; set; }
+
+        public bool IsFiledPeriodLocked { get; set; }
 
         public string? Remarks { get; set; }
 

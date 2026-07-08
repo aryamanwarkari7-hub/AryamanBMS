@@ -1,0 +1,173 @@
+@model AryamanBMS.Models.CreditNoteModel
+
+@{
+    ViewData["Title"] = "Create Credit Note";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Create Credit Note</h1>
+        <p class="module-subtitle">Record overbilling, post-invoice discount or GST reduction</p>
+    </div>
+
+    <a asp-action="Index" class="btn-app btn-secondary-app">
+        <i class="bi bi-arrow-left"></i>
+        Back
+    </a>
+</div>
+
+<form asp-action="Create" method="post">
+    @Html.AntiForgeryToken()
+
+    <div asp-validation-summary="ModelOnly" class="app-alert-danger"></div>
+
+    <div class="app-card">
+        <div class="card-header">
+            <h5 class="card-title">Credit Note Details</h5>
+        </div>
+
+        <div class="card-body">
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label asp-for="OriginalInvoiceId" class="form-label">
+                        Original Invoice
+                    </label>
+
+                    <select asp-for="OriginalInvoiceId" class="app-select">
+                        <option value="">Select Invoice</option>
+
+                        @foreach (var invoice in ViewBag.Invoices)
+                        {
+                            <option value="@invoice.InvoiceId">
+                                @invoice.InvoiceNo - @invoice.Client?.ClientName - @invoice.GrandTotal.ToString("N2")
+                            </option>
+                        }
+                    </select>
+
+                    <span asp-validation-for="OriginalInvoiceId"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="GSTPeriod" class="form-label">
+                        GST Period
+                    </label>
+
+                    <input asp-for="GSTPeriod"
+                           class="app-input"
+                           placeholder="YYYY-MM" />
+
+                    <span asp-validation-for="GSTPeriod"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="TaxableValueReduction" class="form-label">
+                        Taxable Value Reduction
+                    </label>
+
+                    <input asp-for="TaxableValueReduction"
+                           type="number"
+                           step="0.01"
+                           class="app-input credit-amount" />
+
+                    <span asp-validation-for="TaxableValueReduction"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="CGSTAdjustment" class="form-label">CGST Adjustment</label>
+                    <input asp-for="CGSTAdjustment"
+                           type="number"
+                           step="0.01"
+                           class="app-input credit-amount" />
+                    <span asp-validation-for="CGSTAdjustment"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="SGSTAdjustment" class="form-label">SGST Adjustment</label>
+                    <input asp-for="SGSTAdjustment"
+                           type="number"
+                           step="0.01"
+                           class="app-input credit-amount" />
+                    <span asp-validation-for="SGSTAdjustment"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="IGSTAdjustment" class="form-label">IGST Adjustment</label>
+                    <input asp-for="IGSTAdjustment"
+                           type="number"
+                           step="0.01"
+                           class="app-input credit-amount" />
+                    <span asp-validation-for="IGSTAdjustment"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="TotalCredit" class="form-label">
+                        Total Credit
+                    </label>
+
+                    <input asp-for="TotalCredit"
+                           id="TotalCredit"
+                           class="app-input"
+                           readonly />
+
+                    <span asp-validation-for="TotalCredit"
+                          class="validation-message"></span>
+                </div>
+            </div>
+
+            <div class="form-group mt-3">
+                <label asp-for="Reason" class="form-label">Reason</label>
+
+                <textarea asp-for="Reason"
+                          class="app-textarea"
+                          rows="3"></textarea>
+
+                <span asp-validation-for="Reason"
+                      class="validation-message"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-card">
+        <div class="card-body">
+            <button type="submit" class="btn-app btn-primary-app">
+                <i class="bi bi-check-circle"></i>
+                Save Credit Note
+            </button>
+
+            <a asp-action="Index" class="btn-app btn-secondary-app">
+                Cancel
+            </a>
+        </div>
+    </div>
+</form>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        $(function () {
+            function calculateTotalCredit() {
+                var total = 0;
+
+                $(".credit-amount").each(function () {
+                    total += parseFloat($(this).val()) || 0;
+                });
+
+                $("#TotalCredit").val(total.toFixed(2));
+            }
+
+            $(".credit-amount").on(
+                "keyup change",
+                calculateTotalCredit);
+
+            calculateTotalCredit();
+        });
+    </script>
+}

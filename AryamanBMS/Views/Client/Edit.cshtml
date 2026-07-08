@@ -193,6 +193,35 @@
                 </div>
 
                 <div class="form-group">
+                    <label asp-for="Client.RegistrationType" class="form-label">
+                        Registration Type
+                    </label>
+
+                    <select asp-for="Client.RegistrationType" class="app-select">
+                        <option value="Unregistered">Unregistered</option>
+                        <option value="Regular">Regular</option>
+                        <option value="Composition">Composition</option>
+                        <option value="SEZ">SEZ</option>
+                    </select>
+
+                    <span asp-validation-for="Client.RegistrationType"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Client.StateCode" class="form-label">
+                        State Code
+                    </label>
+
+                    <input asp-for="Client.StateCode"
+                           class="app-input"
+                           maxlength="2" />
+
+                    <span asp-validation-for="Client.StateCode"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
                     <label asp-for="Client.PANNumber"
                            class="form-label">
                         PAN Number
@@ -277,6 +306,69 @@
                           class="validation-message"></span>
                 </div>
 
+            </div>
+
+            <div class="form-grid-2 mt-3">
+                <div class="form-group">
+                    <label asp-for="Client.PlaceOfSupply" class="form-label">
+                        Place of Supply
+                    </label>
+
+                    <input asp-for="Client.PlaceOfSupply" class="app-input" />
+
+                    <span asp-validation-for="Client.PlaceOfSupply"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Client.PlaceOfSupplyStateCode" class="form-label">
+                        Place of Supply State Code
+                    </label>
+
+                    <input asp-for="Client.PlaceOfSupplyStateCode"
+                           class="app-input"
+                           maxlength="2" />
+
+                    <span asp-validation-for="Client.PlaceOfSupplyStateCode"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Client.CreditPeriod" class="form-label">
+                        Credit Period
+                    </label>
+
+                    <input asp-for="Client.CreditPeriod"
+                           type="number"
+                           min="0"
+                           class="app-input" />
+
+                    <span asp-validation-for="Client.CreditPeriod"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Client.PaymentTerms" class="form-label">
+                        Payment Terms
+                    </label>
+
+                    <input asp-for="Client.PaymentTerms" class="app-input" />
+
+                    <span asp-validation-for="Client.PaymentTerms"
+                          class="validation-message"></span>
+                </div>
+            </div>
+
+            <div class="form-group mt-3">
+                <label asp-for="Client.BillingAddress" class="form-label">
+                    Billing Address
+                </label>
+
+                <textarea asp-for="Client.BillingAddress"
+                          class="app-textarea"></textarea>
+
+                <span asp-validation-for="Client.BillingAddress"
+                      class="validation-message"></span>
             </div>
 
             <div class="form-group mt-3">

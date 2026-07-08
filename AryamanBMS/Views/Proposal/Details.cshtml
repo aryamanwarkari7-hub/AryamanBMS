@@ -308,3 +308,92 @@
     </div>
 
 </div>
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Proposal Audit Trail</h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="table-responsive">
+
+            <table class="app-table">
+
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Action</th>
+                        <th>Status</th>
+                        <th>Amount</th>
+                        <th>Revision</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (Model.AuditTrail != null && Model.AuditTrail.Any())
+                    {
+                        @foreach (var item in Model.AuditTrail
+                                            .OrderByDescending(x => x.ChangedOn))
+                        {
+                            <tr>
+                                <td>@item.ChangedOn.ToString("dd-MMM-yyyy hh:mm tt")</td>
+
+                                <td>
+                                    <strong>@item.ActionType</strong>
+                                </td>
+
+                                <td>
+                                    @(item.OldStatus ?? "-")
+                                    <i class="bi bi-arrow-right"></i>
+                                    @(item.NewStatus ?? "-")
+                                </td>
+
+                                <td>
+                                    @if (item.OldAmount.HasValue || item.NewAmount.HasValue)
+                                    {
+                                        <span>
+                                            @(item.OldAmount?.ToString("N2") ?? "-")
+                                            <i class="bi bi-arrow-right"></i>
+                                            @(item.NewAmount?.ToString("N2") ?? "-")
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span>-</span>
+                                    }
+                            </td>
+
+                            <td>
+                                @(item.OldRevisionNumber ?? "-")
+                                <i class="bi bi-arrow-right"></i>
+                                @(item.NewRevisionNumber ?? "-")
+                            </td>
+
+                            <td>
+                                @(string.IsNullOrWhiteSpace(item.Remarks)
+                                                            ? "-"
+                                                            : item.Remarks)
+                        </td>
+                    </tr>
+                                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                No audit entries available.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>

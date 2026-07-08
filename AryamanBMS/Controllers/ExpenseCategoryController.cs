@@ -104,6 +104,10 @@ namespace AryamanBMS.Controllers
             existing.DefaultGSTRate = model.DefaultGSTRate;
             existing.ITCEligible = model.ITCEligible;
             existing.GLAccountCode = model.GLAccountCode;
+            existing.ExpenseType = model.ExpenseType;
+            existing.PayableGLAccountCode = model.PayableGLAccountCode;
+            existing.InputGSTGLAccountCode = model.InputGSTGLAccountCode;
+            existing.IsCapitalExpense = model.IsCapitalExpense;
 
             await _categoryRepository.UpdateAsync(existing);
             await _categoryRepository.SaveAsync();

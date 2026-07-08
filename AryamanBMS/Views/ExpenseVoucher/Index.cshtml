@@ -97,6 +97,22 @@
             <a asp-action="Index"
                asp-route-search="@search"
                asp-route-categoryId="@categoryId"
+               asp-route-status="Submitted"
+               class="btn-app @(status == "Submitted" ? "btn-primary-app" : "btn-secondary-app")">
+                Submitted
+            </a>
+
+            <a asp-action="Index"
+               asp-route-search="@search"
+               asp-route-categoryId="@categoryId"
+               asp-route-status="Approved"
+               class="btn-app @(status == "Approved" ? "btn-primary-app" : "btn-secondary-app")">
+                Approved
+            </a>
+
+            <a asp-action="Index"
+               asp-route-search="@search"
+               asp-route-categoryId="@categoryId"
                asp-route-status="Posted"
                class="btn-app @(status == "Posted" ? "btn-primary-app" : "btn-secondary-app")">
                 Posted
@@ -140,7 +156,7 @@
                             </td>
                             <td>@voucher.VoucherDate.ToString("dd MMM yyyy")</td>
                             <td>@voucher.Category?.CategoryName</td>
-                            <td>@voucher.VendorName</td>
+                            <td>@(voucher.Vendor?.VendorName ?? voucher.VendorName)</td>
                                 <td>
                                     @if (voucher.IsInterState)
                                     {
@@ -162,6 +178,14 @@
                                 {
                                     <span class="badge-warning">Draft</span>
                                 }
+                                else if (voucher.Status == "Submitted")
+                                {
+                                    <span class="badge-info">Submitted</span>
+                                }
+                                else if (voucher.Status == "Approved")
+                                {
+                                    <span class="badge-secondary">Approved</span>
+                                }
                                 else if (voucher.Status == "Posted")
                                 {
                                     <span class="badge-success">Posted</span>
@@ -169,6 +193,10 @@
                                 else if (voucher.Status == "Rejected")
                                 {
                                         <span class="badge-danger">Rejected</span>
+                                }
+                                else if (voucher.Status == "Reversed")
+                                {
+                                        <span class="badge-danger">Reversed</span>
                                 }
                             </td>
                             <td>
@@ -187,29 +215,51 @@
                                                 <i class="bi bi-pencil"></i>
                                             </a>
 
-                                            @if (User.IsInRole("Admin") || User.IsInRole("Finance"))
-                                            {
-                                                 <form method="post"
-                                                       action="@Url.Action("Approve")"
-                                                       class="d-inline">
-                                                     @Html.AntiForgeryToken()
-                                                     <input type="hidden" name="id" value="@voucher.ExpenseVoucherId" />
-                                                 
-                                                     <button type="submit"
-                                                             class="btn-app btn-icon btn-success-app"
-                                                             title="Approve"
-                                                             onclick="return confirm('Approve this voucher?')">
-                                                         <i class="bi bi-check-circle"></i>
-                                                     </button>
-                                                 </form>
-
-                                            }
+                                            <form method="post" action="@Url.Action("Submit")" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@voucher.ExpenseVoucherId" />
+                                                <button type="submit" class="btn-app btn-icon btn-success-app" title="Submit" onclick="return confirm('Submit this voucher?')">
+                                                    <i class="bi bi-send"></i>
+                                                </button>
+                                            </form>
 
                                             <a href="@Url.Action("Delete", new { id = voucher.ExpenseVoucherId })"
                                                class="btn-app btn-icon btn-danger-app"
                                                title="Delete Voucher">
                                                 <i class="bi bi-trash"></i>
                                             </a>
+                                    }
+                                    else if (voucher.Status == "Submitted" &&
+                                             (User.IsInRole("Admin") || User.IsInRole("Finance")))
+                                    {
+                                            <a href="@Url.Action("Details", new { id = voucher.ExpenseVoucherId })"
+                                               class="btn-app btn-icon btn-primary-app"
+                                               title="Details">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <form method="post" action="@Url.Action("Approve")" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@voucher.ExpenseVoucherId" />
+                                                <button type="submit" class="btn-app btn-icon btn-success-app" title="Approve" onclick="return confirm('Approve this voucher?')">
+                                                    <i class="bi bi-check-circle"></i>
+                                                </button>
+                                            </form>
+                                    }
+                                    else if (voucher.Status == "Approved" &&
+                                             (User.IsInRole("Admin") || User.IsInRole("Finance")))
+                                    {
+                                            <a href="@Url.Action("Details", new { id = voucher.ExpenseVoucherId })"
+                                               class="btn-app btn-icon btn-primary-app"
+                                               title="Details">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <form method="post" action="@Url.Action("Post")" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@voucher.ExpenseVoucherId" />
+                                                <button type="submit" class="btn-app btn-icon btn-success-app" title="Post" onclick="return confirm('Post this voucher?')">
+                                                    <i class="bi bi-journal-check"></i>
+                                                </button>
+                                            </form>
                                     }
                                     else
                                     {

@@ -4,6 +4,7 @@ using AryamanBMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace AryamanBMS.Controllers
 {
@@ -44,6 +45,10 @@ namespace AryamanBMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ClientViewModel vm)
         {
+
+            NormalizeClientGstDetails(vm.Client);
+            ValidateClientGstDetails(vm.Client);
+
             if (!ModelState.IsValid)
             {
                 await LoadLocationDropdownsAsync();
@@ -86,6 +91,9 @@ namespace AryamanBMS.Controllers
         {
             if (id != vm.Client.ClientId) return NotFound();
 
+            NormalizeClientGstDetails(vm.Client);
+            ValidateClientGstDetails(vm.Client);
+
             if (!ModelState.IsValid)
             {
                 await LoadLocationDropdownsAsync();
@@ -102,6 +110,13 @@ namespace AryamanBMS.Controllers
             existing.Address        = vm.Client.Address;
             existing.City           = vm.Client.City;
             existing.State          = vm.Client.State;
+            existing.StateCode = vm.Client.StateCode;
+            existing.RegistrationType = vm.Client.RegistrationType;
+            existing.PlaceOfSupply = vm.Client.PlaceOfSupply;
+            existing.PlaceOfSupplyStateCode = vm.Client.PlaceOfSupplyStateCode;
+            existing.CreditPeriod = vm.Client.CreditPeriod;
+            existing.PaymentTerms = vm.Client.PaymentTerms;
+            existing.BillingAddress = vm.Client.BillingAddress;
             existing.GSTNumber      = vm.Client.GSTNumber;
             existing.PANNumber      = vm.Client.PANNumber;
             existing.ClientType     = vm.Client.ClientType;
@@ -191,19 +206,150 @@ namespace AryamanBMS.Controllers
 
             return Json(new
             {
-                clientId      = client.ClientId,
-                clientCode    = client.ClientCode,
-                clientName    = client.ClientName,
+                clientId = client.ClientId,
+                clientCode = client.ClientCode,
+                clientName = client.ClientName,
                 contactPerson = client.ContactPerson,
-                phone         = client.Phone,
-                email         = client.Email,
-                gstNumber     = client.GSTNumber,
+                phone = client.Phone,
+                email = client.Email,
+                gstNumber = client.GSTNumber,
+                state = client.State,
+                stateCode = client.StateCode,
+                registrationType = client.RegistrationType,
+                billingAddress = client.BillingAddress,
+                placeOfSupply = client.PlaceOfSupply,
+                placeOfSupplyStateCode = client.PlaceOfSupplyStateCode,
+                creditPeriod = client.CreditPeriod,
+                paymentTerms = client.PaymentTerms
             });
         }
 
         #endregion
 
         #region Helpers
+
+        private static readonly Regex GstinRegex =
+    new(@"^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        private static readonly Regex PanRegex =
+            new(@"^[A-Z]{5}[0-9]{4}[A-Z]$",
+                RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        private void NormalizeClientGstDetails(ClientModel client)
+        {
+            client.GSTNumber =
+                string.IsNullOrWhiteSpace(client.GSTNumber)
+                    ? null
+                    : client.GSTNumber.Trim().ToUpperInvariant();
+
+            client.PANNumber =
+                string.IsNullOrWhiteSpace(client.PANNumber)
+                    ? null
+                    : client.PANNumber.Trim().ToUpperInvariant();
+
+            client.StateCode =
+                NormalizeStateCode(client.StateCode);
+
+            client.PlaceOfSupplyStateCode =
+                NormalizeStateCode(client.PlaceOfSupplyStateCode);
+
+            client.RegistrationType =
+                string.IsNullOrWhiteSpace(client.RegistrationType)
+                    ? "Unregistered"
+                    : client.RegistrationType.Trim();
+
+            client.PaymentTerms =
+                string.IsNullOrWhiteSpace(client.PaymentTerms)
+                    ? null
+                    : client.PaymentTerms.Trim();
+
+            client.BillingAddress =
+                string.IsNullOrWhiteSpace(client.BillingAddress)
+                    ? client.Address
+                    : client.BillingAddress.Trim();
+
+            if (!string.IsNullOrWhiteSpace(client.GSTNumber) &&
+                client.GSTNumber.Length >= 2)
+            {
+                client.StateCode =
+                    NormalizeStateCode(client.GSTNumber[..2]);
+            }
+
+            if (string.IsNullOrWhiteSpace(client.PlaceOfSupply))
+            {
+                client.PlaceOfSupply = client.State;
+            }
+
+            if (string.IsNullOrWhiteSpace(client.PlaceOfSupplyStateCode))
+            {
+                client.PlaceOfSupplyStateCode = client.StateCode;
+            }
+        }
+
+        private void ValidateClientGstDetails(ClientModel client)
+        {
+            bool isRegistered =
+                client.RegistrationType == "Regular" ||
+                client.RegistrationType == "Composition" ||
+                client.RegistrationType == "SEZ";
+
+            if (isRegistered &&
+                string.IsNullOrWhiteSpace(client.GSTNumber))
+            {
+                ModelState.AddModelError(
+                    "Client.GSTNumber",
+                    "GSTIN is required for registered clients.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(client.GSTNumber) &&
+                !GstinRegex.IsMatch(client.GSTNumber))
+            {
+                ModelState.AddModelError(
+                    "Client.GSTNumber",
+                    "Enter a valid 15-character GSTIN.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(client.PANNumber) &&
+                !PanRegex.IsMatch(client.PANNumber))
+            {
+                ModelState.AddModelError(
+                    "Client.PANNumber",
+                    "Enter a valid PAN.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(client.GSTNumber) &&
+                !string.IsNullOrWhiteSpace(client.PANNumber) &&
+                client.GSTNumber.Length >= 12 &&
+                client.GSTNumber.Substring(2, 10) != client.PANNumber)
+            {
+                ModelState.AddModelError(
+                    "Client.PANNumber",
+                    "PAN must match characters 3 to 12 of GSTIN.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(client.StateCode) &&
+                !string.IsNullOrWhiteSpace(client.GSTNumber) &&
+                client.GSTNumber.Length >= 2 &&
+                client.StateCode != client.GSTNumber[..2])
+            {
+                ModelState.AddModelError(
+                    "Client.StateCode",
+                    "State code must match the first two digits of GSTIN.");
+            }
+        }
+
+        private static string? NormalizeStateCode(string? stateCode)
+        {
+            stateCode = stateCode?.Trim();
+
+            if (string.IsNullOrWhiteSpace(stateCode))
+            {
+                return null;
+            }
+
+            return stateCode.PadLeft(2, '0')[..2];
+        }
 
         private async Task<string> GenerateClientCodeAsync()
         {

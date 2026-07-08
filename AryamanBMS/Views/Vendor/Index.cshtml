@@ -1,0 +1,78 @@
+@model IEnumerable<VendorModel>
+
+@{
+    ViewData["Title"] = "Vendors";
+    string search = ViewBag.Search as string ?? "";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">VENDORS</h1>
+        <p class="module-subtitle">Manage vendor GST, payment and bank details.</p>
+    </div>
+    <div class="module-header-actions">
+        <a asp-action="Create" class="btn-app btn-primary-app">
+            <i class="bi bi-plus-circle"></i>
+            New Vendor
+        </a>
+    </div>
+</div>
+
+<div class="app-card table-card">
+    <div class="card-header">
+        <form method="get" class="w-100">
+            <div class="form-grid-3">
+                <input name="search" value="@search" class="app-input" placeholder="Code / name / GSTIN / PAN" />
+                <button type="submit" class="btn-app btn-primary-app">
+                    <i class="bi bi-search"></i>
+                    Search
+                </button>
+                <a asp-action="Index" class="btn-app btn-secondary-app">Reset</a>
+            </div>
+        </form>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="app-table">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Vendor</th>
+                        <th>GSTIN</th>
+                        <th>PAN</th>
+                        <th>State</th>
+                        <th>Payment Terms</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td><strong>@item.VendorCode</strong></td>
+                            <td>@item.VendorName</td>
+                            <td>@(item.GSTIN ?? "-")</td>
+                            <td>@(item.PAN ?? "-")</td>
+                            <td>@(item.State ?? "-")</td>
+                            <td>@(item.PaymentTerms ?? "-")</td>
+                            <td>
+                                <div class="table-actions">
+                                    <a asp-action="Edit" asp-route-id="@item.VendorId" class="btn-app btn-icon btn-secondary-app" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form asp-action="Deactivate" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.VendorId" />
+                                        <button type="submit" class="btn-app btn-icon btn-danger-app" title="Deactivate" onclick="return confirm('Deactivate this vendor?')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

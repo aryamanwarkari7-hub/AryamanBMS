@@ -1,0 +1,93 @@
+@model VendorPaymentModel
+
+@{
+    ViewData["Title"] = "Create Vendor Payment";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">CREATE VENDOR PAYMENT</h1>
+        <p class="module-subtitle">Record payment against a posted expense voucher.</p>
+    </div>
+    <div class="module-header-actions">
+        <a asp-action="Index" class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
+</div>
+
+<form method="post">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="app-alert-danger"></div>
+
+    <div class="app-card form-card">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Payment Details</h2>
+                <p class="card-subtitle">Select vendor, voucher and payment reference.</p>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label asp-for="VendorId" class="form-label">Vendor</label>
+                    <select asp-for="VendorId" asp-items="ViewBag.Vendors" class="app-select">
+                        <option value="">Select Vendor</option>
+                    </select>
+                    <span asp-validation-for="VendorId" class="validation-message"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="ExpenseVoucherId" class="form-label">Expense Voucher</label>
+                    <select asp-for="ExpenseVoucherId" asp-items="ViewBag.Vouchers" class="app-select">
+                        <option value="">Select Voucher</option>
+                    </select>
+                    <span asp-validation-for="ExpenseVoucherId" class="validation-message"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="PaymentDate" class="form-label">Payment Date</label>
+                    <input type="date" asp-for="PaymentDate" class="app-input" />
+                    <span asp-validation-for="PaymentDate" class="validation-message"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="AmountPaid" class="form-label">Amount Paid</label>
+                    <input type="number" asp-for="AmountPaid" class="app-input" min="0" step="0.01" />
+                    <span asp-validation-for="AmountPaid" class="validation-message"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="PaymentMode" class="form-label">Payment Mode</label>
+                    <select asp-for="PaymentMode" class="app-select">
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="UPI">UPI</option>
+                        <option value="Cheque">Cheque</option>
+                        <option value="Cash">Cash</option>
+                    </select>
+                    <span asp-validation-for="PaymentMode" class="validation-message"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="TransactionReference" class="form-label">Transaction Reference</label>
+                    <input asp-for="TransactionReference" class="app-input" maxlength="100" />
+                    <span asp-validation-for="TransactionReference" class="validation-message"></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label asp-for="Remarks" class="form-label">Remarks</label>
+                <textarea asp-for="Remarks" class="app-input" rows="3" maxlength="500"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-card">
+        <div class="card-body form-actions">
+            <button type="submit" class="btn-app btn-primary-app">
+                <i class="bi bi-check-circle"></i>
+                Save
+            </button>
+            <a asp-action="Index" class="btn-app btn-secondary-app">Cancel</a>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

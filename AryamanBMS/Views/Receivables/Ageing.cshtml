@@ -1,0 +1,100 @@
+@model AryamanBMS.ViewModels.InvoiceAgeingReportViewModel
+
+@{
+    ViewData["Title"] = "Invoice Ageing";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Invoice Ageing</h1>
+        <p class="module-subtitle">Outstanding invoices grouped by ageing days</p>
+    </div>
+
+    <a asp-action="Index" class="btn-app btn-secondary-app">
+        <i class="bi bi-arrow-left"></i>
+        Receivables
+    </a>
+</div>
+
+<div class="dashboard-grid">
+
+    <div class="stats-card">
+        <div class="stats-label">Total Outstanding</div>
+        <div class="stats-number">
+            ₹ @Model.TotalOutstanding.ToString("N2")
+        </div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">0-30 Days</div>
+        <div class="stats-number">
+            ₹ @Model.Bucket0To30.ToString("N2")
+        </div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">31-60 Days</div>
+        <div class="stats-number">
+            ₹ @Model.Bucket31To60.ToString("N2")
+        </div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">61-90 Days</div>
+        <div class="stats-number">
+            ₹ @Model.Bucket61To90.ToString("N2")
+        </div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Above 90 Days</div>
+        <div class="stats-number">
+            ₹ @Model.BucketAbove90.ToString("N2")
+        </div>
+    </div>
+
+</div>
+
+<div class="app-card table-card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="app-table">
+            <thead>
+                <tr>
+                    <th>Invoice No</th>
+                    <th>Client</th>
+                    <th>Invoice Date</th>
+                    <th>Due Date</th>
+                    <th>Invoice Total</th>
+                    <th>Received</th>
+                    <th>Outstanding</th>
+                    <th>Ageing Days</th>
+                    <th>Bucket</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Rows)
+                {
+                    <tr>
+                        <td>
+                            <a asp-controller="Invoice"
+                               asp-action="Details"
+                               asp-route-id="@row.InvoiceId">
+                                @row.InvoiceNo
+                            </a>
+                        </td>
+                        <td>@row.ClientName</td>
+                        <td>@row.InvoiceDate.ToString("dd-MMM-yyyy")</td>
+                        <td>@(row.DueDate?.ToString("dd-MMM-yyyy") ?? "-")</td>
+                        <td>@row.InvoiceTotal.ToString("N2")</td>
+                        <td>@row.AmountReceived.ToString("N2")</td>
+                        <td>@row.OutstandingBalance.ToString("N2")</td>
+                        <td>@row.AgeingDays</td>
+                        <td>@row.AgeingBucket</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+</div>

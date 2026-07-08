@@ -1,25 +1,34 @@
 @model AryamanBMS.Models.OfficeAssetModel
 
 @{
-    ViewData["Title"] = "Create Office Asset";
+    bool isEdit = Model.OfficeAssetId > 0;
+    string title = isEdit ? "Edit Office Asset" : "Create Office Asset";
+    string formAction = isEdit ? "Edit" : "Create";
+    ViewData["Title"] = title;
 }
 
 <div class="module-header">
     <div>
-        <h1 class="module-title">CREATE OFFICE ASSET</h1>
-        <p class="module-subtitle">Add asset purchase, warranty and lifecycle details.</p>
+        <h1 class="module-title">@title.ToUpper()</h1>
+        <p class="module-subtitle">Add asset purchase, warranty, GST, location and lifecycle details.</p>
     </div>
 
     <div class="module-header-actions">
-        <a asp-action="Index" class="btn-app btn-secondary-app">
+        <a asp-action="@(isEdit ? "Details" : "Index")"
+           asp-route-id="@(isEdit ? Model.OfficeAssetId : null)"
+           class="btn-app btn-secondary-app">
             <i class="bi bi-arrow-left"></i>
             Back
         </a>
     </div>
 </div>
 
-<form asp-action="Create" method="post">
+<form asp-action="@formAction" asp-route-id="@(isEdit ? Model.OfficeAssetId : null)" method="post">
     @Html.AntiForgeryToken()
+    @if (isEdit)
+    {
+        <input asp-for="OfficeAssetId" type="hidden" />
+    }
 
     <div class="app-card form-card">
         <div class="card-header">
@@ -67,9 +76,42 @@
                         <option value="InUse">In Use</option>
                         <option value="UnderRepair">Under Repair</option>
                         <option value="Disposed">Disposed</option>
+                        <option value="Lost">Lost</option>
+                        <option value="Damaged">Damaged</option>
+                        <option value="Retired">Retired</option>
                     </select>
                     <span asp-validation-for="Status" class="validation-message"></span>
                 </div>
+
+                <div class="form-group">
+                    <label asp-for="SerialNumber" class="form-label">Serial Number</label>
+                    <input asp-for="SerialNumber" class="app-input" />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ModelNumber" class="form-label">Model Number</label>
+                    <input asp-for="ModelNumber" class="app-input" />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Manufacturer" class="form-label">Manufacturer</label>
+                    <input asp-for="Manufacturer" class="app-input" />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Brand" class="form-label">Brand</label>
+                    <input asp-for="Brand" class="app-input" />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Barcode" class="form-label">Barcode</label>
+                    <input asp-for="Barcode" class="app-input" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="ConfigurationDetails" class="form-label">Configuration Details</label>
+                <textarea asp-for="ConfigurationDetails" class="app-input" rows="3"></textarea>
             </div>
         </div>
     </div>
@@ -103,6 +145,16 @@
                 </div>
 
                 <div class="form-group">
+                    <label asp-for="VendorInvoiceNumber" class="form-label">Vendor Invoice Number</label>
+                    <input asp-for="VendorInvoiceNumber" class="app-input" />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="VendorInvoiceDate" class="form-label">Vendor Invoice Date</label>
+                    <input asp-for="VendorInvoiceDate" type="date" class="app-input" />
+                </div>
+
+                <div class="form-group">
                     <label asp-for="FinancialYear" class="form-label">Financial Year <span class="validation-message">*</span></label>
                     <input asp-for="FinancialYear" class="app-input" placeholder="2026-27" />
                     <span asp-validation-for="FinancialYear" class="validation-message"></span>
@@ -132,6 +184,120 @@
     <div class="app-card form-card">
         <div class="card-header">
             <div>
+                <h2 class="card-title">Location & GST</h2>
+                <p class="card-subtitle">Track physical location, tax breakup and capitalization value.</p>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label asp-for="LocationName" class="form-label">Location</label>
+                    <input asp-for="LocationName" class="app-input" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="Building" class="form-label">Building</label>
+                    <input asp-for="Building" class="app-input" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="Floor" class="form-label">Floor</label>
+                    <input asp-for="Floor" class="app-input" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="RoomOrSeat" class="form-label">Room / Seat</label>
+                    <input asp-for="RoomOrSeat" class="app-input" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="TaxableAmount" class="form-label">Taxable Amount</label>
+                    <input asp-for="TaxableAmount" type="number" step="0.01" min="0" class="app-input" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="CGSTAmount" class="form-label">CGST</label>
+                    <input asp-for="CGSTAmount" type="number" step="0.01" min="0" class="app-input" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="SGSTAmount" class="form-label">SGST</label>
+                    <input asp-for="SGSTAmount" type="number" step="0.01" min="0" class="app-input" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="IGSTAmount" class="form-label">IGST</label>
+                    <input asp-for="IGSTAmount" type="number" step="0.01" min="0" class="app-input" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="ITCStatus" class="form-label">ITC Status</label>
+                    <select asp-for="ITCStatus" class="app-select">
+                        <option value="Not Applicable">Not Applicable</option>
+                        <option value="Pending Verification">Pending Verification</option>
+                        <option value="Eligible">Eligible</option>
+                        <option value="Blocked">Blocked</option>
+                        <option value="Claimed">Claimed</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label asp-for="DepreciationRate" class="form-label">Depreciation Rate %</label>
+                    <input asp-for="DepreciationRate" type="number" step="0.01" min="0" class="app-input" />
+                </div>
+            </div>
+
+            <div class="form-check">
+                <input asp-for="ITCEligible" class="form-check-input" />
+                <label asp-for="ITCEligible" class="form-check-label">ITC Eligible</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-card form-card">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">AMC & Disposal</h2>
+                <p class="card-subtitle">Capture AMC, disposal, lost and damaged information.</p>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label asp-for="AmcVendorName" class="form-label">AMC Vendor</label>
+                    <input asp-for="AmcVendorName" class="app-input" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="AmcStartDate" class="form-label">AMC Start</label>
+                    <input asp-for="AmcStartDate" type="date" class="app-input" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="AmcEndDate" class="form-label">AMC End</label>
+                    <input asp-for="AmcEndDate" type="date" class="app-input" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="DisposalValue" class="form-label">Disposal Value</label>
+                    <input asp-for="DisposalValue" type="number" step="0.01" min="0" class="app-input" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="LostOrDamagedOn" class="form-label">Lost / Damaged On</label>
+                    <input asp-for="LostOrDamagedOn" type="date" class="app-input" />
+                </div>
+            </div>
+
+            <div class="form-check">
+                <input asp-for="HasAmc" class="form-check-input" />
+                <label asp-for="HasAmc" class="form-check-label">Covered under AMC</label>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="DisposalReason" class="form-label">Disposal Reason</label>
+                <textarea asp-for="DisposalReason" class="app-input" rows="2"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="LostOrDamagedReason" class="form-label">Lost / Damaged Reason</label>
+                <textarea asp-for="LostOrDamagedReason" class="app-input" rows="2"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-card form-card">
+        <div class="card-header">
+            <div>
                 <h2 class="card-title">Assignment & Notes</h2>
                 <p class="card-subtitle">Employee assignment is recorded after save from the details page.</p>
             </div>
@@ -141,7 +307,7 @@
             <div class="form-grid-1">
                 <div class="form-group">
                     <label class="form-label">Current Assignment</label>
-                    <input class="app-input" value="Assign after save from Details" readonly />
+                <input class="app-input" value="@(isEdit ? (string.IsNullOrWhiteSpace(Model.AssignedTo) ? "Not assigned" : Model.AssignedTo) : "Assign after save from Details")" readonly />
                 </div>
 
                 <div class="form-group">
@@ -157,10 +323,12 @@
         <div class="card-body form-actions">
             <button type="submit" class="btn-app btn-primary-app">
                 <i class="bi bi-check-circle"></i>
-                Save
+                @(isEdit ? "Update" : "Save")
             </button>
 
-            <a asp-action="Index" class="btn-app btn-secondary-app">
+            <a asp-action="@(isEdit ? "Details" : "Index")"
+               asp-route-id="@(isEdit ? Model.OfficeAssetId : null)"
+               class="btn-app btn-secondary-app">
                 Cancel
             </a>
         </div>

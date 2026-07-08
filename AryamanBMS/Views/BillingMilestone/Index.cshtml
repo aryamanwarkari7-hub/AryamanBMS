@@ -1,0 +1,122 @@
+@model IEnumerable<AryamanBMS.Models.BillingMilestoneModel>
+
+@{
+    ViewData["Title"] = "Billing Milestones";
+
+    string StatusBadge(string status) => status switch
+    {
+        "Approved" => "badge-info",
+        "Completed" => "badge-success",
+        "On Hold" => "badge-warning",
+        _ => "badge-secondary"
+    };
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Billing Milestones</h1>
+        <p class="module-subtitle">Define invoiceable stages against PO / WO records</p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="Create" class="btn-app btn-primary-app">
+            <i class="bi bi-plus-circle"></i>
+            New Milestone
+        </a>
+    </div>
+</div>
+
+<div class="app-card table-card">
+    <div class="card-header">
+        <h5 class="card-title">Milestone Register</h5>
+    </div>
+
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="app-table">
+                <thead>
+                    <tr>
+                        <th>PO / WO</th>
+                        <th>Client</th>
+                        <th>Milestone</th>
+                        <th>Project</th>
+                        <th class="text-end">Value</th>
+                        <th class="text-end">Billed</th>
+                        <th class="text-end">Remaining</th>
+                        <th>Status</th>
+                        <th>Active</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.PurchaseWorkOrder?.OrderNumber</td>
+                                <td>@item.PurchaseWorkOrder?.Client?.ClientName</td>
+                                <td>
+                                    <strong>@item.MilestoneName</strong>
+                                    @if (!string.IsNullOrWhiteSpace(item.MilestoneDescription))
+                                    {
+                                        <br />
+                                        <small class="card-subtitle">@item.MilestoneDescription</small>
+                                    }
+                                </td>
+                                <td>@(item.Project?.ProjectName ?? "-")</td>
+                                <td class="text-end">@item.MilestoneValue.ToString("N2")</td>
+                                <td class="text-end">@item.BilledValue.ToString("N2")</td>
+                                <td class="text-end">@item.RemainingBillableValue.ToString("N2")</td>
+                                <td>
+                                    <span class="@StatusBadge(item.CompletionStatus)">
+                                        @item.CompletionStatus
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-danger">Inactive</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <a asp-action="Edit"
+                                       asp-route-id="@item.BillingMilestoneId"
+                                       class="btn-app btn-icon btn-secondary-app"
+                                       title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+
+                                    <form asp-action="ToggleActive"
+                                          asp-route-id="@item.BillingMilestoneId"
+                                          method="post"
+                                          class="d-inline">
+                                        @Html.AntiForgeryToken()
+
+                                        <button type="submit"
+                                                class="btn-app btn-icon @(item.IsActive ? "btn-danger-app" : "btn-success-app")"
+                                                title="@(item.IsActive ? "Deactivate" : "Activate")">
+                                            <i class="bi bi-power"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="10" class="text-center text-muted py-4">
+                                No billing milestones found.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

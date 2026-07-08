@@ -10,6 +10,8 @@ namespace AryamanBMS.Repositories.Interfaces
 
         Task<bool> AssetCodeExistsAsync(string assetCode, int? excludeId = null);
 
+        Task<string> GenerateAssetCodeAsync(string assetCategory);
+
         Task<List<OfficeAssetModel>> GetByFinancialYearAsync(string financialYear);
 
         Task<List<OfficeAssetModel>> GetByCategoryAsync(string assetCategory);

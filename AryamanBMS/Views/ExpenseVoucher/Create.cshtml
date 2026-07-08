@@ -95,13 +95,55 @@
                     {
                         <option value="@category.ExpenseCategoryId"
                                 data-gst="@category.DefaultGSTRate"
-                                data-itc="@category.ITCEligible.ToString().ToLower()">
+                                data-itc="@category.ITCEligible.ToString().ToLower()"
+                                data-type="@category.ExpenseType">
                             @category.CategoryName
                         </option>
                     }
                 </select>
                     <span asp-validation-for="ExpenseCategoryId" class="validation-message"></span>
                 </div>
+
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label asp-for="ExpenseClassification" class="form-label">Expense Classification</label>
+                    <select asp-for="ExpenseClassification" class="app-select">
+                        <option value="General">General</option>
+                        <option value="Project">Project</option>
+                        <option value="Department">Department</option>
+                        <option value="Capital">Capital</option>
+                    </select>
+                    <span asp-validation-for="ExpenseClassification" class="validation-message"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="BusinessPurpose" class="form-label">Business Purpose</label>
+                    <input asp-for="BusinessPurpose" class="app-input" maxlength="500" />
+                    <span asp-validation-for="BusinessPurpose" class="validation-message"></span>
+                </div>
+            </div>
+
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label asp-for="ProjectId" class="form-label">Project</label>
+                    <select asp-for="ProjectId" class="app-select">
+                        <option value="">Not Linked</option>
+                        @foreach (var project in ViewBag.Projects)
+                        {
+                            <option value="@project.Id">@project.ProjectName</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label asp-for="DepartmentId" class="form-label">Department</label>
+                    <select asp-for="DepartmentId" class="app-select">
+                        <option value="">Not Linked</option>
+                        @foreach (var department in ViewBag.Departments)
+                        {
+                            <option value="@department.Id">@department.DepartmentName</option>
+                        }
+                    </select>
+                </div>
+            </div>
 
             <div class="form-group">
                     <label asp-for="Description" class="form-label">Description</label>
@@ -241,14 +283,22 @@
             <div class="form-grid-2">
 
                 <div class="form-group">
-                    <label asp-for="VendorName" class="form-label">Vendor Name</label>
+                    <label asp-for="VendorId" class="form-label">Vendor</label>
 
-                    <input asp-for="VendorName"
-                           class="app-input"
-                           placeholder="Vendor name"
-                           maxlength="50" />
+                    <select asp-for="VendorId" class="app-select" id="vendorSelect">
+                        <option value="">Select Vendor</option>
+                        @foreach (var vendor in ViewBag.Vendors)
+                        {
+                            <option value="@vendor.VendorId"
+                                    data-name="@vendor.VendorName"
+                                    data-gstin="@vendor.GSTIN"
+                                    data-statecode="@vendor.StateCode">
+                                @vendor.VendorName
+                            </option>
+                        }
+                    </select>
 
-                    <span asp-validation-for="VendorName"
+                    <span asp-validation-for="VendorId"
                           class="validation-message"></span>
                 </div>
 
@@ -266,16 +316,40 @@
 
             </div>
 
-            <div class="form-group">
-                <label asp-for="InvoiceNumber" class="form-label">Vendor Invoice Number</label>
+            <input type="hidden" asp-for="VendorName" id="vendorNameInput" />
 
-                <input asp-for="InvoiceNumber"
-                       class="app-input"
-                       placeholder="Reference invoice number"
-                       maxlength="20" />
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label asp-for="InvoiceNumber" class="form-label">Vendor Invoice Number</label>
 
-                <span asp-validation-for="InvoiceNumber"
-                      class="validation-message"></span>
+                    <input asp-for="InvoiceNumber"
+                           class="app-input"
+                           placeholder="Reference invoice number"
+                           maxlength="20" />
+
+                    <span asp-validation-for="InvoiceNumber"
+                          class="validation-message"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="VendorInvoiceDate" class="form-label">Vendor Invoice Date</label>
+                    <input type="date" asp-for="VendorInvoiceDate" class="app-input" />
+                    <span asp-validation-for="VendorInvoiceDate" class="validation-message"></span>
+                </div>
+            </div>
+
+            <div class="form-grid-3">
+                <div class="form-group">
+                    <label asp-for="CompanyStateCode" class="form-label">Company State Code</label>
+                    <input asp-for="CompanyStateCode" class="app-input" maxlength="2" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="VendorStateCode" class="form-label">Vendor State Code</label>
+                    <input asp-for="VendorStateCode" class="app-input" id="vendorStateCodeInput" maxlength="2" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="PlaceOfSupplyStateCode" class="form-label">Place of Supply State Code</label>
+                    <input asp-for="PlaceOfSupplyStateCode" class="app-input" maxlength="2" />
+                </div>
             </div>
 
             <div class="form-group">
@@ -320,6 +394,10 @@
             const categorySelect = document.getElementById('expenseCategorySelect');
             const gstRateInput = document.getElementById('gstRateInput');
             const itcEligibleInput = document.getElementById('itcEligibleInput');
+            const vendorSelect = document.getElementById('vendorSelect');
+            const vendorNameInput = document.getElementById('vendorNameInput');
+            const vendorGstinInput = document.querySelector('input[name="VendorGSTIN"]');
+            const vendorStateCodeInput = document.getElementById('vendorStateCodeInput');
 
             function calculateAmounts() {
                 const amount = parseFloat(document.querySelector('input[name="Amount"]').value) || 0;
@@ -353,8 +431,16 @@
 
                 gstRateInput.value = selected.dataset.gst || 0;
                 itcEligibleInput.checked = selected.dataset.itc === 'true';
+                document.querySelector('select[name="ExpenseClassification"]').value = selected.dataset.type || 'General';
 
                 calculateAmounts();
+            });
+
+            vendorSelect.addEventListener('change', function () {
+                const selected = this.options[this.selectedIndex];
+                vendorNameInput.value = selected.dataset.name || '';
+                vendorGstinInput.value = selected.dataset.gstin || '';
+                vendorStateCodeInput.value = selected.dataset.statecode || '';
             });
 
             expenseForm.addEventListener('input', function (e) {

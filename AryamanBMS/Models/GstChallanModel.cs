@@ -43,6 +43,15 @@ namespace AryamanBMS.Models
         public decimal AmountPaid { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
+        public decimal IGSTPaid { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal CGSTPaid { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal SGSTPaid { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
         public decimal InterestAmount { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]

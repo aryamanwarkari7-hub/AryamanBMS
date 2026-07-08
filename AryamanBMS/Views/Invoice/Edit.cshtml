@@ -41,6 +41,12 @@
     <input type="hidden" asp-for="CreatedBy" />
     <input type="hidden" asp-for="IsDeleted" />
     <input type="hidden" asp-for="AttachmentPath" />
+    <input type="hidden" asp-for="SupplierStateCode" />
+    <input type="hidden" asp-for="CustomerStateCode" />
+    <input type="hidden" asp-for="PlaceOfSupplyStateCode" />
+    <input type="hidden" asp-for="IsGstStateOverride" />
+    <input type="hidden" asp-for="GstStateOverrideReason" />
+    <input type="hidden" asp-for="ProposalId" />
 
     <div class="app-card">
         <div class="card-header">
@@ -95,6 +101,7 @@
                 <div class="form-group">
                     <label asp-for="ClientId" class="form-label">Client</label>
                     <select asp-for="ClientId"
+                            id="ClientId"
                             class="app-select"
                             disabled="@lockRelationships">
 
@@ -102,7 +109,10 @@
 
                         @foreach (var client in ViewBag.Clients)
                         {
-                            <option value="@client.ClientId">
+                            <option value="@client.ClientId"
+                                    data-gst="@client.GSTNumber"
+                                    data-address="@client.Address"
+                                    data-state-code="@(client.GSTNumber?.Length >= 2 ? client.GSTNumber.Substring(0, 2) : "")">
                                 @client.ClientName
                             </option>
                         }
@@ -147,31 +157,60 @@
                           class="validation-message"></span>
                 </div>
 
-                <div class="form-group gst-section">
-                    <label asp-for="GSTNo"
+                <div class="form-group">
+                    <label asp-for="PurchaseWorkOrderId"
                            class="form-label">
                         PO/WO
                     </label>
-                <select asp-for="PurchaseWorkOrderId"
-                        id="PurchaseWorkOrderId"
-                        class="app-select">
-
-                    <option value="">Select Purchase / Work Order</option>
-
-                    @if (ViewBag.PurchaseOrders != null)
-                    {
-                        foreach (var order in ViewBag.PurchaseOrders)
-                        {
-                            <option value="@order.PurchaseOrderId">
-                                @order.OrderNumber - @order.OrderTitle
-                            </option>
-                        }
-                    }
-
-                </select>
+                         <select asp-for="PurchaseWorkOrderId"
+                                 id="PurchaseWorkOrderId"
+                                 class="app-select">
+                        
+                             <option value="">Select Purchase / Work Order</option>
+                        
+                             @if (ViewBag.PurchaseOrders != null)
+                             {
+                                 foreach (var order in ViewBag.PurchaseOrders)
+                                 {
+                                     <option value="@order.PurchaseOrderId">
+                                         @order.OrderNumber - @order.OrderTitle
+                                     </option>
+                                 }
+                             }
+                        
+                         </select>
                     <span asp-validation-for="PurchaseWorkOrderId"
                           class="validation-message">
                     </span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="BillingMilestoneId" class="form-label">
+                        Billing Milestone
+                    </label>
+
+                    <select asp-for="BillingMilestoneId"
+                            id="BillingMilestoneId"
+                            class="app-select">
+
+                        <option value="">Select Milestone</option>
+
+                        @if (ViewBag.BillingMilestones != null)
+                        {
+                            foreach (var milestone in ViewBag.BillingMilestones)
+                            {
+                                <option value="@milestone.BillingMilestoneId"
+                                        data-work-order-id="@milestone.PurchaseWorkOrderId"
+                                        data-project-id="@milestone.ProjectId"
+                                        data-value="@milestone.MilestoneValue">
+                                    @milestone.MilestoneName - @milestone.MilestoneValue.ToString("N2")
+                                </option>
+                            }
+                        }
+                    </select>
+
+                    <span asp-validation-for="BillingMilestoneId"
+                          class="validation-message"></span>
                 </div>
 
                 <span asp-validation-for="PurchaseWorkOrderId"
@@ -498,9 +537,100 @@
                 calculateTotals();
             }
 
+            function updateClientGstDetails() {
+                var selectedOption =
+                    $("#ClientId").find("option:selected");
+
+                var gstNo =
+                    selectedOption.data("gst") || "";
+
+                var billingAddress =
+                    selectedOption.data("address") || "";
+
+                var stateCode =
+                    selectedOption.data("state-code") || "";
+
+                $("#CustomerStateCode").val(stateCode);
+                $("#PlaceOfSupplyStateCode").val(stateCode);
+                $("#GSTNo").val(gstNo);
+                $("#BillingAddress").val(
+                    billingAddress);
+            }
+
+            function filterBillingMilestones() {
+                var selectedWorkOrderId =
+                    $("#PurchaseWorkOrderId").val();
+
+                $("#BillingMilestoneId option").each(function () {
+                    var option = $(this);
+
+                    var milestoneWorkOrderId =
+                        option.data("work-order-id");
+
+                    if (!option.val()) {
+                        option.show();
+                        return;
+                    }
+
+                    option.toggle(
+                        !selectedWorkOrderId ||
+                        milestoneWorkOrderId == selectedWorkOrderId);
+                });
+
+                var selectedMilestone =
+                    $("#BillingMilestoneId option:selected");
+
+                if (selectedMilestone.val() &&
+                    selectedMilestone.data("work-order-id") !=
+                        selectedWorkOrderId) {
+                    $("#BillingMilestoneId").val("");
+                }
+            }
+
             $("#InvoiceType").on(
                 "change",
                 updateInvoiceTypeUI);
+
+            $("#ClientId").on(
+                "change",
+                updateClientGstDetails);
+
+            $("#PurchaseWorkOrderId").on(
+                "change",
+                function () {
+
+                    filterBillingMilestones();
+
+                    var orderId = $(this).val();
+
+                    if (!orderId) {
+                        return;
+                    }
+
+                    $.get(
+                        '@Url.Action("GetPurchaseOrderDetails", "Invoice")',
+                        { id: orderId },
+                        function (data) {
+                            $("#ClientId")
+                                .val(data.clientId)
+                                .trigger("change");
+
+                            $("#ProposalId").val(
+                                data.proposalId || "");
+
+                            $("#DueDate").val(
+                                data.deliveryDueDate
+                                    ? data.deliveryDueDate.substring(0, 10)
+                                    : "");
+
+                            if (data.remarks) {
+                                $("#Remarks").val(data.remarks);
+                            }
+                        }
+                    ).fail(function () {
+                        alert("Purchase Order details could not be loaded.");
+                    });
+                });
 
             $("#btnAddRow").click(function () {
 
@@ -535,7 +665,6 @@
                         <td>
                             <select name="InvoiceDetails[${rowIndex}].Unit"
                                     class="app-select">
-
                                 <option value="Service">Service</option>
                                 <option value="Hour">Hour</option>
                                 <option value="Day">Day</option>
@@ -545,7 +674,6 @@
                                 <option value="User">User</option>
                                 <option value="License">License</option>
                                 <option value="Milestone">Milestone</option>
-
                             </select>
                         </td>
 
@@ -559,7 +687,6 @@
 
                         <td class="gst-column"
                             style="${gstDisplay}">
-
                             <input name="InvoiceDetails[${rowIndex}].GSTPercent"
                                    class="app-input gst"
                                    type="number"
@@ -569,7 +696,6 @@
 
                         <td class="gst-column"
                             style="${gstDisplay}">
-
                             <input name="InvoiceDetails[${rowIndex}].GSTAmount"
                                    class="app-input gstAmount"
                                    value="0.00"
@@ -680,6 +806,7 @@
                             .val(taxableAmount.toFixed(2));
 
                         subTotal += taxableAmount;
+
                         rows.push({
                             row: row,
                             taxableAmount: taxableAmount,
@@ -724,14 +851,16 @@
                         allocatedDiscountTotal += allocatedDiscount;
                     }
 
-                    var taxableAfterDiscount = Math.max(
-                        0,
-                        item.taxableAmount - allocatedDiscount);
+                    var taxableAfterDiscount =
+                        Math.max(
+                            0,
+                            item.taxableAmount - allocatedDiscount);
 
-                    var gstAmount = proforma
-                        ? 0
-                        : taxableAfterDiscount *
-                            item.gstPercent / 100;
+                    var gstAmount =
+                        proforma
+                            ? 0
+                            : taxableAfterDiscount *
+                                item.gstPercent / 100;
 
                     item.row.find(".gstAmount")
                         .val(gstAmount.toFixed(2));
@@ -757,35 +886,8 @@
                     .val(grandTotal.toFixed(2));
             }
 
+            filterBillingMilestones();
             updateInvoiceTypeUI();
-        });
-
-                $("#PurchaseWorkOrderId").on("change", function () {
-            var orderId = $(this).val();
-
-            if (!orderId) {
-                return;
-            }
-
-            $.get(
-                '@Url.Action("GetPurchaseOrderDetails", "Invoice")',
-                { id: orderId },
-                function (data) {
-                    $("#ClientId").val(data.clientId);
-                    $("#ProposalId").val(data.proposalId || "");
-                    $("#DueDate").val(
-                        data.deliveryDueDate
-                            ? data.deliveryDueDate.substring(0, 10)
-                            : ""
-                    );
-
-                    if (data.remarks) {
-                        $("#Remarks").val(data.remarks);
-                    }
-                }
-            ).fail(function () {
-                alert("Purchase Order details could not be loaded.");
-            });
         });
     </script>
 }

@@ -16,9 +16,10 @@ namespace AryamanBMS.Repositories
         }
 
         private IQueryable<ProposalModel> Proposals =>
-            _context.Proposals
-                .Include(p => p.Client)
-                .Include(p => p.Project);
+    _context.Proposals
+        .Include(p => p.Client)
+        .Include(p => p.Project)
+        .Include(p => p.AuditTrail);
 
         public async Task<List<ProposalModel>> GetAllAsync()
         {

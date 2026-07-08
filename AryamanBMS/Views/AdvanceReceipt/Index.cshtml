@@ -1,0 +1,68 @@
+﻿@model IEnumerable<AryamanBMS.Models.AdvanceReceiptModel>
+
+@{
+    ViewData["Title"] = "Advance Receipts";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Advance Receipts</h1>
+        <p class="module-subtitle">Customer advances available for future adjustment</p>
+    </div>
+
+    <a asp-action="Create" class="btn-app btn-primary-app">
+        <i class="bi bi-plus-circle"></i>
+        Add Advance
+    </a>
+</div>
+
+<div class="app-card table-card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="app-table">
+                <thead>
+                    <tr>
+                        <th>Receipt No</th>
+                        <th>Client</th>
+                        <th>Project</th>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Adjusted</th>
+                        <th>Available</th>
+                        <th>Mode</th>
+                        <th>Reference</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.AdvanceReceiptNo</td>
+                            <td>@item.Client?.ClientName</td>
+                            <td>@item.Project?.ProjectName</td>
+                            <td>@item.ReceiptDate.ToString("dd-MMM-yyyy")</td>
+                            <td>@item.Amount.ToString("N2")</td>
+                            <td>@item.AdjustedAmount.ToString("N2")</td>
+                            <td>@item.AvailableBalance.ToString("N2")</td>
+                            <td>@item.PaymentMode</td>
+                            <td>@item.PaymentReference</td>
+                            <td class="text-center">
+                                @if (!item.IsCancelled &&
+                                     item.AvailableBalance > 0)
+                                {
+                                    <a asp-action="Apply"
+                                       asp-route-id="@item.AdvanceReceiptId"
+                                       class="btn-app btn-icon btn-primary-app"
+                                       title="Apply to Invoice">
+                                        <i class="bi bi-arrow-left-right"></i>
+                                    </a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

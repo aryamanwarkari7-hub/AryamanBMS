@@ -1,0 +1,47 @@
+@model IEnumerable<AryamanBMS.Models.FullAndFinalSettlementModel>
+
+@{
+    ViewData["Title"] = "Full and Final Settlements";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Full and Final Settlements</h1>
+        <p class="module-subtitle">Employee exit settlement register</p>
+    </div>
+
+    <a asp-action="Create" class="btn-app btn-primary-app">
+        <i class="bi bi-plus-circle"></i>
+        New Settlement
+    </a>
+</div>
+
+<div class="app-card table-card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="app-table">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Last Working Date</th>
+                        <th class="text-end">Net Payable</th>
+                        <th>Approval</th>
+                        <th>Payment</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.Employee?.EmployeeCode - @item.Employee?.FullName</td>
+                            <td>@item.LastWorkingDate.ToString("dd-MMM-yyyy")</td>
+                            <td class="text-end">@item.FinalNetPayable.ToString("N2")</td>
+                            <td><span class="badge-secondary">@item.ApprovalStatus</span></td>
+                            <td><span class="badge-secondary">@item.PaymentStatus</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

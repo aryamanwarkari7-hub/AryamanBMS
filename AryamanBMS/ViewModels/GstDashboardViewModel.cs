@@ -32,6 +32,32 @@ namespace AryamanBMS.ViewModels
 
         public decimal InputCreditCarryForward { get; set; }
 
+        public decimal PreviousITCCarryForward { get; set; }
+
+        public decimal OutputCGSTBalance { get; set; }
+
+        public decimal OutputSGSTBalance { get; set; }
+
+        public decimal OutputIGSTBalance { get; set; }
+
+        public decimal InputCGSTBalance { get; set; }
+
+        public decimal InputSGSTBalance { get; set; }
+
+        public decimal InputIGSTBalance { get; set; }
+
+        public decimal ITCUtilizedForIGST { get; set; }
+
+        public decimal ITCUtilizedForCGST { get; set; }
+
+        public decimal ITCUtilizedForSGST { get; set; }
+
+        public decimal CashPayableIGST { get; set; }
+
+        public decimal CashPayableCGST { get; set; }
+
+        public decimal CashPayableSGST { get; set; }
+
         public int InvoiceCount { get; set; }
 
         public int ExpenseVoucherCount { get; set; }

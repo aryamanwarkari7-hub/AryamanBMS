@@ -9,22 +9,18 @@
 
   <ItemGroup>
     <Compile Remove="NewFolder\**" />
-    <Compile Remove="Views\NewFolder1\**" />
     <Compile Remove="Views\NewFolder2\**" />
     <Compile Remove="Views\NewFolder3\**" />
     <Compile Remove="Views\NewFolder4\**" />
     <Content Remove="NewFolder\**" />
-    <Content Remove="Views\NewFolder1\**" />
     <Content Remove="Views\NewFolder2\**" />
     <Content Remove="Views\NewFolder3\**" />
     <Content Remove="Views\NewFolder4\**" />
     <EmbeddedResource Remove="NewFolder\**" />
-    <EmbeddedResource Remove="Views\NewFolder1\**" />
     <EmbeddedResource Remove="Views\NewFolder2\**" />
     <EmbeddedResource Remove="Views\NewFolder3\**" />
     <EmbeddedResource Remove="Views\NewFolder4\**" />
     <None Remove="NewFolder\**" />
-    <None Remove="Views\NewFolder1\**" />
     <None Remove="Views\NewFolder2\**" />
     <None Remove="Views\NewFolder3\**" />
     <None Remove="Views\NewFolder4\**" />
@@ -66,6 +62,7 @@
 
   <ItemGroup>
     <Folder Include="App_Data\NewFolder\" />
+    <Folder Include="Views\NewFolder1\" />
     <Folder Include="Views\NewFolder\" />
     <Folder Include="wwwroot\css\modules\" />
     <Folder Include="wwwroot\documents\letters\" />

@@ -20,7 +20,8 @@ namespace AryamanBMS.Services
                 .AnyAsync(x =>
                     x.Month == month &&
                     x.Year == year &&
-                    x.Status == "Filed");
+                    (x.Status == FinancialConstants.GstSnapshotStatus.Filed ||
+                     x.Status == FinancialConstants.GstSnapshotStatus.Locked));
         }
 
         public async Task<decimal> GetOutputGSTAsync(int month, int year)
@@ -40,6 +41,7 @@ namespace AryamanBMS.Services
             return await _context.ExpenseVouchers
                 .Where(x =>
                     x.IsActive &&
+                    !x.IsReversed &&
                     x.ITCEligible &&
                     x.Status == FinancialConstants.ExpenseVoucherStatus.Posted &&
                     x.VoucherDate.Month == month &&
@@ -62,7 +64,7 @@ namespace AryamanBMS.Services
             int year)
         {
             if (await IsSnapshotLockedAsync(month, year))
-                throw new Exception("GST Snapshot is already filed and locked.");
+                throw new Exception("GST Snapshot is already filed or locked.");
 
             var invoices = await _context.Invoices
                 .Where(x =>
@@ -76,6 +78,7 @@ namespace AryamanBMS.Services
             var expenses = await _context.ExpenseVouchers
                 .Where(x =>
                     x.IsActive &&
+                    !x.IsReversed &&
                     x.ITCEligible &&
                     x.Status == FinancialConstants.ExpenseVoucherStatus.Posted &&
                     x.VoucherDate.Month == month &&
@@ -141,33 +144,110 @@ namespace AryamanBMS.Services
             snapshot.SalesCGST = salesCGST;
             snapshot.SalesSGST = salesSGST;
             snapshot.SalesIGST = salesIGST;
+            snapshot.OutputCGSTBalance = salesCGST;
+            snapshot.OutputSGSTBalance = salesSGST;
+            snapshot.OutputIGSTBalance = salesIGST;
 
             snapshot.PurchaseTaxableAmount = purchaseTaxable;
 
             snapshot.PurchaseCGST = purchaseCGST;
             snapshot.PurchaseSGST = purchaseSGST;
             snapshot.PurchaseIGST = purchaseIGST;
+            snapshot.InputCGSTBalance = purchaseCGST;
+            snapshot.InputSGSTBalance = purchaseSGST;
+            snapshot.InputIGSTBalance = purchaseIGST;
 
             snapshot.TotalOutputGST = outputGST;
             snapshot.TotalInputGST = inputGST;
 
-            decimal difference = outputGST - inputGST;
+            snapshot.PreviousITCCarryForward =
+                await GetPreviousCarryForwardAsync(month, year);
+
+            ApplyItcUtilization(snapshot);
 
             snapshot.NetGSTPayable =
-                difference > 0 ? difference : 0;
-
-            snapshot.InputCreditCarryForward =
-                difference < 0 ? Math.Abs(difference) : 0;
+                snapshot.CashPayableIGST +
+                snapshot.CashPayableCGST +
+                snapshot.CashPayableSGST;
 
             snapshot.InvoiceCount = invoices.Count;
             snapshot.ExpenseVoucherCount = expenses.Count;
 
             snapshot.GeneratedOn = DateTime.Now;
-            snapshot.Status = "Calculated";
+            snapshot.Status = FinancialConstants.GstSnapshotStatus.Calculated;
 
             await _context.SaveChangesAsync();
 
             return snapshot;
+        }
+
+        private async Task<decimal> GetPreviousCarryForwardAsync(
+            int month,
+            int year)
+        {
+            int previousMonth = month == 1 ? 12 : month - 1;
+            int previousYear = month == 1 ? year - 1 : year;
+
+            return await _context.GstMonthlySnapshots
+                .Where(x =>
+                    x.Month == previousMonth &&
+                    x.Year == previousYear)
+                .Select(x => (decimal?)x.InputCreditCarryForward)
+                .FirstOrDefaultAsync() ?? 0m;
+        }
+
+        private static void ApplyItcUtilization(
+            GstMonthlySnapshotModel snapshot)
+        {
+            decimal availableIgstCredit =
+                snapshot.InputIGSTBalance +
+                snapshot.PreviousITCCarryForward;
+            decimal availableCgstCredit = snapshot.InputCGSTBalance;
+            decimal availableSgstCredit = snapshot.InputSGSTBalance;
+
+            decimal igstOutput = snapshot.OutputIGSTBalance;
+            decimal cgstOutput = snapshot.OutputCGSTBalance;
+            decimal sgstOutput = snapshot.OutputSGSTBalance;
+
+            decimal igstToIgst = Math.Min(igstOutput, availableIgstCredit);
+            igstOutput -= igstToIgst;
+            availableIgstCredit -= igstToIgst;
+
+            decimal igstToCgst = Math.Min(cgstOutput, availableIgstCredit);
+            cgstOutput -= igstToCgst;
+            availableIgstCredit -= igstToCgst;
+
+            decimal igstToSgst = Math.Min(sgstOutput, availableIgstCredit);
+            sgstOutput -= igstToSgst;
+            availableIgstCredit -= igstToSgst;
+
+            decimal cgstToCgst = Math.Min(cgstOutput, availableCgstCredit);
+            cgstOutput -= cgstToCgst;
+            availableCgstCredit -= cgstToCgst;
+
+            decimal cgstToIgst = Math.Min(igstOutput, availableCgstCredit);
+            igstOutput -= cgstToIgst;
+            availableCgstCredit -= cgstToIgst;
+
+            decimal sgstToSgst = Math.Min(sgstOutput, availableSgstCredit);
+            sgstOutput -= sgstToSgst;
+            availableSgstCredit -= sgstToSgst;
+
+            decimal sgstToIgst = Math.Min(igstOutput, availableSgstCredit);
+            igstOutput -= sgstToIgst;
+            availableSgstCredit -= sgstToIgst;
+
+            snapshot.ITCUtilizedForIGST = igstToIgst + cgstToIgst + sgstToIgst;
+            snapshot.ITCUtilizedForCGST = igstToCgst + cgstToCgst;
+            snapshot.ITCUtilizedForSGST = igstToSgst + sgstToSgst;
+
+            snapshot.CashPayableIGST = igstOutput;
+            snapshot.CashPayableCGST = cgstOutput;
+            snapshot.CashPayableSGST = sgstOutput;
+            snapshot.InputCreditCarryForward =
+                availableIgstCredit +
+                availableCgstCredit +
+                availableSgstCredit;
         }
     }
 }

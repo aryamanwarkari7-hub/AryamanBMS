@@ -41,6 +41,12 @@ namespace AryamanBMS.Models
         [StringLength(100)]
         public string? FiledBy { get; set; }
 
+        [StringLength(450)]
+        public string? FiledByUserId { get; set; }
+
+        [StringLength(50)]
+        public string? AcknowledgementNumber { get; set; }
+
         public string? Remarks { get; set; }
 
         public DateTime CreatedOn { get; set; } = DateTime.Now;

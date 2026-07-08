@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace AryamanBMS.Controllers
 {
@@ -141,6 +142,16 @@ namespace AryamanBMS.Controllers
                 return NotFound();
             }
 
+            if (salary.PayrollStatus == "Finalized")
+            {
+                TempData["Error"] =
+                    "Finalized salary records cannot be edited. Reopen payroll before making corrections.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
+            }
+
             return View(salary);
         }
 
@@ -149,10 +160,51 @@ namespace AryamanBMS.Controllers
         [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Edit(SalaryRecordModel salary)
         {
+            var existing =
+                await _salaryRecordRepository
+                    .GetByIdAsync(salary.Id);
+
+            if (existing == null)
+            {
+                return NotFound();
+            }
+
+            if (existing.PayrollStatus == "Finalized")
+            {
+                TempData["Error"] =
+                    "Finalized salary records cannot be edited. Reopen payroll before making corrections.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id = salary.Id });
+            }
+
             if (ModelState.IsValid)
             {
+                existing.BasicSalary = salary.BasicSalary;
+                existing.HRA = salary.HRA;
+                existing.DA = salary.DA;
+                existing.OtherAllowances = salary.OtherAllowances;
+                existing.PfDeduction = salary.PfDeduction;
+                existing.EsicDeduction = salary.EsicDeduction;
+                existing.TdsDeduction = salary.TdsDeduction;
+                existing.OtherDeductions = salary.OtherDeductions;
+                existing.GrossSalary = salary.GrossSalary;
+                existing.TotalEarnings = salary.GrossSalary;
+                existing.TotalDeductions =
+                    salary.PfDeduction +
+                    salary.EsicDeduction +
+                    existing.ProfessionalTax +
+                    existing.Advance +
+                    salary.TdsDeduction +
+                    salary.OtherDeductions;
+                existing.NetSalary = salary.NetSalary;
+                existing.UpdatedByUserId =
+                    User.FindFirstValue(ClaimTypes.NameIdentifier);
+                existing.UpdatedOn = DateTime.Now;
+
                 await _salaryRecordRepository
-                    .UpdateAsync(salary);
+                    .UpdateAsync(existing);
 
                 await _salaryRecordRepository
                     .SaveAsync();
@@ -184,8 +236,25 @@ namespace AryamanBMS.Controllers
                 return NotFound();
             }
 
+            if (salary.PayrollStatus != "Finalized")
+            {
+                TempData["Error"] =
+                    "Salary can be marked paid only after payroll is finalized.";
+
+                return RedirectToAction(
+                    nameof(Index),
+                    new
+                    {
+                        month,
+                        year,
+                        page
+                    });
+            }
+
             salary.PaymentStatus = "Paid";
             salary.PaidOn = DateTime.Now;
+            salary.PaidByUserId =
+                User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             await _salaryRecordRepository.UpdateAsync(salary);
             await _salaryRecordRepository.SaveAsync();
@@ -201,6 +270,180 @@ namespace AryamanBMS.Controllers
                     year,
                     page
                 });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,HR")]
+        public async Task<IActionResult> Verify(
+            int id,
+            int month,
+            int year,
+            int page = 1)
+        {
+            var salary =
+                await _salaryRecordRepository.GetByIdAsync(id);
+
+            if (salary == null)
+            {
+                return NotFound();
+            }
+
+            if (salary.PayrollStatus is "Finalized")
+            {
+                TempData["Error"] =
+                    "Finalized payroll is already locked.";
+            }
+            else
+            {
+                salary.PayrollStatus = "Verified";
+                salary.VerifiedByUserId =
+                    User.FindFirstValue(ClaimTypes.NameIdentifier);
+                salary.VerifiedOn = DateTime.Now;
+
+                await _salaryRecordRepository.UpdateAsync(salary);
+                await _salaryRecordRepository.SaveAsync();
+
+                TempData["Success"] =
+                    "Salary record verified.";
+            }
+
+            return RedirectToAction(
+                nameof(Index),
+                new { month, year, page });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,HR")]
+        public async Task<IActionResult> FinalizePayroll(
+            int id,
+            int month,
+            int year,
+            int page = 1)
+        {
+            var salary =
+                await _salaryRecordRepository.GetByIdAsync(id);
+
+            if (salary == null)
+            {
+                return NotFound();
+            }
+
+            if (salary.PayrollStatus != "Verified")
+            {
+                TempData["Error"] =
+                    "Only verified salary records can be finalized.";
+
+                return RedirectToAction(
+                    nameof(Index),
+                    new { month, year, page });
+            }
+
+            salary.PayrollStatus = "Finalized";
+            salary.FinalizedByUserId =
+                User.FindFirstValue(ClaimTypes.NameIdentifier);
+            salary.FinalizedOn = DateTime.Now;
+
+            await _salaryRecordRepository.UpdateAsync(salary);
+            await _salaryRecordRepository.SaveAsync();
+
+            TempData["Success"] =
+                "Salary record finalized.";
+
+            return RedirectToAction(
+                nameof(Index),
+                new { month, year, page });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,HR,Finance")]
+        public async Task<IActionResult> Reopen(
+            int id,
+            int month,
+            int year,
+            string reopenReason,
+            int page = 1)
+        {
+            var salary =
+                await _salaryRecordRepository.GetByIdAsync(id);
+
+            if (salary == null)
+            {
+                return NotFound();
+            }
+
+            if (salary.PayrollStatus != "Finalized")
+            {
+                TempData["Error"] =
+                    "Only finalized salary records can be reopened.";
+            }
+            else if (string.IsNullOrWhiteSpace(reopenReason))
+            {
+                TempData["Error"] =
+                    "Reopen reason is required.";
+            }
+            else
+            {
+                salary.PayrollStatus = "Reopened";
+                salary.ReopenReason = reopenReason.Trim();
+                salary.ReopenedByUserId =
+                    User.FindFirstValue(ClaimTypes.NameIdentifier);
+                salary.ReopenedOn = DateTime.Now;
+                salary.IsPayslipReleased = false;
+
+                await _salaryRecordRepository.UpdateAsync(salary);
+                await _salaryRecordRepository.SaveAsync();
+
+                TempData["Success"] =
+                    "Salary record reopened.";
+            }
+
+            return RedirectToAction(
+                nameof(Index),
+                new { month, year, page });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,HR")]
+        public async Task<IActionResult> ReleasePayslip(
+            int id,
+            int month,
+            int year,
+            int page = 1)
+        {
+            var salary =
+                await _salaryRecordRepository.GetByIdAsync(id);
+
+            if (salary == null)
+            {
+                return NotFound();
+            }
+
+            if (salary.PayrollStatus != "Finalized")
+            {
+                TempData["Error"] =
+                    "Payslip can be released only after payroll is finalized.";
+            }
+            else
+            {
+                salary.IsPayslipReleased = true;
+                salary.PayslipReleasedByUserId =
+                    User.FindFirstValue(ClaimTypes.NameIdentifier);
+                salary.PayslipReleasedOn = DateTime.Now;
+
+                await _salaryRecordRepository.UpdateAsync(salary);
+                await _salaryRecordRepository.SaveAsync();
+
+                TempData["Success"] =
+                    "Payslip released.";
+            }
+
+            return RedirectToAction(
+                nameof(Index),
+                new { month, year, page });
         }
 
 
@@ -629,6 +872,15 @@ namespace AryamanBMS.Controllers
                 !User.IsInRole("Admin") &&
                 !User.IsInRole("HR"))
             {
+                if (!salary.IsPayslipReleased)
+                {
+                    TempData["Error"] =
+                        "Payslip has not been released yet.";
+
+                    return RedirectToAction(
+                        nameof(MySalary));
+                }
+
                 var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
                 var employee = await _employeeRepository.Employees
@@ -637,6 +889,13 @@ namespace AryamanBMS.Controllers
                 if (employee == null || salary.EmployeeId != employee.Id)
                 {
                     return Forbid();
+                }
+
+                if (!salary.EmployeeViewedPayslipOn.HasValue)
+                {
+                    salary.EmployeeViewedPayslipOn = DateTime.Now;
+                    await _salaryRecordRepository.UpdateAsync(salary);
+                    await _salaryRecordRepository.SaveAsync();
                 }
             }
 

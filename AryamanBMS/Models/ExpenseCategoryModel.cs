@@ -27,6 +27,17 @@ namespace AryamanBMS.Models
         [StringLength(50)]
         public string? GLAccountCode { get; set; }
 
+        [StringLength(50)]
+        public string ExpenseType { get; set; } = "General";
+
+        [StringLength(50)]
+        public string? PayableGLAccountCode { get; set; }
+
+        [StringLength(50)]
+        public string? InputGSTGLAccountCode { get; set; }
+
+        public bool IsCapitalExpense { get; set; }
+
         public bool IsActive { get; set; } = true;
 
         public DateTime CreatedOn { get; set; } = DateTime.Now;

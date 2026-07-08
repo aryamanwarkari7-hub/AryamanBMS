@@ -1,0 +1,160 @@
+@model AryamanBMS.Models.DebitNoteModel
+
+@{
+    ViewData["Title"] = "Create Debit Note";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Create Debit Note</h1>
+        <p class="module-subtitle">Record additional billing or tax undercharge against an issued invoice</p>
+    </div>
+
+    <a asp-action="Index" class="btn-app btn-secondary-app">
+        <i class="bi bi-arrow-left"></i>
+        Back
+    </a>
+</div>
+
+<form asp-action="Create" method="post">
+    @Html.AntiForgeryToken()
+
+    <div asp-validation-summary="ModelOnly" class="app-alert-danger"></div>
+
+    <div class="app-card">
+        <div class="card-header">
+            <h5 class="card-title">Debit Note Details</h5>
+        </div>
+
+        <div class="card-body">
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label asp-for="OriginalInvoiceId" class="form-label">
+                        Original Invoice
+                    </label>
+
+                    <select asp-for="OriginalInvoiceId" class="app-select">
+                        <option value="">Select Invoice</option>
+
+                        @foreach (var invoice in ViewBag.Invoices)
+                        {
+                            <option value="@invoice.InvoiceId">
+                                @invoice.InvoiceNo - @invoice.Client?.ClientName - @invoice.GrandTotal.ToString("N2")
+                            </option>
+                        }
+                    </select>
+
+                    <span asp-validation-for="OriginalInvoiceId"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="AdditionalTaxableValue" class="form-label">
+                        Additional Taxable Value
+                    </label>
+
+                    <input asp-for="AdditionalTaxableValue"
+                           type="number"
+                           step="0.01"
+                           class="app-input debit-amount" />
+
+                    <span asp-validation-for="AdditionalTaxableValue"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="CGST" class="form-label">CGST</label>
+                    <input asp-for="CGST"
+                           type="number"
+                           step="0.01"
+                           class="app-input debit-amount" />
+                    <span asp-validation-for="CGST"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="SGST" class="form-label">SGST</label>
+                    <input asp-for="SGST"
+                           type="number"
+                           step="0.01"
+                           class="app-input debit-amount" />
+                    <span asp-validation-for="SGST"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="IGST" class="form-label">IGST</label>
+                    <input asp-for="IGST"
+                           type="number"
+                           step="0.01"
+                           class="app-input debit-amount" />
+                    <span asp-validation-for="IGST"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="TotalDebit" class="form-label">
+                        Total Debit
+                    </label>
+
+                    <input asp-for="TotalDebit"
+                           id="TotalDebit"
+                           class="app-input"
+                           readonly />
+
+                    <span asp-validation-for="TotalDebit"
+                          class="validation-message"></span>
+                </div>
+            </div>
+
+            <div class="form-group mt-3">
+                <label asp-for="Reason" class="form-label">Reason</label>
+
+                <textarea asp-for="Reason"
+                          class="app-textarea"
+                          rows="3"></textarea>
+
+                <span asp-validation-for="Reason"
+                      class="validation-message"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-card">
+        <div class="card-body">
+            <button type="submit" class="btn-app btn-primary-app">
+                <i class="bi bi-check-circle"></i>
+                Save Debit Note
+            </button>
+
+            <a asp-action="Index" class="btn-app btn-secondary-app">
+                Cancel
+            </a>
+        </div>
+    </div>
+</form>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        $(function () {
+            function calculateTotalDebit() {
+                var total = 0;
+
+                $(".debit-amount").each(function () {
+                    total += parseFloat($(this).val()) || 0;
+                });
+
+                $("#TotalDebit").val(total.toFixed(2));
+            }
+
+            $(".debit-amount").on(
+                "keyup change",
+                calculateTotalDebit);
+
+            calculateTotalDebit();
+        });
+    </script>
+}

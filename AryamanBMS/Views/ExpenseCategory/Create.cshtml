@@ -155,6 +155,48 @@
                           class="validation-message"></span>
                 </div>
 
+                <div class="form-group">
+                    <label asp-for="ExpenseType"
+                           class="form-label">
+                        Expense Type
+                    </label>
+
+                    <select asp-for="ExpenseType"
+                            class="app-select">
+                        <option value="General">General</option>
+                        <option value="Project">Project</option>
+                        <option value="Department">Department</option>
+                        <option value="Capital">Capital</option>
+                    </select>
+
+                    <span asp-validation-for="ExpenseType"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="PayableGLAccountCode"
+                           class="form-label">
+                        Payable GL Account
+                    </label>
+
+                    <input asp-for="PayableGLAccountCode"
+                           class="app-input"
+                           placeholder="e.g., 2100"
+                           maxlength="50" />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="InputGSTGLAccountCode"
+                           class="form-label">
+                        Input GST GL Account
+                    </label>
+
+                    <input asp-for="InputGSTGLAccountCode"
+                           class="app-input"
+                           placeholder="e.g., 1400"
+                           maxlength="50" />
+                </div>
+
             </div>
 
             <div class="form-check">
@@ -164,6 +206,16 @@
                 <label asp-for="ITCEligible"
                        class="form-check-label">
                     Input Tax Credit Eligible
+                </label>
+            </div>
+
+            <div class="form-check mt-2">
+                <input asp-for="IsCapitalExpense"
+                       class="form-check-input" />
+
+                <label asp-for="IsCapitalExpense"
+                       class="form-check-label">
+                    Capital Expense / Fixed Asset
                 </label>
             </div>
 

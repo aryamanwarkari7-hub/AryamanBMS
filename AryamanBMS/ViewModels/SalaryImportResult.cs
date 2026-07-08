@@ -6,9 +6,13 @@
 
         public List<string> Errors { get; set; } = new();
 
+        public List<string> Warnings { get; set; } = new();
+
         public bool HasErrors => Errors.Any();
 
         public int SkippedPaidCount { get; set; }
+
+        public int ImportBatchId { get; set; }
 
         public string Message
         {

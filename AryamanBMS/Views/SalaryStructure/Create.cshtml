@@ -124,6 +124,74 @@
 
                 </div>
 
+                <div class="form-group">
+                    <label asp-for="BasicSalary" class="form-label">Basic Salary</label>
+                    <input asp-for="BasicSalary" type="number" step="0.01" min="0" class="app-input" />
+                    <span asp-validation-for="BasicSalary" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="HRA" class="form-label">HRA</label>
+                    <input asp-for="HRA" type="number" step="0.01" min="0" class="app-input" />
+                    <span asp-validation-for="HRA" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="DA" class="form-label">DA</label>
+                    <input asp-for="DA" type="number" step="0.01" min="0" class="app-input" />
+                    <span asp-validation-for="DA" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Conveyance" class="form-label">Conveyance</label>
+                    <input asp-for="Conveyance" type="number" step="0.01" min="0" class="app-input" />
+                    <span asp-validation-for="Conveyance" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="MedicalAllowance" class="form-label">Medical Allowance</label>
+                    <input asp-for="MedicalAllowance" type="number" step="0.01" min="0" class="app-input" />
+                    <span asp-validation-for="MedicalAllowance" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="EducationAllowance" class="form-label">Education Allowance</label>
+                    <input asp-for="EducationAllowance" type="number" step="0.01" min="0" class="app-input" />
+                    <span asp-validation-for="EducationAllowance" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="SpecialAllowance" class="form-label">Special Allowance</label>
+                    <input asp-for="SpecialAllowance" type="number" step="0.01" min="0" class="app-input" />
+                    <span asp-validation-for="SpecialAllowance" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="OtherAllowances" class="form-label">Other Allowances</label>
+                    <input asp-for="OtherAllowances" type="number" step="0.01" min="0" class="app-input" />
+                    <span asp-validation-for="OtherAllowances" class="text-danger"></span>
+                </div>
+
+                <div class="form-check mt-4">
+                    <input asp-for="IsPfApplicable" class="form-check-input" />
+                    <label asp-for="IsPfApplicable" class="form-check-label">PF Applicable</label>
+                </div>
+
+                <div class="form-check mt-4">
+                    <input asp-for="IsEsicApplicable" class="form-check-input" />
+                    <label asp-for="IsEsicApplicable" class="form-check-label">ESIC Applicable</label>
+                </div>
+
+                <div class="form-check mt-4">
+                    <input asp-for="IsPtApplicable" class="form-check-input" />
+                    <label asp-for="IsPtApplicable" class="form-check-label">PT Applicable</label>
+                </div>
+
+                <div class="form-check mt-4">
+                    <input asp-for="IsTdsApplicable" class="form-check-input" />
+                    <label asp-for="IsTdsApplicable" class="form-check-label">TDS Applicable</label>
+                </div>
+
                 <div class="form-check mt-4">
 
                     <input asp-for="IsActive"

@@ -35,6 +35,12 @@ namespace AryamanBMS.Models
 
         public DateTime JoiningDate { get; set; }
 
+        public DateTime? ResignationDate { get; set; }
+
+        public DateTime? LastWorkingDate { get; set; }
+
+        public DateTime? RelievingDate { get; set; }
+
         public int DepartmentId { get; set; }
 
         public int DesignationId { get; set; }

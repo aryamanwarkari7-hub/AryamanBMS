@@ -24,22 +24,19 @@
                 Edit
             </a>
 
-            @if (User.IsInRole("Admin") || User.IsInRole("Finance"))
-            {
-                <form method="post"
-                      asp-action="Approve"
-                      class="d-inline">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="id" value="@Model.ExpenseVoucherId" />
+            <form method="post"
+                  asp-action="Submit"
+                  class="d-inline">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.ExpenseVoucherId" />
 
-                    <button type="submit"
-                            class="btn-app btn-success-app"
-                            onclick="return confirm('Approve this voucher?')">
-                        <i class="bi bi-check-circle"></i>
-                        Approve
-                    </button>
-                </form>
-            }
+                <button type="submit"
+                        class="btn-app btn-success-app"
+                        onclick="return confirm('Submit this voucher?')">
+                    <i class="bi bi-send"></i>
+                    Submit
+                </button>
+            </form>
 
             <a asp-action="Delete"
                asp-route-id="@Model.ExpenseVoucherId"
@@ -47,6 +44,44 @@
                 <i class="bi bi-trash"></i>
                 Delete
             </a>
+        }
+        else if (Model.Status == FinancialConstants.ExpenseVoucherStatus.Submitted &&
+                 (User.IsInRole("Admin") || User.IsInRole("Finance")))
+        {
+            <form method="post" asp-action="Approve" class="d-inline">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.ExpenseVoucherId" />
+                <button type="submit" class="btn-app btn-success-app" onclick="return confirm('Approve this voucher?')">
+                    <i class="bi bi-check-circle"></i>
+                    Approve
+                </button>
+            </form>
+        }
+        else if (Model.Status == FinancialConstants.ExpenseVoucherStatus.Approved &&
+                 (User.IsInRole("Admin") || User.IsInRole("Finance")))
+        {
+            <form method="post" asp-action="Post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.ExpenseVoucherId" />
+                <button type="submit" class="btn-app btn-success-app" onclick="return confirm('Post this voucher?')">
+                    <i class="bi bi-journal-check"></i>
+                    Post
+                </button>
+            </form>
+        }
+        else if (Model.Status == FinancialConstants.ExpenseVoucherStatus.Posted &&
+                 !Model.IsReversed &&
+                 (User.IsInRole("Admin") || User.IsInRole("Finance")))
+        {
+            <form method="post" asp-action="Reverse" class="d-inline">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.ExpenseVoucherId" />
+                <input type="hidden" name="reversalReason" value="Reversed from voucher details" />
+                <button type="submit" class="btn-app btn-danger-app" onclick="return confirm('Reverse this posted voucher?')">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                    Reverse
+                </button>
+            </form>
         }
 
         <a asp-action="Index"
@@ -252,6 +287,14 @@
                 {
                     <span class="badge-warning">Draft</span>
                 }
+                else if (Model.Status == "Submitted")
+                {
+                    <span class="badge-info">Submitted</span>
+                }
+                else if (Model.Status == "Approved")
+                {
+                    <span class="badge-secondary">Approved</span>
+                }
                 else if (Model.Status == "Posted")
                 {
                     <span class="badge-success">Posted</span>
@@ -260,14 +303,33 @@
                 {
                     <span class="badge-danger">Rejected</span>
                 }
+                else if (Model.Status == "Reversed")
+                {
+                    <span class="badge-danger">Reversed</span>
+                }
             </div>
 
         </div>
 
-        <div class="form-group">
-            <label class="form-label">Description</label>
-            <strong>@(string.IsNullOrWhiteSpace(Model.Description) ? "-" : Model.Description)</strong>
-        </div>
+            <div class="form-group">
+                <label class="form-label">Payment Status</label>
+                <strong>@Model.PaymentStatus</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Paid Amount</label>
+                <strong>₹ @Model.PaidAmount.ToString("N2")</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Balance Amount</label>
+                <strong>₹ @Model.BalanceAmount.ToString("N2")</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                <strong>@(string.IsNullOrWhiteSpace(Model.Description) ? "-" : Model.Description)</strong>
+            </div>
 
     </div>
 </div>
@@ -375,7 +437,7 @@
 
             <div class="form-group">
                 <label class="form-label">Vendor Name</label>
-                <strong>@(string.IsNullOrWhiteSpace(Model.VendorName) ? "-" : Model.VendorName)</strong>
+                <strong>@(Model.Vendor?.VendorName ?? (string.IsNullOrWhiteSpace(Model.VendorName) ? "-" : Model.VendorName))</strong>
             </div>
 
             <div class="form-group">
@@ -386,6 +448,11 @@
             <div class="form-group">
                 <label class="form-label">Vendor Invoice Number</label>
                 <strong>@(string.IsNullOrWhiteSpace(Model.InvoiceNumber) ? "-" : Model.InvoiceNumber)</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Vendor Invoice Date</label>
+                <strong>@(Model.VendorInvoiceDate?.ToString("dd MMM yyyy") ?? "-")</strong>
             </div>
 
         </div>
@@ -445,13 +512,23 @@
                 </strong>
             </div>
 
+            <div class="form-group">
+                <label class="form-label">Reversed On</label>
+                <strong>@(Model.ReversedOn?.ToString("dd MMM yyyy HH:mm") ?? "-")</strong>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Reversal Reason</label>
+                <strong>@(string.IsNullOrWhiteSpace(Model.ReversalReason) ? "-" : Model.ReversalReason)</strong>
+            </div>
+
         </div>
 
     </div>
 
 </div>
     
-@if (Model.Status == FinancialConstants.ExpenseVoucherStatus.Draft &&
+@if (Model.Status == FinancialConstants.ExpenseVoucherStatus.Submitted &&
     (User.IsInRole("Admin") || User.IsInRole("Finance")))
 {
     <div class="app-card">

@@ -92,6 +92,65 @@ namespace AryamanBMS.Models
         public DateTime CreatedOn { get; set; } = DateTime.Now;
         public DateTime? UpdatedOn { get; set; }
 
+        [StringLength(450)]
+        public string? CreatedByUserId { get; set; }
+
+        [StringLength(450)]
+        public string? UpdatedByUserId { get; set; }
+
+        [StringLength(450)]
+        public string? SubmittedByUserId { get; set; }
+
+        public DateTime? SubmittedOn { get; set; }
+
+        [StringLength(450)]
+        public string? AcceptedByUserId { get; set; }
+
+        public DateTime? AcceptedOn { get; set; }
+
+        [StringLength(450)]
+        public string? RejectedByUserId { get; set; }
+
+        public DateTime? RejectedOn { get; set; }
+
+        [StringLength(500)]
+        public string? RejectionReason { get; set; }
+
+        public DateTime? ExpiredOn { get; set; }
+
+        [StringLength(500)]
+        public string? RevisionReason { get; set; }
+
+        [StringLength(450)]
+        public string? RevisedByUserId { get; set; }
+
+        public DateTime? RevisedOn { get; set; }
+
+        [StringLength(150)]
+        public string? CustomerApprovalReference { get; set; }
+
+        [StringLength(450)]
+        public string? ApprovedByUserId { get; set; }
+
+        public DateTime? ApprovedOn { get; set; }
+
+        [StringLength(450)]
+        public string? IssuedByUserId { get; set; }
+
+        public DateTime? IssuedOn { get; set; }
+
+        [StringLength(450)]
+        public string? CancelledByUserId { get; set; }
+
+        public DateTime? CancelledOn { get; set; }
+
+        [StringLength(500)]
+        public string? CancellationReason { get; set; }
+
+        [ValidateNever]
+        public virtual ICollection<ProposalAuditModel> AuditTrail { get; set; }
+            = new List<ProposalAuditModel>();
+
         [ForeignKey(nameof(ClientId))]
         [ValidateNever]
         public virtual ClientModel? Client { get; set; }

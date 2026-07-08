@@ -1,0 +1,52 @@
+@model IEnumerable<VendorPaymentModel>
+
+@{
+    ViewData["Title"] = "Vendor Payments";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">VENDOR PAYMENTS</h1>
+        <p class="module-subtitle">Track partial and full payments against posted expense vouchers.</p>
+    </div>
+    <div class="module-header-actions">
+        <a asp-action="Create" class="btn-app btn-primary-app">
+            <i class="bi bi-plus-circle"></i>
+            New Payment
+        </a>
+    </div>
+</div>
+
+<div class="app-card table-card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="app-table">
+                <thead>
+                    <tr>
+                        <th>Payment No.</th>
+                        <th>Date</th>
+                        <th>Vendor</th>
+                        <th>Voucher</th>
+                        <th>Mode</th>
+                        <th>Reference</th>
+                        <th class="text-end">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td><strong>@item.PaymentNo</strong></td>
+                            <td>@item.PaymentDate.ToString("dd MMM yyyy")</td>
+                            <td>@(item.Vendor?.VendorName ?? "-")</td>
+                            <td>@(item.ExpenseVoucher?.VoucherNumber ?? "-")</td>
+                            <td>@item.PaymentMode</td>
+                            <td>@(item.TransactionReference ?? "-")</td>
+                            <td class="text-end">₹ @item.AmountPaid.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

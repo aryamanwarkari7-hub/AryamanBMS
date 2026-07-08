@@ -22,11 +22,11 @@ namespace AryamanBMS.Controllers
         private readonly IProposalDocumentService _proposalDocumentService;
 
         public ProposalController(
-    IProposalRepository proposalRepo,
-    IClientRepository clientRepo,
-    IFileStorageService fileStorage,
-    ApplicationDbContext context,
-    IProposalDocumentService proposalDocumentService)
+           IProposalRepository proposalRepo,
+           IClientRepository clientRepo,
+           IFileStorageService fileStorage,
+           ApplicationDbContext context,
+           IProposalDocumentService proposalDocumentService)
         {
             _proposalRepo = proposalRepo;
             _clientRepo = clientRepo;
@@ -78,9 +78,14 @@ namespace AryamanBMS.Controllers
             ModelState.Remove("Proposal.Status");
             ModelState.Remove(nameof(vm.UploadFile));
 
+            string? currentUserId =  User.FindFirstValue(ClaimTypes.NameIdentifier);
+
             vm.Proposal.Status = "Draft";
             vm.Proposal.IsConverted = false;
             vm.Proposal.IsActive = true;
+            vm.Proposal.CreatedByUserId = currentUserId;
+
+            NormalizeProposal(vm.Proposal);
 
             NormalizeProposal(vm.Proposal);
 
@@ -130,10 +135,16 @@ namespace AryamanBMS.Controllers
             }
 
             await _proposalRepo.CreateWithSequenceAsync(vm.Proposal);
-
-            string? currentUserId =
-                User.FindFirstValue(
-                    ClaimTypes.NameIdentifier);
+            await AddProposalAuditAsync(
+               vm.Proposal, "Created",
+               null,
+               vm.Proposal.Status,
+               null,
+               vm.Proposal.ProposalAmount,
+               null,
+               vm.Proposal.RevisionNumber,
+               "Proposal created.",
+               currentUserId);
 
             if (string.IsNullOrWhiteSpace(currentUserId))
             {
@@ -243,6 +254,9 @@ namespace AryamanBMS.Controllers
                     new { id });
             }
 
+            string? currentUserId =
+                User.FindFirstValue(ClaimTypes.NameIdentifier);
+
             ModelState.Remove("Proposal.ProposalNumber");
             ModelState.Remove("Proposal.FileName");
             ModelState.Remove("Proposal.StoredFileName");
@@ -276,6 +290,43 @@ namespace AryamanBMS.Controllers
                 existing.VersionNo;
 
             NormalizeProposal(vm.Proposal);
+
+            bool protectedProposalChanged = HasProtectedProposalChange(existing, vm.Proposal);
+
+            if (IsAccepted(existing) && protectedProposalChanged)
+            {
+                if (string.Equals(
+                        existing.RevisionNumber,
+                        vm.Proposal.RevisionNumber,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    ModelState.AddModelError(
+                        "Proposal.RevisionNumber",
+                        "Revision number must change when an accepted proposal is revised.");
+                }
+
+                if (string.IsNullOrWhiteSpace(vm.Proposal.RevisionReason))
+                {
+                    ModelState.AddModelError(
+                        "Proposal.RevisionReason",
+                        "Revision reason is required when an accepted proposal is revised.");
+                }
+
+                if (string.IsNullOrWhiteSpace(vm.Proposal.CustomerApprovalReference))
+                {
+                    ModelState.AddModelError(
+                        "Proposal.CustomerApprovalReference",
+                        "Customer approval reference is required when an accepted proposal is revised.");
+                }
+            }
+
+            if (vm.Proposal.Status == "Rejected" &&
+                string.IsNullOrWhiteSpace(vm.Proposal.RejectionReason))
+            {
+                ModelState.AddModelError(
+                    "Proposal.RejectionReason",
+                    "Rejection reason is required.");
+            }
 
             if (!IsAllowedStatusTransition(
                     existing.Status,
@@ -364,6 +415,15 @@ namespace AryamanBMS.Controllers
                 }
             }
 
+            string oldStatus = existing.Status;
+            decimal? oldAmount = existing.ProposalAmount;
+            string oldRevisionNumber = existing.RevisionNumber;
+            bool statusChanged =
+                !string.Equals(
+                    existing.Status,
+                    vm.Proposal.Status,
+                    StringComparison.OrdinalIgnoreCase);
+
             existing.ClientId =   vm.Proposal.ClientId;
 
             existing.ProjectId = vm.Proposal.ProjectId;
@@ -386,15 +446,19 @@ namespace AryamanBMS.Controllers
 
             existing.Status = vm.Proposal.Status;
 
+            ApplyStatusAuditFields(
+                existing,
+                oldStatus,
+                vm.Proposal.Status,
+                currentUserId);
+
             existing.RevisionNumber =  vm.Proposal.RevisionNumber;
 
             existing.PreparedBy = vm.Proposal.PreparedBy;
 
-            existing.PreparedByDesignation =
-                vm.Proposal.PreparedByDesignation;
+            existing.PreparedByDesignation =vm.Proposal.PreparedByDesignation;
 
-            existing.ProblemStatement =
-                vm.Proposal.ProblemStatement;
+            existing.ProblemStatement = vm.Proposal.ProblemStatement;
 
             existing.Timeline =  vm.Proposal.Timeline;
 
@@ -419,6 +483,20 @@ namespace AryamanBMS.Controllers
 
             existing.PaymentTerms =   vm.Proposal.PaymentTerms;
 
+            existing.RejectionReason = CleanText(vm.Proposal.RejectionReason);
+
+            existing.RevisionReason =   CleanText(vm.Proposal.RevisionReason);
+
+            existing.CustomerApprovalReference = CleanText(vm.Proposal.CustomerApprovalReference);
+
+            if (protectedProposalChanged)
+            {
+                existing.RevisedByUserId = currentUserId;
+                existing.RevisedOn = DateTime.Now;
+            }
+
+            existing.UpdatedByUserId = currentUserId;
+
             existing.ProposalTemplateId =    vm.Proposal.ProposalTemplateId;
 
             if (uploadedFile != null)
@@ -432,6 +510,22 @@ namespace AryamanBMS.Controllers
 
             try
             {
+                if (statusChanged || protectedProposalChanged)
+                {
+                    await AddProposalAuditAsync(
+                        existing,
+                        protectedProposalChanged ? "Revised" : "Status Changed",
+                        oldStatus,
+                        existing.Status,
+                        oldAmount,
+                        existing.ProposalAmount,
+                        oldRevisionNumber,
+                        existing.RevisionNumber,
+                        protectedProposalChanged
+                            ? existing.RevisionReason
+                            : $"Status changed from {oldStatus} to {existing.Status}.",
+                        currentUserId);
+                }
                 await _proposalRepo.UpdateAsync(existing);
                 await _proposalRepo.SaveAsync();
             }
@@ -551,8 +645,7 @@ namespace AryamanBMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var proposal =
-                await _proposalRepo.GetByIdAsync(id);
+            var proposal = await _proposalRepo.GetByIdAsync(id);
 
             if (proposal == null)
                 return NotFound();
@@ -565,8 +658,32 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            proposal.IsActive = !proposal.IsActive;
+            bool newActiveStatus = !proposal.IsActive;
+
+            proposal.IsActive = newActiveStatus;
             proposal.UpdatedOn = DateTime.Now;
+            proposal.UpdatedByUserId =
+                User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!newActiveStatus)
+            {
+                proposal.CancelledByUserId = proposal.UpdatedByUserId;
+                proposal.CancelledOn = DateTime.Now;
+            }
+
+            await AddProposalAuditAsync(
+                proposal,
+                newActiveStatus ? "Activated" : "Deactivated",
+                proposal.Status,
+                proposal.Status,
+                proposal.ProposalAmount,
+                proposal.ProposalAmount,
+                proposal.RevisionNumber,
+                proposal.RevisionNumber,
+                newActiveStatus
+                    ? "Proposal activated."
+                    : "Proposal deactivated.",
+                proposal.UpdatedByUserId);
 
             await _proposalRepo.UpdateAsync(proposal);
             await _proposalRepo.SaveAsync();
@@ -954,6 +1071,91 @@ namespace AryamanBMS.Controllers
 
             proposal.Remarks =
                 CleanText(proposal.Remarks);
+        }
+
+        private static bool IsAccepted(ProposalModel proposal)
+        {
+            return string.Equals(
+                proposal.Status,
+                "Accepted",
+                StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool HasProtectedProposalChange(
+            ProposalModel existing,
+            ProposalModel incoming)
+        {
+            return existing.ProposalAmount != incoming.ProposalAmount ||
+                   !string.Equals(existing.Scope, incoming.Scope, StringComparison.Ordinal) ||
+                   !string.Equals(existing.PaymentTerms, incoming.PaymentTerms, StringComparison.Ordinal) ||
+                   !string.Equals(existing.CommercialDescription, incoming.CommercialDescription, StringComparison.Ordinal);
+        }
+
+        private static void ApplyStatusAuditFields(
+            ProposalModel proposal,
+            string oldStatus,
+            string newStatus,
+            string? currentUserId)
+        {
+            if (string.Equals(oldStatus, newStatus, StringComparison.OrdinalIgnoreCase))
+                return;
+
+            DateTime now = DateTime.Now;
+
+            if (newStatus == "Sent")
+            {
+                proposal.SubmittedByUserId = currentUserId;
+                proposal.SubmittedOn = now;
+                proposal.IssuedByUserId = currentUserId;
+                proposal.IssuedOn = now;
+            }
+            else if (newStatus == "Accepted")
+            {
+                proposal.AcceptedByUserId = currentUserId;
+                proposal.AcceptedOn = now;
+                proposal.ApprovedByUserId = currentUserId;
+                proposal.ApprovedOn = now;
+            }
+            else if (newStatus == "Rejected")
+            {
+                proposal.RejectedByUserId = currentUserId;
+                proposal.RejectedOn = now;
+            }
+            else if (newStatus == "Expired")
+            {
+                proposal.ExpiredOn = now;
+            }
+        }
+
+        private async Task AddProposalAuditAsync(
+            ProposalModel proposal,
+            string actionType,
+            string? oldStatus,
+            string? newStatus,
+            decimal? oldAmount,
+            decimal? newAmount,
+            string? oldRevisionNumber,
+            string? newRevisionNumber,
+            string? remarks,
+            string? changedByUserId)
+        {
+            await _context.ProposalAudits.AddAsync(
+                new ProposalAuditModel
+                {
+                    ProposalId = proposal.ProposalId,
+                    ActionType = actionType,
+                    OldStatus = oldStatus,
+                    NewStatus = newStatus,
+                    OldAmount = oldAmount,
+                    NewAmount = newAmount,
+                    OldRevisionNumber = oldRevisionNumber,
+                    NewRevisionNumber = newRevisionNumber,
+                    Remarks = CleanText(remarks),
+                    ChangedByUserId = changedByUserId,
+                    ChangedOn = DateTime.Now
+                });
+
+            await _context.SaveChangesAsync();
         }
 
         private static string? CleanText(string? value)

@@ -1,0 +1,92 @@
+@model AryamanBMS.ViewModels.AdvanceReceiptApplyViewModel
+
+@{
+    ViewData["Title"] = "Apply Advance Receipt";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Apply Advance Receipt</h1>
+        <p class="module-subtitle">
+            @Model.AdvanceReceiptNo - @Model.ClientName
+        </p>
+    </div>
+
+    <a asp-action="Index" class="btn-app btn-secondary-app">
+        <i class="bi bi-arrow-left"></i>
+        Back
+    </a>
+</div>
+
+<form asp-action="Apply" asp-route-id="@Model.AdvanceReceiptId" method="post">
+    @Html.AntiForgeryToken()
+
+    <input asp-for="AdvanceReceiptId" type="hidden" />
+    <input asp-for="AdvanceReceiptNo" type="hidden" />
+    <input asp-for="ClientName" type="hidden" />
+    <input asp-for="AvailableBalance" type="hidden" />
+
+    <div asp-validation-summary="ModelOnly" class="app-alert-danger"></div>
+
+    <div class="app-card">
+        <div class="card-header">
+            <h5 class="card-title">Adjustment Details</h5>
+        </div>
+
+        <div class="card-body">
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label class="form-label">Available Advance</label>
+                    <div>@Model.AvailableBalance.ToString("N2")</div>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="InvoiceId" class="form-label">Invoice</label>
+                    <select asp-for="InvoiceId"
+                            asp-items="Model.Invoices"
+                            class="app-select">
+                        <option value="">Select Invoice</option>
+                    </select>
+                    <span asp-validation-for="InvoiceId" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="AmountToAdjust" class="form-label">
+                        Amount to Adjust
+                    </label>
+                    <input asp-for="AmountToAdjust"
+                           class="app-input"
+                           type="number"
+                           step="0.01" />
+                    <span asp-validation-for="AmountToAdjust" class="validation-message"></span>
+                </div>
+            </div>
+
+            <div class="form-group mt-3">
+                <label asp-for="Remarks" class="form-label">Remarks</label>
+                <textarea asp-for="Remarks"
+                          class="app-textarea"
+                          rows="3"></textarea>
+                <span asp-validation-for="Remarks" class="validation-message"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-card">
+        <div class="card-body">
+            <button type="submit" class="btn-app btn-primary-app">
+                <i class="bi bi-check-circle"></i>
+                Apply Advance
+            </button>
+
+            <a asp-action="Index" class="btn-app btn-secondary-app">
+                Cancel
+            </a>
+        </div>
+    </div>
+</form>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

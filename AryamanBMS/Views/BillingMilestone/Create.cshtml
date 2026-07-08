@@ -1,0 +1,43 @@
+@model AryamanBMS.Models.BillingMilestoneModel
+
+@{
+    ViewData["Title"] = "Create Billing Milestone";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Create Billing Milestone</h1>
+        <p class="module-subtitle">Add an invoiceable stage against a PO / WO</p>
+    </div>
+
+    <a asp-action="Index" class="btn-app btn-secondary-app">
+        <i class="bi bi-arrow-left"></i>
+        Back
+    </a>
+</div>
+
+<form asp-action="Create" method="post">
+    @Html.AntiForgeryToken()
+
+    <div asp-validation-summary="ModelOnly" class="app-alert-danger"></div>
+
+    <partial name="_Form" model="Model" />
+
+    <div class="app-card">
+        <div class="card-body">
+            <button type="submit" class="btn-app btn-primary-app">
+                <i class="bi bi-check-circle"></i>
+                Save Milestone
+            </button>
+
+            <a asp-action="Index" class="btn-app btn-secondary-app">
+                Cancel
+            </a>
+        </div>
+    </div>
+</form>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

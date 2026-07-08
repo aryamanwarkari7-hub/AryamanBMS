@@ -1,0 +1,101 @@
+@using AryamanBMS.Controllers
+
+@{
+    ViewData["Title"] = "Purchase Reports";
+    string report = ViewBag.Report as string ?? "VendorPayable";
+
+    List<PurchaseReportRow> Rows(string key) => key switch
+    {
+        "Category" => ViewBag.CategoryWise,
+        "Vendor" => ViewBag.VendorWise,
+        "Project" => ViewBag.ProjectWise,
+        "Department" => ViewBag.DepartmentWise,
+        "Reimbursement" => ViewBag.Reimbursements,
+        "ITC" => ViewBag.Itc,
+        "PaidUnpaid" => ViewBag.PaidUnpaid,
+        "Monthly" => ViewBag.Monthly,
+        "Capital" => ViewBag.Capital,
+        _ => ViewBag.VendorPayable
+    };
+
+    var rows = Rows(report);
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">PURCHASE REPORTS</h1>
+        <p class="module-subtitle">Vendor payables, expenses, ITC and purchase analytics.</p>
+    </div>
+</div>
+
+<div class="app-card table-card">
+    <div class="card-header">
+        <div class="module-header-actions justify-content-start">
+            @{
+                var reports = new Dictionary<string, string>
+                {
+                    ["VendorPayable"] = "Vendor Payable",
+                    ["Category"] = "Category",
+                    ["Vendor"] = "Vendor",
+                    ["Project"] = "Project",
+                    ["Department"] = "Department",
+                    ["Reimbursement"] = "Reimbursement",
+                    ["ITC"] = "ITC",
+                    ["PaidUnpaid"] = "Paid / Unpaid",
+                    ["Monthly"] = "Monthly",
+                    ["Capital"] = "Capital"
+                };
+            }
+
+            @foreach (var item in reports)
+            {
+                <a asp-action="Index"
+                   asp-route-report="@item.Key"
+                   class="btn-app @(report == item.Key ? "btn-primary-app" : "btn-secondary-app")">
+                    @item.Value
+                </a>
+            }
+        </div>
+    </div>
+
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="app-table">
+                <thead>
+                    <tr>
+                        <th>Group</th>
+                        <th class="text-center">Count</th>
+                        <th class="text-end">Taxable</th>
+                        <th class="text-end">GST</th>
+                        <th class="text-end">Total</th>
+                        <th class="text-end">Paid</th>
+                        <th class="text-end">Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (rows.Any())
+                    {
+                        foreach (var row in rows)
+                        {
+                            <tr>
+                                <td>@row.Label</td>
+                                <td class="text-center">@row.Count</td>
+                                <td class="text-end">₹ @row.TaxableAmount.ToString("N2")</td>
+                                <td class="text-end">₹ @row.GstAmount.ToString("N2")</td>
+                                <td class="text-end">₹ @row.TotalAmount.ToString("N2")</td>
+                                <td class="text-end">₹ @row.PaidAmount.ToString("N2")</td>
+                                <td class="text-end">₹ @row.BalanceAmount.ToString("N2")</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="empty-state">No purchase data found.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

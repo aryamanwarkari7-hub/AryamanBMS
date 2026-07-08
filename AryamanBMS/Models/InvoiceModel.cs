@@ -22,6 +22,8 @@ namespace AryamanBMS.Models
 
         public int? PurchaseWorkOrderId { get; set; }
 
+        public int? BillingMilestoneId { get; set; }
+
         [Required]
         public int ClientId { get; set; }
 
@@ -32,6 +34,20 @@ namespace AryamanBMS.Models
         public string? GSTNo { get; set; }
 
         public bool IsInterState { get; set; }
+
+        [StringLength(2)]
+        public string? SupplierStateCode { get; set; }
+
+        [StringLength(2)]
+        public string? CustomerStateCode { get; set; }
+
+        [StringLength(2)]
+        public string? PlaceOfSupplyStateCode { get; set; }
+
+        public bool IsGstStateOverride { get; set; }
+
+        [StringLength(500)]
+        public string? GstStateOverrideReason { get; set; }
 
         public string? ProjectName { get; set; }
 
@@ -102,6 +118,10 @@ namespace AryamanBMS.Models
         [ForeignKey(nameof(PurchaseWorkOrderId))]
         [ValidateNever]
         public virtual PurchaseOrderModel? PurchaseOrder { get; set; }
+
+        [ForeignKey(nameof(BillingMilestoneId))]
+        [ValidateNever]
+        public virtual BillingMilestoneModel? BillingMilestone { get; set; }
 
         [StringLength(50)]
         public string? SACCode { get; set; }

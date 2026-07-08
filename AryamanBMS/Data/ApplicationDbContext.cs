@@ -41,6 +41,13 @@ namespace AryamanBMS.Data
         // Salary
         public DbSet<SalaryRecordModel> SalaryRecords { get; set; }
         public DbSet<EmployeeSalaryStructureModel> EmployeeSalaryStructures { get; set; }
+        public DbSet<SalaryImportBatchModel> SalaryImportBatches { get; set; }
+        public DbSet<PayrollPolicyModel> PayrollPolicies { get; set; }
+        public DbSet<PayrollPeriodLockModel> PayrollPeriodLocks { get; set; }
+        public DbSet<SalaryAdvanceModel> SalaryAdvances { get; set; }
+        public DbSet<SalaryPaymentBatchModel> SalaryPaymentBatches { get; set; }
+        public DbSet<FullAndFinalSettlementModel> FullAndFinalSettlements { get; set; }
+        public DbSet<ProfessionalTaxSlabModel> ProfessionalTaxSlabs { get; set; }
 
         // Letters
         public DbSet<LetterModel> Letters { get; set; }
@@ -73,9 +80,13 @@ namespace AryamanBMS.Data
         public DbSet<ProposalModel> Proposals { get; set; }
         public DbSet<ProposalTemplateModel>ProposalTemplates
         { get; set; }
-        public DbSet<ProposalDocumentVersionModel>ProposalDocumentVersions
-        { get; set; }
+        public DbSet<ProposalDocumentVersionModel>ProposalDocumentVersions { get; set; }
+
+        public DbSet<ProposalAuditModel> ProposalAudits { get; set; }
+
         public DbSet<PurchaseOrderModel> PurchaseOrders { get; set; }
+
+        public DbSet<BillingMilestoneModel> BillingMilestones { get; set; }
 
         public DbSet<InvoiceModel> Invoices { get; set; }
         public DbSet<InvoiceDetailsModel> InvoiceDetails { get; set; }
@@ -83,9 +94,15 @@ namespace AryamanBMS.Data
         public DbSet<InvoiceDocumentVersionModel> InvoiceDocumentVersions { get; set; }
         public DbSet<PaymentReceiptModel> PaymentReceipts { get; set; }
 
+        public DbSet<AdvanceReceiptModel> AdvanceReceipts { get; set; }
+        public DbSet<CreditNoteModel> CreditNotes { get; set; }
+        public DbSet<DebitNoteModel> DebitNotes { get; set; }
+
         public DbSet<ExpenseCategoryModel> ExpenseCategories { get; set; }
+        public DbSet<VendorModel> Vendors { get; set; }
         public DbSet<ExpenseVoucherModel> ExpenseVouchers { get; set; }
         public DbSet<ExpenseVoucherDocumentModel> ExpenseVoucherDocuments { get; set; }
+        public DbSet<VendorPaymentModel> VendorPayments { get; set; }
 
         public DbSet<GstMonthlySnapshotModel> GstMonthlySnapshots { get; set; }
         public DbSet<GstConfigurationModel> GstConfigurations { get; set; }
@@ -99,6 +116,9 @@ namespace AryamanBMS.Data
         public DbSet<OfficeAssetModel> OfficeAssets { get; set; }
         public DbSet<OfficeAssetAssignmentHistoryModel> OfficeAssetAssignmentHistories
         { get; set; }
+        public DbSet<OfficeAssetDocumentModel> OfficeAssetDocuments { get; set; }
+        public DbSet<OfficeAssetMaintenanceModel> OfficeAssetMaintenances { get; set; }
+        public DbSet<OfficeAssetVerificationModel> OfficeAssetVerifications { get; set; }
 
         public DbSet<PfMonthlySnapshotModel> PfMonthlySnapshots { get; set; }
         public DbSet<PfChallanModel> PfChallans { get; set; }
@@ -289,6 +309,86 @@ namespace AryamanBMS.Data
             modelBuilder.Entity<EmployeeSalaryStructureModel>()
                .ToTable("TableEmployeeSalaryStructure");
 
+            modelBuilder.Entity<SalaryRecordModel>()
+                .HasIndex(x => new
+                {
+                    x.EmployeeId,
+                    x.Month,
+                    x.Year
+                })
+                .IsUnique();
+
+            modelBuilder.Entity<SalaryRecordModel>()
+                .HasOne(x => x.Employee)
+                .WithMany()
+                .HasForeignKey(x => x.EmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<SalaryRecordModel>()
+                .HasOne(x => x.SalaryImportBatch)
+                .WithMany(x => x.SalaryRecords)
+                .HasForeignKey(x => x.SalaryImportBatchId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<SalaryImportBatchModel>()
+                .ToTable("TableSalaryImportBatch");
+
+            modelBuilder.Entity<PayrollPolicyModel>()
+                .ToTable("TablePayrollPolicy");
+
+            modelBuilder.Entity<PayrollPolicyModel>()
+                .HasIndex(x => x.IsActive);
+
+            modelBuilder.Entity<PayrollPeriodLockModel>()
+                .ToTable("TablePayrollPeriodLock");
+
+            modelBuilder.Entity<PayrollPeriodLockModel>()
+                .HasIndex(x => new
+                {
+                    x.Month,
+                    x.Year
+                })
+                .IsUnique();
+
+            modelBuilder.Entity<SalaryAdvanceModel>()
+                .ToTable("TableSalaryAdvance");
+
+            modelBuilder.Entity<SalaryAdvanceModel>()
+                .HasOne(x => x.Employee)
+                .WithMany()
+                .HasForeignKey(x => x.EmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<SalaryPaymentBatchModel>()
+                .ToTable("TableSalaryPaymentBatch");
+
+            modelBuilder.Entity<SalaryPaymentBatchModel>()
+                .HasIndex(x => new
+                {
+                    x.Month,
+                    x.Year,
+                    x.PaymentStatus
+                });
+
+            modelBuilder.Entity<FullAndFinalSettlementModel>()
+                .ToTable("TableFullAndFinalSettlement");
+
+            modelBuilder.Entity<FullAndFinalSettlementModel>()
+                .HasOne(x => x.Employee)
+                .WithMany()
+                .HasForeignKey(x => x.EmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ProfessionalTaxSlabModel>()
+                .ToTable("TableProfessionalTaxSlab");
+
+            modelBuilder.Entity<ProfessionalTaxSlabModel>()
+                .HasIndex(x => new
+                {
+                    x.State,
+                    x.IsActive
+                });
+
             modelBuilder.Entity<EmployeeSalaryStructureModel>()
                 .Property(x => x.ActualSalary)
                 .HasPrecision(18, 2);
@@ -433,7 +533,7 @@ namespace AryamanBMS.Data
 
             // Meetings
             modelBuilder.Entity<ProjectMeetingModel>()
-    .ToTable("TableProjectMeeting");
+                  .ToTable("TableProjectMeeting");
 
             modelBuilder.Entity<ProjectMeetingModel>()
                 .HasOne(m => m.Project)
@@ -544,6 +644,15 @@ namespace AryamanBMS.Data
                 .HasForeignKey(x => x.ProjectId)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            modelBuilder.Entity<ProposalAuditModel>()
+                .ToTable("tableproposalaudit");
+
+            modelBuilder.Entity<ProposalAuditModel>()
+                .HasOne(x => x.Proposal)
+                .WithMany(x => x.AuditTrail)
+                .HasForeignKey(x => x.ProposalId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<ProposalTemplateModel>()
                  .HasKey(x => x.ProposalTemplateId);
 
@@ -594,6 +703,27 @@ namespace AryamanBMS.Data
                 .HasOne(x => x.Proposal)
                 .WithMany(x => x.PurchaseOrders)
                 .HasForeignKey(x => x.ProposalId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<BillingMilestoneModel>()
+                  .ToTable("tablebillingmilestone");
+
+            modelBuilder.Entity<BillingMilestoneModel>()
+                .HasOne(x => x.PurchaseWorkOrder)
+                .WithMany()
+                .HasForeignKey(x => x.PurchaseWorkOrderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<BillingMilestoneModel>()
+                .HasOne(x => x.Project)
+                .WithMany()
+                .HasForeignKey(x => x.ProjectId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<InvoiceModel>()
+                .HasOne(x => x.BillingMilestone)
+                .WithMany()
+                .HasForeignKey(x => x.BillingMilestoneId)
                 .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<InvoiceModel>().ToTable("tableinvoicemaster");
@@ -647,25 +777,119 @@ namespace AryamanBMS.Data
                 .HasForeignKey(x => x.InvoiceId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Advance receipt
+            modelBuilder.Entity<AdvanceReceiptModel>()
+                .ToTable("tableadvancereceipt");
+
+            modelBuilder.Entity<AdvanceReceiptModel>()
+                .HasIndex(x => x.AdvanceReceiptNo)
+                .IsUnique();
+
+            modelBuilder.Entity<AdvanceReceiptModel>()
+                .HasOne(x => x.Client)
+                .WithMany()
+                .HasForeignKey(x => x.ClientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<AdvanceReceiptModel>()
+                .HasOne(x => x.Project)
+                .WithMany()
+                .HasForeignKey(x => x.ProjectId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<CreditNoteModel>()
+                   .ToTable("tablecreditnote");
+
+            modelBuilder.Entity<CreditNoteModel>()
+                .HasIndex(x => x.CreditNoteNo)
+                .IsUnique();
+
+            modelBuilder.Entity<CreditNoteModel>()
+                .HasOne(x => x.OriginalInvoice)
+                .WithMany()
+                .HasForeignKey(x => x.OriginalInvoiceId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<DebitNoteModel>()
+                .ToTable("tabledebitnote");
+
+            modelBuilder.Entity<DebitNoteModel>()
+                .HasIndex(x => x.DebitNoteNo)
+                .IsUnique();
+
+            modelBuilder.Entity<DebitNoteModel>()
+                .HasOne(x => x.OriginalInvoice)
+                .WithMany()
+                .HasForeignKey(x => x.OriginalInvoiceId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<ExpenseCategoryModel>().ToTable("tableexpensecategories");
             modelBuilder.Entity<ExpenseCategoryModel>()
                 .HasIndex(x => x.CategoryCode)
                 .IsUnique();
+
+            modelBuilder.Entity<VendorModel>().ToTable("tablevendor");
+            modelBuilder.Entity<VendorModel>()
+                .HasIndex(x => x.VendorCode)
+                .IsUnique();
+            modelBuilder.Entity<VendorModel>()
+                .HasIndex(x => x.GSTIN);
+            modelBuilder.Entity<VendorModel>()
+                .HasIndex(x => x.IsActive);
 
             modelBuilder.Entity<ExpenseVoucherModel>().ToTable("tableexpensevouchers");
             modelBuilder.Entity<ExpenseVoucherModel>()
                 .HasIndex(x => x.VoucherNumber)
                 .IsUnique();
             modelBuilder.Entity<ExpenseVoucherModel>()
+                .HasIndex(x => new
+                {
+                    x.VendorId,
+                    x.InvoiceNumber,
+                    x.FinancialYear
+                });
+            modelBuilder.Entity<ExpenseVoucherModel>()
                 .HasOne(x => x.Category)
                 .WithMany(x => x.ExpenseVouchers)
                 .HasForeignKey(x => x.ExpenseCategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<ExpenseVoucherModel>()
+                .HasOne(x => x.Vendor)
+                .WithMany(x => x.ExpenseVouchers)
+                .HasForeignKey(x => x.VendorId)
+                .OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<ExpenseVoucherModel>()
+                .HasOne(x => x.Project)
+                .WithMany()
+                .HasForeignKey(x => x.ProjectId)
+                .OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<ExpenseVoucherModel>()
+                .HasOne(x => x.Department)
+                .WithMany()
+                .HasForeignKey(x => x.DepartmentId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<ExpenseVoucherDocumentModel>().ToTable("tableexpensevoucherdocument");
             modelBuilder.Entity<ExpenseVoucherDocumentModel>()
                 .HasOne(x => x.ExpenseVoucher)
                 .WithMany(x => x.Documents)
+                .HasForeignKey(x => x.ExpenseVoucherId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<VendorPaymentModel>().ToTable("tablevendorpayment");
+            modelBuilder.Entity<VendorPaymentModel>()
+                .HasIndex(x => x.PaymentNo)
+                .IsUnique();
+            modelBuilder.Entity<VendorPaymentModel>()
+                .HasIndex(x => x.TransactionReference);
+            modelBuilder.Entity<VendorPaymentModel>()
+                .HasOne(x => x.Vendor)
+                .WithMany()
+                .HasForeignKey(x => x.VendorId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<VendorPaymentModel>()
+                .HasOne(x => x.ExpenseVoucher)
+                .WithMany(x => x.VendorPayments)
                 .HasForeignKey(x => x.ExpenseVoucherId)
                 .OnDelete(DeleteBehavior.Restrict);
 
@@ -727,6 +951,21 @@ namespace AryamanBMS.Data
                 .WithMany()
                 .HasForeignKey(x => x.AssignedEmployeeId)
                 .OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<OfficeAssetModel>()
+                .HasOne(x => x.Vendor)
+                .WithMany()
+                .HasForeignKey(x => x.VendorId)
+                .OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<OfficeAssetModel>()
+                .HasOne(x => x.ExpenseVoucher)
+                .WithMany()
+                .HasForeignKey(x => x.ExpenseVoucherId)
+                .OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<OfficeAssetModel>()
+                .HasOne(x => x.PurchaseOrder)
+                .WithMany()
+                .HasForeignKey(x => x.PurchaseOrderId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<OfficeAssetAssignmentHistoryModel>()
                 .ToTable("tableofficeassetassignmenthistory");
@@ -744,6 +983,30 @@ namespace AryamanBMS.Data
                 .WithMany()
                 .HasForeignKey(x => x.EmployeeId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<OfficeAssetDocumentModel>()
+                .ToTable("tableofficeassetdocument");
+            modelBuilder.Entity<OfficeAssetDocumentModel>()
+                .HasOne(x => x.OfficeAsset)
+                .WithMany(x => x.Documents)
+                .HasForeignKey(x => x.OfficeAssetId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<OfficeAssetMaintenanceModel>()
+                .ToTable("tableofficeassetmaintenance");
+            modelBuilder.Entity<OfficeAssetMaintenanceModel>()
+                .HasOne(x => x.OfficeAsset)
+                .WithMany(x => x.MaintenanceHistory)
+                .HasForeignKey(x => x.OfficeAssetId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<OfficeAssetVerificationModel>()
+                .ToTable("tableofficeassetverification");
+            modelBuilder.Entity<OfficeAssetVerificationModel>()
+                .HasOne(x => x.OfficeAsset)
+                .WithMany(x => x.VerificationHistory)
+                .HasForeignKey(x => x.OfficeAssetId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<PfMonthlySnapshotModel>().ToTable("tablepfmonthlysnapshot");
             modelBuilder.Entity<PfMonthlySnapshotModel>()

@@ -672,8 +672,171 @@
 --         ON DELETE RESTRICT
 -- );
 
+
+
+-- SHOW TABLES;
+
+-- CREATE TABLE TableInvoiceDocumentVersion
+-- (
+--     InvoiceDocumentVersionId INT NOT NULL AUTO_INCREMENT,
+--     InvoiceId INT NOT NULL,
+--     VersionNumber INT NOT NULL,
+
+--     DocumentFormat VARCHAR(20) NOT NULL,
+
+--     OriginalFileName VARCHAR(255) NOT NULL,
+--     StoredFilePath VARCHAR(500) NOT NULL,
+--     ContentType VARCHAR(150) NOT NULL,
+--     FileSize BIGINT NOT NULL DEFAULT 0,
+
+--     GeneratedByUserId VARCHAR(450) NOT NULL,
+--     GeneratedOn DATETIME NOT NULL,
+
+--     IsCurrent TINYINT(1) NOT NULL DEFAULT 1,
+--     Remarks VARCHAR(500) NULL,
+
+--     PRIMARY KEY (InvoiceDocumentVersionId),
+
+--     CONSTRAINT FK_InvoiceDocumentVersion_Invoice
+--         FOREIGN KEY (InvoiceId)
+--         REFERENCES TableInvoiceMaster(InvoiceId)
+--         ON DELETE RESTRICT,
+
+--     UNIQUE KEY UX_InvoiceDocumentVersion
+--     (
+--         InvoiceId,
+--         VersionNumber,
+--         DocumentFormat
+--     ),
+
+--     INDEX IX_InvoiceDocumentVersion_InvoiceId
+--     (
+--         InvoiceId
+--     ),
+
+--     INDEX IX_InvoiceDocumentVersion_IsCurrent
+--     (
+--         IsCurrent
+--     )
+-- );
+
+-- CREATE TABLE tablebillingmilestone (
+--     BillingMilestoneId INT NOT NULL AUTO_INCREMENT,
+--     PurchaseWorkOrderId INT NOT NULL,
+--     ProjectId INT NULL,
+--     MilestoneName VARCHAR(200) NOT NULL,
+--     MilestoneDescription VARCHAR(1000) NULL,
+--     MilestoneValue DECIMAL(18,2) NOT NULL DEFAULT 0,
+--     BilledValue DECIMAL(18,2) NOT NULL DEFAULT 0,
+--     RemainingBillableValue DECIMAL(18,2) NOT NULL DEFAULT 0,
+--     CompletionStatus VARCHAR(30) NOT NULL DEFAULT 'Pending',
+--     ApprovalDate DATETIME NULL,
+--     SortOrder INT NOT NULL DEFAULT 0,
+--     IsActive TINYINT(1) NOT NULL DEFAULT 1,
+--     CreatedOn DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+--     UpdatedOn DATETIME NULL,
+--     PRIMARY KEY (BillingMilestoneId),
+--     INDEX IX_tablebillingmilestone_PurchaseWorkOrderId (PurchaseWorkOrderId),
+--     INDEX IX_tablebillingmilestone_ProjectId (ProjectId)
+-- );
+
+-- ALTER TABLE tableclientmaster
+-- ADD COLUMN StateCode VARCHAR(2) NULL,
+-- ADD COLUMN RegistrationType VARCHAR(30) NOT NULL DEFAULT 'Unregistered',
+-- ADD COLUMN PlaceOfSupply VARCHAR(100) NULL,
+-- ADD COLUMN PlaceOfSupplyStateCode VARCHAR(2) NULL,
+-- ADD COLUMN CreditPeriod INT NOT NULL DEFAULT 0,
+-- ADD COLUMN PaymentTerms VARCHAR(100) NULL,
+-- ADD COLUMN BillingAddress VARCHAR(1000) NULL;
+
+-- CREATE TABLE tableadvancereceipt (
+--     AdvanceReceiptId INT NOT NULL AUTO_INCREMENT,
+--     AdvanceReceiptNo VARCHAR(30) NOT NULL,
+--     ClientId INT NOT NULL,
+--     ProjectId INT NULL,
+--     Amount DECIMAL(18,2) NOT NULL DEFAULT 0,
+--     ReceiptDate DATETIME NOT NULL,
+--     PaymentMode VARCHAR(30) NOT NULL,
+--     PaymentReference VARCHAR(100) NULL,
+--     AvailableBalance DECIMAL(18,2) NOT NULL DEFAULT 0,
+--     AdjustedAmount DECIMAL(18,2) NOT NULL DEFAULT 0,
+--     Remarks VARCHAR(500) NULL,
+--     ReceivedByUserId VARCHAR(450) NULL,
+--     IsCancelled TINYINT(1) NOT NULL DEFAULT 0,
+--     CreatedOn DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+--     UpdatedOn DATETIME NULL,
+--     PRIMARY KEY (AdvanceReceiptId),
+--     UNIQUE KEY UX_tableadvancereceipt_AdvanceReceiptNo (AdvanceReceiptNo),
+--     INDEX IX_tableadvancereceipt_ClientId (ClientId),
+--     INDEX IX_tableadvancereceipt_ProjectId (ProjectId),
+--     INDEX IX_tableadvancereceipt_PaymentReference (PaymentReference)
+-- );
+
+-- CREATE TABLE tablecreditnote (
+--     CreditNoteId INT NOT NULL AUTO_INCREMENT,
+--     CreditNoteNo VARCHAR(30) NOT NULL,
+--     OriginalInvoiceId INT NOT NULL,
+--     Reason VARCHAR(500) NOT NULL,
+--     TaxableValueReduction DECIMAL(18,2) NOT NULL DEFAULT 0,
+--     CGSTAdjustment DECIMAL(18,2) NOT NULL DEFAULT 0,
+--     SGSTAdjustment DECIMAL(18,2) NOT NULL DEFAULT 0,
+--     IGSTAdjustment DECIMAL(18,2) NOT NULL DEFAULT 0,
+--     TotalCredit DECIMAL(18,2) NOT NULL DEFAULT 0,
+--     ApprovedByUserId VARCHAR(450) NULL,
+--     ApprovedOn DATETIME NULL,
+--     GSTPeriod VARCHAR(20) NULL,
+--     IsCancelled TINYINT(1) NOT NULL DEFAULT 0,
+--     CreatedByUserId VARCHAR(450) NULL,
+--     CreatedOn DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+--     UpdatedOn DATETIME NULL,
+--     PRIMARY KEY (CreditNoteId),
+--     UNIQUE KEY UX_tablecreditnote_CreditNoteNo (CreditNoteNo),
+--     INDEX IX_tablecreditnote_OriginalInvoiceId (OriginalInvoiceId)
+-- );
+
+-- CREATE TABLE tabledebitnote (
+--     DebitNoteId INT NOT NULL AUTO_INCREMENT,
+--     DebitNoteNo VARCHAR(30) NOT NULL,
+--     OriginalInvoiceId INT NOT NULL,
+--     Reason VARCHAR(500) NOT NULL,
+--     AdditionalTaxableValue DECIMAL(18,2) NOT NULL DEFAULT 0,
+--     CGST DECIMAL(18,2) NOT NULL DEFAULT 0,
+--     SGST DECIMAL(18,2) NOT NULL DEFAULT 0,
+--     IGST DECIMAL(18,2) NOT NULL DEFAULT 0,
+--     TotalDebit DECIMAL(18,2) NOT NULL DEFAULT 0,
+--     ApprovedByUserId VARCHAR(450) NULL,
+--     ApprovedOn DATETIME NULL,
+--     IsCancelled TINYINT(1) NOT NULL DEFAULT 0,
+--     CreatedByUserId VARCHAR(450) NULL,
+--     CreatedOn DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+--     UpdatedOn DATETIME NULL,
+--     PRIMARY KEY (DebitNoteId),
+--     UNIQUE KEY UX_tabledebitnote_DebitNoteNo (DebitNoteNo),
+--     INDEX IX_tabledebitnote_OriginalInvoiceId (OriginalInvoiceId)
+-- );
+
+-- CREATE TABLE tableproposalaudit (
+--     ProposalAuditId INT NOT NULL AUTO_INCREMENT,
+--     ProposalId INT NOT NULL,
+--     ActionType VARCHAR(50) NOT NULL,
+--     OldStatus VARCHAR(30) NULL,
+--     NewStatus VARCHAR(30) NULL,
+--     OldAmount DECIMAL(18,2) NULL,
+--     NewAmount DECIMAL(18,2) NULL,
+--     OldRevisionNumber VARCHAR(10) NULL,
+--     NewRevisionNumber VARCHAR(10) NULL,
+--     Remarks VARCHAR(1000) NULL,
+--     ChangedByUserId VARCHAR(450) NULL,
+--     ChangedOn DATETIME NOT NULL,
+--     PRIMARY KEY (ProposalAuditId),
+--     INDEX IX_tableproposalaudit_ProposalId (ProposalId),
+--     CONSTRAINT FK_tableproposalaudit_tableproposal_ProposalId
+--         FOREIGN KEY (ProposalId)
+--         REFERENCES tableproposal (ProposalId)
+-- );
+
+
+
 -- -- ============================================================
 -- -- TABLE CREATION COMPLETED
 -- -- ============================================================
-
--- SHOW TABLES;

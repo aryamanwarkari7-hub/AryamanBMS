@@ -37,6 +37,27 @@ namespace AryamanBMS.Models
         [StringLength(100)]
         public string? State { get; set; }
 
+        [StringLength(2)]
+        public string? StateCode { get; set; }
+
+        [StringLength(30)]
+        public string RegistrationType { get; set; } = "Unregistered";
+
+        [StringLength(100)]
+        public string? PlaceOfSupply { get; set; }
+
+        [StringLength(2)]
+        public string? PlaceOfSupplyStateCode { get; set; }
+
+        [Range(0, 365)]
+        public int CreditPeriod { get; set; }
+
+        [StringLength(100)]
+        public string? PaymentTerms { get; set; }
+
+        [StringLength(1000)]
+        public string? BillingAddress { get; set; }
+
         [StringLength(15)]
         public string? GSTNumber { get; set; }
 

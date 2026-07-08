@@ -34,7 +34,15 @@ namespace AryamanBMS.Services
             var endDate = new DateTime(year, month, totalDays);
 
             var employees = await _employeeRepository.Employees
-                .Where(e => e.IsActive)
+                .Where(e =>
+                    e.JoiningDate.Date <= endDate &&
+                    (
+                        e.IsActive ||
+                        (
+                            e.LastWorkingDate.HasValue &&
+                            e.LastWorkingDate.Value.Date >= startDate
+                        )
+                    ))
                 .OrderBy(e => e.EmployeeCode)
                 .ToListAsync();
 
@@ -56,8 +64,30 @@ namespace AryamanBMS.Services
 
             foreach (var employee in employees)
             {
+                DateTime eligibleStart =
+                    employee.JoiningDate.Date > startDate
+                        ? employee.JoiningDate.Date
+                        : startDate;
+
+                DateTime eligibleEnd =
+                    employee.LastWorkingDate.HasValue &&
+                    employee.LastWorkingDate.Value.Date < endDate
+                        ? employee.LastWorkingDate.Value.Date
+                        : endDate;
+
+                if (eligibleStart > eligibleEnd)
+                {
+                    continue;
+                }
+
+                int eligibleDays =
+                    (eligibleEnd - eligibleStart).Days + 1;
+
                 var employeeAttendance = attendanceRecords
-                    .Where(a => a.EmployeeId == employee.Id)
+                    .Where(a =>
+                        a.EmployeeId == employee.Id &&
+                        a.AttendanceDate.Date >= eligibleStart &&
+                        a.AttendanceDate.Date <= eligibleEnd)
                     .ToList();
 
                 int presentCount = employeeAttendance
@@ -87,16 +117,16 @@ namespace AryamanBMS.Services
                     .Sum(l => CountOverlapDays(
                         l.FromDate,
                         l.ToDate,
-                        startDate,
-                        endDate));
+                        eligibleStart,
+                        eligibleEnd));
 
                 int unpaidLeaveCount = employeeApprovedLeaves
                     .Where(l => l.LeaveType != null && !l.LeaveType.IsPaidLeave)
                     .Sum(l => CountOverlapDays(
                         l.FromDate,
                         l.ToDate,
-                        startDate,
-                        endDate));
+                        eligibleStart,
+                        eligibleEnd));
 
                 int accountedDays =
                      presentCount
@@ -107,7 +137,7 @@ namespace AryamanBMS.Services
                      + unpaidLeaveCount
                      + markedAbsentCount;
 
-                int missingDays = totalDays - accountedDays;
+                int missingDays = eligibleDays - accountedDays;
 
                 if (missingDays < 0)
                 {
@@ -169,7 +199,7 @@ namespace AryamanBMS.Services
 
                     OnDutyCount = onDutyCount,
 
-                    TotalDays = totalDays,
+                    TotalDays = eligibleDays,
 
                     PayDays = payDays,
 

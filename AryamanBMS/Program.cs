@@ -153,7 +153,7 @@ if (!app.Environment.IsDevelopment())
 app.UseStatusCodePagesWithReExecute(
     "/System/NotFoundPage");
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();

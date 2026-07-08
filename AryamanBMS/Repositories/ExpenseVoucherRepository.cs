@@ -22,6 +22,8 @@ namespace AryamanBMS.Repositories
                 .AsNoTracking()
                 .Where(x => x.IsActive)
                 .Include(x => x.Category)
+                .Include(x => x.Vendor)
+                .Include(x => x.VendorPayments.Where(p => p.IsActive))
                 .OrderByDescending(x => x.VoucherDate)
                 .ToListAsync();
         }
@@ -32,6 +34,8 @@ namespace AryamanBMS.Repositories
                 .AsNoTracking()
                 .Where(x => x.Status == status && x.IsActive)
                 .Include(x => x.Category)
+                .Include(x => x.Vendor)
+                .Include(x => x.VendorPayments.Where(p => p.IsActive))
                 .OrderByDescending(x => x.VoucherDate)
                 .ToListAsync();
         }
@@ -42,6 +46,7 @@ namespace AryamanBMS.Repositories
                 .AsNoTracking()
                 .Where(x => x.FinancialYear == financialYear && x.IsActive)
                 .Include(x => x.Category)
+                .Include(x => x.Vendor)
                 .OrderByDescending(x => x.VoucherDate)
                 .ToListAsync();
         }
@@ -52,6 +57,7 @@ namespace AryamanBMS.Repositories
                 .AsNoTracking()
                 .Where(x => x.ExpenseCategoryId == categoryId && x.IsActive)
                 .Include(x => x.Category)
+                .Include(x => x.Vendor)
                 .OrderByDescending(x => x.VoucherDate)
                 .ToListAsync();
         }
@@ -60,7 +66,9 @@ namespace AryamanBMS.Repositories
         {
             return await _context.ExpenseVouchers
                 .Include(x => x.Category)
+                .Include(x => x.Vendor)
                 .Include(x => x.Documents.Where(d => d.IsActive))
+                .Include(x => x.VendorPayments.Where(p => p.IsActive))
                 .FirstOrDefaultAsync(x => x.ExpenseVoucherId == id && x.IsActive);
         }
 
@@ -69,6 +77,7 @@ namespace AryamanBMS.Repositories
             return await _context.ExpenseVouchers
                 .AsNoTracking()
                 .Include(x => x.Category)
+                .Include(x => x.Vendor)
                 .FirstOrDefaultAsync(x => x.VoucherNumber == voucherNumber && x.IsActive);
         }
 
@@ -144,13 +153,16 @@ namespace AryamanBMS.Repositories
                     return false;
 
                 if (voucher.Status !=
-                    FinancialConstants.ExpenseVoucherStatus.Draft)
+                    FinancialConstants.ExpenseVoucherStatus.Submitted)
                 {
                     return false;
                 }
 
                 voucher.Status =
-                    FinancialConstants.ExpenseVoucherStatus.Posted;
+                    FinancialConstants.ExpenseVoucherStatus.Approved;
+
+                voucher.ApprovalStatus =
+                    FinancialConstants.ExpenseVoucherStatus.Approved;
 
                 voucher.ApprovedByUserId =
                     approvedByUserId;
@@ -196,7 +208,7 @@ namespace AryamanBMS.Repositories
                     return false;
 
                 if (voucher.Status !=
-                    FinancialConstants.ExpenseVoucherStatus.Draft)
+                    FinancialConstants.ExpenseVoucherStatus.Submitted)
                 {
                     return false;
                 }
@@ -289,6 +301,10 @@ namespace AryamanBMS.Repositories
                 model.IsActive = true;
                 model.Status =
                     FinancialConstants.ExpenseVoucherStatus.Draft;
+                model.ApprovalStatus =
+                    FinancialConstants.ExpenseVoucherStatus.Draft;
+                model.PaymentStatus =
+                    FinancialConstants.PaymentStatus.Unpaid;
 
                 await _context.ExpenseVouchers.AddAsync(model);
 
@@ -302,16 +318,65 @@ namespace AryamanBMS.Repositories
             }
         }
 
+        public async Task<bool> SubmitAsync(
+            int id,
+            string submittedByUserId)
+        {
+            var voucher = await _context.ExpenseVouchers
+                .FirstOrDefaultAsync(x => x.ExpenseVoucherId == id && x.IsActive);
+
+            if (voucher == null ||
+                voucher.Status != FinancialConstants.ExpenseVoucherStatus.Draft)
+            {
+                return false;
+            }
+
+            voucher.Status = FinancialConstants.ExpenseVoucherStatus.Submitted;
+            voucher.ApprovalStatus = FinancialConstants.ExpenseVoucherStatus.Submitted;
+            voucher.SubmittedByUserId = submittedByUserId;
+            voucher.SubmittedOn = DateTime.Now;
+            voucher.UpdatedOn = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<bool> PostAsync(
+            int id,
+            string postedByUserId)
+        {
+            var voucher = await _context.ExpenseVouchers
+                .FirstOrDefaultAsync(x => x.ExpenseVoucherId == id && x.IsActive);
+
+            if (voucher == null ||
+                voucher.Status != FinancialConstants.ExpenseVoucherStatus.Approved)
+            {
+                return false;
+            }
+
+            voucher.Status = FinancialConstants.ExpenseVoucherStatus.Posted;
+            voucher.ApprovalStatus = FinancialConstants.ExpenseVoucherStatus.Posted;
+            voucher.PostedByUserId = postedByUserId;
+            voucher.PostedOn = DateTime.Now;
+            voucher.UpdatedOn = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
         public async Task<bool> VendorInvoiceExistsAsync(
-            string? vendorName,
+            int? vendorId,
+            string? vendorGstin,
             string invoiceNumber,
+            string financialYear,
             int? excludeId = null)
         {
-            string normalizedVendor =
-                NormalizeLookupValue(vendorName);
-
             string normalizedInvoice =
                 NormalizeLookupValue(invoiceNumber);
+            string normalizedGstin =
+                NormalizeLookupValue(vendorGstin);
 
             if (string.IsNullOrWhiteSpace(
                     normalizedInvoice))
@@ -324,11 +389,13 @@ namespace AryamanBMS.Repositories
                     .AsNoTracking()
                     .Where(x =>
                         x.IsActive &&
+                        x.FinancialYear == financialYear &&
                         x.InvoiceNumber != null)
                     .Select(x => new
                     {
                         x.ExpenseVoucherId,
-                        x.VendorName,
+                        x.VendorId,
+                        x.VendorGSTIN,
                         x.InvoiceNumber
                     })
                     .ToListAsync();
@@ -337,8 +404,10 @@ namespace AryamanBMS.Repositories
                 (!excludeId.HasValue ||
                  x.ExpenseVoucherId != excludeId.Value) &&
 
-                NormalizeLookupValue(x.VendorName) ==
-                    normalizedVendor &&
+                ((vendorId.HasValue &&
+                  x.VendorId == vendorId.Value) ||
+                 (!string.IsNullOrWhiteSpace(normalizedGstin) &&
+                  NormalizeLookupValue(x.VendorGSTIN) == normalizedGstin)) &&
 
                 NormalizeLookupValue(x.InvoiceNumber) ==
                     normalizedInvoice);

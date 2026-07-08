@@ -1,0 +1,51 @@
+@model IEnumerable<AryamanBMS.Models.SalaryAdvanceModel>
+
+@{
+    ViewData["Title"] = "Salary Advances";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Salary Advances</h1>
+        <p class="module-subtitle">Track employee advances and recovery balance</p>
+    </div>
+
+    <a asp-action="Create" class="btn-app btn-primary-app">
+        <i class="bi bi-plus-circle"></i>
+        New Advance
+    </a>
+</div>
+
+<div class="app-card table-card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="app-table">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Date</th>
+                        <th class="text-end">Amount</th>
+                        <th class="text-end">Monthly Recovery</th>
+                        <th class="text-end">Recovered</th>
+                        <th class="text-end">Outstanding</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.Employee?.EmployeeCode - @item.Employee?.FullName</td>
+                            <td>@item.AdvanceDate.ToString("dd-MMM-yyyy")</td>
+                            <td class="text-end">@item.AdvanceAmount.ToString("N2")</td>
+                            <td class="text-end">@item.MonthlyRecoveryAmount.ToString("N2")</td>
+                            <td class="text-end">@item.TotalRecovered.ToString("N2")</td>
+                            <td class="text-end">@item.OutstandingBalance.ToString("N2")</td>
+                            <td><span class="badge-secondary">@item.Status</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

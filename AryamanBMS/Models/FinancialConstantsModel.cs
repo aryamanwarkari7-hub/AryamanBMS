@@ -72,7 +72,7 @@
         public static class PaymentStatus
         {
             public const string Unpaid = "Unpaid";
-            public const string PartiallyPaid = "PartiallyPaid";
+            public const string PartiallyPaid = "Partially Paid";
             public const string Paid = "Paid";
             public const string Overdue = "Overdue";
         }
@@ -80,8 +80,20 @@
         public static class ExpenseVoucherStatus
         {
             public const string Draft = "Draft";
+            public const string Submitted = "Submitted";
+            public const string Approved = "Approved";
             public const string Posted = "Posted";
             public const string Rejected = "Rejected";
+            public const string Reversed = "Reversed";
+        }
+
+        public static class GstSnapshotStatus
+        {
+            public const string Draft = "Draft";
+            public const string Calculated = "Calculated";
+            public const string Verified = "Verified";
+            public const string Filed = "Filed";
+            public const string Locked = "Locked";
         }
     }
 
