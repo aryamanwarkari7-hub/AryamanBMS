@@ -39,6 +39,7 @@
                     <input type="text"
                            id="searchBox"
                            class="app-input"
+                           data-table-filter-target="#documentTable"
                            placeholder="Search document, category or number" />
                 </div>
             </div>
@@ -217,26 +218,5 @@
 </div>
 
 @section Scripts {
-
-    <script>
-
-        document.getElementById("searchBox")
-        .addEventListener("keyup", function(){
-
-        let value=this.value.toLowerCase();
-
-        let rows=document.querySelectorAll("#documentTable tbody tr");
-
-        rows.forEach(function(row){
-
-        row.style.display=row.innerText.toLowerCase().includes(value)
-        ? ""
-        : "none";
-
-        });
-
-        });
-
-    </script>
-
+    <script src="~/js/table-filter.js" asp-append-version="true"></script>
 }

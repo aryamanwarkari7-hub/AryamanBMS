@@ -8,18 +8,22 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="App_Data\NewFolder\**" />
     <Compile Remove="NewFolder\**" />
     <Compile Remove="Views\NewFolder2\**" />
     <Compile Remove="Views\NewFolder3\**" />
     <Compile Remove="Views\NewFolder4\**" />
+    <Content Remove="App_Data\NewFolder\**" />
     <Content Remove="NewFolder\**" />
     <Content Remove="Views\NewFolder2\**" />
     <Content Remove="Views\NewFolder3\**" />
     <Content Remove="Views\NewFolder4\**" />
+    <EmbeddedResource Remove="App_Data\NewFolder\**" />
     <EmbeddedResource Remove="NewFolder\**" />
     <EmbeddedResource Remove="Views\NewFolder2\**" />
     <EmbeddedResource Remove="Views\NewFolder3\**" />
     <EmbeddedResource Remove="Views\NewFolder4\**" />
+    <None Remove="App_Data\NewFolder\**" />
     <None Remove="NewFolder\**" />
     <None Remove="Views\NewFolder2\**" />
     <None Remove="Views\NewFolder3\**" />
@@ -27,15 +31,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="App_Data\LetterDocuments\2b93fd68-11cf-4edc-a6b4-3d2431df73e5_Atharwa_Internship_Letter.pdf" />
-    <Content Include="App_Data\LetterDocuments\9cb04f0c-cdd6-4f0e-a394-a49f55787400_Aryaman Offer Letter.pdf" />
-    <Content Include="App_Data\LetterDocuments\a047cd3e-843b-49b0-850c-a98e6978e570_Aryaman Offer Letter.pdf" />
-    <Content Include="App_Data\CompanyDocuments\Company Registration\da608933-5107-4204-8925-93866663bbf2.xlsx" />
-    <Content Include="App_Data\FinancialAuditDocuments\b0d3a8b2-308e-45df-948d-1bb102e89e8a.xlsx" />
-    <Content Include="App_Data\NoticeDocuments\0d8be58d-e169-495c-806d-0966015c1caa.xlsx" />
-    <Content Include="App_Data\Orders\PO\c993fc9b-bfa9-4467-9bce-8f385f500942.xlsx" />
-    <Content Include="App_Data\Proposals\7c5982f9-47ef-4859-befa-26ac3292ae30.xlsx" />
-  </ItemGroup>
+  <None Update="App_Data\**\*">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+  </None>
+</ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="ClosedXML" Version="0.105.0" />
@@ -61,7 +61,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="App_Data\NewFolder\" />
     <Folder Include="Views\NewFolder1\" />
     <Folder Include="Views\NewFolder\" />
     <Folder Include="wwwroot\css\modules\" />

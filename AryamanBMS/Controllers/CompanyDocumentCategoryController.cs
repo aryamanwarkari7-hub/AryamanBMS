@@ -66,8 +66,14 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> Save(
             CompanyDocumentCategoryModel model)
         {
-            model.CategoryCode = model.CategoryCode?.Trim().ToUpper();
-            model.CategoryName = model.CategoryName?.Trim();
+            model.CategoryCode =
+                (model.CategoryCode ?? string.Empty)
+                .Trim()
+                .ToUpperInvariant();
+
+            model.CategoryName =
+                (model.CategoryName ?? string.Empty).Trim();
+
             model.Description = model.Description?.Trim();
             model.AllowedExtensions = model.AllowedExtensions?.Trim().ToLower();
 

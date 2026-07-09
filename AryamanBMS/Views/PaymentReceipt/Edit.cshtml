@@ -115,7 +115,9 @@
                     <select asp-for="InvoiceId"
                             id="invoiceSelect"
                             class="app-select"
-                            data-selected-invoice="@Model.InvoiceId">
+                            data-selected-invoice="@Model.InvoiceId"
+                            data-invoice-url="@Url.Action("GetInvoicesByClient", "PaymentReceipt")"
+                            data-mode="edit">
                         <option value="">Select Invoice</option>
                     </select>
 
@@ -126,8 +128,7 @@
             </div>
 
             <div id="invoiceDetails"
-                 class="app-alert-info"
-                 style="display:none;">
+                 class="app-alert-info is-hidden">
 
                 <div class="form-grid-3">
 
@@ -309,91 +310,5 @@
 @section Scripts
 {
     <partial name="_ValidationScriptsPartial" />
-
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const clientSelect = document.getElementById("clientSelect");
-            const invoiceSelect = document.getElementById("invoiceSelect");
-            const selectedInvoiceId = invoiceSelect.dataset.selectedInvoice;
-            const invoiceDetails = document.getElementById("invoiceDetails");
-            const invoiceAmount = document.getElementById("invoiceAmount");
-            const invoiceBalance = document.getElementById("invoiceBalance");
-            const amountReceived = document.getElementById("amountReceived");
-
-            clientSelect.addEventListener("change", function () {
-                loadInvoices(this.value, "");
-            });
-
-            if (clientSelect.value) {
-                loadInvoices(clientSelect.value, selectedInvoiceId);
-            }
-
-            async function loadInvoices(clientId, selectedId) {
-                invoiceDetails.style.display = "none";
-                invoiceSelect.innerHTML = "<option value=''>Loading...</option>";
-
-                if (!clientId) {
-                    invoiceSelect.innerHTML = "<option value=''>Select Client First</option>";
-                    return;
-                }
-
-                try {
-                    const url = '@Url.Action("GetInvoicesByClient", "PaymentReceipt")'
-                        + '?clientId=' + encodeURIComponent(clientId)
-                        + '&selectedInvoiceId=' + encodeURIComponent(selectedId || '');
-
-                    const response = await fetch(url);
-
-                    if (!response.ok) {
-                        throw new Error("Unable to load invoices.");
-                    }
-
-                    const invoices = await response.json();
-
-                    invoiceSelect.innerHTML = "<option value=''>Select Invoice</option>";
-
-                    invoices.forEach(function (invoice) {
-                        const option = document.createElement("option");
-
-                        option.value = invoice.value;
-                        option.text = invoice.text;
-                        option.dataset.amount = invoice.amount;
-                        option.dataset.balance = invoice.balance;
-
-                        if (selectedId && invoice.value.toString() === selectedId.toString()) {
-                            option.selected = true;
-                        }
-
-                        invoiceSelect.appendChild(option);
-                    });
-
-                    if (selectedId) {
-                        showInvoiceDetails();
-                    }
-                }
-                catch (error) {
-                    console.error(error);
-                    invoiceSelect.innerHTML = "<option value=''>Error loading invoices</option>";
-                }
-            }
-
-            invoiceSelect.addEventListener("change", showInvoiceDetails);
-
-            function showInvoiceDetails() {
-                if (invoiceSelect.selectedIndex <= 0) {
-                    invoiceDetails.style.display = "none";
-                    return;
-                }
-
-                const selected = invoiceSelect.options[invoiceSelect.selectedIndex];
-                const amount = parseFloat(selected.dataset.amount || "0");
-                const balance = parseFloat(selected.dataset.balance || "0");
-
-                invoiceAmount.textContent = amount.toFixed(2);
-                invoiceBalance.textContent = balance.toFixed(2);
-
-                invoiceDetails.style.display = "block";
-            }
-        });
-    </script>
+    <script src="~/js/payment-receipt-form.js" asp-append-version="true"></script>
 }

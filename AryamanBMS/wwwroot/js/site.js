@@ -19,6 +19,22 @@ document.addEventListener("DOMContentLoaded", function () {
     }, 3000);
 });
 
+document.addEventListener("click", function (event) {
+    const confirmTrigger = event.target.closest("[data-confirm]");
+
+    if (confirmTrigger && !confirm(confirmTrigger.dataset.confirm || "Are you sure?")) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+    }
+
+    const printTrigger = event.target.closest("[data-print-window]");
+
+    if (printTrigger) {
+        event.preventDefault();
+        window.print();
+    }
+});
 
 document.addEventListener("DOMContentLoaded", function () {
     const sidebar = document.querySelector(".sidebar");

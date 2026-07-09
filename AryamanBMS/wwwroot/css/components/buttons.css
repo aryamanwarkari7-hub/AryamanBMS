@@ -55,8 +55,8 @@
 ========================================== */
 
 .btn-success-app {
-    background-color: #16A34A;
-    color: white;
+    background-color: var(--success-color);
+    color: var(--text-light);
 }
 
 /* ==========================================
@@ -64,8 +64,8 @@
 ========================================== */
 
 .btn-danger-app {
-    background-color: #BA160C;
-    color: white;
+    background-color: var(--danger-color);
+    color: var(--text-light);
 }
 
 
@@ -74,8 +74,8 @@
 ========================================== */
 
 .btn-deactivate-app {
-    background-color: indianred;
-    color:white;
+    background-color: var(--danger-soft-text);
+    color: var(--text-light);
 }
 
 
@@ -104,17 +104,13 @@
     font-weight:bold;
 }
 
-.btn-app-primary{
-    color:red;
-    padding:var(--space-md);
-}
-
 /* ==========================================
    BUTTON RESPONSIVENESS
 ========================================== */
 
 @media (max-width: 576px) {
     .btn,
+    .btn-app,
     .app-btn,
     .btn-primary,
     .btn-secondary,
@@ -127,6 +123,7 @@
     }
 
     .table-actions .btn,
+    .table-actions .btn-app,
     .table-actions .app-btn {
         white-space: nowrap;
     }

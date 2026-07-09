@@ -22,19 +22,19 @@
     gap: 12px;
     margin-bottom: 14px;
     padding: 10px 14px;
-    border: 1px solid #dbe3ec;
-    border-radius: 8px;
-    background-color: #f8fafc;
+    border: 1px solid var(--border-muted);
+    border-radius: var(--radius-sm);
+    background-color: var(--page-bg);
 }
 
     .timeline-date-heading span {
-        font-size: 14px;
-        font-weight: 700;
-        color: #0f172a;
+        font-size: var(--font-sm);
+        font-weight: var(--fw-bold);
+        color: var(--text-primary);
     }
 
     .timeline-date-heading small {
-        color: #64748b;
+        color: var(--secondary-color);
     }
 
 .project-timeline-item {
@@ -51,7 +51,7 @@
         bottom: -2px;
         left: 16px;
         width: 2px;
-        background-color: #e2e8f0;
+        background-color: var(--border-color);
     }
 
     .project-timeline-item:last-child::before {
@@ -64,14 +64,14 @@
     left: 0;
     width: 34px;
     height: 34px;
-    border: 3px solid #ffffff;
+    border: 3px solid var(--card-bg);
     border-radius: 50%;
-    background-color: #2479b8;
-    color: #ffffff;
+    background-color: var(--primary-color);
+    color: var(--text-light);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 0 0 1px #cbd5e1;
+    box-shadow: 0 0 0 1px var(--text-muted);
     z-index: 2;
 }
 
@@ -81,15 +81,15 @@
 
 .project-timeline-content {
     padding: 15px 17px;
-    border: 1px solid #e2e8f0;
-    border-radius: 9px;
-    background-color: #ffffff;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background-color: var(--card-bg);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
     .project-timeline-content:hover {
-        border-color: #93c5fd;
-        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.07);
+        border-color: var(--info-soft-border);
+        box-shadow: var(--shadow-md);
     }
 
 .timeline-item-header {
@@ -108,7 +108,7 @@
 
 .timeline-event-title {
     margin: 0;
-    color: #0f172a;
+    color: var(--text-primary);
     font-size: 15px;
     font-weight: 700;
 }
@@ -118,19 +118,19 @@
     display: inline-flex;
     align-items: center;
     padding: 3px 8px;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     font-size: 11px;
-    font-weight: 600;
+    font-weight: var(--fw-semibold);
 }
 
 .timeline-type-badge {
-    background-color: #eaf3f9;
-    color: #1d6599;
+    background-color: var(--primary-accent-tint);
+    color: var(--primary-color);
 }
 
 .timeline-event-badge {
-    background-color: #f1f5f9;
-    color: #475569;
+    background-color: var(--table-th-bg);
+    color: var(--text-secondary);
     white-space: nowrap;
 }
 
@@ -139,13 +139,13 @@
     align-items: center;
     gap: 5px;
     margin-top: 5px;
-    color: #64748b;
+    color: var(--secondary-color);
     font-size: 12px;
 }
 
 .timeline-description {
     margin: 12px 0;
-    color: #334155;
+    color: var(--border-dark);
     line-height: 1.55;
 }
 
@@ -156,25 +156,25 @@
     gap: 8px;
     margin: 12px 0;
     padding: 10px;
-    border-radius: 7px;
-    background-color: #f8fafc;
+    border-radius: var(--radius-sm);
+    background-color: var(--page-bg);
 }
 
 .timeline-value {
     padding: 4px 9px;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     font-size: 12px;
-    font-weight: 600;
+    font-weight: var(--fw-semibold);
 }
 
 .old-value {
-    background-color: #fee2e2;
-    color: #b91c1c;
+    background-color: var(--danger-soft);
+    color: var(--danger-soft-text);
 }
 
 .new-value {
-    background-color: #dcfce7;
-    color: #15803d;
+    background-color: var(--success-soft);
+    color: var(--success-soft-text);
 }
 
 .timeline-footer {
@@ -182,8 +182,8 @@
     flex-wrap: wrap;
     gap: 16px;
     padding-top: 10px;
-    border-top: 1px solid #f1f5f9;
-    color: #64748b;
+    border-top: 1px solid var(--table-th-bg);
+    color: var(--secondary-color);
     font-size: 12px;
 }
 
@@ -196,7 +196,7 @@
 /* Timeline category colours */
 
 .timeline-project .project-timeline-marker {
-    background-color: #2479b8;
+    background-color: var(--primary-color);
 }
 
 .timeline-member .project-timeline-marker {
@@ -208,15 +208,15 @@
 }
 
 .timeline-flow .project-timeline-marker {
-    background-color: #ea580c;
+    background-color: var(--warning-color);
 }
 
 .timeline-risk .project-timeline-marker {
-    background-color: #dc2626;
+    background-color: var(--danger-color);
 }
 
 .timeline-meeting .project-timeline-marker {
-    background-color: #16a34a;
+    background-color: var(--success-color);
 }
 
 @media (max-width: 768px) {

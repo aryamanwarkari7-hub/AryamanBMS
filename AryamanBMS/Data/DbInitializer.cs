@@ -18,12 +18,13 @@ namespace AryamanBMS.Data
                 serviceProvider.GetRequiredService<IConfiguration>();
 
             string[] roles =
-            {
-                "Admin",
-                "HR",
-                "Employee",
-                "ProjectManager"
-            };
+             {
+                 "Admin",
+                 "HR",
+                 "Finance",
+                 "Employee",
+                 "ProjectManager"
+             };
 
             foreach (var role in roles)
             {

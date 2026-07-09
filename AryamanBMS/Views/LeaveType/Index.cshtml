@@ -29,7 +29,19 @@
 
     <div class="card-body">
 
-        <table class="app-table">
+        <div class="form-grid-3 mb-3">
+            <div class="form-group">
+                <label class="form-label">Search</label>
+                <input type="text"
+                       class="app-input"
+                       data-table-filter-target="#leaveTypeTable"
+                       placeholder="Search code, name or status" />
+            </div>
+        </div>
+
+        <div class="table-responsive">
+
+        <table class="app-table" id="leaveTypeTable">
 
             <thead>
 
@@ -114,6 +126,13 @@
 
         </table>
 
+        </div>
+
     </div>
 
 </div>
+
+@section Scripts
+{
+    <script src="~/js/table-filter.js" asp-append-version="true"></script>
+}

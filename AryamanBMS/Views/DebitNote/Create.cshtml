@@ -137,24 +137,5 @@
 @section Scripts
 {
     <partial name="_ValidationScriptsPartial" />
-
-    <script>
-        $(function () {
-            function calculateTotalDebit() {
-                var total = 0;
-
-                $(".debit-amount").each(function () {
-                    total += parseFloat($(this).val()) || 0;
-                });
-
-                $("#TotalDebit").val(total.toFixed(2));
-            }
-
-            $(".debit-amount").on(
-                "keyup change",
-                calculateTotalDebit);
-
-            calculateTotalDebit();
-        });
-    </script>
+    <script src="~/js/credit-debit-note.js" asp-append-version="true"></script>
 }

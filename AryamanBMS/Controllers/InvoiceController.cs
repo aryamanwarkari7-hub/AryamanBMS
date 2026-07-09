@@ -1416,7 +1416,7 @@ namespace AryamanBMS.Controllers
             {
                 item.ItemName = item.ItemName?.Trim() ??string.Empty;
 
-                item.Description =  item.Description?.Trim();
+                item.Description = item.Description?.Trim() ?? string.Empty;
 
                 item.Unit = item.Unit?.Trim() ?? string.Empty;
 

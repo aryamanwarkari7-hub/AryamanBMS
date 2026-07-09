@@ -296,6 +296,8 @@
                     <select asp-for="Client.City"
                             id="cityDropdown"
                             class="app-select"
+                            data-current-city="@(Model.Client.City ?? "")"
+                            data-cities-url="@Url.Action("GetCities", "Location")"
                             disabled>
 
                         <option value="">Select City</option>
@@ -426,75 +428,5 @@
 @section Scripts
 {
     <partial name="_ValidationScriptsPartial" />
-
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-
-            const stateDropdown =
-                document.getElementById("stateDropdown");
-
-            const cityDropdown =
-                document.getElementById("cityDropdown");
-
-            const currentCity =
-                @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
-                    Model.Client.City ?? ""));
-
-        async function loadCities(selectedCity = "") {
-
-            cityDropdown.innerHTML =
-                '<option value="">Select City</option>';
-
-            cityDropdown.disabled = true;
-
-            const selectedState =
-                stateDropdown.options[
-                    stateDropdown.selectedIndex
-                ];
-
-            const stateId =
-                selectedState?.dataset.stateId;
-
-            if (!stateId) {
-                return;
-            }
-
-            const response = await fetch(
-                `/Location/GetCities?stateId=${encodeURIComponent(stateId)}`
-            );
-
-            if (!response.ok) {
-                alert("Cities could not be loaded.");
-                return;
-            }
-
-            const cities = await response.json();
-
-            cities.forEach(function (city) {
-
-                const option =
-                    document.createElement("option");
-
-                option.value = city.name;
-                option.textContent = city.name;
-                option.selected =
-                    city.name === selectedCity;
-
-                cityDropdown.appendChild(option);
-            });
-
-            cityDropdown.disabled = false;
-        }
-
-        stateDropdown.addEventListener(
-            "change",
-            function () {
-                loadCities("");
-            });
-
-        if (stateDropdown.value) {
-            loadCities(currentCity);
-        }
-    });
-</script>
+    <script src="~/js/client-location.js" asp-append-version="true"></script>
 }

@@ -150,24 +150,5 @@
 @section Scripts
 {
     <partial name="_ValidationScriptsPartial" />
-
-    <script>
-        $(function () {
-            function calculateTotalCredit() {
-                var total = 0;
-
-                $(".credit-amount").each(function () {
-                    total += parseFloat($(this).val()) || 0;
-                });
-
-                $("#TotalCredit").val(total.toFixed(2));
-            }
-
-            $(".credit-amount").on(
-                "keyup change",
-                calculateTotalCredit);
-
-            calculateTotalCredit();
-        });
-    </script>
+    <script src="~/js/credit-debit-note.js" asp-append-version="true"></script>
 }

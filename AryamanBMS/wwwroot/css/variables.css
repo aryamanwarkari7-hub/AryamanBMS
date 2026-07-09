@@ -8,14 +8,32 @@
     --page-bg: #F8FAFC;
     --card-bg: #FFFFFF;
     --table-th-bg: #F1F5F9;
+    --table-row-hover-bg: rgba(37, 99, 235, 0.03);
     /* BRAND COLORS */
     --primary-color: #2072AF;
     --primary-hover: #4F46E5;
+    --primary-accent-tint: rgba(32, 114, 175, 0.08);
     --secondary-color: #64748B;
+    --secondary-tint: rgba(100, 116, 139, 0.15);
     --success-color: #10B981;
     --danger-color: #EF4444;
     --warning-color: #F59E0B;
     --info-color: #3B82F6;
+    --primary-soft: #DBEAFE;
+    --primary-soft-text: #1D4ED8;
+    --success-soft: #DCFCE7;
+    --success-soft-text: #166534;
+    --success-soft-border: #BBF7D0;
+    --danger-soft: #FEE2E2;
+    --danger-soft-text: #991B1B;
+    --danger-soft-border: #FECACA;
+    --warning-soft: #FEF3C7;
+    --warning-soft-text: #92400E;
+    --info-soft: #DBEAFE;
+    --info-soft-text: #1D4ED8;
+    --info-soft-border: #BFDBFE;
+    --neutral-soft: #E5E7EB;
+    --neutral-soft-text: #374151;
     /* TEXT */
     --text-primary: #0F172A;
     --text-secondary: #475569;
@@ -24,6 +42,7 @@
     --text-dark: #0F172A;
     /* BORDER / SHADOW */
     --border-color: #E2E8F0;
+    --border-muted: #DBE4EF;
     --border-dark: #334155;
     /* SIDEBAR */
     --sidebar-text: #94A3B8;
@@ -56,6 +75,11 @@
     --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
     --shadow-md: 0 4px 6px rgba(0,0,0,0.08);
     --shadow-lg: 0 10px 20px rgba(0,0,0,0.12);
+    --shadow-focus: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    --shadow-dropdown: 0 14px 34px rgba(15, 23, 42, 0.12);
+    --shadow-status-success: 0 4px 12px rgba(22, 163, 74, 0.25);
+    --shadow-status-warning: 0 4px 12px rgba(217, 119, 6, 0.25);
+    --shadow-status-danger: 0 4px 12px rgba(220, 38, 38, 0.25);
     /* ==========================================
        FONT SIZES / WEIGHTS
     ========================================== */

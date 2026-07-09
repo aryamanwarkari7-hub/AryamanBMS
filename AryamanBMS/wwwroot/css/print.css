@@ -85,6 +85,63 @@
     text-align: right;
 }
 
+.receipt-print-page {
+    margin: 30px;
+    background: #ffffff;
+    color: #000000;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+}
+
+.receipt-print-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 20px;
+}
+
+.receipt-print-page table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.receipt-print-page th,
+.receipt-print-page td {
+    border: 1px solid #333333;
+    padding: 6px 8px;
+    text-align: left;
+}
+
+.receipt-print-page th {
+    width: 40%;
+    background: #f0f0f0;
+}
+
+.receipt-print-page .text-right {
+    text-align: right;
+}
+
+.receipt-cancelled {
+    color: #dc2626;
+}
+
+@media (max-width: 576px) {
+    .receipt-print-page {
+        margin: 16px;
+        font-size: 13px;
+    }
+
+    .receipt-print-header {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .print-summary {
+        width: 100%;
+    }
+}
+
 @media print {
 
     .print-toolbar,

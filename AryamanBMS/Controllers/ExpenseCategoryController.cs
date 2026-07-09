@@ -46,8 +46,13 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> Create(ExpenseCategoryModel model)
         {
 
-            model.CategoryCode = model.CategoryCode?.Trim().ToUpper();
-            model.CategoryName = model.CategoryName?.Trim();
+            model.CategoryCode =
+                (model.CategoryCode ?? string.Empty)
+                .Trim()
+                .ToUpperInvariant();
+
+            model.CategoryName =
+                (model.CategoryName ?? string.Empty).Trim();
             if (!ModelState.IsValid)
                 return View(model);
 

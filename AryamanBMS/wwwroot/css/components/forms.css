@@ -25,7 +25,9 @@
 
 .app-input,
 .app-select,
-.app-textarea {
+.app-textarea,
+.form-control,
+.form-select {
     width: 100%;
     height: 44px;
     padding: 10px 14px;
@@ -48,10 +50,12 @@
 
     .app-input:focus,
     .app-select:focus,
-    .app-textarea:focus {
+    .app-textarea:focus,
+    .form-control:focus,
+    .form-select:focus {
         outline: none;
         border-color: var(--primary-color);
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        box-shadow: var(--shadow-focus);
     }
 
     /* ==========================================
@@ -59,7 +63,8 @@
 ========================================== */
 
     .app-input::placeholder,
-    .app-textarea::placeholder {
+    .app-textarea::placeholder,
+    .form-control::placeholder {
         color: var(--text-muted);
     }
 
@@ -69,7 +74,7 @@
 
 .validation-message {
     font-size: var(--font-xs);
-    color: #dc2626;
+    color: var(--danger-color);
 }
 
 /* ==========================================
@@ -107,6 +112,8 @@
 
     .filter-form-row .app-input,
     .filter-form-row .app-select,
+    .filter-form-row .form-control,
+    .filter-form-row .form-select,
     .filter-form-row .form-group {
         width: 100%;
         min-width: 0;

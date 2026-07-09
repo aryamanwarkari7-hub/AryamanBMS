@@ -125,20 +125,5 @@
 @section Scripts
 {
     <partial name="_ValidationScriptsPartial" />
-
-    <script>
-        // Native password field unmask script execution
-        document.getElementById('passwordToggle').addEventListener('click', function () {
-            const passwordInput = document.querySelector('input[name="Password"]');
-            const toggleIcon = this.querySelector('i');
-
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                toggleIcon.classList.replace('bi-eye', 'bi-eye-slash');
-            } else {
-                passwordInput.type = 'password';
-                toggleIcon.classList.replace('bi-eye-slash', 'bi-eye');
-            }
-        });
-    </script>
+    <script src="~/js/password-toggle.js" asp-append-version="true"></script>
 }

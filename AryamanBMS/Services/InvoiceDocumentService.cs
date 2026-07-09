@@ -534,48 +534,44 @@ namespace AryamanBMS.Services
                 ["{{TaxType}}"] =
                     taxType,
 
-                /*
-                 * Replace these with Company Settings later.
-                 */
                 ["{{CompanyName}}"] =
-                    Clean(companyProfile.CompanyName),
-                    
+    Clean(companyProfile.CompanyName),
+
                 ["{{CompanyAddress}}"] =
-                    Clean(companyProfile.Address),
-                    
-                 ["{{CompanyEmail}}"] =
-                    Clean(companyProfile.Email),
-                    
-                  ["{{CompanyPhone}}"] =
-                    Clean(companyProfile.Phone),
-                    
-                 ["{{CompanyGSTIN}}"] =
-                    Clean(companyProfile.GSTIN),
-                    
-                 ["{{CompanyPAN}}"] =
-                    Clean(companyProfile.PAN),
+    Clean(companyProfile.Address),
 
-                ["{{SACCode}}"] =   Clean(invoice.SACCode),
+                ["{{CompanyEmail}}"] =
+    Clean(companyProfile.Email),
 
-                ["{{ContactPerson}}"] = Clean(invoice.Client?.ContactPerson),
+                ["{{CompanyPhone}}"] =
+    Clean(companyProfile.Phone),
 
-                ["{{ReceiverName}}"] = string.Empty,
+                ["{{CompanyGSTIN}}"] =
+    Clean(companyProfile.GSTIN),
 
-               ["{{SACCode}}"] =  Clean(invoice.SACCode),
+                ["{{CompanyPAN}}"] =
+    Clean(companyProfile.PAN),
 
-                ["{{ReceiverName}}"] =  string.Empty,
+                ["{{SACCode}}"] =
+    Clean(invoice.SACCode),
 
-                ["{{BankName}}"] =    Clean(companyProfile.BankName),
+                ["{{ReceiverName}}"] =
+    string.Empty,
 
-                ["{{AccountNumber}}"] =  Clean(companyProfile.AccountNumber),
+                ["{{BankName}}"] =
+    Clean(companyProfile.BankName),
 
-                ["{{IFSCCode}}"] = Clean(companyProfile.IFSCCode),
+                ["{{AccountNumber}}"] =
+    Clean(companyProfile.AccountNumber),
 
-                ["{{BankBranch}}"] = Clean(companyProfile.BankBranch),
+                ["{{IFSCCode}}"] =
+    Clean(companyProfile.IFSCCode),
 
-                ["{{AuthorizedSignatory}}"] =  Clean(companyProfile.AuthorizedSignatory),
+                ["{{BankBranch}}"] =
+    Clean(companyProfile.BankBranch),
 
-                ["{{ReceiverName}}"] = string.Empty
+                ["{{AuthorizedSignatory}}"] =
+    Clean(companyProfile.AuthorizedSignatory)
             };
         }
 

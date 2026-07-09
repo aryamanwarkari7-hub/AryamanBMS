@@ -179,29 +179,16 @@
     </div>
 </div>
 
+<form id="financialAuditDocumentStatusForm"
+      asp-action="Delete"
+      method="post"
+      class="d-none">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="id" value="" />
+</form>
+
 @section Scripts
 {
-    <script>
-        function changeDocumentStatus(id) {
-            if (!confirm("Do you want to change this document status?")) {
-                return;
-            }
-
-            var form = $('<form/>', {
-                action: '/FinancialAuditDocument/Delete',
-                method: 'post'
-            });
-
-            form.append('@Html.AntiForgeryToken()');
-
-            form.append($('<input/>', {
-                type: 'hidden',
-                name: 'id',
-                value: id
-            }));
-
-            $('body').append(form);
-            form.submit();
-        }
-    </script>
+    <script src="~/js/status-toggle-form.js" asp-append-version="true"></script>
+    <script src="~/js/financial-audit-document.js" asp-append-version="true"></script>
 }

@@ -3,15 +3,15 @@
 @{
     ViewData["Title"] = "Invoice Tracker";
 
-    string currentSearch = Context.Request.Query["search"];
-    string currentClientId = Context.Request.Query["clientId"];
+    string currentSearch = Context.Request.Query["search"].ToString();
+    string currentClientId = Context.Request.Query["clientId"].ToString();
     string currentInvoiceStatus =
-        Context.Request.Query["invoiceStatus"];
+        Context.Request.Query["invoiceStatus"].ToString();
     string currentPaymentStatus =
-        Context.Request.Query["paymentStatus"];
+        Context.Request.Query["paymentStatus"].ToString();
 
-    string currentMonth = Context.Request.Query["month"];
-    string currentYear = Context.Request.Query["year"];
+    string currentMonth = Context.Request.Query["month"].ToString();
+    string currentYear = Context.Request.Query["year"].ToString();
 
     var availableYears =
         ViewBag.AvailableYears as IEnumerable<int>

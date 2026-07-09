@@ -3,9 +3,9 @@
 @{
     ViewData["Title"] = "Payment Receipts";
 
-    string currentSearch = Context.Request.Query["search"];
-    string currentClientId = Context.Request.Query["clientId"];
-    string currentStatus = Context.Request.Query["status"];
+    string currentSearch = Context.Request.Query["search"].ToString();
+    string currentClientId = Context.Request.Query["clientId"].ToString();
+    string currentStatus = Context.Request.Query["status"].ToString();
 }
 
 <div class="module-header">
@@ -281,12 +281,3 @@
     </div>
 
 </div>
-
-<style>
-    .amount-column {
-        width: 140px;
-        min-width: 140px;
-        max-width: 140px;
-        white-space: nowrap;
-    }
-</style>

@@ -165,6 +165,7 @@
 
 <div class="modal fade"
      id="categoryModal"
+     data-get-url="@Url.Action("Get", "CompanyDocumentCategory")"
      tabindex="-1">
 
     <div class="modal-dialog modal-lg">
@@ -180,62 +181,17 @@
 
 </div>
 
+<form id="categoryStatusForm"
+      asp-action="Delete"
+      method="post"
+      class="d-none">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="id" value="" />
+</form>
+
 @section Scripts
 {
     <partial name="_ValidationScriptsPartial" />
-
-    <script>
-        function openCreate() {
-            $("#modalTitle").text("Add Company Document Category");
-            $("#categoryForm")[0].reset();
-            $("#DocumentCategoryId").val(0);
-            $("#IsActive").prop("checked", true);
-            $("#categoryModal").modal("show");
-        }
-
-        function openEdit(id) {
-            $.get('/CompanyDocumentCategory/Get/' + id, function (data) {
-                $("#modalTitle").text("Edit Company Document Category");
-
-                $("#DocumentCategoryId").val(data.documentCategoryId);
-                $("#CategoryCode").val(data.categoryCode);
-                $("#CategoryName").val(data.categoryName);
-                $("#Description").val(data.description);
-                $("#DisplayOrder").val(data.displayOrder);
-                $("#ExpiryReminderDays").val(data.expiryReminderDays);
-                $("#AllowedExtensions").val(data.allowedExtensions);
-                $("#MaxFileSizeMB").val(data.maxFileSizeMB);
-
-                $("#IsMandatory").prop("checked", data.isMandatory);
-                $("#HasExpiry").prop("checked", data.hasExpiry);
-                $("#RequireDocumentNumber").prop("checked", data.requireDocumentNumber);
-                $("#AllowMultipleDocuments").prop("checked", data.allowMultipleDocuments);
-                $("#IsActive").prop("checked", data.isActive);
-
-                $("#categoryModal").modal("show");
-            });
-        }
-
-            function deleteCategory(id) {
-            if (!confirm("Do you want to change this category status?")) {
-                return;
-            }
-
-            var form = $('<form/>', {
-                action: '/CompanyDocumentCategory/Delete',
-                method: 'post'
-            });
-
-            form.append('@Html.AntiForgeryToken()');
-
-            form.append($('<input/>', {
-                type: 'hidden',
-                name: 'id',
-                value: id
-            }));
-
-            $('body').append(form);
-            form.submit();
-        }
-    </script>
+    <script src="~/js/status-toggle-form.js" asp-append-version="true"></script>
+    <script src="~/js/company-document-category.js" asp-append-version="true"></script>
 }

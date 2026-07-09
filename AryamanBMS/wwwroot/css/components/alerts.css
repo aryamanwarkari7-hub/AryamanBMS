@@ -4,25 +4,25 @@
     gap: 10px;
     padding: 14px 18px;
     margin-bottom: 20px;
-    border-radius: 12px;
-    color: white;
-    font-weight: 500;
+    border-radius: var(--radius-md);
+    color: var(--text-light);
+    font-weight: var(--fw-medium);
     transition: opacity 0.5s ease;
 }
 
 .alert-success-app {
-    background: #16a34a;
-    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
+    background: var(--success-color);
+    box-shadow: var(--shadow-status-success);
 }
 
 .alert-warning-app {
-    background-color: orange;
-    box-shadow: 0 4px 12px rgba(217, 119, 6, 0.25);
+    background-color: var(--warning-color);
+    box-shadow: var(--shadow-status-warning);
 }
 
 .alert-error-app {
-    background: #dc2626;
-    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+    background: var(--danger-color);
+    box-shadow: var(--shadow-status-danger);
 }
 
 .alert-hide {

@@ -130,10 +130,10 @@ textarea {
     min-width: 36px;
     height: 36px;
     padding: 0 11px;
-    border: 1px solid #d7dee8;
-    border-radius: 7px;
-    background: #ffffff;
-    color: #334155;
+    border: 1px solid var(--border-muted);
+    border-radius: var(--radius-sm);
+    background: var(--card-bg);
+    color: var(--border-dark);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -141,20 +141,20 @@ textarea {
     font-size: 13px;
     font-weight: 600;
     text-decoration: none;
-    transition: 0.2s ease;
+    transition: var(--transition-fast);
 }
 
     .pagination-btn:hover,
     .pagination-number:hover {
-        border-color: #1d75b8;
-        color: #1d75b8;
-        background: #f4f9fd;
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+        background: var(--primary-accent-tint);
     }
 
     .pagination-number.active {
-        border-color: #1d75b8;
-        background: #1d75b8;
-        color: #ffffff;
+        border-color: var(--primary-color);
+        background: var(--primary-color);
+        color: var(--text-light);
         pointer-events: none;
     }
 
@@ -166,7 +166,7 @@ textarea {
 .pagination-dots {
     min-width: 28px;
     text-align: center;
-    color: #64748b;
+    color: var(--secondary-color);
 }
 
 /* System state pages */
@@ -179,7 +179,7 @@ textarea {
     align-items: center;
     justify-content: center;
     padding: 48px 24px;
-    background: linear-gradient( 135deg, rgba(15, 23, 42, 0.04), rgba(37, 99, 235, 0.06) ), radial-gradient( circle at 18% 20%, rgba(37, 99, 235, 0.12), transparent 28% ), radial-gradient( circle at 82% 72%, rgba(239, 68, 68, 0.10), transparent 26% ), #f8fafc;
+    background: linear-gradient( 135deg, rgba(15, 23, 42, 0.04), rgba(37, 99, 235, 0.06) ), radial-gradient( circle at 18% 20%, rgba(37, 99, 235, 0.12), transparent 28% ), radial-gradient( circle at 82% 72%, rgba(239, 68, 68, 0.10), transparent 26% ), var(--page-bg);
 }
 
     .state-page::before {
@@ -196,10 +196,10 @@ textarea {
     position: relative;
     z-index: 1;
     width: min(100%, 520px);
-    background: rgba(255, 255, 255, 0.96);
-    border: 1px solid #dbe3ef;
-    border-radius: 8px;
-    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+    background: var(--card-bg);
+    border: 1px solid var(--border-muted);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-dropdown);
     padding: 36px;
     text-align: center;
 }
@@ -219,35 +219,35 @@ textarea {
     }
 
     .state-icon.danger {
-        background: #fee2e2;
-        color: #b91c1c;
+        background: var(--danger-soft);
+        color: var(--danger-soft-text);
     }
 
     .state-icon.warning {
-        background: #fef3c7;
-        color: #b45309;
+        background: var(--warning-soft);
+        color: var(--warning-soft-text);
     }
 
     .state-icon.info {
-        background: #dbeafe;
-        color: #1d4ed8;
+        background: var(--info-soft);
+        color: var(--info-soft-text);
     }
 
     .state-icon.success {
-        background: #dcfce7;
-        color: #15803d;
+        background: var(--success-soft);
+        color: var(--success-soft-text);
     }
 
 .state-card h1 {
     margin-bottom: 10px;
     font-size: 30px;
     font-weight: 800;
-    color: #0f172a;
+    color: var(--text-primary);
 }
 
 .state-card p {
     margin: 0 auto 24px;
-    color: #475569;
+    color: var(--text-secondary);
     line-height: 1.6;
 }
 
@@ -256,6 +256,27 @@ textarea {
     justify-content: center;
     gap: 12px;
     flex-wrap: wrap;
+}
+
+.is-hidden {
+    display: none !important;
+}
+
+.progress-thin {
+    height: 6px;
+}
+
+.progress-compact {
+    height: 8px;
+    max-width: 350px;
+}
+
+.progress-medium {
+    height: 12px;
+}
+
+.progress-large {
+    height: 18px;
 }
 
 @media (max-width: 576px) {

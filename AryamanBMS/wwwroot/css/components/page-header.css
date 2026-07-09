@@ -4,10 +4,10 @@
     align-items: center;
     margin-bottom: 24px;
     padding: 24px 28px;
-    background: #ffffff;
+    background: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
-    box-shadow: 0 2px 8px rgba(0,0,0,.04);
+    box-shadow: var(--shadow-sm);
     margin:var(--space-xl);
 }
 .module-header-actions {
@@ -43,9 +43,9 @@
 .module-header-actions .dropdown-menu {
     min-width: 220px;
     padding: 8px;
-    border: 1px solid #dbe4ef;
-    border-radius: 8px;
-    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.12);
+    border: 1px solid var(--border-muted);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-dropdown);
 }
 
 .module-header-actions .dropdown-item {
@@ -58,7 +58,7 @@
 }
 
     .module-header-actions .dropdown-item i {
-        color: #2279b8;
+        color: var(--primary-color);
     }
 
 /* ==========================================
@@ -110,6 +110,14 @@
     .module-header-actions .btn {
         width: 100%;
         justify-content: center;
+    }
+
+    .module-header > .btn-app,
+    .module-header > .btn {
+        width: 100%;
+        max-width: 100%;
+        justify-content: center;
+        white-space: normal;
     }
 
     .module-title {
