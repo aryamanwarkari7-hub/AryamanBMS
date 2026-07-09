@@ -357,20 +357,20 @@
                         <td>
 
                             <div class="table-actions">
-                            <a asp-action="Details"
-                               asp-route-id="@item.InvoiceId"
-                               class="btn-app btn-icon btn-primary-app">
-
-                                <i class="bi bi-eye"></i>
-
-                            </a>
+                                   <a asp-action="Details"
+                                      asp-route-id="@item.InvoiceId"
+                                      class="btn-app btn-icon btn-primary-app">
+                                   
+                                       <i class="bi bi-eye"></i>
+                                   
+                                   </a>
 
 
                                 @if (item.InvoiceStatus == "Draft")
                                 {
                                     <a asp-action="Edit"
                                        asp-route-id="@item.InvoiceId"
-                                       class="btn-action btn-action-edit"
+                                       class="btn-action btn-icon btn-secondary-app"
                                        title="Edit">
 
                                         <i class="bi bi-pencil"></i>
@@ -384,7 +384,7 @@
                                 {
                                     <a asp-action="Cancel"
                                        asp-route-id="@item.InvoiceId"
-                                       class="btn-action btn-action-delete"
+                                       class="btn-action btn-icon btn-danger-app"
                                        title="Cancel Invoice">
 
                                         <i class="bi bi-x-circle"></i>
