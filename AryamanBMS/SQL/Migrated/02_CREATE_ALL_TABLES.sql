@@ -872,6 +872,43 @@
 --         (UserId, IsRead, CreatedOn)
 -- );
 
+CREATE TABLE IF NOT EXISTS TableLoginHistory
+(
+    Id INT NOT NULL AUTO_INCREMENT,
+
+    UserId VARCHAR(450) NULL,
+
+    AttemptedUserName VARCHAR(256) NOT NULL,
+
+    EventType VARCHAR(50) NOT NULL,
+
+    IsSuccessful TINYINT(1) NOT NULL DEFAULT 0,
+
+    FailureReason VARCHAR(250) NULL,
+
+    IpAddress VARCHAR(45) NULL,
+
+    UserAgent VARCHAR(500) NULL,
+
+    OccurredOn DATETIME NOT NULL
+        DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (Id),
+
+    CONSTRAINT FK_TableLoginHistory_AspNetUsers_UserId
+        FOREIGN KEY (UserId)
+        REFERENCES AspNetUsers(Id)
+        ON DELETE SET NULL,
+
+    INDEX IX_TableLoginHistory_UserId (UserId),
+
+    INDEX IX_TableLoginHistory_OccurredOn
+        (OccurredOn),
+
+    INDEX IX_TableLoginHistory_EventType
+        (EventType)
+);
+
 -- -- ============================================================
 -- -- TABLE CREATION COMPLETED
 -- -- ============================================================
