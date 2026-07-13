@@ -1,0 +1,335 @@
+@model AryamanBMS.ViewModels.AccountsFinanceDashboardViewModel
+
+@using System.Globalization
+
+@{
+    ViewData["Title"] = "Accounts & Finance Dashboard";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Accounts & Finance Dashboard</h1>
+        <p class="module-subtitle">Sales, receivables, expenses, GST and assets for @Model.PeriodLabel</p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-controller="Invoice" asp-action="Index" class="btn-app btn-secondary-app">
+            <i class="bi bi-receipt"></i>
+            Invoices
+        </a>
+
+        <a asp-controller="ExpenseVoucher" asp-action="Index" class="btn-app btn-secondary-app">
+            <i class="bi bi-wallet2"></i>
+            Expenses
+        </a>
+
+        <a asp-controller="Gst" asp-action="Dashboard" class="btn-app btn-primary-app">
+            <i class="bi bi-calculator"></i>
+            GST
+        </a>
+    </div>
+</div>
+
+<div class="app-card mb-3">
+    <div class="card-body">
+        <form asp-action="Dashboard" method="get">
+            <div class="filter-form-row">
+                <div class="form-group">
+                    <label class="form-label">Month</label>
+                    <select name="month" class="app-select">
+                        @for (int month = 1; month <= 12; month++)
+                        {
+                            string monthName = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(month);
+
+                            if (month == Model.Month)
+                            {
+                                <option value="@month" selected>@monthName</option>
+                            }
+                            else
+                            {
+                                <option value="@month">@monthName</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Year</label>
+                    <select name="year" class="app-select">
+                        @for (int year = DateTime.Today.Year - 5; year <= DateTime.Today.Year + 2; year++)
+                        {
+                            if (year == Model.Year)
+                            {
+                                <option value="@year" selected>@year</option>
+                            }
+                            else
+                            {
+                                <option value="@year">@year</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="filter-form-actions">
+                    <button type="submit" class="btn-app btn-primary-app">
+                        <i class="bi bi-search"></i>
+                        Load
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <div class="stats-card">
+        <div class="stats-label">Total Invoiced</div>
+        <div class="stats-number">₹@Model.TotalInvoiced.ToString("N0")</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Collected</div>
+        <div class="stats-number">₹@Model.TotalCollected.ToString("N0")</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Outstanding</div>
+        <div class="stats-number">₹@Model.OutstandingReceivables.ToString("N0")</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Overdue</div>
+        <div class="stats-number">₹@Model.OverdueReceivables.ToString("N0")</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Pending Expenses</div>
+        <div class="stats-number">₹@Model.PendingExpenses.ToString("N0")</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Advance Balance</div>
+        <div class="stats-number">₹@Model.AdvanceBalance.ToString("N0")</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Net GST Payable</div>
+        <div class="stats-number">₹@Model.NetGSTPayable.ToString("N0")</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Asset Value</div>
+        <div class="stats-number">₹@Model.AssetValue.ToString("N0")</div>
+    </div>
+</div>
+
+<div class="main-dashboard-layout">
+    <div class="app-card dashboard-section-card">
+        <div class="card-header">
+            <h5 class="card-title">Invoice Status</h5>
+        </div>
+
+        <div class="card-body">
+            @foreach (var item in Model.InvoiceStatusBuckets)
+            {
+                <div class="dashboard-bar-row">
+                    <div class="dashboard-bar-label">
+                        <span>@item.Label</span>
+                        <strong>@item.Count</strong>
+                    </div>
+                    <div class="dashboard-bar-track">
+                        <div class="dashboard-bar-fill @item.CssClass"
+                             style="width: @item.Percent.ToString("0.##", CultureInfo.InvariantCulture)%;">
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="app-card dashboard-section-card">
+        <div class="card-header">
+            <h5 class="card-title">Payment Status</h5>
+        </div>
+
+        <div class="card-body">
+            @foreach (var item in Model.PaymentStatusBuckets)
+            {
+                <div class="dashboard-bar-row">
+                    <div class="dashboard-bar-label">
+                        <span>@item.Label</span>
+                        <strong>@item.Count</strong>
+                    </div>
+                    <div class="dashboard-bar-track">
+                        <div class="dashboard-bar-fill @item.CssClass"
+                             style="width: @item.Percent.ToString("0.##", CultureInfo.InvariantCulture)%;">
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="app-card dashboard-section-card">
+        <div class="card-header">
+            <h5 class="card-title">Expense Payment Status</h5>
+        </div>
+
+        <div class="card-body">
+            @foreach (var item in Model.ExpenseStatusBuckets)
+            {
+                <div class="dashboard-bar-row">
+                    <div class="dashboard-bar-label">
+                        <span>@item.Label</span>
+                        <strong>@item.Count</strong>
+                    </div>
+                    <div class="dashboard-bar-track">
+                        <div class="dashboard-bar-fill @item.CssClass"
+                             style="width: @item.Percent.ToString("0.##", CultureInfo.InvariantCulture)%;">
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="app-card dashboard-section-card">
+        <div class="card-header">
+            <h5 class="card-title">Asset Status</h5>
+        </div>
+
+        <div class="card-body">
+            @foreach (var item in Model.AssetStatusBuckets)
+            {
+                <div class="dashboard-bar-row">
+                    <div class="dashboard-bar-label">
+                        <span>@item.Label</span>
+                        <strong>@item.Count</strong>
+                    </div>
+                    <div class="dashboard-bar-track">
+                        <div class="dashboard-bar-fill @item.CssClass"
+                             style="width: @item.Percent.ToString("0.##", CultureInfo.InvariantCulture)%;">
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="main-dashboard-layout">
+    <div class="app-card dashboard-section-card">
+        <div class="card-header">
+            <h5 class="card-title">Overdue Invoices</h5>
+        </div>
+
+        <div class="card-body">
+            @if (!Model.OverdueInvoiceList.Any())
+            {
+                <div class="empty-state">No overdue invoices.</div>
+            }
+            else
+            {
+                foreach (var item in Model.OverdueInvoiceList)
+                {
+                    <a asp-controller="Invoice"
+                       asp-action="Details"
+                       asp-route-id="@item.Id"
+                       class="dashboard-list-link">
+                        <span>
+                            <strong>@item.Title</strong>
+                            <small>@item.Subtitle</small>
+                        </span>
+                        <strong>₹@item.Amount.ToString("N0")</strong>
+                    </a>
+                }
+            }
+        </div>
+    </div>
+
+    <div class="app-card dashboard-section-card">
+        <div class="card-header">
+            <h5 class="card-title">Pending Expenses</h5>
+        </div>
+
+        <div class="card-body">
+            @if (!Model.PendingExpenseList.Any())
+            {
+                <div class="empty-state">No pending expenses.</div>
+            }
+            else
+            {
+                foreach (var item in Model.PendingExpenseList)
+                {
+                    <a asp-controller="ExpenseVoucher"
+                       asp-action="Details"
+                       asp-route-id="@item.Id"
+                       class="dashboard-list-link">
+                        <span>
+                            <strong>@item.Title</strong>
+                            <small>@item.Subtitle</small>
+                        </span>
+                        <strong>₹@item.Amount.ToString("N0")</strong>
+                    </a>
+                }
+            }
+        </div>
+    </div>
+
+    <div class="app-card dashboard-section-card">
+        <div class="card-header">
+            <h5 class="card-title">Recent Receipts</h5>
+        </div>
+
+        <div class="card-body">
+            @if (!Model.RecentReceipts.Any())
+            {
+                <div class="empty-state">No receipts found.</div>
+            }
+            else
+            {
+                foreach (var item in Model.RecentReceipts)
+                {
+                    <a asp-controller="PaymentReceipt"
+                       asp-action="Details"
+                       asp-route-id="@item.Id"
+                       class="dashboard-list-link">
+                        <span>
+                            <strong>@item.Title</strong>
+                            <small>@item.Subtitle</small>
+                        </span>
+                        <strong>₹@item.Amount.ToString("N0")</strong>
+                    </a>
+                }
+            }
+        </div>
+    </div>
+
+    <div class="app-card dashboard-section-card">
+        <div class="card-header">
+            <h5 class="card-title">Available Advances</h5>
+        </div>
+
+        <div class="card-body">
+            @if (!Model.AdvanceReceiptList.Any())
+            {
+                <div class="empty-state">No available advances.</div>
+            }
+            else
+            {
+                foreach (var item in Model.AdvanceReceiptList)
+                {
+                    <a asp-controller="AdvanceReceipt"
+                       asp-action="Index"
+                       class="dashboard-list-link">
+                        <span>
+                            <strong>@item.Title</strong>
+                            <small>@item.Subtitle</small>
+                        </span>
+                        <strong>₹@item.Amount.ToString("N0")</strong>
+                    </a>
+                }
+            }
+        </div>
+    </div>
+</div>

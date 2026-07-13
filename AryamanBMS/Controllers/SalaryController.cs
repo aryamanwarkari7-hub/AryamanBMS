@@ -446,12 +446,11 @@ namespace AryamanBMS.Controllers
                 new { month, year, page });
         }
 
-
         [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Dashboard(
-         string viewType = "Monthly",
-         int? month = null,
-         int? year = null)
+    string viewType = "Monthly",
+    int? month = null,
+    int? year = null)
         {
             int selectedMonth =
                 month.HasValue &&
@@ -460,47 +459,48 @@ namespace AryamanBMS.Controllers
                     ? month.Value
                     : DateTime.Today.Month;
 
-            int selectedYear =
-                year ?? DateTime.Today.Year;
+            int selectedYear = year ?? DateTime.Today.Year;
 
-            bool isYearly =
-                string.Equals(
-                    viewType,
-                    "Yearly",
-                    StringComparison.OrdinalIgnoreCase);
+            bool isYearly = string.Equals(
+                viewType,
+                "Yearly",
+                StringComparison.OrdinalIgnoreCase);
 
-            viewType = isYearly
-                ? "Yearly"
-                : "Monthly";
+            viewType = isYearly ? "Yearly" : "Monthly";
 
-            var yearSalaries =
-                await _salaryRecordRepository.SalaryRecords
-                    .AsNoTracking()
-                    .Where(x => x.Year == selectedYear)
-                    .ToListAsync();
+            var yearSalaries = await _salaryRecordRepository.SalaryRecords
+                .AsNoTracking()
+                .Include(x => x.Employee)
+                .Where(x => x.Year == selectedYear)
+                .ToListAsync();
 
-            var selectedSalaries =
-                isYearly
-                    ? yearSalaries
-                    : yearSalaries
-                        .Where(x => x.Month == selectedMonth)
-                        .ToList();
+            var selectedSalaries = isYearly
+                ? yearSalaries
+                : yearSalaries
+                    .Where(x => x.Month == selectedMonth)
+                    .ToList();
 
-            int paidCount =
-                selectedSalaries.Count(x =>
-                    string.Equals(
-                        x.PaymentStatus,
-                        "Paid",
-                        StringComparison.OrdinalIgnoreCase));
+            int totalRecords = selectedSalaries.Count;
 
-            int pendingCount =
-                selectedSalaries.Count - paidCount;
+            int paidCount = selectedSalaries.Count(x =>
+                string.Equals(x.PaymentStatus, "Paid", StringComparison.OrdinalIgnoreCase));
 
-            decimal totalGrossSalary =
-                selectedSalaries.Sum(x => x.GrossSalary);
+            int pendingCount = totalRecords - paidCount;
 
-            decimal totalNetSalary =
-                selectedSalaries.Sum(x => x.NetSalary);
+            int finalizedCount = selectedSalaries.Count(x =>
+                string.Equals(x.PayrollStatus, "Finalized", StringComparison.OrdinalIgnoreCase));
+
+            int verifiedCount = selectedSalaries.Count(x =>
+                string.Equals(x.PayrollStatus, "Verified", StringComparison.OrdinalIgnoreCase));
+
+            int draftCount = selectedSalaries.Count(x =>
+                string.Equals(x.PayrollStatus, "Draft", StringComparison.OrdinalIgnoreCase));
+
+            int payslipReleasedCount = selectedSalaries.Count(x => x.IsPayslipReleased);
+
+            int payslipPendingCount = selectedSalaries.Count(x =>
+                string.Equals(x.PayrollStatus, "Finalized", StringComparison.OrdinalIgnoreCase) &&
+                !x.IsPayslipReleased);
 
             var model = new SalaryDashboardViewModel
             {
@@ -508,111 +508,132 @@ namespace AryamanBMS.Controllers
                 Month = selectedMonth,
                 Year = selectedYear,
 
-                TotalEmployees =
-             selectedSalaries
-                 .Select(x => x.EmployeeId)
-                 .Distinct()
-                 .Count(),
+                TotalEmployees = selectedSalaries
+                    .Select(x => x.EmployeeId)
+                    .Distinct()
+                    .Count(),
 
                 PaidCount = paidCount,
-
                 PendingCount = pendingCount,
 
-                TotalGrossSalary =
-             selectedSalaries.Sum(x => x.GrossSalary),
+                FinalizedCount = finalizedCount,
+                VerifiedCount = verifiedCount,
+                DraftCount = draftCount,
 
-                TotalNetSalary =
-             selectedSalaries.Sum(x => x.NetSalary),
+                PayslipReleasedCount = payslipReleasedCount,
+                PayslipPendingCount = payslipPendingCount,
 
-                TotalDeductions =
-             selectedSalaries.Sum(x => x.TotalDeductions),
+                TotalGrossSalary = selectedSalaries.Sum(x => x.GrossSalary),
+                TotalNetSalary = selectedSalaries.Sum(x => x.NetSalary),
+                TotalDeductions = selectedSalaries.Sum(x => x.TotalDeductions),
 
-                PayrollCompletionPercentage =
-             selectedSalaries.Count > 0
-                 ? Math.Round(
-                     (decimal)paidCount /
-                     selectedSalaries.Count * 100,
-                     2)
-                 : 0,
+                PayrollCompletionPercentage = totalRecords > 0
+                    ? Math.Round((decimal)paidCount / totalRecords * 100, 2)
+                    : 0,
 
-                TotalBasic =
-             selectedSalaries.Sum(x => x.BasicSalary),
+                PayslipReleasePercentage = totalRecords > 0
+                    ? Math.Round((decimal)payslipReleasedCount / totalRecords * 100, 2)
+                    : 0,
 
-                TotalHRA =
-             selectedSalaries.Sum(x => x.HRA),
+                FinalizationPercentage = totalRecords > 0
+                    ? Math.Round((decimal)finalizedCount / totalRecords * 100, 2)
+                    : 0,
 
-                TotalDA =
-             selectedSalaries.Sum(x => x.DA),
+                TotalBasic = selectedSalaries.Sum(x => x.BasicSalary),
+                TotalHRA = selectedSalaries.Sum(x => x.HRA),
+                TotalDA = selectedSalaries.Sum(x => x.DA),
 
-                TotalOtherAllowances =
-             selectedSalaries.Sum(x =>
-                 x.Conveyance +
-                 x.MedicalAllowance +
-                 x.EducationAllowance +
-                 x.SpecialAllowance +
-                 x.OtherAllowances),
+                TotalOtherAllowances = selectedSalaries.Sum(x =>
+                    x.Conveyance +
+                    x.MedicalAllowance +
+                    x.EducationAllowance +
+                    x.SpecialAllowance +
+                    x.OtherAllowances),
 
-                TotalPF =
-             selectedSalaries.Sum(x => x.PfDeduction),
+                TotalPF = selectedSalaries.Sum(x => x.PfDeduction),
+                TotalESIC = selectedSalaries.Sum(x => x.EsicDeduction),
+                TotalTDS = selectedSalaries.Sum(x => x.TdsDeduction),
 
-                TotalESIC =
-             selectedSalaries.Sum(x => x.EsicDeduction),
-
-                TotalTDS =
-             selectedSalaries.Sum(x => x.TdsDeduction),
-
-                TotalOtherDeductions =
-             selectedSalaries.Sum(x =>
-                 x.ProfessionalTax +
-                 x.Advance +
-                 x.OtherDeductions)
+                TotalOtherDeductions = selectedSalaries.Sum(x =>
+                    x.ProfessionalTax +
+                    x.Advance +
+                    x.OtherDeductions)
             };
+
+            model.PaymentBuckets = BuildSalaryBuckets(new List<SalaryDashboardBucket>
+    {
+        new() { Label = "Paid", Count = paidCount, CssClass = "bucket-success" },
+        new() { Label = "Pending", Count = pendingCount, CssClass = "bucket-warning" }
+    });
+
+            model.PayrollStatusBuckets = BuildSalaryBuckets(new List<SalaryDashboardBucket>
+    {
+        new() { Label = "Draft", Count = draftCount, CssClass = "bucket-neutral" },
+        new() { Label = "Verified", Count = verifiedCount, CssClass = "bucket-info" },
+        new() { Label = "Finalized", Count = finalizedCount, CssClass = "bucket-success" }
+    });
+
+            model.PayComponentBuckets = BuildSalaryAmountBuckets(new List<SalaryDashboardBucket>
+    {
+        new() { Label = "Basic", Amount = model.TotalBasic, CssClass = "bucket-success" },
+        new() { Label = "HRA", Amount = model.TotalHRA, CssClass = "bucket-info" },
+        new() { Label = "DA", Amount = model.TotalDA, CssClass = "bucket-warning" },
+        new() { Label = "Other", Amount = model.TotalOtherAllowances, CssClass = "bucket-neutral" }
+    });
+
+            model.DeductionBuckets = BuildSalaryAmountBuckets(new List<SalaryDashboardBucket>
+    {
+        new() { Label = "PF", Amount = model.TotalPF, CssClass = "bucket-info" },
+        new() { Label = "ESIC", Amount = model.TotalESIC, CssClass = "bucket-warning" },
+        new() { Label = "TDS", Amount = model.TotalTDS, CssClass = "bucket-danger" },
+        new() { Label = "Other", Amount = model.TotalOtherDeductions, CssClass = "bucket-neutral" }
+    });
+
+            model.PendingPayments = selectedSalaries
+                .Where(x => !string.Equals(x.PaymentStatus, "Paid", StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(x => x.NetSalary)
+                .Take(8)
+                .Select(ToSalaryDashboardListItem)
+                .ToList();
+
+            model.PendingFinalization = selectedSalaries
+                .Where(x => !string.Equals(x.PayrollStatus, "Finalized", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(x => x.Employee!.FirstName)
+                .Take(8)
+                .Select(ToSalaryDashboardListItem)
+                .ToList();
+
+            model.PendingPayslips = selectedSalaries
+                .Where(x =>
+                    string.Equals(x.PayrollStatus, "Finalized", StringComparison.OrdinalIgnoreCase) &&
+                    !x.IsPayslipReleased)
+                .OrderBy(x => x.Employee!.FirstName)
+                .Take(8)
+                .Select(ToSalaryDashboardListItem)
+                .ToList();
 
             if (isYearly)
             {
-                model.MonthlySummaries =
-                    yearSalaries
-                        .GroupBy(x => x.Month)
-                        .OrderBy(x => x.Key)
-                        .Select(group =>
+                model.MonthlySummaries = yearSalaries
+                    .GroupBy(x => x.Month)
+                    .OrderBy(x => x.Key)
+                    .Select(group =>
+                    {
+                        int monthlyPaid = group.Count(x =>
+                            string.Equals(x.PaymentStatus, "Paid", StringComparison.OrdinalIgnoreCase));
+
+                        return new SalaryDashboardViewModel.MonthlySalarySummaryViewModel
                         {
-                            int monthlyPaid =
-                                group.Count(x =>
-                                    string.Equals(
-                                        x.PaymentStatus,
-                                        "Paid",
-                                        StringComparison.OrdinalIgnoreCase));
-
-                            return new SalaryDashboardViewModel
-                                .MonthlySalarySummaryViewModel
-                            {
-                                Month = group.Key,
-
-                                MonthName =
-                                    new DateTime(
-                                        selectedYear,
-                                        group.Key,
-                                        1)
-                                    .ToString("MMMM"),
-
-                                EmployeeCount =
-                                    group.Select(x => x.EmployeeId)
-                                        .Distinct()
-                                        .Count(),
-
-                                PaidCount = monthlyPaid,
-
-                                PendingCount =
-                                    group.Count() - monthlyPaid,
-
-                                GrossSalary =
-                                    group.Sum(x => x.GrossSalary),
-
-                                NetSalary =
-                                    group.Sum(x => x.NetSalary)
-                            };
-                        })
-                        .ToList();
+                            Month = group.Key,
+                            MonthName = new DateTime(selectedYear, group.Key, 1).ToString("MMMM"),
+                            EmployeeCount = group.Select(x => x.EmployeeId).Distinct().Count(),
+                            PaidCount = monthlyPaid,
+                            PendingCount = group.Count() - monthlyPaid,
+                            GrossSalary = group.Sum(x => x.GrossSalary),
+                            NetSalary = group.Sum(x => x.NetSalary)
+                        };
+                    })
+                    .ToList();
             }
 
             ViewBag.ViewType = viewType;
@@ -621,6 +642,54 @@ namespace AryamanBMS.Controllers
 
             return View(model);
         }
+
+
+        private static List<SalaryDashboardBucket> BuildSalaryBuckets(
+    List<SalaryDashboardBucket> buckets)
+        {
+            int total = buckets.Sum(x => x.Count);
+
+            foreach (var bucket in buckets)
+            {
+                bucket.Percent = total == 0
+                    ? 0
+                    : Math.Round((decimal)bucket.Count / total * 100, 2);
+            }
+
+            return buckets;
+        }
+
+        private static List<SalaryDashboardBucket> BuildSalaryAmountBuckets(
+            List<SalaryDashboardBucket> buckets)
+        {
+            decimal total = buckets.Sum(x => x.Amount);
+
+            foreach (var bucket in buckets)
+            {
+                bucket.Percent = total == 0
+                    ? 0
+                    : Math.Round(bucket.Amount / total * 100, 2);
+            }
+
+            return buckets;
+        }
+
+        private static SalaryDashboardListItem ToSalaryDashboardListItem(
+            SalaryRecordModel salary)
+        {
+            return new SalaryDashboardListItem
+            {
+                SalaryRecordId = salary.Id,
+                EmployeeId = salary.EmployeeId,
+                EmployeeName = salary.Employee?.FullName ?? "-",
+                EmployeeCode = salary.Employee?.EmployeeCode ?? string.Empty,
+                Meta = $"{salary.Month:00}/{salary.Year}",
+                Badge = $"{salary.PayrollStatus} / {salary.PaymentStatus}",
+                Amount = salary.NetSalary
+            };
+        }
+
+
 
         [HttpGet]
         [Authorize(Roles = "Admin,HR")]
@@ -868,9 +937,18 @@ namespace AryamanBMS.Controllers
                 return NotFound();
             }
 
-            if (User.IsInRole("Employee") &&
-                !User.IsInRole("Admin") &&
-                !User.IsInRole("HR"))
+            bool isAdminOrHr = User.IsInRole("Admin") || User.IsInRole("HR");
+
+            bool isEmployeeOnly =
+                User.IsInRole("Employee") &&
+                !isAdminOrHr;
+
+            if (!isAdminOrHr && !isEmployeeOnly)
+            {
+                return Forbid();
+            }
+
+            if (isEmployeeOnly)
             {
                 if (!salary.IsPayslipReleased)
                 {
@@ -920,15 +998,17 @@ namespace AryamanBMS.Controllers
             }
 
             var salary = _salaryRecordRepository.SalaryRecords
-                .Where(x => x.EmployeeId == employee.Id)
-                .OrderByDescending(x => x.Year)
-                .ThenByDescending(x => x.Month)
-                .FirstOrDefault();
+               .Where(x =>
+                   x.EmployeeId == employee.Id &&
+                   x.IsPayslipReleased)
+               .OrderByDescending(x => x.Year)
+               .ThenByDescending(x => x.Month)
+               .FirstOrDefault();
 
             if (salary == null)
             {
-                TempData["Error"] = "No salary records found.";
-                return RedirectToAction("Index", "Dashboard");
+                TempData["Error"] = "No released payslips found.";
+                return RedirectToAction(nameof(MySalary));
             }
 
             return RedirectToAction(
@@ -954,18 +1034,21 @@ namespace AryamanBMS.Controllers
                 TempData["Error"] =
                     "Employee profile not found.";
 
-                return RedirectToAction("Index", "Dashboard");
+                return RedirectToAction("MyDashboard", "Employee");
             }
 
             var salaries = _salaryRecordRepository.SalaryRecords
-                .Where(x => x.EmployeeId == employee.Id)
-                .OrderByDescending(x => x.Year)
-                .ThenByDescending(x => x.Month)
-                .ToList();
+    .AsNoTracking()
+    .Where(x =>
+        x.EmployeeId == employee.Id &&
+        x.IsPayslipReleased)
+    .OrderByDescending(x => x.Year)
+    .ThenByDescending(x => x.Month)
+    .ToList();
 
             return View(salaries);
         }
-
+        
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,HR")]

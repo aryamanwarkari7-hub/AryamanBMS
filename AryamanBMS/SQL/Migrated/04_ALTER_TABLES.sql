@@ -278,8 +278,21 @@
 -- ADD CancelledOn DATETIME NULL,
 -- ADD CancellationReason VARCHAR(500) NULL;
 
-ALTER TABLE tableemployee
-ADD ResignationDate DATETIME NULL,
-ADD LastWorkingDate DATETIME NULL,
-ADD RelievingDate DATETIME NULL;
+-- ALTER TABLE tableemployee
+-- ADD ResignationDate DATETIME NULL,
+-- ADD LastWorkingDate DATETIME NULL,
+-- ADD RelievingDate DATETIME NULL;
+
+-- ALTER TABLE aspnetusers
+-- ADD ProfilePhotoPath VARCHAR(500) NULL;
+
+-- ALTER TABLE aspnetusers
+-- ADD ActivityStatus VARCHAR(30) NOT NULL DEFAULT 'Offline',
+-- ADD ActivityStatusMessage VARCHAR(150) NULL,
+-- ADD ActivityStatusUpdatedOn DATETIME NULL;
+
+ALTER TABLE aspnetusers
+ADD LastSeenOn DATETIME NULL,
+ADD IsActivityStatusManual BIT NOT NULL DEFAULT 0;
+
 

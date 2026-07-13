@@ -1,10 +1,18 @@
-﻿@using AryamanBMS.Models
+﻿@model AryamanBMS.ViewModels.EmployeeDashboardViewModel
 
 @{
     ViewData["Title"] = "Employee Dashboard";
 
-    var recentEmployees =
-        ViewBag.RecentEmployees as List<EmployeeModel>;
+    string P(decimal value) =>
+        value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+
+    decimal activePercent = Model.Headcount.TotalEmployees == 0
+        ? 0
+        : Math.Round((decimal)Model.Headcount.ActiveEmployees * 100 / Model.Headcount.TotalEmployees, 2);
+
+    decimal inactivePercent = Math.Min(100, activePercent + (Model.Headcount.TotalEmployees == 0
+        ? 0
+        : Math.Round((decimal)Model.Headcount.InactiveEmployees * 100 / Model.Headcount.TotalEmployees, 2)));
 }
 
 <div class="module-header">
@@ -12,12 +20,11 @@
     <div>
         <h1 class="module-title">Employee Dashboard</h1>
         <p class="module-subtitle">
-            Employee overview and quick summary
+            Admin overview of employee master, compliance and movement for FY @Model.FinancialYear
         </p>
     </div>
 
-    <div class="d-flex gap-2">
-
+    <div class="module-header-actions">
         <a asp-action="Create"
            class="btn-app btn-primary-app">
             <i class="bi bi-plus-lg"></i>
@@ -29,165 +36,364 @@
             <i class="bi bi-table"></i>
             Register
         </a>
-
     </div>
 
 </div>
 
-<div class="dashboard-grid">
+<div class="main-dashboard-layout">
 
-    <div class="stats-card">
-        <div class="stats-label">
-            Total Employees
-        </div>
-
-        <div class="stats-number">
-            @ViewBag.TotalEmployees
-        </div>
-    </div>
-
-    <div class="stats-card">
-        <div class="stats-label">
-            Active Employees
-        </div>
-
-        <div class="stats-number">
-            @ViewBag.ActiveEmployees
-        </div>
-    </div>
-
-    <div class="stats-card">
-        <div class="stats-label">
-            Inactive Employees
-        </div>
-
-        <div class="stats-number">
-            @ViewBag.InactiveEmployees
-        </div>
-    </div>
-
-    <div class="stats-card">
-        <div class="stats-label">
-            Recently Added
-        </div>
-
-        <div class="stats-number">
-            @(recentEmployees?.Count ?? 0)
-        </div>
-    </div>
-
-</div>
-
-<div class="app-card table-card">
-
-    <div class="card-header">
-
-        <h5 class="card-title">
-            Recent Employees
-        </h5>
-
-    </div>
-
-    <div class="card-body">
-
-        @if (recentEmployees == null || !recentEmployees.Any())
-        {
-            <div class="empty-state">
-                No employee records found.
+    <section class="app-card dashboard-section-card dashboard-finance-card">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Headcount Overview</h2>
+                <p class="card-subtitle">Employee strength, movement and exit watch</p>
             </div>
-        }
-        else
-        {
-            <div class="table-responsive">
+        </div>
 
-                <table class="app-table">
+        <div class="card-body">
 
-                    <thead>
-                        <tr>
-                            <th>Code</th>
-                            <th>Employee</th>
-                            <th>Department</th>
-                            <th>Designation</th>
-                            <th>Official Email</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
+            <div class="dashboard-metric-grid finance-grid">
 
-                    <tbody>
+                <a asp-action="Index"
+                   class="dashboard-metric">
+                    <span>Total Employees</span>
+                    <strong>@Model.Headcount.TotalEmployees</strong>
+                </a>
 
-                        @foreach (var employee in recentEmployees)
+                <a asp-action="Index"
+                   class="dashboard-metric">
+                    <span>Active Employees</span>
+                    <strong>@Model.Headcount.ActiveEmployees</strong>
+                </a>
+
+                <a asp-action="Index"
+                   class="dashboard-metric metric-danger">
+                    <span>Inactive Employees</span>
+                    <strong>@Model.Headcount.InactiveEmployees</strong>
+                </a>
+
+                <a asp-action="Index"
+                   class="dashboard-metric">
+                    <span>Joined This Month</span>
+                    <strong>@Model.Headcount.JoinedThisMonth</strong>
+                </a>
+
+                <a asp-action="Index"
+                   class="dashboard-metric">
+                    <span>Joined This FY</span>
+                    <strong>@Model.Headcount.JoinedThisFinancialYear</strong>
+                </a>
+
+                <a asp-action="Index"
+                   class="dashboard-metric metric-danger">
+                    <span>Upcoming Exits</span>
+                    <strong>@Model.Headcount.UpcomingExits</strong>
+                </a>
+
+                <a asp-action="Index"
+                   class="dashboard-metric metric-danger">
+                    <span>Missing Compliance</span>
+                    <strong>@Model.MissingComplianceEmployees.Count</strong>
+                </a>
+
+                <a asp-action="Index"
+                   class="dashboard-metric metric-danger">
+                    <span>No Documents</span>
+                    <strong>@Model.Compliance.EmployeesWithoutDocuments</strong>
+                </a>
+
+            </div>
+
+            <div class="dashboard-visual-row">
+
+                <div class="dashboard-chart-panel">
+                    <div class="dashboard-list-title">Employee Status</div>
+
+                    <div class="dashboard-donut-wrap">
+                        <div class="dashboard-donut"
+                             style="--seg-1:@P(activePercent)%; --seg-2:@P(inactivePercent)%;">
+                            <div>
+                                <strong>@Model.Headcount.ActiveEmployees</strong>
+                                <span>Active</span>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-legend">
+                            <span><i class="legend-dot bucket-info"></i>Active @Model.Headcount.ActiveEmployees</span>
+                            <span><i class="legend-dot bucket-neutral"></i>Inactive @Model.Headcount.InactiveEmployees</span>
+                            <span><i class="legend-dot bucket-danger"></i>Exits @Model.Headcount.UpcomingExits</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-bars dashboard-chart-panel">
+                    <div class="dashboard-list-title">Department Distribution</div>
+
+                    @if (!Model.DepartmentBuckets.Any())
+                    {
+                        <div class="dashboard-empty-state">
+                            No department data available.
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var bucket in Model.DepartmentBuckets)
                         {
-                            <tr>
-
-                                <td>
-                                    <strong>@employee.EmployeeCode</strong>
-                                </td>
-
-                                <td>
-                                    <strong>@employee.FullName</strong>
-                                    <br />
-                                    <small>
-                                        DOJ:
-                                        @employee.JoiningDate.ToString("dd-MMM-yyyy")
-                                    </small>
-                                </td>
-
-                                <td>
-                                    @(employee.Department?.DepartmentName ?? "-")
-                                </td>
-
-                                <td>
-                                    @(employee.Designation?.DesignationName ?? "-")
-                                </td>
-
-                                <td>
-                                    @(employee.OfficialEmail ?? "-")
-                                </td>
-
-                                <td>
-                                    @if (employee.IsActive)
-                                    {
-                                        <span class="badge-success">
-                                            Active
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge-danger">
-                                            Inactive
-                                        </span>
-                                    }
-                                </td>
-
-                                <td>
-                                    <div class="table-actions">
-
-                                        <a asp-action="Details"
-                                           asp-route-id="@employee.Id"
-                                           class="btn-app btn-primary-app btn-icon">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-
-                                        <a asp-action="Edit"
-                                           asp-route-id="@employee.Id"
-                                           class="btn-app btn-secondary-app btn-icon">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-
-                                    </div>
-                                </td>
-
-                            </tr>
+                            <div class="dashboard-bar-row">
+                                <div>
+                                    <span>@bucket.Label</span>
+                                    <strong>@bucket.Count</strong>
+                                </div>
+                                <div class="dashboard-bar-track">
+                                    <span class="dashboard-bar-fill @bucket.CssClass"
+                                          style="width:@bucket.Percent%">
+                                    </span>
+                                </div>
+                            </div>
                         }
-
-                    </tbody>
-
-                </table>
+                    }
+                </div>
 
             </div>
-        }
 
-    </div>
+        </div>
+    </section>
+
+    <section class="app-card dashboard-section-card">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Employee Composition</h2>
+                <p class="card-subtitle">Employment type and gender split</p>
+            </div>
+        </div>
+
+        <div class="card-body">
+
+            <div class="dashboard-bars">
+                <div class="dashboard-list-title">Employment Type</div>
+
+                @if (!Model.EmploymentTypeBuckets.Any())
+                {
+                    <div class="dashboard-empty-state">
+                        No employment type data available.
+                    </div>
+                }
+                else
+                {
+                    @foreach (var bucket in Model.EmploymentTypeBuckets)
+                    {
+                        <div class="dashboard-bar-row">
+                            <div>
+                                <span>@bucket.Label</span>
+                                <strong>@bucket.Count</strong>
+                            </div>
+                            <div class="dashboard-bar-track">
+                                <span class="dashboard-bar-fill @bucket.CssClass"
+                                      style="width:@bucket.Percent%">
+                                </span>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+
+            <div class="dashboard-bars">
+                <div class="dashboard-list-title">Gender Split</div>
+
+                @if (!Model.GenderBuckets.Any())
+                {
+                    <div class="dashboard-empty-state">
+                        No gender data available.
+                    </div>
+                }
+                else
+                {
+                    @foreach (var bucket in Model.GenderBuckets)
+                    {
+                        <div class="dashboard-bar-row">
+                            <div>
+                                <span>@bucket.Label</span>
+                                <strong>@bucket.Count</strong>
+                            </div>
+                            <div class="dashboard-bar-track">
+                                <span class="dashboard-bar-fill @bucket.CssClass"
+                                      style="width:@bucket.Percent%">
+                                </span>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+
+        </div>
+    </section>
+
+    <section class="app-card dashboard-section-card">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Compliance Health</h2>
+                <p class="card-subtitle">Missing employee master and statutory details</p>
+            </div>
+        </div>
+
+        <div class="card-body">
+
+            <div class="dashboard-metric-grid">
+
+                <a asp-action="Index" class="dashboard-metric metric-danger">
+                    <span>Missing PAN</span>
+                    <strong>@Model.Compliance.MissingPan</strong>
+                </a>
+
+                <a asp-action="Index" class="dashboard-metric metric-danger">
+                    <span>Missing Aadhaar</span>
+                    <strong>@Model.Compliance.MissingAadhaar</strong>
+                </a>
+
+                <a asp-action="Index" class="dashboard-metric metric-danger">
+                    <span>Missing UAN</span>
+                    <strong>@Model.Compliance.MissingUan</strong>
+                </a>
+
+                <a asp-action="Index" class="dashboard-metric metric-danger">
+                    <span>Missing ESIC</span>
+                    <strong>@Model.Compliance.MissingEsic</strong>
+                </a>
+
+                <a asp-action="Index" class="dashboard-metric metric-danger">
+                    <span>Missing Official Email</span>
+                    <strong>@Model.Compliance.MissingOfficialEmail</strong>
+                </a>
+
+                <a asp-action="Index" class="dashboard-metric metric-danger">
+                    <span>Missing Mobile</span>
+                    <strong>@Model.Compliance.MissingMobileNumber</strong>
+                </a>
+
+            </div>
+
+        </div>
+    </section>
+
+    <section class="app-card dashboard-section-card dashboard-finance-card">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Action Lists</h2>
+                <p class="card-subtitle">Employees needing HR/Admin attention</p>
+            </div>
+        </div>
+
+        <div class="card-body">
+
+            <div class="dashboard-finance-lower">
+
+                <div class="dashboard-list">
+                    <div class="dashboard-list-title">Upcoming Exits</div>
+
+                    @if (!Model.UpcomingExits.Any())
+                    {
+                        <div class="dashboard-empty-state">
+                            No upcoming exits.
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model.UpcomingExits)
+                        {
+                            <a asp-action="Details"
+                               asp-route-id="@item.EmployeeId"
+                               class="dashboard-list-row dashboard-list-link">
+                                <div>
+                                    <strong>@item.EmployeeName</strong>
+                                    <span>@item.EmployeeCode · @item.Subtitle</span>
+                                </div>
+                                <span class="dashboard-row-meta">@item.Meta</span>
+                            </a>
+                        }
+                    }
+                </div>
+
+                <div class="dashboard-list">
+                    <div class="dashboard-list-title">Missing Compliance</div>
+
+                    @if (!Model.MissingComplianceEmployees.Any())
+                    {
+                        <div class="dashboard-empty-state">
+                            No compliance gaps.
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model.MissingComplianceEmployees)
+                        {
+                            <a asp-action="Details"
+                               asp-route-id="@item.EmployeeId"
+                               class="dashboard-list-row dashboard-list-link">
+                                <div>
+                                    <strong>@item.EmployeeName</strong>
+                                    <span>@item.EmployeeCode · @item.Subtitle</span>
+                                </div>
+                                <span class="dashboard-row-meta">@item.Badge</span>
+                            </a>
+                        }
+                    }
+                </div>
+
+                <div class="dashboard-list">
+                    <div class="dashboard-list-title">No Documents</div>
+
+                    @if (!Model.EmployeesWithoutDocuments.Any())
+                    {
+                        <div class="dashboard-empty-state">
+                            All employees have documents.
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model.EmployeesWithoutDocuments)
+                        {
+                            <a asp-action="Details"
+                               asp-route-id="@item.EmployeeId"
+                               class="dashboard-list-row dashboard-list-link">
+                                <div>
+                                    <strong>@item.EmployeeName</strong>
+                                    <span>@item.EmployeeCode · @item.Subtitle</span>
+                                </div>
+                                <span class="dashboard-row-meta">@item.Badge</span>
+                            </a>
+                        }
+                    }
+                </div>
+
+            </div>
+
+            <div class="dashboard-list dashboard-compact-list">
+                <div class="dashboard-list-title">Recent Employees</div>
+
+                @if (!Model.RecentEmployees.Any())
+                {
+                    <div class="dashboard-empty-state">
+                        No recent employees.
+                    </div>
+                }
+                else
+                {
+                    @foreach (var item in Model.RecentEmployees)
+                    {
+                        <a asp-action="Details"
+                           asp-route-id="@item.EmployeeId"
+                           class="dashboard-list-row dashboard-list-link">
+                            <div>
+                                <strong>@item.EmployeeName</strong>
+                                <span>@item.EmployeeCode · @item.Subtitle</span>
+                            </div>
+                            <span class="dashboard-row-meta">@item.Meta</span>
+                        </a>
+                    }
+                }
+            </div>
+
+        </div>
+    </section>
 
 </div>

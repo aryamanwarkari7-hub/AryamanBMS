@@ -1,11 +1,11 @@
 ﻿using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
+using AryamanBMS.Services.Interfaces;
 using AryamanBMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-
-using Microsoft.AspNetCore.Identity;
 
 namespace AryamanBMS.Controllers
 {
@@ -14,13 +14,16 @@ namespace AryamanBMS.Controllers
     {
         private readonly IPaymentReceiptRepository _paymentRepository;
         private readonly UserManager<ApplicationUserModel> _userManager;
+        private readonly INotificationService _notificationService;
 
         public PaymentReceiptController(
           IPaymentReceiptRepository paymentRepository,
-          UserManager<ApplicationUserModel> userManager)
+          UserManager<ApplicationUserModel> userManager,
+          INotificationService notificationService)
         {
             _paymentRepository = paymentRepository;
             _userManager = userManager;
+            _notificationService = notificationService;
         }
 
 
@@ -144,12 +147,34 @@ namespace AryamanBMS.Controllers
             try
             {
                 await _paymentRepository.AddAsync(model);
+
+                var updatedInvoice =
+                    (await _paymentRepository
+                        .GetInvoicesByClientAsync(model.ClientId))
+                    .FirstOrDefault(x =>
+                        x.InvoiceId == model.InvoiceId);
+
+                if (updatedInvoice != null)
+                {
+                    await NotifyPaymentReceivedAsync(
+                        model,
+                        updatedInvoice);
+                }
             }
             catch (InvalidOperationException ex)
             {
                 ModelState.AddModelError(
                     nameof(model.AmountReceived),
                     ex.Message);
+
+                await LoadFormDataAsync(model.ClientId);
+
+                return View(model);
+            }
+            catch (Exception)
+            {
+                TempData["Error"] =
+                    "Payment receipt could not be created.";
 
                 await LoadFormDataAsync(model.ClientId);
 
@@ -591,6 +616,80 @@ namespace AryamanBMS.Controllers
             }
 
            return ModelState.IsValid;
+        }
+
+        private async Task NotifyPaymentReceivedAsync(
+    PaymentReceiptModel receipt,
+    InvoiceModel invoice)
+        {
+            var admins =
+                await _userManager.GetUsersInRoleAsync("Admin");
+
+            var financeUsers =
+                await _userManager.GetUsersInRoleAsync("Finance");
+
+            var recipients = admins
+                .Concat(financeUsers)
+                .Where(x => x.IsActive)
+                .GroupBy(x => x.Id)
+                .Select(x => x.First())
+                .ToList();
+
+            string clientName =
+                invoice.Client?.ClientName ?? "Client";
+
+            foreach (var recipient in recipients)
+            {
+                bool paymentNotificationExists =
+                    await _notificationService.ExistsAsync(
+                        recipient.Id,
+                        "PaymentReceived",
+                        "PaymentReceipt",
+                        receipt.PaymentReceiptId);
+
+                if (!paymentNotificationExists)
+                {
+                    await _notificationService.CreateAsync(
+                        userId: recipient.Id,
+                        title: "Payment Received",
+                        message:
+                            $"Payment of ₹{receipt.AmountReceived:N2} was received " +
+                            $"from {clientName} against invoice {invoice.InvoiceNo}.",
+                        notificationType: "PaymentReceived",
+                        referenceType: "PaymentReceipt",
+                        referenceId: receipt.PaymentReceiptId,
+                        actionUrl:
+                            $"/PaymentReceipt/Details/{receipt.PaymentReceiptId}");
+                }
+
+                if (string.Equals(
+                        invoice.PaymentStatus,
+                        "Paid",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    bool settledNotificationExists =
+                        await _notificationService.ExistsAsync(
+                            recipient.Id,
+                            "InvoiceSettled",
+                            "Invoice",
+                            invoice.InvoiceId);
+
+                    if (!settledNotificationExists)
+                    {
+                        await _notificationService.CreateAsync(
+                            userId: recipient.Id,
+                            title: "Invoice Fully Settled",
+                            message:
+                                $"Invoice {invoice.InvoiceNo} for {clientName} " +
+                                $"has been fully paid.",
+                            notificationType: "InvoiceSettled",
+                            referenceType: "Invoice",
+                            referenceId: invoice.InvoiceId,
+                            actionUrl:
+                                $"/Invoice/Details/{invoice.InvoiceId}");
+                    }
+                }
+            }
         }
 
         #endregion

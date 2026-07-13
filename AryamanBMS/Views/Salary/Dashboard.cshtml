@@ -5,11 +5,10 @@
 @{
     ViewData["Title"] = "Salary Dashboard";
 
-    bool isYearly =
-        string.Equals(
-            Model.ViewType,
-            "Yearly",
-            StringComparison.OrdinalIgnoreCase);
+    bool isYearly = string.Equals(
+        Model.ViewType,
+        "Yearly",
+        StringComparison.OrdinalIgnoreCase);
 
     string selectedPeriod = isYearly
         ? Model.Year.ToString()
@@ -17,564 +16,392 @@
 }
 
 <div class="module-header">
-
     <div>
-
-        <h1 class="module-title">
-            Salary Dashboard
-        </h1>
-
-        <p class="module-subtitle">
-            Payroll overview for @selectedPeriod
-        </p>
-
+        <h1 class="module-title">Salary Dashboard</h1>
+        <p class="module-subtitle">Payroll overview for @selectedPeriod</p>
     </div>
 
     <div class="module-header-actions">
-
         <a asp-action="Index"
            asp-route-month="@Model.Month"
            asp-route-year="@Model.Year"
            class="btn-app btn-secondary-app">
-
             <i class="bi bi-list"></i>
             Salary Register
-
         </a>
 
         <a asp-action="ExportExcel"
            asp-route-month="@Model.Month"
            asp-route-year="@Model.Year"
            class="btn-app btn-success-app">
-
             <i class="bi bi-file-earmark-excel"></i>
             Export Excel
-
         </a>
 
         <a asp-action="AttendanceSummary"
            asp-route-month="@Model.Month"
            asp-route-year="@Model.Year"
            class="btn-app btn-secondary-app">
-
             <i class="bi bi-calendar-check"></i>
             Attendance Summary
-
         </a>
-
     </div>
-
 </div>
 
-<!-- Payroll Filter -->
-
 <div class="app-card mb-3">
-
-    <div class="card-header">
-
-        <h5 class="card-title">
-            Payroll Period
-        </h5>
-
-    </div>
-
     <div class="card-body">
-
-        <form asp-action="Dashboard"
-              method="get">
-
+        <form asp-action="Dashboard" method="get">
             <div class="filter-form-row">
-
-                <div>
-
-                    <label class="form-label">
-                        View Type
-                    </label>
-
-                    <select name="viewType"
-                            id="viewType"
-                            class="app-input">
-
+                <div class="form-group">
+                    <label class="form-label">View Type</label>
+                    <select name="viewType" id="viewType" class="app-select">
                         @if (!isYearly)
                         {
-                            <option value="Monthly" selected>
-                                Monthly
-                            </option>
-
-                            <option value="Yearly">
-                                Yearly
-                            </option>
+                            <option value="Monthly" selected>Monthly</option>
+                            <option value="Yearly">Yearly</option>
                         }
                         else
                         {
-                            <option value="Monthly">
-                                Monthly
-                            </option>
-
-                            <option value="Yearly" selected>
-                                Yearly
-                            </option>
+                            <option value="Monthly">Monthly</option>
+                            <option value="Yearly" selected>Yearly</option>
                         }
-
                     </select>
-
                 </div>
 
-                <div id="monthFilter">
-
-                    <label class="form-label">
-                        Month
-                    </label>
-
-                    <select name="month"
-                            class="app-input">
-
-                        @for (int monthNumber = 1;
-                                                monthNumber <= 12;
-                                                monthNumber++)
+                <div class="form-group" id="monthFilter">
+                    <label class="form-label">Month</label>
+                    <select name="month" class="app-select">
+                        @for (int monthNumber = 1; monthNumber <= 12; monthNumber++)
                         {
-                            string monthName =
-                            CultureInfo.CurrentCulture
-                            .DateTimeFormat
-                            .GetMonthName(monthNumber);
+                            string monthName = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(monthNumber);
 
                             if (monthNumber == Model.Month)
                             {
-                                <option value="@monthNumber"
-                                        selected>
-                                    @monthName
-                                </option>
+                                <option value="@monthNumber" selected>@monthName</option>
                             }
                             else
                             {
-                                <option value="@monthNumber">
-                                    @monthName
-                                </option>
+                                <option value="@monthNumber">@monthName</option>
                             }
                         }
-
                     </select>
-
                 </div>
 
-                <div>
-
-                    <label class="form-label">
-                        Year
-                    </label>
-
-                    <select name="year"
-                            class="app-input">
-
-                        @for (int yearValue =
-                                                DateTime.Today.Year - 5;
-                                                yearValue <=
-                                                DateTime.Today.Year + 2;
-                                                yearValue++)
+                <div class="form-group">
+                    <label class="form-label">Year</label>
+                    <select name="year" class="app-select">
+                        @for (int yearValue = DateTime.Today.Year - 5; yearValue <= DateTime.Today.Year + 2; yearValue++)
                         {
                             if (yearValue == Model.Year)
                             {
-                                <option value="@yearValue"
-                                        selected>
-                                    @yearValue
-                                </option>
+                                <option value="@yearValue" selected>@yearValue</option>
                             }
                             else
                             {
-                                <option value="@yearValue">
-                                    @yearValue
-                                </option>
+                                <option value="@yearValue">@yearValue</option>
                             }
                         }
-
                     </select>
-
                 </div>
 
                 <div class="filter-form-actions">
-                    <button type="submit"
-                            class="btn-app btn-primary-app">
+                    <button type="submit" class="btn-app btn-primary-app">
                         <i class="bi bi-search"></i>
                         Load
                     </button>
                 </div>
-
             </div>
-
         </form>
-
     </div>
-
 </div>
-
-<!-- Dashboard Cards -->
 
 <div class="dashboard-grid">
-
     <div class="stats-card">
-
-        <div class="stats-label">
-            Total Salary Records
-        </div>
-
-        <div class="stats-number">
-            @Model.TotalEmployees
-        </div>
-
+        <div class="stats-label">Salary Records</div>
+        <div class="stats-number">@Model.TotalEmployees</div>
     </div>
 
     <div class="stats-card">
-
-        <div class="stats-label">
-            Paid Salaries Record
-        </div>
-
-        <div class="stats-number">
-            @Model.PaidCount
-        </div>
-
+        <div class="stats-label">Net Payable</div>
+        <div class="stats-number">₹@Model.TotalNetSalary.ToString("N0")</div>
     </div>
 
     <div class="stats-card">
-
-        <div class="stats-label">
-            Pending Salaries Record
-        </div>
-
-        <div class="stats-number">
-            @Model.PendingCount
-        </div>
-
+        <div class="stats-label">Paid</div>
+        <div class="stats-number">@Model.PaidCount</div>
     </div>
 
     <div class="stats-card">
-
-        <div class="stats-label">
-            Total Gross Salary
-        </div>
-
-        <div class="stats-number">
-            ₹ @Model.TotalGrossSalary.ToString("N0")
-        </div>
-
+        <div class="stats-label">Pending</div>
+        <div class="stats-number">@Model.PendingCount</div>
     </div>
 
     <div class="stats-card">
-
-        <div class="stats-label">
-            Total Net Payable
-        </div>
-
-        <div class="stats-number">
-            ₹ @Model.TotalNetSalary.ToString("N0")
-        </div>
-
+        <div class="stats-label">Gross Payroll</div>
+        <div class="stats-number">₹@Model.TotalGrossSalary.ToString("N0")</div>
     </div>
 
     <div class="stats-card">
-
-        <div class="stats-label">
-            Total Deductions
-        </div>
-
-        <div class="stats-number">
-            ₹ @Model.TotalDeductions.ToString("N0")
-        </div>
-
+        <div class="stats-label">Deductions</div>
+        <div class="stats-number">₹@Model.TotalDeductions.ToString("N0")</div>
     </div>
 
+    <div class="stats-card">
+        <div class="stats-label">Finalized</div>
+        <div class="stats-number">@Model.FinalizedCount</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Payslips Pending</div>
+        <div class="stats-number">@Model.PayslipPendingCount</div>
+    </div>
 </div>
 
-<!-- Payroll Progress -->
-
-<div class="app-card mb-3">
-
-    <div class="card-header">
-
-        <h5 class="card-title">
-            Payment Completion
-        </h5>
-
-    </div>
-
-    <div class="card-body">
-
-        <div class="d-flex justify-content-between mb-2">
-
-            <span>
-                @Model.PaidCount of
-                @(Model.PaidCount + Model.PendingCount)
-                salary records paid
-            </span>
-
-            <strong>
-                @Model.PayrollCompletionPercentage.ToString("0.##")%
-            </strong>
-
-        </div>
-
-        <div class="progress progress-medium">
-
-            <div class="progress-bar"
-                 role="progressbar"
-                 style="width: @Model.PayrollCompletionPercentage.ToString("0.##", CultureInfo.InvariantCulture)%"
-                 aria-valuenow="@Model.PayrollCompletionPercentage"
-                 aria-valuemin="0"
-                 aria-valuemax="100">
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-<!-- Earnings and Deductions -->
-
-<div class="row g-3 mb-3">
-
-    <div class="col-lg-6">
-
-        <div class="app-card h-100">
-
-            <div class="card-header">
-
-                <h5 class="card-title">
-                    Earnings Summary
-                </h5>
-
-            </div>
-
-            <div class="card-body">
-
-                <div class="table-responsive">
-
-                    <table class="app-table">
-
-                        <tbody>
-
-                            <tr>
-                                <th>Basic Salary</th>
-                                <td class="text-end">
-                                    ₹ @Model.TotalBasic.ToString("N0")
-                                </td>
-                            </tr>
-
-                            <tr>
-                                <th>HRA</th>
-                                <td class="text-end">
-                                    ₹ @Model.TotalHRA.ToString("N0")
-                                </td>
-                            </tr>
-
-                            <tr>
-                                <th>DA</th>
-                                <td class="text-end">
-                                    ₹ @Model.TotalDA.ToString("N0")
-                                </td>
-                            </tr>
-
-                            <tr>
-                                <th>Other Allowances</th>
-                                <td class="text-end">
-                                    ₹ @Model.TotalOtherAllowances.ToString("N0")
-                                </td>
-                            </tr>
-
-                            <tr>
-                                <th>Total Gross Payroll</th>
-                                <td class="text-end">
-                                    <strong>
-                                        ₹ @Model.TotalGrossSalary.ToString("N0")
-                                    </strong>
-                                </td>
-                            </tr>
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-    <div class="col-lg-6">
-
-        <div class="app-card h-100">
-
-            <div class="card-header">
-
-                <h5 class="card-title">
-                    Deductions Summary
-                </h5>
-
-            </div>
-
-            <div class="card-body">
-
-                <div class="table-responsive">
-
-                    <table class="app-table">
-
-                        <tbody>
-
-                            <tr>
-                                <th>PF</th>
-                                <td class="text-end">
-                                    ₹ @Model.TotalPF.ToString("N0")
-                                </td>
-                            </tr>
-
-                            <tr>
-                                <th>ESIC</th>
-                                <td class="text-end">
-                                    ₹ @Model.TotalESIC.ToString("N0")
-                                </td>
-                            </tr>
-
-                            <tr>
-                                <th>TDS</th>
-                                <td class="text-end">
-                                    ₹ @Model.TotalTDS.ToString("N0")
-                                </td>
-                            </tr>
-
-                            <tr>
-                                <th>Other Deductions</th>
-                                <td class="text-end">
-                                    ₹ @Model.TotalOtherDeductions.ToString("N0")
-                                </td>
-                            </tr>
-
-                            <tr>
-                                <th>Total Deductions</th>
-                                <td class="text-end">
-                                    <strong>
-                                        ₹ @Model.TotalDeductions.ToString("N0")
-                                    </strong>
-                                </td>
-                            </tr>
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-<!-- Yearly Month-wise Summary -->
-@if (isYearly)
-{
-    <div class="app-card table-card">
-
+<div class="main-dashboard-layout">
+    <div class="app-card dashboard-section-card">
         <div class="card-header">
-
-            <h5 class="card-title">
-                Month-wise Payroll Summary - @Model.Year
-            </h5>
-
+            <h5 class="card-title">Payment Completion</h5>
         </div>
 
         <div class="card-body">
+            <div class="dashboard-kpi-ring" style="--value:@Model.PayrollCompletionPercentage.ToString("0.##", CultureInfo.InvariantCulture);">
+                <div>
+                    <strong>@Model.PayrollCompletionPercentage.ToString("0.##")%</strong>
+                    <span>Paid</span>
+                </div>
+            </div>
 
+            @foreach (var item in Model.PaymentBuckets)
+            {
+                <div class="dashboard-bar-row">
+                    <div class="dashboard-bar-label">
+                        <span>@item.Label</span>
+                        <strong>@item.Count</strong>
+                    </div>
+
+                    <div class="dashboard-bar-track">
+                        <div class="dashboard-bar-fill @item.CssClass"
+                             style="width: @item.Percent.ToString("0.##", CultureInfo.InvariantCulture)%;">
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="app-card dashboard-section-card">
+        <div class="card-header">
+            <h5 class="card-title">Payroll Status</h5>
+        </div>
+
+        <div class="card-body">
+            <div class="dashboard-kpi-ring" style="--value:@Model.FinalizationPercentage.ToString("0.##", CultureInfo.InvariantCulture);">
+                <div>
+                    <strong>@Model.FinalizationPercentage.ToString("0.##")%</strong>
+                    <span>Finalized</span>
+                </div>
+            </div>
+
+            @foreach (var item in Model.PayrollStatusBuckets)
+            {
+                <div class="dashboard-bar-row">
+                    <div class="dashboard-bar-label">
+                        <span>@item.Label</span>
+                        <strong>@item.Count</strong>
+                    </div>
+
+                    <div class="dashboard-bar-track">
+                        <div class="dashboard-bar-fill @item.CssClass"
+                             style="width: @item.Percent.ToString("0.##", CultureInfo.InvariantCulture)%;">
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="app-card dashboard-section-card">
+        <div class="card-header">
+            <h5 class="card-title">Earnings Breakup</h5>
+        </div>
+
+        <div class="card-body">
+            @foreach (var item in Model.PayComponentBuckets)
+            {
+                <div class="dashboard-bar-row">
+                    <div class="dashboard-bar-label">
+                        <span>@item.Label</span>
+                        <strong>₹@item.Amount.ToString("N0")</strong>
+                    </div>
+
+                    <div class="dashboard-bar-track">
+                        <div class="dashboard-bar-fill @item.CssClass"
+                             style="width: @item.Percent.ToString("0.##", CultureInfo.InvariantCulture)%;">
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="app-card dashboard-section-card">
+        <div class="card-header">
+            <h5 class="card-title">Deduction Breakup</h5>
+        </div>
+
+        <div class="card-body">
+            @foreach (var item in Model.DeductionBuckets)
+            {
+                <div class="dashboard-bar-row">
+                    <div class="dashboard-bar-label">
+                        <span>@item.Label</span>
+                        <strong>₹@item.Amount.ToString("N0")</strong>
+                    </div>
+
+                    <div class="dashboard-bar-track">
+                        <div class="dashboard-bar-fill @item.CssClass"
+                             style="width: @item.Percent.ToString("0.##", CultureInfo.InvariantCulture)%;">
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="main-dashboard-layout">
+    <div class="app-card dashboard-section-card">
+        <div class="card-header">
+            <h5 class="card-title">Pending Payments</h5>
+        </div>
+
+        <div class="card-body">
+            @if (!Model.PendingPayments.Any())
+            {
+                <div class="empty-state">No pending salary payments.</div>
+            }
+            else
+            {
+                foreach (var item in Model.PendingPayments)
+                {
+                    <a asp-action="Details"
+                       asp-route-id="@item.SalaryRecordId"
+                       class="dashboard-list-link">
+                        <span>
+                            <strong>@item.EmployeeName</strong>
+                            <small>@item.EmployeeCode</small>
+                        </span>
+                        <strong>₹@item.Amount.ToString("N0")</strong>
+                    </a>
+                }
+            }
+        </div>
+    </div>
+
+    <div class="app-card dashboard-section-card">
+        <div class="card-header">
+            <h5 class="card-title">Pending Finalization</h5>
+        </div>
+
+        <div class="card-body">
+            @if (!Model.PendingFinalization.Any())
+            {
+                <div class="empty-state">All records are finalized.</div>
+            }
+            else
+            {
+                foreach (var item in Model.PendingFinalization)
+                {
+                    <a asp-action="Details"
+                       asp-route-id="@item.SalaryRecordId"
+                       class="dashboard-list-link">
+                        <span>
+                            <strong>@item.EmployeeName</strong>
+                            <small>@item.EmployeeCode</small>
+                        </span>
+                        <span class="badge-warning">@item.Badge</span>
+                    </a>
+                }
+            }
+        </div>
+    </div>
+
+    <div class="app-card dashboard-section-card dashboard-finance-card">
+        <div class="card-header">
+            <h5 class="card-title">Payslips Pending Release</h5>
+        </div>
+
+        <div class="card-body">
+            @if (!Model.PendingPayslips.Any())
+            {
+                <div class="empty-state">No payslips pending release.</div>
+            }
+            else
+            {
+                foreach (var item in Model.PendingPayslips)
+                {
+                    <a asp-action="Details"
+                       asp-route-id="@item.SalaryRecordId"
+                       class="dashboard-list-link">
+                        <span>
+                            <strong>@item.EmployeeName</strong>
+                            <small>@item.EmployeeCode</small>
+                        </span>
+                        <span class="badge-info">@item.Meta</span>
+                    </a>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@if (isYearly)
+{
+    <div class="app-card table-card">
+        <div class="card-header">
+            <h5 class="card-title">Month-wise Payroll Summary - @Model.Year</h5>
+        </div>
+
+        <div class="card-body">
             @if (!Model.MonthlySummaries.Any())
             {
-                <div class="empty-state">
-
-                    <i class="bi bi-cash-stack"></i>
-
-                    <p class="mb-0">
-                        No salary records found for @Model.Year.
-                    </p>
-
-                </div>
+                <div class="empty-state">No salary records found for @Model.Year.</div>
             }
             else
             {
                 <div class="table-responsive">
-
                     <table class="app-table">
-
                         <thead>
-
                             <tr>
                                 <th>Month</th>
                                 <th>Employees</th>
                                 <th>Paid</th>
                                 <th>Pending</th>
-                                <th class="text-end">
-                                    Gross Payroll
-                                </th>
-                                <th class="text-end">
-                                    Net Payroll
-                                </th>
-                                <th class="text-end">
-                                    Actions
-                                </th>
+                                <th class="text-end">Gross Payroll</th>
+                                <th class="text-end">Net Payroll</th>
+                                <th class="text-end">Actions</th>
                             </tr>
-
                         </thead>
 
                         <tbody>
-
                             @foreach (var item in Model.MonthlySummaries)
                             {
                                 <tr>
-
+                                    <td><strong>@item.MonthName</strong></td>
+                                    <td>@item.EmployeeCount</td>
+                                    <td><span class="badge-success">@item.PaidCount</span></td>
+                                    <td><span class="badge-warning">@item.PendingCount</span></td>
+                                    <td class="text-end">₹@item.GrossSalary.ToString("N0")</td>
+                                    <td class="text-end">₹@item.NetSalary.ToString("N0")</td>
                                     <td>
-                                        <strong>
-                                            @item.MonthName
-                                        </strong>
-                                    </td>
-
-                                    <td>
-                                        @item.EmployeeCount
-                                    </td>
-
-                                    <td>
-                                        <span class="badge-success">
-                                            @item.PaidCount
-                                        </span>
-                                    </td>
-
-                                    <td>
-                                        <span class="badge-warning">
-                                            @item.PendingCount
-                                        </span>
-                                    </td>
-
-                                    <td class="text-end">
-                                        ₹ @item.GrossSalary.ToString("N0")
-                                    </td>
-
-                                    <td class="text-end">
-                                        ₹ @item.NetSalary.ToString("N0")
-                                    </td>
-
-                                    <td>
-
                                         <div class="table-actions justify-content-end">
-
                                             <a asp-action="Dashboard"
                                                asp-route-viewType="Monthly"
                                                asp-route-month="@item.Month"
                                                asp-route-year="@Model.Year"
                                                class="btn-app btn-primary-app btn-icon"
                                                title="View monthly dashboard">
-
                                                 <i class="bi bi-eye"></i>
-
                                             </a>
 
                                             <a asp-action="Index"
@@ -582,61 +409,29 @@
                                                asp-route-year="@Model.Year"
                                                class="btn-app btn-secondary-app btn-icon"
                                                title="Open salary register">
-
                                                 <i class="bi bi-list"></i>
-
                                             </a>
-
                                         </div>
-
                                     </td>
-
                                 </tr>
                             }
-
                         </tbody>
 
                         <tfoot>
-
                             <tr>
-
-                                <th>
-                                    Total
-                                </th>
-
-                                <th>
-                                    -
-                                </th>
-
-                                <th>
-                                    @Model.PaidCount
-                                </th>
-
-                                <th>
-                                    @Model.PendingCount
-                                </th>
-
-                                <th class="text-end">
-                                    ₹ @Model.TotalGrossSalary.ToString("N0")
-                                </th>
-
-                                <th class="text-end">
-                                    ₹ @Model.TotalNetSalary.ToString("N0")
-                                </th>
-
+                                <th>Total</th>
+                                <th>-</th>
+                                <th>@Model.PaidCount</th>
+                                <th>@Model.PendingCount</th>
+                                <th class="text-end">₹@Model.TotalGrossSalary.ToString("N0")</th>
+                                <th class="text-end">₹@Model.TotalNetSalary.ToString("N0")</th>
                                 <th></th>
-
                             </tr>
-
                         </tfoot>
-
                     </table>
-
                 </div>
             }
-
         </div>
-
     </div>
 }
 

@@ -5,8 +5,7 @@
 @{
     ViewData["Title"] = "My Monthly Attendance";
 
-    var employee =
-        ViewBag.Employee as EmployeeModel;
+    var employee = ViewBag.Employee as EmployeeModel;
 
     int selectedMonth =
         ViewBag.Month is int month
@@ -18,137 +17,133 @@
             ? year
             : DateTime.Today.Year;
 
-    int totalDays =
-        DateTime.DaysInMonth(
-            selectedYear,
-            selectedMonth);
+    int totalDays = DateTime.DaysInMonth(selectedYear, selectedMonth);
 
-    int presentCount =
-        Model.Count(a => a.Status == "P");
-
-    int leaveCount =
-        Model.Count(a => a.Status == "L");
-
-    int onDutyCount =
-        Model.Count(a => a.Status == "OD");
-
-    int absentCount =
-        Model.Count(a => a.Status == "A");
+    int presentCount = Model.Count(a => a.Status == "P");
+    int leaveCount = Model.Count(a => a.Status == "L");
+    int onDutyCount = Model.Count(a => a.Status == "OD");
+    int absentCount = Model.Count(a => a.Status == "A");
+    int holidayCount = Model.Count(a => a.Status == "H");
+    int weekOffCount = Model.Count(a => a.Status == "WO");
 
     int markedCount =
         Model.Select(a => a.AttendanceDate.Date)
             .Distinct()
             .Count();
 
-    int missingCount =
-        Math.Max(0, totalDays - markedCount);
+    int missingCount = Math.Max(0, totalDays - markedCount);
 
-    double totalWorkingHours =
-        Model.Sum(a => a.WorkingHours);
+    double totalWorkingHours = Model.Sum(a => a.WorkingHours);
+
+    int totalMinutes = (int)Math.Round(totalWorkingHours * 60);
+    int totalHours = totalMinutes / 60;
+    int remainingMinutes = totalMinutes % 60;
+
+    string totalWorkingHoursText = totalWorkingHours > 0
+        ? $"{totalHours} hr {remainingMinutes} min"
+        : "-";
 
     var monthTitle =
         new DateTime(selectedYear, selectedMonth, 1)
             .ToString("MMMM yyyy");
+
+    string FormatHours(double hoursValue)
+    {
+        if (hoursValue <= 0)
+        {
+            return "-";
+        }
+
+        var minutes = (int)Math.Round(hoursValue * 60);
+        var hrs = minutes / 60;
+        var mins = minutes % 60;
+
+        return $"{hrs} hr {mins} min";
+    }
 }
 
 <div class="module-header">
-
     <div>
         <h1 class="module-title">My Monthly Attendance</h1>
         <p class="module-subtitle">
-            @(employee?.FullName ?? "Employee") -
-            @monthTitle
+            @(employee?.FullName ?? "Employee") - @monthTitle
         </p>
     </div>
 
     <div class="module-header-actions">
-
         <a asp-action="Index"
            class="btn-app btn-secondary-app">
             <i class="bi bi-clock"></i>
             Today
         </a>
 
+        <a asp-controller="Employee"
+           asp-action="MyDashboard"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-speedometer2"></i>
+            My Dashboard
+        </a>
     </div>
-
 </div>
 
 <div class="app-card mb-3">
-
-    <div class="card-header">
-        <h5 class="card-title">Attendance Filter</h5>
-    </div>
-
     <div class="card-body">
-
         <form method="get">
-
             <div class="filter-form-row">
-
                 <div class="form-group">
-
                     <label class="form-label">Month</label>
 
-                    <select name="month"
-                            class="app-select">
-
-                        @for (int month = 1; month <= 12; month++)
+                    <select name="month" class="app-select">
+                        @for (int monthNumber = 1; monthNumber <= 12; monthNumber++)
                         {
                             var monthName =
-                                new DateTime(2000, month, 1)
-                                    .ToString("MMMM");
+                            new DateTime(2000, monthNumber, 1)
+                            .ToString("MMMM");
 
-                            <option value="@month"
-                                    selected="@(month == selectedMonth)">
-                                @monthName
-                            </option>
+                            if (monthNumber == selectedMonth)
+                            {
+                                <option value="@monthNumber" selected>@monthName</option>
+                            }
+                            else
+                            {
+                                <option value="@monthNumber">@monthName</option>
+                            }
                         }
-
                     </select>
-
                 </div>
 
                 <div class="form-group">
-
                     <label class="form-label">Year</label>
 
-                    <select name="year"
-                            class="app-select">
-
-                        @for (int year = DateTime.Today.Year - 5;
-                             year <= DateTime.Today.Year + 1;
-                             year++)
+                    <select name="year" class="app-select">
+                        @for (int yearValue = DateTime.Today.Year - 5;
+                                                yearValue <= DateTime.Today.Year + 1;
+                                                yearValue++)
                         {
-                            <option value="@year"
-                                    selected="@(year == selectedYear)">
-                                @year
-                            </option>
+                            if (yearValue == selectedYear)
+                            {
+                                <option value="@yearValue" selected>@yearValue</option>
+                            }
+                            else
+                            {
+                                <option value="@yearValue">@yearValue</option>
+                            }
                         }
-
                     </select>
-
                 </div>
 
                 <div class="filter-form-actions">
-
-                    <button type="submit"
-                            class="btn-app btn-primary-app">
+                    <button type="submit" class="btn-app btn-primary-app">
                         <i class="bi bi-search"></i>
                         Load
                     </button>
-
                 </div>
-
             </div>
-
         </form>
-
     </div>
-
 </div>
 
 <div class="dashboard-grid">
-
     <div class="stats-card">
         <div class="stats-label">Present</div>
         <div class="stats-number">@presentCount</div>
@@ -170,27 +165,32 @@
     </div>
 
     <div class="stats-card">
+        <div class="stats-label">Week Off</div>
+        <div class="stats-number">@weekOffCount</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Holiday</div>
+        <div class="stats-number">@holidayCount</div>
+    </div>
+
+    <div class="stats-card">
         <div class="stats-label">Missing Days</div>
         <div class="stats-number">@missingCount</div>
     </div>
 
     <div class="stats-card">
         <div class="stats-label">Working Hours</div>
-        <div class="stats-number">@totalWorkingHours.ToString("0.00")</div>
+        <div class="stats-number">@totalWorkingHoursText</div>
     </div>
-
 </div>
 
 <div class="app-card table-card">
-
     <div class="card-header">
-        <h5 class="card-title">
-            Attendance Register - @selectedMonth/@selectedYear
-        </h5>
+        <h5 class="card-title">Attendance Register - @monthTitle</h5>
     </div>
 
     <div class="card-body">
-
         @if (!Model.Any())
         {
             <div class="empty-state">
@@ -200,9 +200,7 @@
         else
         {
             <div class="table-responsive">
-
-                <table class="app-table">
-
+                <table class="app-table employee-monthly-attendance-table">
                     <thead>
                         <tr>
                             <th>Date</th>
@@ -216,13 +214,13 @@
                     </thead>
 
                     <tbody>
-
                         @foreach (var attendance in Model)
                         {
                             <tr>
-
                                 <td>
-                                    @attendance.AttendanceDate.ToString("dd-MMM-yyyy")
+                                    <strong>
+                                        @attendance.AttendanceDate.ToString("dd-MMM-yyyy")
+                                    </strong>
                                 </td>
 
                                 <td>
@@ -256,42 +254,29 @@
                                             <span>-</span>
                                             break;
                                     }
-                                </td>
+                            </td>
 
-                                <td>
-                                    @(attendance.CheckInTime?.ToString("hh:mm tt") ?? "-")
-                                </td>
+                            <td>@(attendance.CheckInTime?.ToString("hh:mm tt") ?? "-")</td>
+                            <td>@(attendance.CheckOutTime?.ToString("hh:mm tt") ?? "-")</td>
 
-                                <td>
-                                    @(attendance.CheckOutTime?.ToString("hh:mm tt") ?? "-")
-                                </td>
+                            <td>
+                                @(string.IsNullOrWhiteSpace(attendance.LocationType)
+                                                            ? "-"
+                                                            : attendance.LocationType)
+                                                                                  </td>
 
-                                <td>
-                                    @(string.IsNullOrWhiteSpace(attendance.LocationType)
-                                        ? "-"
-                                        : attendance.LocationType)
-                                </td>
+                            <td>@FormatHours(attendance.WorkingHours)</td>
 
-                                <td>
-                                    @attendance.WorkingHours.ToString("0.00") hrs
-                                </td>
-
-                                <td>
-                                    @(string.IsNullOrWhiteSpace(attendance.Remarks)
-                                        ? "-"
-                                        : attendance.Remarks)
-                                </td>
-
-                            </tr>
-                        }
-
+                            <td>
+                                @(string.IsNullOrWhiteSpace(attendance.Remarks)
+                                                            ? "-"
+                                                            : attendance.Remarks)
+                        </td>
+                    </tr>
+                                        }
                     </tbody>
-
                 </table>
-
             </div>
         }
-
     </div>
-
 </div>

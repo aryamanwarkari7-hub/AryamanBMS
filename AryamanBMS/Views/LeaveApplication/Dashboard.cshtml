@@ -5,14 +5,14 @@
 }
 
 <div class="module-header">
-
     <div>
         <h1 class="module-title">Leave Dashboard</h1>
-        <p class="module-subtitle">Leave application overview</p>
+        <p class="module-subtitle">
+            Leave applications, approvals, cancellations and comp off overview for FY @Model.FinancialYear
+        </p>
     </div>
 
-    <div class="d-flex gap-2">
-
+    <div class="module-header-actions">
         <a asp-action="Index"
            class="btn-app btn-secondary-app">
             <i class="bi bi-list"></i>
@@ -24,36 +24,334 @@
             <i class="bi bi-file-earmark-excel"></i>
             Export Leave
         </a>
-
     </div>
-
 </div>
 
-<div class="dashboard-grid">
+<div class="main-dashboard-layout">
 
-    <div class="stats-card">
-        <div class="stats-label">Total Applications</div>
-        <div class="stats-number">@Model.TotalApplications</div>
-    </div>
+    <section class="app-card dashboard-section-card dashboard-finance-card">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Leave Overview</h2>
+                <p class="card-subtitle">Current month approvals and active leave pressure</p>
+            </div>
+        </div>
 
-    <div class="stats-card">
-        <div class="stats-label">Pending</div>
-        <div class="stats-number">@Model.PendingApplications</div>
-    </div>
+        <div class="card-body">
+            <div class="dashboard-metric-grid finance-grid">
+                <a asp-action="Index" class="dashboard-metric">
+                    <span>This Month Applications</span>
+                    <strong>@Model.Summary.TotalThisMonth</strong>
+                </a>
 
-    <div class="stats-card">
-        <div class="stats-label">Approved</div>
-        <div class="stats-number">@Model.ApprovedApplications</div>
-    </div>
+                <a asp-action="Index" class="dashboard-metric metric-danger">
+                    <span>Pending Applications</span>
+                    <strong>@Model.Summary.PendingApplications</strong>
+                </a>
 
-    <div class="stats-card">
-        <div class="stats-label">Rejected</div>
-        <div class="stats-number">@Model.RejectedApplications</div>
-    </div>
+                <a asp-action="Index" class="dashboard-metric">
+                    <span>Approved This Month</span>
+                    <strong>@Model.Summary.ApprovedThisMonth</strong>
+                </a>
 
-    <div class="stats-card">
-        <div class="stats-label">Cancelled</div>
-        <div class="stats-number">@Model.CancelledApplications</div>
-    </div>
+                <a asp-action="Index" class="dashboard-metric metric-danger">
+                    <span>Rejected This Month</span>
+                    <strong>@Model.Summary.RejectedThisMonth</strong>
+                </a>
+
+                <a asp-action="Index" class="dashboard-metric">
+                    <span>On Leave Today</span>
+                    <strong>@Model.Summary.OnLeaveToday</strong>
+                </a>
+
+                <a asp-action="Index" class="dashboard-metric">
+                    <span>Upcoming Leaves</span>
+                    <strong>@Model.Summary.UpcomingLeaves</strong>
+                </a>
+
+                <a asp-action="Index" class="dashboard-metric metric-danger">
+                    <span>Cancellation Requests</span>
+                    <strong>@Model.Summary.CancellationRequests</strong>
+                </a>
+
+                <a asp-action="Index" class="dashboard-metric">
+                    <span>Cancelled This Month</span>
+                    <strong>@Model.Summary.CancelledThisMonth</strong>
+                </a>
+            </div>
+
+            <div class="dashboard-visual-row">
+                <div class="dashboard-bars dashboard-chart-panel">
+                    <div class="dashboard-list-title">Application Status</div>
+
+                    @if (!Model.StatusBuckets.Any())
+                    {
+                        <div class="dashboard-empty-state">
+                            No leave application data.
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var bucket in Model.StatusBuckets)
+                        {
+                            <div class="dashboard-bar-row">
+                                <div>
+                                    <span>@bucket.Label</span>
+                                    <strong>@bucket.Count</strong>
+                                </div>
+                                <div class="dashboard-bar-track">
+                                    <span class="dashboard-bar-fill @bucket.CssClass"
+                                          style="width:@bucket.Percent%">
+                                    </span>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+
+                <div class="dashboard-bars dashboard-chart-panel">
+                    <div class="dashboard-list-title">Leave Type Usage</div>
+
+                    @if (!Model.LeaveTypeBuckets.Any())
+                    {
+                        <div class="dashboard-empty-state">
+                            No approved leave usage yet.
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var bucket in Model.LeaveTypeBuckets)
+                        {
+                            <div class="dashboard-bar-row">
+                                <div>
+                                    <span>@bucket.Label</span>
+                                    <strong>@bucket.Days.ToString("0.##") day(s)</strong>
+                                </div>
+                                <div class="dashboard-bar-track">
+                                    <span class="dashboard-bar-fill @bucket.CssClass"
+                                          style="width:@bucket.Percent%">
+                                    </span>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="app-card dashboard-section-card">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Comp Off</h2>
+                <p class="card-subtitle">Pending, available, expiring and used comp off</p>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="dashboard-metric-grid">
+                <a asp-controller="CompOffCredit" asp-action="Index" class="dashboard-metric metric-danger">
+                    <span>Pending Requests</span>
+                    <strong>@Model.CompOff.PendingRequests</strong>
+                </a>
+
+                <a asp-controller="CompOffCredit" asp-action="Index" class="dashboard-metric">
+                    <span>Available Credits</span>
+                    <strong>@Model.CompOff.ApprovedAvailableCredits</strong>
+                </a>
+
+                <a asp-controller="CompOffCredit" asp-action="Index" class="dashboard-metric metric-danger">
+                    <span>Expiring Soon</span>
+                    <strong>@Model.CompOff.ExpiringSoon</strong>
+                </a>
+
+                <a asp-controller="CompOffCredit" asp-action="Index" class="dashboard-metric">
+                    <span>Used This Month</span>
+                    <strong>@Model.CompOff.UsedThisMonth.ToString("0.##")</strong>
+                </a>
+            </div>
+
+            <div class="dashboard-list dashboard-compact-list">
+                <div class="dashboard-list-title">Expiring Comp Off Credits</div>
+
+                @if (!Model.ExpiringCompOffCredits.Any())
+                {
+                    <div class="dashboard-empty-state">
+                        No comp off credits expiring soon.
+                    </div>
+                }
+                else
+                {
+                    @foreach (var item in Model.ExpiringCompOffCredits)
+                    {
+                        <a asp-controller="Employee"
+                           asp-action="Details"
+                           asp-route-id="@item.EmployeeId"
+                           class="dashboard-list-row dashboard-list-link">
+                            <div>
+                                <strong>@item.EmployeeName</strong>
+                                <span>@item.Subtitle</span>
+                            </div>
+                            <span class="dashboard-row-meta">@item.Meta</span>
+                        </a>
+                    }
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="app-card dashboard-section-card">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Today & Upcoming</h2>
+                <p class="card-subtitle">People currently away and upcoming approved leave</p>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="dashboard-list">
+                <div class="dashboard-list-title">On Leave Today</div>
+
+                @if (!Model.OnLeaveToday.Any())
+                {
+                    <div class="dashboard-empty-state">
+                        No employees are on leave today.
+                    </div>
+                }
+                else
+                {
+                    @foreach (var item in Model.OnLeaveToday)
+                    {
+                        <a asp-action="Details"
+                           asp-route-id="@item.LeaveApplicationId"
+                           class="dashboard-list-row dashboard-list-link">
+                            <div>
+                                <strong>@item.EmployeeName</strong>
+                                <span>@item.Subtitle</span>
+                            </div>
+                            <span class="dashboard-row-meta">@item.Meta</span>
+                        </a>
+                    }
+                }
+            </div>
+
+            <div class="dashboard-list">
+                <div class="dashboard-list-title">Upcoming Leaves</div>
+
+                @if (!Model.UpcomingLeaves.Any())
+                {
+                    <div class="dashboard-empty-state">
+                        No upcoming leaves in the next 30 days.
+                    </div>
+                }
+                else
+                {
+                    @foreach (var item in Model.UpcomingLeaves)
+                    {
+                        <a asp-action="Details"
+                           asp-route-id="@item.LeaveApplicationId"
+                           class="dashboard-list-row dashboard-list-link">
+                            <div>
+                                <strong>@item.EmployeeName</strong>
+                                <span>@item.Subtitle</span>
+                            </div>
+                            <span class="dashboard-row-meta">@item.Meta</span>
+                        </a>
+                    }
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="app-card dashboard-section-card dashboard-finance-card">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Action Lists</h2>
+                <p class="card-subtitle">Approval and cancellation work requiring HR/Admin action</p>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="dashboard-finance-lower">
+                <div class="dashboard-list">
+                    <div class="dashboard-list-title">Pending Applications</div>
+
+                    @if (!Model.PendingApplications.Any())
+                    {
+                        <div class="dashboard-empty-state">
+                            No pending leave applications.
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model.PendingApplications)
+                        {
+                            <a asp-action="Details"
+                               asp-route-id="@item.LeaveApplicationId"
+                               class="dashboard-list-row dashboard-list-link">
+                                <div>
+                                    <strong>@item.EmployeeName</strong>
+                                    <span>@item.Subtitle</span>
+                                </div>
+                                <span class="dashboard-row-meta">@item.Meta</span>
+                            </a>
+                        }
+                    }
+                </div>
+
+                <div class="dashboard-list">
+                    <div class="dashboard-list-title">Cancellation Requests</div>
+
+                    @if (!Model.CancellationRequests.Any())
+                    {
+                        <div class="dashboard-empty-state">
+                            No cancellation requests.
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model.CancellationRequests)
+                        {
+                            <a asp-action="Details"
+                               asp-route-id="@item.LeaveApplicationId"
+                               class="dashboard-list-row dashboard-list-link">
+                                <div>
+                                    <strong>@item.EmployeeName</strong>
+                                    <span>@item.Subtitle</span>
+                                </div>
+                                <span class="dashboard-row-meta">@item.Meta</span>
+                            </a>
+                        }
+                    }
+                </div>
+
+                <div class="dashboard-list">
+                    <div class="dashboard-list-title">Upcoming Leaves</div>
+
+                    @if (!Model.UpcomingLeaves.Any())
+                    {
+                        <div class="dashboard-empty-state">
+                            No upcoming leave approvals.
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model.UpcomingLeaves)
+                        {
+                            <a asp-action="Details"
+                               asp-route-id="@item.LeaveApplicationId"
+                               class="dashboard-list-row dashboard-list-link">
+                                <div>
+                                    <strong>@item.EmployeeName</strong>
+                                    <span>@item.Subtitle</span>
+                                </div>
+                                <span class="dashboard-row-meta">@item.Meta</span>
+                            </a>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
 
 </div>

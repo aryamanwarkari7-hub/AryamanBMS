@@ -835,7 +835,42 @@
 --         REFERENCES tableproposal (ProposalId)
 -- );
 
+-- CREATE TABLE IF NOT EXISTS TableNotification
+-- (
+--     Id INT NOT NULL AUTO_INCREMENT,
 
+--     UserId VARCHAR(450) NOT NULL,
+
+--     Title VARCHAR(150) NOT NULL,
+
+--     Message VARCHAR(500) NOT NULL,
+
+--     NotificationType VARCHAR(50) NOT NULL
+--         DEFAULT 'System',
+
+--     ReferenceType VARCHAR(100) NULL,
+
+--     ReferenceId INT NULL,
+
+--     ActionUrl VARCHAR(500) NULL,
+
+--     IsRead TINYINT(1) NOT NULL DEFAULT 0,
+
+--     CreatedOn DATETIME NOT NULL
+--         DEFAULT CURRENT_TIMESTAMP,
+
+--     ReadOn DATETIME NULL,
+
+--     PRIMARY KEY (Id),
+
+--     CONSTRAINT FK_TableNotification_AspNetUsers_UserId
+--         FOREIGN KEY (UserId)
+--         REFERENCES AspNetUsers(Id)
+--         ON DELETE CASCADE,
+
+--     INDEX IX_TableNotification_User_Read_Created
+--         (UserId, IsRead, CreatedOn)
+-- );
 
 -- -- ============================================================
 -- -- TABLE CREATION COMPLETED

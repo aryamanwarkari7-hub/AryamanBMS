@@ -190,7 +190,9 @@
                             <th>User Name</th>
                             <th>Email</th>
                             <th>Role</th>
-                            <th>Status</th>
+                            <th>Account</th>
+                            <th>Activity</th>
+                            <th>Last Seen</th>
                             <th class="text-end">Actions</th>
                         </tr>
                     </thead>
@@ -226,8 +228,7 @@
                                 </td>
 
                                 <td>
-
-                                    @if (user.IsActive)
+                            @if (user.IsActive)
                                     {
                                         <span class="badge-success">
                                             Active
@@ -239,7 +240,49 @@
                                             Inactive
                                         </span>
                                     }
+                                </td>
 
+                                <td>
+                                    @{
+                                        var activityStatus =
+                                        string.IsNullOrWhiteSpace(user.ActivityStatus)
+                                        ? "Offline"
+                                        : user.ActivityStatus;
+
+                                        var activityBadgeClass = activityStatus switch
+                                        {
+                                            "Available" => "badge-success",
+                                            "Busy" => "badge-warning",
+                                            "Away" => "badge-warning",
+                                            "Do Not Disturb" => "badge-danger",
+                                            "Offline" => "badge-secondary",
+                                            _ => "badge-secondary"
+                                        };
+                                    }
+
+                                    <span class="@activityBadgeClass">
+                                        @activityStatus
+                                    </span>
+
+                                    @if (!string.IsNullOrWhiteSpace(user.ActivityStatusMessage))
+                                    {
+                                        <div class="mt-1">
+                                            <small class="text-muted">
+                                                @user.ActivityStatusMessage
+                                            </small>
+                                        </div>
+                                    }
+                                </td>
+
+                                <td>
+                                    @if (user.LastSeenOn.HasValue)
+                                    {
+                                        @user.LastSeenOn.Value.ToString("dd-MM-yyyy hh:mm tt")
+                                    }
+                                    else
+                                    {
+                                        <span>-</span>
+                                    }
                                 </td>
 
                                 <td>

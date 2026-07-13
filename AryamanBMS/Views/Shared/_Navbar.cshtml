@@ -20,11 +20,17 @@
 
     if (!string.IsNullOrWhiteSpace(userName))
     {
-        initials = string.Join("",
-            userName.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                    .Take(2)
-                    .Select(x => x[0]))
-                    .ToUpper();
+        var nameParts = userName
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        if (nameParts.Length == 1)
+        {
+            initials = nameParts[0][0].ToString().ToUpper();
+        }
+        else
+        {
+            initials = $"{nameParts.First()[0]}{nameParts.Last()[0]}".ToUpper();
+        }
     }
 }
 
@@ -46,95 +52,147 @@
         </h4>
 
         <div class="page-subtitle">
-            Welcome, @role
+            Welcome, @userName
         </div>
 
     </div>
 
-    <div class="navbar-right">
+    @{
+        var activityStatus = currentUser?.ActivityStatus ?? "Offline";
+        var activityClass = activityStatus.ToLower().Replace(" ", "-");
+    }
 
-        <div class="navbar-date">
-            @DateTime.Now.ToString("dd MMM yyyy")
-        </div>
-
-        <div class="dropdown">
-
-            <div class="user-avatar"
+    <div class="navbar-actions">
+        @await Component.InvokeAsync("NotificationBell")
+        
+        <div class="navbar-user dropdown">
+        
+            <div class="activity-avatar"
                  data-bs-toggle="dropdown"
+                 aria-expanded="false"
                  role="button">
-
-                @initials
-
+        
+                <div class="user-avatar">
+        
+                    @if (!string.IsNullOrWhiteSpace(currentUser?.ProfilePhotoPath))
+                    {
+                        <img src="@currentUser.ProfilePhotoPath"
+                             alt="@userName"
+                             class="user-avatar-img" />
+                    }
+                    else
+                    {
+                        @initials
+                    }
+        
+                </div>
+        
+                <span class="activity-dot activity-@activityClass"
+                      title="@activityStatus">
+                </span>
+        
             </div>
-
-            <ul class="dropdown-menu dropdown-menu-end">
-
-                <li class="dropdown-header">
-
+        
+            @if (!string.IsNullOrWhiteSpace(
+                    currentUser?.ActivityStatusMessage))
+            {
+                <div class="avatar-status-bubble"
+                     title="@currentUser.ActivityStatusMessage">
+        
+                    @currentUser.ActivityStatusMessage
+        
+                </div>
+            }
+        
+            <div class="dropdown-menu dropdown-menu-end activity-status-menu">
+        
+                <div class="activity-menu-header">
+        
                     <strong>@userName</strong>
-
-                    <br />
-
-                    <small>@role</small>
-
-                </li>
-
-                <li>
-                    <hr class="dropdown-divider">
-                </li>
-
-                <li>
-
-                    <a class="dropdown-item"
-                       asp-controller="Account"
-                       asp-action="Profile">
-
-                        <i class="bi bi-person"></i>
-                        My Profile
-
-                    </a>
-
-                </li>
-
-                <li>
-
-                    <a class="dropdown-item"
-                       asp-controller="Account"
-                       asp-action="ChangePassword">
-
-                        <i class="bi bi-key"></i>
-                        Change Password
-
-                    </a>
-
-                </li>
-
-                <li>
-                    <hr class="dropdown-divider">
-                </li>
-
-                <li>
-
-                    <form asp-controller="Account"
-                          asp-action="Logout"
-                          method="post">
-
-                        <button type="submit"
-                                class="dropdown-item text-danger">
-
-                            <i class="bi bi-box-arrow-right"></i>
-                            Logout
-
-                        </button>
-
-                    </form>
-
-                </li>
-
-            </ul>
-
+        
+                    <span>@activityStatus</span>
+        
+                </div>
+        
+                <form asp-controller="Account"
+                      asp-action="UpdateActivityStatus"
+                      method="post"
+                      class="activity-status-form">
+        
+                    @Html.AntiForgeryToken()
+        
+                    <input type="hidden"
+                           name="returnUrl"
+                           value="@Context.Request.Path@Context.Request.QueryString" />
+        
+                    <button type="submit"
+                            name="activityStatus"
+                            value="Available"
+                            class="dropdown-item activity-status-option">
+        
+                        <span class="activity-menu-dot activity-available"></span>
+        
+                        Available
+        
+                    </button>
+        
+                    <button type="submit"
+                            name="activityStatus"
+                            value="Busy"
+                            class="dropdown-item activity-status-option">
+        
+                        <span class="activity-menu-dot activity-busy"></span>
+        
+                        Busy
+        
+                    </button>
+        
+                    <button type="submit"
+                            name="activityStatus"
+                            value="Do Not Disturb"
+                            class="dropdown-item activity-status-option">
+        
+                        <span class="activity-menu-dot activity-do-not-disturb"></span>
+        
+                        Do Not Disturb
+        
+                    </button>
+        
+                </form>
+        
+                <div class="dropdown-divider"></div>
+        
+                <a asp-controller="Account"
+                   asp-action="Profile"
+                   class="dropdown-item">
+        
+                    <i class="bi bi-person-circle"></i>
+        
+                    My Profile
+        
+                </a>
+        
+                <form asp-controller="Account"
+                      asp-action="Logout"
+                      method="post"
+                      class="navbar-logout-form">
+        
+                    @Html.AntiForgeryToken()
+        
+                    <button type="submit"
+                            class="dropdown-item navbar-logout-item">
+        
+                        <i class="bi bi-box-arrow-right"></i>
+        
+                        Logout
+        
+                    </button>
+        
+                </form>
+        
+            </div>
+        
         </div>
-
     </div>
 
 </div>

@@ -5,20 +5,31 @@
 }
 
 <div class="module-header">
-
     <div>
         <h1 class="module-title">Apply Leave</h1>
         <p class="module-subtitle">Submit a new leave application</p>
     </div>
 
+    <div class="module-header-actions">
+        <a asp-action="Index" class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back 
+        </a>
+    </div>
 </div>
 
-<div class="app-card">
+<div class="app-card form-card">
+    <div class="card-header">
+        <div>
+            <h5 class="card-title">Leave Details</h5>
+            <p class="card-subtitle">Select leave type, date range and reason</p>
+        </div>
+    </div>
 
     <div class="card-body">
+        <form asp-action="Create" method="post">
 
-        <form asp-action="Create"
-              method="post">
+            @Html.AntiForgeryToken()
 
             <div asp-validation-summary="ModelOnly"
                  class="validation-message mb-3">
@@ -27,11 +38,9 @@
             <div class="form-grid-2">
 
                 <div class="form-group">
-                    <label class="form-label">Leave Type</label>
+                    <label asp-for="LeaveTypeId" class="form-label">Leave Type</label>
 
-                    <select asp-for="LeaveTypeId"
-                            class="app-select">
-
+                    <select asp-for="LeaveTypeId" class="app-select">
                         <option value="">Select Leave Type</option>
 
                         @foreach (var leaveType in ViewBag.LeaveTypes)
@@ -40,7 +49,6 @@
                                 @leaveType.LeaveCode - @leaveType.LeaveName
                             </option>
                         }
-
                     </select>
 
                     <span asp-validation-for="LeaveTypeId"
@@ -49,11 +57,20 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">From Date</label>
+                    <label class="form-label">Estimated Days</label>
+
+                    <div class="app-input readonly-field" id="estimatedDays">
+                        -
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="FromDate" class="form-label">From Date</label>
 
                     <input asp-for="FromDate"
                            type="date"
-                           class="app-input" />
+                           class="app-input"
+                           id="fromDate" />
 
                     <span asp-validation-for="FromDate"
                           class="validation-message">
@@ -61,24 +78,26 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">To Date</label>
+                    <label asp-for="ToDate" class="form-label">To Date</label>
 
                     <input asp-for="ToDate"
                            type="date"
-                           class="app-input" />
+                           class="app-input"
+                           id="toDate" />
 
                     <span asp-validation-for="ToDate"
                           class="validation-message">
                     </span>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Reason</label>
+                <div class="form-group form-span-2">
+                    <label asp-for="Reason" class="form-label">Reason</label>
 
                     <textarea asp-for="Reason"
                               class="app-textarea"
-                              placeholder="Enter reason for leave">
-                    </textarea>
+                              rows="4"
+                              maxlength="500"
+                              placeholder="Enter reason for leave"></textarea>
 
                     <span asp-validation-for="Reason"
                           class="validation-message">
@@ -87,10 +106,10 @@
 
             </div>
 
-            <div class="mt-4">
-
+            <div class="form-actions mt-4">
                 <button type="submit"
                         class="btn-app btn-primary-app">
+                    <i class="bi bi-send"></i>
                     Submit Application
                 </button>
 
@@ -98,16 +117,51 @@
                    class="btn-app btn-secondary-app">
                     Cancel
                 </a>
-
             </div>
 
         </form>
-
     </div>
-
 </div>
 
 @section Scripts
 {
     <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        (function () {
+            const fromDateInput = document.getElementById('fromDate');
+            const toDateInput = document.getElementById('toDate');
+            const estimatedDays = document.getElementById('estimatedDays');
+
+            function updateEstimatedDays() {
+                if (!fromDateInput.value || !toDateInput.value) {
+                    estimatedDays.textContent = '-';
+                    return;
+                }
+
+                const fromDate = new Date(fromDateInput.value);
+                const toDate = new Date(toDateInput.value);
+
+                if (Number.isNaN(fromDate.getTime()) || Number.isNaN(toDate.getTime())) {
+                    estimatedDays.textContent = '-';
+                    return;
+                }
+
+                if (toDate < fromDate) {
+                    estimatedDays.textContent = 'Invalid range';
+                    return;
+                }
+
+                const diffTime = toDate.getTime() - fromDate.getTime();
+                const diffDays = Math.floor(diffTime / 86400000) + 1;
+
+                estimatedDays.textContent = diffDays + (diffDays === 1 ? ' day' : ' days');
+            }
+
+            fromDateInput.addEventListener('change', updateEstimatedDays);
+            toDateInput.addEventListener('change', updateEstimatedDays);
+
+            updateEstimatedDays();
+        })();
+    </script>
 }

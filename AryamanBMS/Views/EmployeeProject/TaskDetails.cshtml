@@ -1,0 +1,145 @@
+@model AryamanBMS.Models.ProjectTaskModel
+
+@{
+    ViewData["Title"] = "Task Details";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Task Details</h1>
+        <p class="module-subtitle">View assigned task information</p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="MyTasks"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back to Tasks
+        </a>
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <div class="stats-card">
+        <div class="stats-label">Priority</div>
+        <div class="stats-number">@Model.Priority</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Status</div>
+        <div class="stats-number">@Model.Status</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Completion</div>
+        <div class="stats-number">@Model.ProgressPercent%</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Due Date</div>
+        <div class="stats-number">@(Model.DueDate?.ToString("dd MMM") ?? "-")</div>
+    </div>
+</div>
+
+<div class="main-dashboard-layout">
+    <div class="app-card dashboard-section-card">
+        <div class="card-header">
+            <h5 class="card-title">Task Information</h5>
+        </div>
+
+        <div class="card-body">
+            <div class="profile-stack">
+                <div class="profile-info-row">
+                    <span><i class="bi bi-hash"></i> Task Code</span>
+                    <strong>@Model.TaskCode</strong>
+                </div>
+
+                <div class="profile-info-row">
+                    <span><i class="bi bi-card-text"></i> Task Title</span>
+                    <strong>@Model.TaskTitle</strong>
+                </div>
+
+                <div class="profile-info-row">
+                    <span><i class="bi bi-kanban"></i> Project</span>
+                    <strong>
+                        @(Model.Project?.ProjectCode ?? "-")
+                        -
+                        @(Model.Project?.ProjectName ?? "-")
+                    </strong>
+                </div>
+
+                <div class="profile-info-row">
+                    <span><i class="bi bi-person"></i> Assigned To</span>
+                    <strong>@(Model.AssignedEmployee?.FullName ?? "-")</strong>
+                </div>
+
+                <div class="profile-info-row">
+                    <span><i class="bi bi-calendar-plus"></i> Start Date</span>
+                    <strong>@(Model.StartDate?.ToString("dd-MMM-yyyy") ?? "-")</strong>
+                </div>
+
+                <div class="profile-info-row">
+                    <span><i class="bi bi-calendar-check"></i> Due Date</span>
+                    <strong>@(Model.DueDate?.ToString("dd-MMM-yyyy") ?? "-")</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-card dashboard-section-card">
+        <div class="card-header">
+            <h5 class="card-title">Hours & Progress</h5>
+        </div>
+
+        <div class="card-body">
+            <div class="profile-stack">
+                <div class="profile-info-row">
+                    <span><i class="bi bi-clock"></i> Estimated Hours</span>
+                    <strong>@Model.EstimatedHours.ToString("0.##")</strong>
+                </div>
+
+                <div class="profile-info-row">
+                    <span><i class="bi bi-hourglass-split"></i> Actual Hours</span>
+                    <strong>@Model.ActualHours.ToString("0.##")</strong>
+                </div>
+
+                <div class="profile-info-row">
+                    <span><i class="bi bi-graph-up"></i> Progress</span>
+                    <strong>@Model.ProgressPercent%</strong>
+                </div>
+
+                <div class="profile-info-row">
+                    <span><i class="bi bi-activity"></i> Status</span>
+                    <strong>@Model.Status</strong>
+                </div>
+
+                <div class="profile-info-row">
+                    <span><i class="bi bi-calendar3"></i> Created On</span>
+                    <strong>@Model.CreatedOn.ToString("dd-MMM-yyyy hh:mm tt")</strong>
+                </div>
+
+                <div class="profile-info-row">
+                    <span><i class="bi bi-pencil-square"></i> Updated On</span>
+                    <strong>@(Model.UpdatedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="app-card dashboard-section-card">
+    <div class="card-header">
+        <h5 class="card-title">Description</h5>
+    </div>
+
+    <div class="card-body">
+        @if (string.IsNullOrWhiteSpace(Model.Description))
+        {
+            <div class="empty-state">No description provided.</div>
+        }
+        else
+        {
+            <p class="mb-0">@Model.Description</p>
+        }
+    </div>
+</div>

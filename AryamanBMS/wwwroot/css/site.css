@@ -294,3 +294,57 @@ textarea {
         }
 }
 
+
+/* ==========================================
+   ACTIVITY AVATAR WRAP
+========================================== */
+.navbar-user {
+    position: relative;
+    overflow: visible;
+}
+
+.activity-avatar {
+    position: relative;
+    z-index: 1061;
+    cursor: pointer;
+}
+
+.avatar-status-bubble {
+    position: absolute;
+    /* Places bubble below and slightly left of avatar */
+    top: calc(100% + 3px);
+    right: 12px;
+    z-index: 1060;
+    width: max-content;
+    max-width: 230px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    /* Chat-message shape */
+    border-radius: 14px 4px 14px 14px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: #334155;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+}
+
+    /* Chat-tail connecting bubble to avatar */
+    .avatar-status-bubble::before {
+        content: "";
+        position: absolute;
+        top: -9px;
+        right: -1px;
+        width: 18px;
+        height: 18px;
+        background: rgba(255, 255, 255, 0.78);
+        clip-path: polygon( 100% 0, 100% 100%, 0 100% );
+        border-radius: 0 3px 0 0;
+        filter: drop-shadow( 1px -1px 0 rgba(255, 255, 255, 0.65) );
+    }

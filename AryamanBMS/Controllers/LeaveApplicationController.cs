@@ -1128,29 +1128,238 @@ namespace AryamanBMS.Controllers
         }
 
         [Authorize(Roles = "Admin,HR")]
-        public IActionResult Dashboard()
+        public async Task<IActionResult> Dashboard()
         {
-            var applications =
-                _leaveApplicationRepository.LeaveApplications;
+            DateTime today = DateTime.Today;
+            DateTime monthStart = new(today.Year, today.Month, 1);
+            DateTime nextMonth = monthStart.AddMonths(1);
+            DateTime upcomingEnd = today.AddDays(30);
+            DateTime compOffExpiryEnd = today.AddDays(15);
+
+            int financialYearStartYear =
+                today.Month >= 4 ? today.Year : today.Year - 1;
+
+            var applications = await _leaveApplicationRepository.LeaveApplications
+                .AsNoTracking()
+                .Include(x => x.Employee)
+                .Include(x => x.LeaveType)
+                .ToListAsync();
+
+            var compOffCredits = await _compOffCreditRepository.CompOffCredits
+                .AsNoTracking()
+                .Include(x => x.Employee)
+                .ToListAsync();
+
+            var compOffUsages = await _compOffUsageRepository.CompOffUsages
+                .AsNoTracking()
+                .ToListAsync();
 
             var model = new LeaveDashboardViewModel
             {
-                TotalApplications = applications.Count(),
-
-                PendingApplications =
-                    applications.Count(x => x.Status == "Pending"),
-
-                ApprovedApplications =
-                    applications.Count(x => x.Status == "Approved"),
-
-                RejectedApplications =
-                    applications.Count(x => x.Status == "Rejected"),
-
-                CancelledApplications =
-                    applications.Count(x => x.Status == "Cancelled")
+                Today = today,
+                FinancialYear = $"{financialYearStartYear}-{(financialYearStartYear + 1).ToString()[2..]}"
             };
 
+            model.Summary.TotalThisMonth = applications.Count(x =>
+                x.AppliedOn >= monthStart &&
+                x.AppliedOn < nextMonth);
+
+            model.Summary.PendingApplications = applications.Count(x =>
+                x.Status == "Pending");
+
+            model.Summary.ApprovedThisMonth = applications.Count(x =>
+                x.Status == "Approved" &&
+                x.ApprovedOn.HasValue &&
+                x.ApprovedOn.Value >= monthStart &&
+                x.ApprovedOn.Value < nextMonth);
+
+            model.Summary.RejectedThisMonth = applications.Count(x =>
+                x.Status == "Rejected" &&
+                x.ApprovedOn.HasValue &&
+                x.ApprovedOn.Value >= monthStart &&
+                x.ApprovedOn.Value < nextMonth);
+
+            model.Summary.CancelledThisMonth = applications.Count(x =>
+                x.Status == "Cancelled" &&
+                x.CancellationReviewedOn.HasValue &&
+                x.CancellationReviewedOn.Value >= monthStart &&
+                x.CancellationReviewedOn.Value < nextMonth);
+
+            model.Summary.CancellationRequests = applications.Count(x =>
+    x.CancellationStatus == "Pending");
+
+            model.Summary.OnLeaveToday = applications.Count(x =>
+                x.Status == "Approved" &&
+                x.FromDate <= today &&
+                x.ToDate >= today);
+
+            model.Summary.UpcomingLeaves = applications.Count(x =>
+                x.Status == "Approved" &&
+                x.FromDate > today &&
+                x.FromDate <= upcomingEnd);
+
+            model.CompOff.PendingRequests = compOffCredits.Count(x =>
+                x.Status == "Pending");
+
+            model.CompOff.ApprovedAvailableCredits = compOffCredits.Count(x =>
+                x.Status == "Approved" &&
+                x.ExpiryDate >= today &&
+                x.CreditDays > x.UsedDays);
+
+            model.CompOff.ExpiringSoon = compOffCredits.Count(x =>
+                x.Status == "Approved" &&
+                x.ExpiryDate >= today &&
+                x.ExpiryDate <= compOffExpiryEnd &&
+                x.CreditDays > x.UsedDays);
+
+            model.CompOff.UsedThisMonth = compOffUsages
+                .Where(x =>
+                    !x.IsReversed &&
+                    x.UsedOn >= monthStart &&
+                    x.UsedOn < nextMonth)
+                .Sum(x => x.UsedDays);
+
+            model.StatusBuckets = BuildLeaveBuckets(
+                applications
+                    .GroupBy(x => x.Status)
+                    .Select(x => new LeaveDashboardBucket
+                    {
+                        Label = x.Key,
+                        Count = x.Count(),
+                        CssClass = GetLeaveStatusClass(x.Key)
+                    })
+                    .OrderByDescending(x => x.Count)
+                    .ToList());
+
+            model.LeaveTypeBuckets = BuildLeaveBuckets(
+                applications
+                    .Where(x => x.Status == "Approved")
+                    .GroupBy(x => x.LeaveType != null ? x.LeaveType.LeaveName : "Unassigned")
+                    .Select(x => new LeaveDashboardBucket
+                    {
+                        Label = x.Key,
+                        Count = x.Count(),
+                        Days = x.Sum(y => y.NumberOfDays),
+                        CssClass = "bucket-info"
+                    })
+                    .OrderByDescending(x => x.Days)
+                    .Take(6)
+                    .ToList());
+
+            model.PendingApplications = applications
+                .Where(x => x.Status == "Pending")
+                .OrderBy(x => x.AppliedOn)
+                .Take(5)
+                .Select(ToLeaveDashboardListItem)
+                .ToList();
+
+            model.OnLeaveToday = applications
+                .Where(x =>
+                    x.Status == "Approved" &&
+                    x.FromDate <= today &&
+                    x.ToDate >= today)
+                .OrderBy(x => x.ToDate)
+                .Take(5)
+                .Select(x =>
+                {
+                    var item = ToLeaveDashboardListItem(x);
+                    item.Meta = $"Until {x.ToDate:dd-MMM-yyyy}";
+                    item.Badge = "On Leave";
+                    return item;
+                })
+                .ToList();
+
+            model.UpcomingLeaves = applications
+                .Where(x =>
+                    x.Status == "Approved" &&
+                    x.FromDate > today &&
+                    x.FromDate <= upcomingEnd)
+                .OrderBy(x => x.FromDate)
+                .Take(5)
+                .Select(x =>
+                {
+                    var item = ToLeaveDashboardListItem(x);
+                    item.Meta = $"{x.FromDate:dd-MMM} to {x.ToDate:dd-MMM}";
+                    item.Badge = "Upcoming";
+                    return item;
+                })
+                .ToList();
+
+            model.CancellationRequests = applications
+    .Where(x => x.CancellationStatus == "Pending")
+                .OrderBy(x => x.CancellationRequestedOn)
+                .Take(5)
+                .Select(x =>
+                {
+                    var item = ToLeaveDashboardListItem(x);
+                    item.Meta = x.CancellationRequestedOn?.ToString("dd-MMM-yyyy");
+                    item.Badge = "Cancel";
+                    return item;
+                })
+                .ToList();
+
+            model.ExpiringCompOffCredits = compOffCredits
+                .Where(x =>
+                    x.Status == "Approved" &&
+                    x.ExpiryDate >= today &&
+                    x.ExpiryDate <= compOffExpiryEnd &&
+                    x.CreditDays > x.UsedDays)
+                .OrderBy(x => x.ExpiryDate)
+                .Take(5)
+                .Select(x => new LeaveDashboardListItem
+                {
+                    EmployeeId = x.EmployeeId,
+                    EmployeeName = x.Employee?.FullName ?? "-",
+                    Subtitle = $"{x.CreditDays - x.UsedDays:0.##} day(s) available",
+                    Meta = x.ExpiryDate.ToString("dd-MMM-yyyy"),
+                    Badge = "Expiring"
+                })
+                .ToList();
+
             return View(model);
+        }
+
+        private static List<LeaveDashboardBucket> BuildLeaveBuckets(
+    List<LeaveDashboardBucket> buckets)
+        {
+            decimal total = buckets.Sum(x => x.Days > 0 ? x.Days : x.Count);
+
+            foreach (var bucket in buckets)
+            {
+                decimal value = bucket.Days > 0 ? bucket.Days : bucket.Count;
+
+                bucket.Percent = total == 0
+                    ? 0
+                    : Math.Round(value * 100 / total, 2);
+            }
+
+            return buckets;
+        }
+
+        private static LeaveDashboardListItem ToLeaveDashboardListItem(
+            LeaveApplicationModel application)
+        {
+            return new LeaveDashboardListItem
+            {
+                LeaveApplicationId = application.Id,
+                EmployeeId = application.EmployeeId,
+                EmployeeName = application.Employee?.FullName ?? "-",
+                Subtitle = application.LeaveType?.LeaveName ?? "Leave",
+                Meta = $"{application.FromDate:dd-MMM} to {application.ToDate:dd-MMM}",
+                Badge = application.Status
+            };
+        }
+
+        private static string GetLeaveStatusClass(string status)
+        {
+            return status switch
+            {
+                "Approved" => "bucket-success",
+                "Pending" => "bucket-warning",
+                "Rejected" => "bucket-danger",
+                "Cancelled" => "bucket-neutral",
+                _ => "bucket-info"
+            };
         }
 
         [Authorize(Roles = "Admin,HR")]

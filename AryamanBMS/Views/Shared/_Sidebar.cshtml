@@ -1,6 +1,9 @@
 ﻿@using AryamanBMS.Models
 @using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
 
+@inject AryamanBMS.Repositories.Interfaces.IEmployeeRepository EmployeeRepository
+@inject AryamanBMS.Repositories.Interfaces.IProjectMemberRepository ProjectMemberRepository
 @inject UserManager<ApplicationUserModel> UserManager
 
 @{
@@ -34,33 +37,60 @@
         await UserManager.IsInRoleAsync(currentUser, "Employee");
 
     var isProjectManager =
-          currentUser != null &&
-          await UserManager.IsInRoleAsync(currentUser, "ProjectManager");
+        currentUser != null &&
+        await UserManager.IsInRoleAsync(currentUser, "ProjectManager");
 
     var isFinance =
-          currentUser != null &&
-          await UserManager.IsInRoleAsync(currentUser, "Finance");
+        currentUser != null &&
+        await UserManager.IsInRoleAsync(currentUser, "Finance");
 
     var isAdminOrHR = isAdmin || isHR;
 
+    var isEmployeeOnly =
+        isEmployee && !isAdmin && !isHR;
+
+    var hasEmployeeProjectAccess = false;
+
+    if (isEmployeeOnly && currentUser != null)
+    {
+        var linkedEmployee =
+            await EmployeeRepository.Employees
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.ApplicationUserId == currentUser.Id);
+
+        if (linkedEmployee != null)
+        {
+            hasEmployeeProjectAccess =
+                await ProjectMemberRepository.ProjectMembers
+                    .AsNoTracking()
+                    .AnyAsync(x =>
+                        x.EmployeeId == linkedEmployee.Id &&
+                        x.IsActive);
+        }
+    }
+
     var canAccessProjectManagement =
-        isAdminOrHR || isProjectManager || isEmployee;
+        isAdminOrHR || isProjectManager || hasEmployeeProjectAccess;
 
     var canAccessAccounts =
         isAdmin || isFinance;
-
-    var isEmployeeOnly =
-        isEmployee && !isAdmin && !isHR;
 
     var initials = string.Empty;
 
     if (!string.IsNullOrWhiteSpace(userName))
     {
-        initials = string.Join("",
-            userName.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                    .Take(2)
-                    .Select(x => x[0]))
-                    .ToUpper();
+        var nameParts = userName
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        if (nameParts.Length == 1)
+        {
+            initials = nameParts[0][0].ToString().ToUpper();
+        }
+        else
+        {
+            initials = $"{nameParts.First()[0]}{nameParts.Last()[0]}".ToUpper();
+        }
     }
 
     bool isLeaveOpen =
@@ -102,7 +132,7 @@
     bool isEmployeeActive = currentController == "Employee";
 
     bool isProjectSetupActive =
-    currentController == "Project" ||
+    (currentController == "Project" && currentAction != "Overview") ||
     currentController == "ProjectMember";
 
     bool isProjectPlanningActive =
@@ -114,10 +144,15 @@
         currentController == "MOM" ||
         currentController == "Risk";
 
+    bool isEmployeeProjectActive =
+    currentController == "EmployeeProject";
+
     bool isProjectActive =
+        (currentController == "Project" && currentAction == "Overview") ||
         isProjectSetupActive ||
         isProjectPlanningActive ||
-        isProjectTrackingActive;
+        isProjectTrackingActive ||
+        isEmployeeProjectActive;
 
     bool isSalesActive =
         currentController == "Client" ||
@@ -182,22 +217,35 @@
     
     <div class="sidebar-menu" id="sidebarAccordion">
 
+        
         @*  Dashboard *@
         <div class="menu-group">
             @if (isAdminOrHR)
             {
-            <a asp-controller="Dashboard"
-               asp-action="Index"
-               class="menu-group-header dashboard-link @(currentController == "Dashboard" ? "active-menu" : "")">
+                <a asp-controller="Dashboard"
+                   asp-action="Index"
+                   class="menu-group-header dashboard-link @(currentController == "Dashboard" ? "active-menu" : "")">
 
-                <div class="menu-group-left">
-                    <i class="bi bi-speedometer2"></i>
-                    <span>Dashboard</span>
-                </div>
+                    <div class="menu-group-left">
+                        <i class="bi bi-speedometer2"></i>
+                        <span>Dashboard</span>
+                    </div>
 
-            </a>
+                </a>
             }
+            else if (isEmployeeOnly)
+            {
+                <a asp-controller="Employee"
+                   asp-action="MyDashboard"
+                   class="menu-group-header dashboard-link @(currentController == "Employee" && currentAction == "MyDashboard" ? "active-menu" : "")">
 
+                    <div class="menu-group-left">
+                        <i class="bi bi-speedometer2"></i>
+                        <span>My Dashboard</span>
+                    </div>
+
+                </a>
+            }
         </div>
 
         @* Master Setup *@
@@ -264,6 +312,21 @@
                             <span>Designations</span>
 
                         </a>
+
+                        @if (isAdmin)
+                        {
+                            <a asp-controller="LoginHistory"
+                               asp-action="Index"
+                               class="submenu-item
+                               @(currentController == "LoginHistory"
+                                                          ? "active-menu"
+                                                          : "")">
+                               
+                                 <i class="bi bi-shield-lock"></i>
+                                 <span>Login History</span>
+
+                            </a>
+                         }
 
                     </div>
 
@@ -639,10 +702,10 @@
         </div>    
 
         @* Project Management *@
+        @* Project Management *@
         @if (canAccessProjectManagement)
         {
             <div class="menu-group">
-
                 <button class="menu-group-header @(isProjectActive ? "active-menu" : "")"
                         type="button"
                         data-bs-toggle="collapse"
@@ -655,7 +718,6 @@
                     </div>
 
                     <i class="bi bi-chevron-down"></i>
-
                 </button>
 
                 <div class="collapse @(isProjectActive ? "show" : "")"
@@ -664,143 +726,142 @@
 
                     <div class="submenu" id="projectSubAccordion">
 
-                        <div class="submenu-nested">
+                        @if (isEmployeeOnly)
+                        {
+                            <a asp-controller="EmployeeProject"
+                               asp-action="MyTasks"
+                               class="submenu-item @(currentController == "EmployeeProject" ? "active-menu" : "")">
+                                <i class="bi bi-list-check"></i>
+                                <span>My Tasks</span>
+                            </a>
+                        }
+                        else
+                        {
+                            <a asp-controller="Project"
+                               asp-action="Overview"
+                               class="submenu-item @(currentController == "Project" && currentAction == "Overview" ? "active-menu" : "")">
+                                <i class="bi bi-speedometer2"></i>
+                                <span>Dashboard</span>
+                            </a>
 
-                            <button class="submenu-item submenu-toggle @(isProjectSetupActive ? "active-menu" : "")"
-                                    type="button"
-                                    data-bs-toggle="collapse"
-                                    data-bs-target="#projectSetupSubMenu"
-                                    aria-expanded="@isProjectSetupActive.ToString().ToLower()">
+                            <div class="submenu-nested">
+                                <button class="submenu-item submenu-toggle @(isProjectSetupActive ? "active-menu" : "")"
+                                        type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#projectSetupSubMenu"
+                                        aria-expanded="@isProjectSetupActive.ToString().ToLower()">
 
-                                <i class="bi bi-folder2-open"></i>
-                                <span>Project Setup</span>
-                                <i class="bi bi-chevron-down ms-auto"></i>
+                                    <i class="bi bi-folder2-open"></i>
+                                    <span>Project Setup</span>
+                                    <i class="bi bi-chevron-down ms-auto"></i>
+                                </button>
 
-                            </button>
+                                <div class="collapse @(isProjectSetupActive ? "show" : "")"
+                                     id="projectSetupSubMenu"
+                                     data-bs-parent="#projectSubAccordion">
 
-                            <div class="collapse @(isProjectSetupActive ? "show" : "")"
-                                 id="projectSetupSubMenu"
-                                 data-bs-parent="#projectSubAccordion">
+                                    @if (isAdmin || isHR)
+                                    {
+                                        <a asp-controller="Project"
+                                           asp-action="Index"
+                                           class="submenu-item nested-item @(currentController == "Project" && currentAction != "Overview" ? "active-menu" : "")">
+                                            <i class="bi bi-kanban"></i>
+                                            <span>Projects</span>
+                                        </a>
 
-                                @if (isAdmin || isHR)
-                                {
-                                    <a asp-controller="Project"
-                                       asp-action="Index"
-                                       class="submenu-item nested-item @(currentController == "Project" ? "active-menu" : "")">
-                                        <i class="bi bi-kanban"></i>
-                                        <span>Projects</span>
-                                    </a>
-                                }
-
-                                @if (isAdmin || isHR)
-                                {
-                                    <a asp-controller="ProjectMember"
-                                       asp-action="AllMembers"
-                                       class="submenu-item nested-item @(currentController == "ProjectMember" ? "active-menu" : "")">
-                                        <i class="bi bi-people"></i>
-                                        <span>Members</span>
-                                    </a>
-                                }
-
+                                        <a asp-controller="ProjectMember"
+                                           asp-action="AllMembers"
+                                           class="submenu-item nested-item @(currentController == "ProjectMember" ? "active-menu" : "")">
+                                            <i class="bi bi-people"></i>
+                                            <span>Members</span>
+                                        </a>
+                                    }
+                                </div>
                             </div>
 
-                        </div>
+                            <div class="submenu-nested">
+                                <button class="submenu-item submenu-toggle @(isProjectPlanningActive ? "active-menu" : "")"
+                                        type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#projectPlanningSubMenu"
+                                        aria-expanded="@isProjectPlanningActive.ToString().ToLower()">
 
-                        <div class="submenu-nested">
+                                    <i class="bi bi-diagram-3"></i>
+                                    <span>Planning</span>
+                                    <i class="bi bi-chevron-down ms-auto"></i>
+                                </button>
 
-                            <button class="submenu-item submenu-toggle @(isProjectPlanningActive ? "active-menu" : "")"
-                                    type="button"
-                                    data-bs-toggle="collapse"
-                                    data-bs-target="#projectPlanningSubMenu"
-                                    aria-expanded="@isProjectPlanningActive.ToString().ToLower()">
+                                <div class="collapse @(isProjectPlanningActive ? "show" : "")"
+                                     id="projectPlanningSubMenu"
+                                     data-bs-parent="#projectSubAccordion">
 
-                                <i class="bi bi-diagram-3"></i>
-                                <span>Planning</span>
-                                <i class="bi bi-chevron-down ms-auto"></i>
+                                    @if (isAdmin || isHR)
+                                    {
+                                        <a asp-controller="ProjectTask"
+                                           asp-action="Index"
+                                           class="submenu-item nested-item @(currentController == "ProjectTask" ? "active-menu" : "")">
+                                            <i class="bi bi-list-task"></i>
+                                            <span>Tasks</span>
+                                        </a>
 
-                            </button>
-
-                            <div class="collapse @(isProjectPlanningActive ? "show" : "")"
-                                 id="projectPlanningSubMenu"
-                                 data-bs-parent="#projectSubAccordion">
-
-                                @if (isAdmin || isHR)
-                                {
-                                    <a asp-controller="ProjectTask"
-                                       asp-action="Index"
-                                       class="submenu-item nested-item @(currentController == "ProjectTask" ? "active-menu" : "")">
-                                        <i class="bi bi-list-task"></i>
-                                        <span>Tasks</span>
-                                    </a>
-                                }
-
-                                @if (isAdmin || isHR)
-                                {
-                                    <a asp-controller="ProjectFlow"
-                                       asp-action="Index"
-                                       class="submenu-item nested-item @(currentController == "ProjectFlow" ? "active-menu" : "")">
-                                        <i class="bi bi-signpost-split"></i>
-                                        <span>Milestones</span>
-                                    </a>
-                                }
-
+                                        <a asp-controller="ProjectFlow"
+                                           asp-action="Index"
+                                           class="submenu-item nested-item @(currentController == "ProjectFlow" ? "active-menu" : "")">
+                                            <i class="bi bi-signpost-split"></i>
+                                            <span>Milestones</span>
+                                        </a>
+                                    }
+                                </div>
                             </div>
 
-                        </div>
+                            <div class="submenu-nested">
+                                <button class="submenu-item submenu-toggle @(isProjectTrackingActive ? "active-menu" : "")"
+                                        type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#projectTrackingSubMenu"
+                                        aria-expanded="@isProjectTrackingActive.ToString().ToLower()">
 
-                        <div class="submenu-nested">
+                                    <i class="bi bi-activity"></i>
+                                    <span>Tracker</span>
+                                    <i class="bi bi-chevron-down ms-auto"></i>
+                                </button>
 
-                            <button class="submenu-item submenu-toggle @(isProjectTrackingActive ? "active-menu" : "")"
-                                    type="button"
-                                    data-bs-toggle="collapse"
-                                    data-bs-target="#projectTrackingSubMenu"
-                                    aria-expanded="@isProjectTrackingActive.ToString().ToLower()">
+                                <div class="collapse @(isProjectTrackingActive ? "show" : "")"
+                                     id="projectTrackingSubMenu"
+                                     data-bs-parent="#projectSubAccordion">
 
-                                <i class="bi bi-activity"></i>
-                                <span>Tracker</span>
-                                <i class="bi bi-chevron-down ms-auto"></i>
+                                    @if (isAdmin || isHR)
+                                    {
+                                        <a asp-controller="TaskTracker"
+                                           asp-action="Index"
+                                           class="submenu-item nested-item @(currentController == "TaskTracker" ? "active-menu" : "")">
+                                            <i class="bi bi-activity"></i>
+                                            <span>Task Updates</span>
+                                        </a>
+                                    }
 
-                            </button>
-
-                            <div class="collapse @(isProjectTrackingActive ? "show" : "")"
-                                 id="projectTrackingSubMenu"
-                                 data-bs-parent="#projectSubAccordion">
-
-                                @if (isAdmin || isHR)
-                                {
-                                    <a asp-controller="TaskTracker"
+                                    <a asp-controller="MOM"
                                        asp-action="Index"
-                                       class="submenu-item nested-item @(currentController == "TaskTracker" ? "active-menu" : "")">
-                                        <i class="bi bi-activity"></i>
-                                        <span>Task Updates</span>
+                                       class="submenu-item nested-item @(currentController == "MOM" ? "active-menu" : "")">
+                                        <i class="bi bi-journal-text"></i>
+                                        <span>Meetings</span>
                                     </a>
-                                }
 
-                                <a asp-controller="MOM"
-                                   asp-action="Index"
-                                   class="submenu-item nested-item @(currentController == "MOM" ? "active-menu" : "")">
-                                    <i class="bi bi-journal-text"></i>
-                                    <span>Meetings</span>
-                                </a>
-
-                                @if (isAdmin || isHR)
-                                {
-                                    <a asp-controller="Risk"
-                                       asp-action="Index"
-                                       class="submenu-item nested-item @(currentController == "Risk" ? "active-menu" : "")">
-                                        <i class="bi bi-exclamation-triangle"></i>
-                                        <span>Risks</span>
-                                    </a>
-                                }
-
+                                    @if (isAdmin || isHR)
+                                    {
+                                        <a asp-controller="Risk"
+                                           asp-action="Index"
+                                           class="submenu-item nested-item @(currentController == "Risk" ? "active-menu" : "")">
+                                            <i class="bi bi-exclamation-triangle"></i>
+                                            <span>Risks</span>
+                                        </a>
+                                    }
+                                </div>
                             </div>
-
-                        </div>
+                        }
 
                     </div>
-
                 </div>
-
             </div>
         }
 
@@ -830,7 +891,16 @@
 
                     <div class="submenu" id="financeSubAccordion">
 
+                        <a asp-controller="AccountsFinance"
+                           asp-action="Dashboard"
+                           class="submenu-item @(currentController == "AccountsFinance" ? "active-menu" : "")">
+                            <i class="bi bi-speedometer2"></i>
+                            <span>Dashboard</span>
+                        </a>
+
                         <div class="submenu-nested">
+
+
 
                             <button class="submenu-item submenu-toggle @(isComplianceDocumentsActive ? "active-menu" : "")"
                                     type="button"
@@ -1136,8 +1206,32 @@
 
         <div class="user-profile d-flex flex-row justify-content-between">
 
-            <div class="user-avatar">
-                @initials
+            @{
+                var sidebarActivityStatus = currentUser?.ActivityStatus ?? "Offline";
+                var sidebarActivityClass = sidebarActivityStatus.ToLower().Replace(" ", "-");
+            }
+
+            <div class="activity-avatar sidebar-footer-avatar">
+
+                <div class="user-avatar">
+
+                    @if (!string.IsNullOrWhiteSpace(currentUser?.ProfilePhotoPath))
+                    {
+                        <img src="@currentUser.ProfilePhotoPath"
+                             alt="@userName"
+                             class="user-avatar-img" />
+                    }
+                    else
+                    {
+                        @initials
+                    }
+
+                </div>
+
+                <span class="activity-dot activity-@sidebarActivityClass"
+                      title="@sidebarActivityStatus">
+                </span>
+
             </div>
 
             <div class="user-details">
@@ -1148,6 +1242,10 @@
 
                 <div class="user-role">
                     @role
+                </div>
+
+                <div class="user-activity-status">
+                    @sidebarActivityStatus
                 </div>
 
             </div>

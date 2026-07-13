@@ -13,5 +13,11 @@
         public string Role { get; set; } = string.Empty;
 
         public bool IsActive { get; set; }
+
+        public string ActivityStatus { get; set; } = "Offline";
+
+        public string? ActivityStatusMessage { get; set; }
+
+        public DateTime? LastSeenOn { get; set; }
     }
 }

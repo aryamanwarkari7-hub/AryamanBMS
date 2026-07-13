@@ -1,8 +1,11 @@
-﻿<!DOCTYPE html>
+﻿@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="@Antiforgery.GetAndStoreTokens(Context).RequestToken" />
     <title>@ViewData["Title"] - AryamanBMS</title>
     @*Bootsrap*@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
@@ -13,6 +16,7 @@
     @*Css Links*@
     <link rel="stylesheet" href="~/css/variables.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/components/notification.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/layout.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/sidebar.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/navbar.css" asp-append-version="true" />
@@ -20,6 +24,7 @@
     <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/gantt.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/timeline.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/index.css" asp-append-version="true" />
 
     <link rel="stylesheet" href="~/css/components/cards.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/components/buttons.css" asp-append-version="true" />
@@ -28,6 +33,7 @@
     <link rel="stylesheet" href="~/css/components/tables.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/components/badges.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/components/alerts.css" asp-append-version="true"/>
+    <link rel="stylesheet" href="~/css/components/avatar.css" asp-append-version="true"/>
     <link rel="stylesheet" href="~/css/modules/payslip-print.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/modules/invoice-print.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/print.css" asp-append-version="true" />
@@ -93,5 +99,9 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
     
     @await RenderSectionAsync("Scripts", required: false)
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <script src="~/js/activity-heartbeat.js" asp-append-version="true"></script>
+    }
 </body>
 </html>

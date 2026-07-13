@@ -1,0 +1,186 @@
+@model IEnumerable<AryamanBMS.Models.ProjectTaskModel>
+
+@{
+    ViewData["Title"] = "My Tasks";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">My Tasks</h1>
+        <p class="module-subtitle">Track tasks assigned to you</p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-controller="Employee"
+           asp-action="MyDashboard"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-speedometer2"></i>
+            My Dashboard
+        </a>
+    </div>
+</div>
+
+<div class="app-card mb-3">
+    <div class="card-body">
+        <form asp-action="MyTasks" method="get">
+            <div class="filter-form-row">
+
+                <input type="text"
+                       name="searchText"
+                       value="@ViewBag.SearchText"
+                       class="app-input flex-grow-1"
+                       placeholder="Task code, title or project"
+                       autocomplete="off" />
+
+                <select name="status" class="app-select">
+                    <option value="">All Statuses</option>
+                    <option value="Not Started" selected="@(ViewBag.Status == "Not Started")">Not Started</option>
+                    <option value="In Progress" selected="@(ViewBag.Status == "In Progress")">In Progress</option>
+                    <option value="Completed" selected="@(ViewBag.Status == "Completed")">Completed</option>
+                    <option value="On Hold" selected="@(ViewBag.Status == "On Hold")">On Hold</option>
+                </select>
+
+                <select name="priority" class="app-select">
+                    <option value="">All Priorities</option>
+                    <option value="Low" selected="@(ViewBag.Priority == "Low")">Low</option>
+                    <option value="Medium" selected="@(ViewBag.Priority == "Medium")">Medium</option>
+                    <option value="High" selected="@(ViewBag.Priority == "High")">High</option>
+                    <option value="Critical" selected="@(ViewBag.Priority == "Critical")">Critical</option>
+                </select>
+
+                <div class="filter-form-actions">
+                    <button type="submit" class="btn-app btn-primary-app">
+                        <i class="bi bi-search"></i>
+                        Search
+                    </button>
+
+                    <a asp-action="MyTasks" class="btn-app btn-secondary-app">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                        Reset
+                    </a>
+                </div>
+
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="app-card table-card">
+    <div class="card-header">
+        <h5 class="card-title">Assigned Task List</h5>
+    </div>
+
+    <div class="card-body">
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                No assigned tasks found.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="app-table">
+                    <thead>
+                        <tr>
+                            <th>Task Code</th>
+                            <th>Task Title</th>
+                            <th>Project</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Completion</th>
+                            <th>Due Date</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var task in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@task.TaskCode</strong>
+                                </td>
+
+                                <td>@task.TaskTitle</td>
+
+                                <td>
+                                    @(task.Project?.ProjectCode ?? "-")
+                                    <br />
+                                    <small>@(task.Project?.ProjectName ?? "-")</small>
+                                </td>
+
+                                <td>
+                                    @switch (task.Priority)
+                                    {
+                                        case "Critical":
+                                        case "High":
+                                            <span class="badge-danger">@task.Priority</span>
+                                            break;
+
+                                        case "Medium":
+                                            <span class="badge-warning">@task.Priority</span>
+                                            break;
+
+                                        default:
+                                            <span class="badge-secondary">@task.Priority</span>
+                                            break;
+                                    }
+                                </td>
+
+                                <td>
+                                    @switch (task.Status)
+                                    {
+                                        case "Completed":
+                                            <span class="badge-success">Completed</span>
+                                            break;
+
+                                        case "In Progress":
+                                            <span class="badge-info">In Progress</span>
+                                            break;
+
+                                        case "On Hold":
+                                            <span class="badge-warning">On Hold</span>
+                                            break;
+
+                                        default:
+                                            <span class="badge-secondary">@task.Status</span>
+                                            break;
+                                    }
+                                </td>
+
+                                <td>@task.ProgressPercent%</td>
+
+                                <td>
+                                    @(task.DueDate?.ToString("dd-MMM-yyyy") ?? "-")
+                                </td>
+
+                                <td>
+                                    <div class="table-actions justify-content-end">
+                                        <a asp-controller="EmployeeProject"
+   asp-action="TaskDetails"
+   asp-route-id="@task.Id"
+   class="btn-app btn-primary-app btn-icon"
+   title="View details"
+   aria-label="View task details">
+    <i class="bi bi-eye"></i>
+</a>
+
+                                        @* <a asp-controller="TaskTracker"
+                                           asp-action="Index"
+                                           asp-route-projectTaskId="@task.Id"
+                                           class="btn-app btn-secondary-app btn-icon"
+                                           title="Task updates"
+                                           aria-label="Task updates">
+                                            <i class="bi bi-activity"></i>
+                                        </a> *@
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

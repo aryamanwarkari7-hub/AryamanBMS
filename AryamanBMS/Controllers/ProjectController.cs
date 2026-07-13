@@ -206,6 +206,262 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> Overview()
+        {
+            var today = DateTime.Today;
+            var upcomingEnd = today.AddDays(14);
+
+            var projectsQuery = _projectRepository.Projects
+                .AsNoTracking()
+                .Include(p => p.ProjectManager)
+                .Where(p => p.IsActive);
+
+            projectsQuery = await _projectAccessService.ApplyProjectFilterAsync(
+                User,
+                projectsQuery);
+
+            var projects = await projectsQuery.ToListAsync();
+
+            var projectIds = projects.Select(p => p.Id).ToList();
+
+            var tasks = await _projectTaskRepository.ProjectTasks
+                .AsNoTracking()
+                .Include(t => t.Project)
+                .Where(t =>
+                    t.IsActive &&
+                    projectIds.Contains(t.ProjectId))
+                .ToListAsync();
+
+            var risks = await _projectRiskRepository.ProjectRisks
+                .AsNoTracking()
+                .Include(r => r.Project)
+                .Where(r =>
+                    r.IsActive &&
+                    projectIds.Contains(r.ProjectId))
+                .ToListAsync();
+
+            var meetings = await _projectMeetingRepository.Meetings
+                .AsNoTracking()
+                .Include(m => m.Project)
+                .Where(m =>
+                    m.IsActive &&
+                    projectIds.Contains(m.ProjectId))
+                .ToListAsync();
+
+            var flows = await _projectFlowRepository.ProjectFlows
+                .AsNoTracking()
+                .Include(f => f.Project)
+                .Where(f =>
+                    f.IsActive &&
+                    projectIds.Contains(f.ProjectId))
+                .ToListAsync();
+
+            int completedTasks = tasks.Count(t =>
+                string.Equals(t.Status, "Completed", StringComparison.OrdinalIgnoreCase));
+
+            int overdueTasks = tasks.Count(t =>
+                t.DueDate.HasValue &&
+                t.DueDate.Value.Date < today &&
+                !string.Equals(t.Status, "Completed", StringComparison.OrdinalIgnoreCase));
+
+            int overdueProjects = projects.Count(p =>
+                p.EndDate.HasValue &&
+                p.EndDate.Value.Date < today &&
+                !string.Equals(p.Status, "Completed", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(p.Status, "Cancelled", StringComparison.OrdinalIgnoreCase));
+
+            var model = new ProjectOverviewDashboardViewModel
+            {
+                TotalProjects = projects.Count,
+
+                ActiveProjects = projects.Count(p =>
+                    string.Equals(p.Status, "In Progress", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(p.Status, "Planning", StringComparison.OrdinalIgnoreCase)),
+
+                CompletedProjects = projects.Count(p =>
+                    string.Equals(p.Status, "Completed", StringComparison.OrdinalIgnoreCase)),
+
+                OnHoldProjects = projects.Count(p =>
+                    string.Equals(p.Status, "On Hold", StringComparison.OrdinalIgnoreCase)),
+
+                OverdueProjects = overdueProjects,
+
+                TotalTasks = tasks.Count,
+
+                CompletedTasks = completedTasks,
+
+                OpenTasks = tasks.Count - completedTasks,
+
+                OverdueTasks = overdueTasks,
+
+                OpenRisks = risks.Count(r =>
+                    string.Equals(r.RiskStatus, "Open", StringComparison.OrdinalIgnoreCase)),
+
+                CriticalRisks = risks.Count(r =>
+                    string.Equals(r.Severity, "Critical", StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(r.RiskStatus, "Closed", StringComparison.OrdinalIgnoreCase)),
+
+                UpcomingMeetings = meetings.Count(m =>
+                    m.MeetingDate.Date >= today &&
+                    m.MeetingDate.Date <= upcomingEnd &&
+                    !string.Equals(m.MeetingStatus, "Cancelled", StringComparison.OrdinalIgnoreCase)),
+
+                PendingMilestones = flows.Count(f =>
+                    string.Equals(f.StageStatus, "Pending", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(f.StageStatus, "In Progress", StringComparison.OrdinalIgnoreCase)),
+
+                AverageProgress = tasks.Any()
+                    ? Math.Round(tasks.Average(t => (decimal)t.ProgressPercent), 2)
+                    : 0,
+
+                TotalBudget = projects.Sum(p => p.Budget)
+            };
+
+            model.StatusBuckets = BuildProjectOverviewBuckets(
+                projects
+                    .GroupBy(p => p.Status ?? "Unknown")
+                    .Select(g => new ProjectOverviewBucket
+                    {
+                        Label = g.Key,
+                        Count = g.Count(),
+                        CssClass = GetProjectBucketClass(g.Key)
+                    })
+                    .OrderByDescending(x => x.Count)
+                    .ToList());
+
+            model.PriorityBuckets = BuildProjectOverviewBuckets(
+                projects
+                    .GroupBy(p => p.Priority ?? "Unknown")
+                    .Select(g => new ProjectOverviewBucket
+                    {
+                        Label = g.Key,
+                        Count = g.Count(),
+                        CssClass = GetProjectBucketClass(g.Key)
+                    })
+                    .OrderByDescending(x => x.Count)
+                    .ToList());
+
+            model.TaskStatusBuckets = BuildProjectOverviewBuckets(
+                tasks
+                    .GroupBy(t => t.Status ?? "Unknown")
+                    .Select(g => new ProjectOverviewBucket
+                    {
+                        Label = g.Key,
+                        Count = g.Count(),
+                        CssClass = GetProjectBucketClass(g.Key)
+                    })
+                    .OrderByDescending(x => x.Count)
+                    .ToList());
+
+            model.OverdueProjectList = projects
+                .Where(p =>
+                    p.EndDate.HasValue &&
+                    p.EndDate.Value.Date < today &&
+                    !string.Equals(p.Status, "Completed", StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(p.Status, "Cancelled", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(p => p.EndDate)
+                .Take(8)
+                .Select(p => new ProjectOverviewListItem
+                {
+                    Id = p.Id,
+                    ProjectId = p.Id,
+                    Title = p.ProjectName,
+                    Subtitle = p.ProjectCode,
+                    Meta = p.EndDate?.ToString("dd-MMM-yyyy"),
+                    Badge = p.Status
+                })
+                .ToList();
+
+            model.OverdueTaskList = tasks
+                .Where(t =>
+                    t.DueDate.HasValue &&
+                    t.DueDate.Value.Date < today &&
+                    !string.Equals(t.Status, "Completed", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(t => t.DueDate)
+                .Take(8)
+                .Select(t => new ProjectOverviewListItem
+                {
+                    Id = t.Id,
+                    ProjectId = t.ProjectId,
+                    Title = t.TaskTitle,
+                    Subtitle = t.Project?.ProjectName,
+                    Meta = t.DueDate?.ToString("dd-MMM-yyyy"),
+                    Badge = t.Status
+                })
+                .ToList();
+
+            model.CriticalRiskList = risks
+                .Where(r =>
+                    string.Equals(r.Severity, "Critical", StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(r.RiskStatus, "Closed", StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(r => r.RiskScore)
+                .Take(8)
+                .Select(r => new ProjectOverviewListItem
+                {
+                    Id = r.Id,
+                    ProjectId = r.ProjectId,
+                    Title = r.RiskTitle,
+                    Subtitle = r.Project?.ProjectName,
+                    Meta = $"Score {r.RiskScore}",
+                    Badge = r.RiskStatus
+                })
+                .ToList();
+
+            model.UpcomingMeetingList = meetings
+                .Where(m =>
+                    m.MeetingDate.Date >= today &&
+                    m.MeetingDate.Date <= upcomingEnd &&
+                    !string.Equals(m.MeetingStatus, "Cancelled", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(m => m.MeetingDate)
+                .Take(8)
+                .Select(m => new ProjectOverviewListItem
+                {
+                    Id = m.Id,
+                    ProjectId = m.ProjectId,
+                    Title = m.MeetingTitle,
+                    Subtitle = m.Project?.ProjectName,
+                    Meta = m.MeetingDate.ToString("dd-MMM-yyyy"),
+                    Badge = m.MeetingStatus
+                })
+                .ToList();
+
+            return View(model);
+        }
+
+        private static List<ProjectOverviewBucket> BuildProjectOverviewBuckets(
+    List<ProjectOverviewBucket> buckets)
+        {
+            int total = buckets.Sum(x => x.Count);
+
+            foreach (var bucket in buckets)
+            {
+                bucket.Percent = total == 0
+                    ? 0
+                    : Math.Round((decimal)bucket.Count / total * 100, 2);
+            }
+
+            return buckets;
+        }
+
+        private static string GetProjectBucketClass(string value)
+        {
+            return value switch
+            {
+                "Completed" => "bucket-success",
+                "In Progress" => "bucket-info",
+                "Planning" => "bucket-warning",
+                "On Hold" => "bucket-danger",
+                "Cancelled" => "bucket-neutral",
+                "Critical" => "bucket-danger",
+                "High" => "bucket-warning",
+                "Medium" => "bucket-info",
+                "Low" => "bucket-success",
+                "Not Started" => "bucket-neutral",
+                _ => "bucket-info"
+            };
+        }
+
+        [HttpGet]
         public async Task<IActionResult> Dashboard(int id)
         {
             var project =

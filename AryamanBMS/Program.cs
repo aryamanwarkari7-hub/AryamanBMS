@@ -1,4 +1,5 @@
 using AryamanBMS.Data;
+using AryamanBMS.Middleware;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories;
 using AryamanBMS.Repositories.Implementations;
@@ -11,6 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 using QuestPDF.Infrastructure;
+using AryamanBMS.Services.Background;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -144,6 +146,16 @@ builder.Services.AddScoped< IProposalDocumentService,ProposalDocumentService>();
 // INVOICE SERVICE
 builder.Services.AddScoped<IInvoiceDocumentService,InvoiceDocumentService>();
 
+// NOTIFICATION SERVICE
+builder.Services.AddScoped<INotificationService,NotificationService>();
+
+// BACKGROUND SERVICE
+builder.Services.AddHostedService<TaskReminderBackgroundService>();
+builder.Services.AddHostedService<InvoiceReminderBackgroundService>();
+
+// LOGIN HISTORY SERVICE
+builder.Services.AddScoped<ILoginHistoryService,LoginHistoryService>();
+
 QuestPDF.Settings.License =LicenseType.Evaluation;
 
 var app = builder.Build();
@@ -166,11 +178,14 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthentication();
+
+app.UseMiddleware<UserActivityMiddleware>();
+
 app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Dashboard}/{action=Index}/{id?}");
+    pattern: "{controller=Account}/{action=Login}/{id?}");
 
 
 using (var scope = app.Services.CreateScope())

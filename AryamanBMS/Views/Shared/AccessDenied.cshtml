@@ -17,11 +17,24 @@
         </p>
 
         <div class="state-actions">
-            <a asp-controller="Dashboard"
-               asp-action="Index"
-               class="btn-app btn-primary-app">
-                Go to Dashboard
-            </a>
+            @if (User.IsInRole("Employee") &&
+                        !User.IsInRole("Admin") &&
+                        !User.IsInRole("HR"))
+            {
+                <a asp-controller="Employee"
+                   asp-action="MyDashboard"
+                   class="btn-app btn-primary-app">
+                    Go to My Dashboard
+                </a>
+            }
+            else
+            {
+                <a asp-controller="Dashboard"
+                   asp-action="Index"
+                   class="btn-app btn-primary-app">
+                    Go to Dashboard
+                </a>
+            }
 
             <a asp-controller="Account"
                asp-action="Profile"

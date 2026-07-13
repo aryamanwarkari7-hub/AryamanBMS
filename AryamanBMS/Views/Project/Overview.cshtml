@@ -1,0 +1,259 @@
+﻿@model AryamanBMS.ViewModels.ProjectOverviewDashboardViewModel
+
+@using System.Globalization
+
+@{
+    ViewData["Title"] = "Project Dashboard";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Project Dashboard</h1>
+        <p class="module-subtitle">Projects, tasks, risks and meetings overview</p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="Index" class="btn-app btn-secondary-app">
+            <i class="bi bi-list"></i>
+            Project List
+        </a>
+
+        <a asp-action="Create" class="btn-app btn-primary-app">
+            <i class="bi bi-plus-lg"></i>
+            Add Project
+        </a>
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <div class="stats-card">
+        <div class="stats-label">Total Projects</div>
+        <div class="stats-number">@Model.TotalProjects</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Active Projects</div>
+        <div class="stats-number">@Model.ActiveProjects</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Overdue Projects</div>
+        <div class="stats-number">@Model.OverdueProjects</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Average Progress</div>
+        <div class="stats-number">@Model.AverageProgress.ToString("0.##")%</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Open Tasks</div>
+        <div class="stats-number">@Model.OpenTasks</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Overdue Tasks</div>
+        <div class="stats-number">@Model.OverdueTasks</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Critical Risks</div>
+        <div class="stats-number">@Model.CriticalRisks</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Upcoming Meetings</div>
+        <div class="stats-number">@Model.UpcomingMeetings</div>
+    </div>
+</div>
+
+<div class="main-dashboard-layout">
+    <div class="app-card dashboard-section-card">
+        <div class="card-header">
+            <h5 class="card-title">Project Status</h5>
+        </div>
+
+        <div class="card-body">
+            @foreach (var item in Model.StatusBuckets)
+            {
+                <div class="dashboard-bar-row">
+                    <div class="dashboard-bar-label">
+                        <span>@item.Label</span>
+                        <strong>@item.Count</strong>
+                    </div>
+
+                    <div class="dashboard-bar-track">
+                        <div class="dashboard-bar-fill @item.CssClass"
+                             style="width: @item.Percent.ToString("0.##", CultureInfo.InvariantCulture)%;">
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="app-card dashboard-section-card">
+        <div class="card-header">
+            <h5 class="card-title">Project Priority</h5>
+        </div>
+
+        <div class="card-body">
+            @foreach (var item in Model.PriorityBuckets)
+            {
+                <div class="dashboard-bar-row">
+                    <div class="dashboard-bar-label">
+                        <span>@item.Label</span>
+                        <strong>@item.Count</strong>
+                    </div>
+
+                    <div class="dashboard-bar-track">
+                        <div class="dashboard-bar-fill @item.CssClass"
+                             style="width: @item.Percent.ToString("0.##", CultureInfo.InvariantCulture)%;">
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="app-card dashboard-section-card dashboard-finance-card">
+        <div class="card-header">
+            <h5 class="card-title">Task Status</h5>
+        </div>
+
+        <div class="card-body">
+            @foreach (var item in Model.TaskStatusBuckets)
+            {
+                <div class="dashboard-bar-row">
+                    <div class="dashboard-bar-label">
+                        <span>@item.Label</span>
+                        <strong>@item.Count</strong>
+                    </div>
+
+                    <div class="dashboard-bar-track">
+                        <div class="dashboard-bar-fill @item.CssClass"
+                             style="width: @item.Percent.ToString("0.##", CultureInfo.InvariantCulture)%;">
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="main-dashboard-layout">
+    <div class="app-card dashboard-section-card">
+        <div class="card-header">
+            <h5 class="card-title">Overdue Projects</h5>
+        </div>
+
+        <div class="card-body">
+            @if (!Model.OverdueProjectList.Any())
+            {
+                <div class="empty-state">No overdue projects.</div>
+            }
+            else
+            {
+                foreach (var item in Model.OverdueProjectList)
+                {
+                    <a asp-action="Dashboard"
+                       asp-route-id="@item.ProjectId"
+                       class="dashboard-list-link">
+                        <span>
+                            <strong>@item.Title</strong>
+                            <small>@item.Subtitle</small>
+                        </span>
+                        <span class="badge-danger">@item.Meta</span>
+                    </a>
+                }
+            }
+        </div>
+    </div>
+
+    <div class="app-card dashboard-section-card">
+        <div class="card-header">
+            <h5 class="card-title">Overdue Tasks</h5>
+        </div>
+
+        <div class="card-body">
+            @if (!Model.OverdueTaskList.Any())
+            {
+                <div class="empty-state">No overdue tasks.</div>
+            }
+            else
+            {
+                foreach (var item in Model.OverdueTaskList)
+                {
+                    <a asp-controller="ProjectTask"
+                       asp-action="Details"
+                       asp-route-id="@item.Id"
+                       class="dashboard-list-link">
+                        <span>
+                            <strong>@item.Title</strong>
+                            <small>@item.Subtitle</small>
+                        </span>
+                        <span class="badge-danger">@item.Meta</span>
+                    </a>
+                }
+            }
+        </div>
+    </div>
+
+    <div class="app-card dashboard-section-card">
+        <div class="card-header">
+            <h5 class="card-title">Critical Risks</h5>
+        </div>
+
+        <div class="card-body">
+            @if (!Model.CriticalRiskList.Any())
+            {
+                <div class="empty-state">No critical risks.</div>
+            }
+            else
+            {
+                foreach (var item in Model.CriticalRiskList)
+                {
+                    <a asp-controller="Risk"
+                       asp-action="Index"
+                       asp-route-projectId="@item.ProjectId"
+                       class="dashboard-list-link">
+                        <span>
+                            <strong>@item.Title</strong>
+                            <small>@item.Subtitle</small>
+                        </span>
+                        <span class="badge-danger">@item.Meta</span>
+                    </a>
+                }
+            }
+        </div>
+    </div>
+
+    <div class="app-card dashboard-section-card">
+        <div class="card-header">
+            <h5 class="card-title">Upcoming Meetings</h5>
+        </div>
+
+        <div class="card-body">
+            @if (!Model.UpcomingMeetingList.Any())
+            {
+                <div class="empty-state">No upcoming meetings.</div>
+            }
+            else
+            {
+                foreach (var item in Model.UpcomingMeetingList)
+                {
+                    <a asp-controller="MOM"
+                       asp-action="Index"
+                       asp-route-projectId="@item.ProjectId"
+                       class="dashboard-list-link">
+                        <span>
+                            <strong>@item.Title</strong>
+                            <small>@item.Subtitle</small>
+                        </span>
+                        <span class="badge-info">@item.Meta</span>
+                    </a>
+                }
+            }
+        </div>
+    </div>
+</div>

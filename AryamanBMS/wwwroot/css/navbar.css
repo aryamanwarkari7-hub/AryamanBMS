@@ -114,8 +114,8 @@
 }
 
 .user-avatar {
-    width: 45px;
-    height: 40px;
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
     background: var(--primary-color);
     color: var(--text-light);
@@ -125,6 +125,15 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.user-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
 .dropdown-menu {

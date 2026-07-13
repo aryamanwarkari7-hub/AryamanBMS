@@ -1,318 +1,349 @@
 ﻿@model AryamanBMS.ViewModels.AttendanceDashboardViewModel
 
+@using System.Globalization
+
 @{
     ViewData["Title"] = "Attendance Dashboard";
 
-    bool isDailyView =
-        ViewBag.IsDailyView == true;
+    bool isDailyView = ViewBag.IsDailyView == true;
 
-    DateTime? selectedDate =
-        ViewBag.SelectedDate as DateTime?;
+    DateTime? selectedDate = ViewBag.SelectedDate as DateTime?;
 
     var dailyAttendance =
-        ViewBag.DailyAttendance
-        as List<AryamanBMS.Models.AttendanceModel>
+        ViewBag.DailyAttendance as List<AryamanBMS.Models.AttendanceModel>
         ?? new List<AryamanBMS.Models.AttendanceModel>();
+
+    string periodLabel = isDailyView
+        ? Model.SummaryDate.ToString("dd MMM yyyy")
+        : $"{CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(Model.Month)} {Model.Year}";
 }
 
 <div class="module-header">
-
     <div>
-        <h1 class="module-title">
-            Attendance Dashboard
-        </h1>
-
-        <p class="module-subtitle">
-            Monthly Attendance Summary
-        </p>
+        <h1 class="module-title">Attendance Dashboard</h1>
+        <p class="module-subtitle">Attendance overview for @periodLabel</p>
     </div>
 
-    <div class="d-flex gap-2 mb-3">
-
-        <a asp-action="Create"
-           class="btn-app btn-primary-app">
-
+    <div class="module-header-actions">
+        <a asp-action="Create" class="btn-app btn-primary-app">
             <i class="bi bi-plus-circle"></i>
             Add Attendance
-
         </a>
-        
 
-        <a asp-action="Register"
-           class="btn-app btn-secondary-app">
-
+        <a asp-action="Register" class="btn-app btn-secondary-app">
             <i class="bi bi-table"></i>
-            Attendance Register
-
+            Register
         </a>
 
-        <a asp-action="Summary"
-           class="btn-app btn-secondary-app">
-
+        <a asp-action="Summary" class="btn-app btn-secondary-app">
             <i class="bi bi-bar-chart"></i>
-            Attendance Summary
-
+            Summary
         </a>
-
     </div>
-
 </div>
-
-
-<!-- Summary Cards -->
-
-<div class="dashboard-grid">
-
-    <div class="stats-card">
-
-        <div class="stats-label">
-            @(isDailyView
-                        ? $"Present on {selectedDate:dd MMM yyyy}"
-                        : "Present Today")
-        </div>
-
-        <div class="stats-number">
-            @Model.PresentToday
-        </div>
-
-    </div>
-
-    <div class="stats-card">
-
-        <div class="stats-label">
-            @(isDailyView
-                        ? $"On Leave on {selectedDate:dd MMM yyyy}"
-                        : "On Leave Today")
-        </div>
-
-        <div class="stats-number">
-            @Model.OnLeaveToday
-        </div>
-
-    </div>
-
-    <div class="stats-card">
-
-        <div class="stats-label">
-            @(isDailyView
-                        ? $"Not Marked on {selectedDate:dd MMM yyyy}"
-                        : "Not Marked Today")
-        </div>
-
-        <div class="stats-number">
-            @Model.NotMarkedToday
-        </div>
-
-    </div>
-
-    <div class="stats-card">
-
-        <div class="stats-label">
-            Attendance %
-        </div>
-
-        <div class="stats-number">
-            @Model.AttendancePercentage%
-        </div>
-
-    </div>
-
-</div>
-
-
-<!-- Filter Card -->
 
 <div class="app-card mb-3">
-
-    <div class="card-header">
-
-        <h5 class="card-title">
-            Attendance Filter
-        </h5>
-
-    </div>
-
     <div class="card-body">
-
-        <form asp-action="Dashboard"
-              method="get">
-
+        <form asp-action="Dashboard" method="get">
             <div class="filter-form-row">
-
                 <div class="form-group">
+                    <label class="form-label">Day</label>
+                    <select name="day" class="app-select">
+                        <option value="">All Days</option>
 
-                    <label class="form-label">
-                        Day
-                    </label>
-
-                    <select name="day"
-                            class="app-select">
-
-                        <option value="">
-                            All Days
-                        </option>
-
-                        @for (int calendarDay = 1;
-                                                calendarDay <= Model.TotalDays;
-                                                calendarDay++)
+                        @for (int calendarDay = 1; calendarDay <= Model.TotalDays; calendarDay++)
                         {
-                            if (ViewBag.SelectedDay != null &&
-                            calendarDay ==
-                            (int)ViewBag.SelectedDay)
+                            if (ViewBag.SelectedDay != null && calendarDay == (int)ViewBag.SelectedDay)
                             {
-                                <option value="@calendarDay"
-                                        selected>
-                                    @calendarDay
-                                </option>
+                                <option value="@calendarDay" selected>@calendarDay</option>
                             }
                             else
                             {
-                                <option value="@calendarDay">
-                                    @calendarDay
-                                </option>
+                                <option value="@calendarDay">@calendarDay</option>
                             }
                         }
-
                     </select>
-
                 </div>
 
                 <div class="form-group">
-
-                    <label class="form-label">
-                        Month
-                    </label>
-
-                    <select name="month"
-                            class="app-select">
-
+                    <label class="form-label">Month</label>
+                    <select name="month" class="app-select">
                         @for (int month = 1; month <= 12; month++)
                         {
-                            var monthName =
-                                new DateTime(2000, month, 1)
-                                .ToString("MMMM");
+                            string monthName = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(month);
 
                             if (month == Model.Month)
                             {
-                                <option value="@month" selected>
-                                    @monthName
-                                </option>
+                                <option value="@month" selected>@monthName</option>
                             }
                             else
                             {
-                                <option value="@month">
-                                    @monthName
-                                </option>
+                                <option value="@month">@monthName</option>
                             }
                         }
-
                     </select>
-
                 </div>
 
                 <div class="form-group">
-
-                    <label class="form-label">
-                        Year
-                    </label>
-
-                    <select name="year"
-                            class="app-select">
-
-                        @for (int year = DateTime.Today.Year - 2;
-                             year <= DateTime.Today.Year + 2;
-                             year++)
+                    <label class="form-label">Year</label>
+                    <select name="year" class="app-select">
+                        @for (int year = DateTime.Today.Year - 2; year <= DateTime.Today.Year + 2; year++)
                         {
                             if (year == Model.Year)
                             {
-                                <option value="@year" selected>
-                                    @year
-                                </option>
+                                <option value="@year" selected>@year</option>
                             }
                             else
                             {
-                                <option value="@year">
-                                    @year
-                                </option>
+                                <option value="@year">@year</option>
                             }
                         }
-
                     </select>
-
                 </div>
 
                 <div class="filter-form-actions">
-                <button type="submit"
-                        class="btn-app btn-primary-app">
+                    <button type="submit" class="btn-app btn-primary-app">
+                        <i class="bi bi-search"></i>
+                        Load
+                    </button>
 
-                    <i class="bi bi-search"></i>
-                    Load
-
-                </button>
+                    <a asp-action="Dashboard" class="btn-app btn-secondary-app">
+                        Reset
+                    </a>
                 </div>
-
             </div>
-
         </form>
-
     </div>
-
 </div>
 
-<!-- Legend -->
-
-<div class="app-card mb-3">
-
-    <div class="card-header">
-
-        <h5 class="card-title">
-            Attendance Legend
-        </h5>
-
+<div class="dashboard-grid">
+    <div class="stats-card">
+        <div class="stats-label">Active Employees</div>
+        <div class="stats-number">@Model.TotalActiveEmployees</div>
     </div>
 
-    <div class="card-body">
-
-        <div class="d-flex flex-wrap gap-2">
-
-            <span class="badge-success">P - Present</span>
-
-            <span class="badge-danger">A - Absent</span>
-
-            <span class="badge-warning">L - Leave</span>
-
-            <span class="badge-primary">H - Holiday</span>
-
-            <span class="badge-secondary">WO - Week Off</span>
-
-            <span class="badge-info">OD - On Duty</span>
-
-        </div>
-
+    <div class="stats-card">
+        <div class="stats-label">Present</div>
+        <div class="stats-number">@Model.PresentToday</div>
     </div>
 
+    <div class="stats-card">
+        <div class="stats-label">On Leave</div>
+        <div class="stats-number">@Model.OnLeaveToday</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Attendance %</div>
+        <div class="stats-number">@Model.AttendancePercentage.ToString("0.##")%</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Absent</div>
+        <div class="stats-number">@Model.AbsentToday</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">On Duty</div>
+        <div class="stats-number">@Model.OnDutyToday</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Not Marked</div>
+        <div class="stats-number">@Model.NotMarkedToday</div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-label">Missing Checkout</div>
+        <div class="stats-number">@Model.MissingCheckoutCount</div>
+    </div>
 </div>
 
-<!-- Register -->
-@if (isDailyView)
-{
-    <div class="app-card table-card">
-
+<div class="main-dashboard-layout">
+    <div class="app-card dashboard-section-card">
         <div class="card-header">
-
-            <h5 class="card-title">
-                Daily Attendance -
-                @selectedDate?.ToString("dd MMMM yyyy")
-            </h5>
-
+            <h5 class="card-title">Daily Status Mix</h5>
         </div>
 
         <div class="card-body">
+            @foreach (var item in Model.StatusBuckets)
+            {
+                <div class="dashboard-bar-row">
+                    <div class="dashboard-bar-label">
+                        <span>@item.Label</span>
+                        <strong>@item.Count</strong>
+                    </div>
 
+                    <div class="dashboard-bar-track">
+                        <div class="dashboard-bar-fill @item.CssClass"
+                             style="width: @item.Percent.ToString("0.##", CultureInfo.InvariantCulture)%;">
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="app-card dashboard-section-card">
+        <div class="card-header">
+            <h5 class="card-title">Month Status Mix</h5>
+        </div>
+
+        <div class="card-body">
+            @foreach (var item in Model.MonthlyStatusBuckets)
+            {
+                <div class="dashboard-bar-row">
+                    <div class="dashboard-bar-label">
+                        <span>@item.Label</span>
+                        <strong>@item.Count</strong>
+                    </div>
+
+                    <div class="dashboard-bar-track">
+                        <div class="dashboard-bar-fill @item.CssClass"
+                             style="width: @item.Percent.ToString("0.##", CultureInfo.InvariantCulture)%;">
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="app-card dashboard-section-card dashboard-finance-card">
+        <div class="card-header">
+            <h5 class="card-title">Daily Attendance Heatmap</h5>
+        </div>
+
+        <div class="card-body">
+            <div class="attendance-heatmap">
+                @foreach (var day in Model.DayTrends)
+                {
+                    string heatClass =
+                    day.PresentPercent >= 90
+                    ? "heat-strong"
+                    : day.PresentPercent >= 70
+                    ? "heat-good"
+                    : day.PresentPercent >= 40
+                    ? "heat-low"
+                    : "heat-poor";
+
+                    <div class="attendance-heatmap-day @heatClass"
+                         title="Day @day.Day | Present: @day.PresentCount | Leave: @day.LeaveCount | Absent: @day.AbsentCount | Not Marked: @day.NotMarkedCount">
+                        <strong>@day.Day</strong>
+                        <span>@day.PresentPercent.ToString("0")%</span>
+                    </div>
+                }
+            </div>
+
+            <div class="dashboard-legend-row mt-3">
+                <span><i class="heat-dot heat-strong"></i> 90%+</span>
+                <span><i class="heat-dot heat-good"></i> 70-89%</span>
+                <span><i class="heat-dot heat-low"></i> 40-69%</span>
+                <span><i class="heat-dot heat-poor"></i> Below 40%</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-dashboard-layout">
+    <div class="app-card dashboard-section-card">
+        <div class="card-header">
+            <h5 class="card-title">Not Marked</h5>
+        </div>
+
+        <div class="card-body">
+            @if (!Model.NotMarkedEmployees.Any())
+            {
+                <div class="empty-state">All active employees are marked.</div>
+            }
+            else
+            {
+                foreach (var item in Model.NotMarkedEmployees)
+                {
+                    <a asp-controller="Employee"
+                       asp-action="Details"
+                       asp-route-id="@item.EmployeeId"
+                       class="dashboard-list-link">
+                        <span>
+                            <strong>@item.EmployeeName</strong>
+                            <small>@item.EmployeeCode</small>
+                        </span>
+                        <span class="badge-warning">@item.Badge</span>
+                    </a>
+                }
+            }
+        </div>
+    </div>
+
+    <div class="app-card dashboard-section-card">
+        <div class="card-header">
+            <h5 class="card-title">On Leave</h5>
+        </div>
+
+        <div class="card-body">
+            @if (!Model.OnLeaveEmployees.Any())
+            {
+                <div class="empty-state">No employees on leave.</div>
+            }
+            else
+            {
+                foreach (var item in Model.OnLeaveEmployees)
+                {
+                    <a asp-controller="Employee"
+                       asp-action="Details"
+                       asp-route-id="@item.EmployeeId"
+                       class="dashboard-list-link">
+                        <span>
+                            <strong>@item.EmployeeName</strong>
+                            <small>@item.EmployeeCode</small>
+                        </span>
+                        <span class="badge-warning">@item.Badge</span>
+                    </a>
+                }
+            }
+        </div>
+    </div>
+
+    <div class="app-card dashboard-section-card dashboard-finance-card">
+        <div class="card-header">
+            <h5 class="card-title">Missing Checkout</h5>
+        </div>
+
+        <div class="card-body">
+            @if (!Model.MissingCheckoutEmployees.Any())
+            {
+                <div class="empty-state">No missing checkout records.</div>
+            }
+            else
+            {
+                foreach (var item in Model.MissingCheckoutEmployees)
+                {
+                    <a asp-controller="Employee"
+                       asp-action="Details"
+                       asp-route-id="@item.EmployeeId"
+                       class="dashboard-list-link">
+                        <span>
+                            <strong>@item.EmployeeName</strong>
+                            <small>@item.EmployeeCode</small>
+                        </span>
+                        <span class="badge-danger">@item.Meta</span>
+                    </a>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@if (isDailyView)
+{
+    <div class="app-card table-card">
+        <div class="card-header">
+            <h5 class="card-title">
+                Daily Attendance - @selectedDate?.ToString("dd MMMM yyyy")
+            </h5>
+        </div>
+
+        <div class="card-body">
             <div class="table-responsive">
-
                 <table class="app-table">
-
                     <thead>
                         <tr>
                             <th>Employee</th>
@@ -326,212 +357,143 @@
                     </thead>
 
                     <tbody>
-
                         @foreach (var employee in Model.Employees)
                         {
-                            var record =
-                            dailyAttendance
-                            .FirstOrDefault(a =>
-                            a.EmployeeId ==
-                            employee.EmployeeId);
+                            var record = dailyAttendance.FirstOrDefault(a => a.EmployeeId == employee.EmployeeId);
 
                             <tr>
-
                                 <td>
-                                    <strong>
-                                        @employee.EmployeeName
-                                    </strong>
-
+                                    <strong>@employee.EmployeeName</strong>
                                     <br />
-
-                                    <small>
-                                        @employee.EmployeeCode
-                                    </small>
+                                    <small>@employee.EmployeeCode</small>
                                 </td>
 
+                                <td>@(record?.Status ?? "-")</td>
+                                <td>@(record?.CheckInTime?.ToString("hh:mm tt") ?? "-")</td>
+                                <td>@(record?.CheckOutTime?.ToString("hh:mm tt") ?? "-")</td>
                                 <td>
-                                    @(record?.Status ?? "-")
+                                    @if (record != null && record.WorkingHours > 0)
+                                    {
+                                        var totalMinutes = (int)Math.Round(record.WorkingHours * 60);
+                                        var hours = totalMinutes / 60;
+                                        var minutes = totalMinutes % 60;
+
+                                        <span>@hours hr @minutes min</span>
+                                    }
+                                    else
+                                    {
+                                        <span>-</span>
+                                    }
                                 </td>
-
-                                <td>
-                                    @(record?.CheckInTime
-                                                                ?.ToString("hh:mm tt")
-                                                                ?? "-")
-                                                                   </td>
-
-                                <td>
-                                    @(record?.CheckOutTime
-                                                                ?.ToString("hh:mm tt")
-                                                                ?? "-")
-                                                                   </td>
-
-                                <td>
-                                    @(record?.WorkingHours.ToString("0.##")
-                                                                ?? "-")
-                        </td>
-
-                                <td>
-                                    @(record?.LocationType ?? "-")
-                                </td>
-
-                                <td>
-                                    @(record?.Remarks ?? "-")
-                                </td>
-
+                                <td>@(record?.LocationType ?? "-")</td>
+                                <td>@(record?.Remarks ?? "-")</td>
                             </tr>
-                                        }
-
+                        }
                     </tbody>
-
                 </table>
-
             </div>
-
         </div>
-
     </div>
 }
 
-@if (!isDailyView){
-<div class="app-card table-card">
+@if (!isDailyView)
+{
+    <div class="app-card table-card">
+        <div class="card-header">
+            <h5 class="card-title">
+                Attendance Register - @Model.Month/@Model.Year
+            </h5>
+        </div>
 
-    <div class="card-header">
-
-        <h5 class="card-title">
-
-            Attendance Register
-            -
-            @Model.Month/@Model.Year
-
-        </h5>
-
-    </div>
-
-    <div class="card-body">
-
-        @if (!Model.Employees.Any())
-        {
-            <div class="empty-state">
-                No attendance records found.
-            </div>
-        }
-        else
-        {
-            <div class="table-responsive">
-
-                <table class="app-table attendance-register">
-
-                    <thead>
-
-                        <tr>
-
-                            <th>
-                                Employee
-                            </th>
-
-                            @for (int day = 1;
-                                day <= Model.TotalDays;
-                                day++)
-                            {
-                                <th>
-                                    @day
-                                </th>
-                            }
-
-                            <th>P</th>
-                            <th>A</th>
-                            <th>L</th>
-                            <th>H</th>
-                            <th>WO</th>
-                            <th>OD</th>
-
-                        </tr>
-
-                    </thead>
-
-                    <tbody>
-
-                        @foreach (var employee in Model.Employees)
-                        {
+        <div class="card-body">
+            @if (!Model.Employees.Any())
+            {
+                <div class="empty-state">No attendance records found.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="app-table attendance-register">
+                        <thead>
                             <tr>
+                                <th>Employee</th>
 
-                                <td class="wide-employee-cell">
-
-                                    <strong>
-                                        @employee.EmployeeName
-                                    </strong>
-
-                                    <br />
-
-                                    <small>
-                                        @employee.EmployeeCode
-                                    </small>
-
-                                </td>
-
-                                @for (int day = 1;
-                                    day <= Model.TotalDays;
-                                    day++)
+                                @for (int day = 1; day <= Model.TotalDays; day++)
                                 {
-                                    var status =
-                                        employee.DailyStatus.ContainsKey(day)
+                                    <th>@day</th>
+                                }
+
+                                <th>P</th>
+                                <th>A</th>
+                                <th>L</th>
+                                <th>H</th>
+                                <th>WO</th>
+                                <th>OD</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var employee in Model.Employees)
+                            {
+                                <tr>
+                                    <td class="wide-employee-cell">
+                                        <strong>@employee.EmployeeName</strong>
+                                        <br />
+                                        <small>@employee.EmployeeCode</small>
+                                    </td>
+
+                                    @for (int day = 1; day <= Model.TotalDays; day++)
+                                    {
+                                        var status = employee.DailyStatus.ContainsKey(day)
                                         ? employee.DailyStatus[day]
                                         : "";
 
-                                    <td>
+                                        <td>
+                                            @switch (status)
+                                            {
+                                                case "P":
+                                                    <span class="badge-success">P</span>
+                                                    break;
 
-                                        @switch (status)
-                                        {
-                                            case "P":
-                                                <span class="badge-success">P</span>
-                                                break;
+                                                case "A":
+                                                    <span class="badge-danger">A</span>
+                                                    break;
 
-                                            case "A":
-                                                <span class="badge-danger">A</span>
-                                                break;
+                                                case "L":
+                                                    <span class="badge-warning">L</span>
+                                                    break;
 
-                                            case "L":
-                                                <span class="badge-warning">L</span>
-                                                break;
+                                                case "H":
+                                                    <span class="badge-primary">H</span>
+                                                    break;
 
-                                            case "H":
-                                                <span class="badge-primary">H</span>
-                                                break;
+                                                case "WO":
+                                                    <span class="badge-secondary">WO</span>
+                                                    break;
 
-                                            case "WO":
-                                                <span class="badge-secondary">WO</span>
-                                                break;
+                                                case "OD":
+                                                    <span class="badge-info">OD</span>
+                                                    break;
 
-                                            case "OD":
-                                                <span class="badge-info">OD</span>
-                                                break;
+                                                default:
+                                                    <span>-</span>
+                                                    break;
+                                            }
+                                        </td>
+                                    }
 
-                                            default:
-                                                <span>-</span>
-                                                break;
-                                        }
-
-                                    </td>
-                                }
-
-                                <td><strong>@employee.PresentCount</strong></td>
-                                <td><strong>@employee.AbsentCount</strong></td>
-                                <td><strong>@employee.LeaveCount</strong></td>
-                                <td><strong>@employee.HolidayCount</strong></td>
-                                <td><strong>@employee.WeekOffCount</strong></td>
-                                <td><strong>@employee.OnDutyCount</strong></td>
-
-                            </tr>
-                        }
-
-                    </tbody>
-
-                </table>
-
-            </div>
-        }
-
+                                    <td><strong>@employee.PresentCount</strong></td>
+                                    <td><strong>@employee.AbsentCount</strong></td>
+                                    <td><strong>@employee.LeaveCount</strong></td>
+                                    <td><strong>@employee.HolidayCount</strong></td>
+                                    <td><strong>@employee.WeekOffCount</strong></td>
+                                    <td><strong>@employee.OnDutyCount</strong></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
     </div>
-
-</div>
 }

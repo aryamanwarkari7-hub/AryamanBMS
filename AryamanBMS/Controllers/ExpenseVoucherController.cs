@@ -19,21 +19,24 @@ namespace AryamanBMS.Controllers
         private readonly IFileStorageService _fileStorageService;
         private readonly UserManager<ApplicationUserModel> _userManager;
         private readonly ApplicationDbContext _context;
+        private readonly INotificationService _notificationService;
 
         private const string DocumentFolder = "ExpenseVoucherDocuments";
 
         public ExpenseVoucherController(
-            IExpenseVoucherRepository voucherRepository,
-            IExpenseCategoryRepository categoryRepository,
-            IFileStorageService fileStorageService,
-            UserManager<ApplicationUserModel> userManager,
-            ApplicationDbContext context)
+             IExpenseVoucherRepository voucherRepository,
+             IExpenseCategoryRepository categoryRepository,
+             IFileStorageService fileStorageService,
+             UserManager<ApplicationUserModel> userManager,
+             ApplicationDbContext context,
+             INotificationService notificationService)
         {
             _voucherRepository = voucherRepository;
             _categoryRepository = categoryRepository;
             _fileStorageService = fileStorageService;
             _userManager = userManager;
             _context = context;
+            _notificationService = notificationService;
         }
 
         public async Task<IActionResult> Index(string? status, int? categoryId, string? search)
@@ -363,6 +366,17 @@ namespace AryamanBMS.Controllers
 
             bool submitted = await _voucherRepository.SubmitAsync(id, GetCurrentUserId());
 
+            if (submitted)
+            {
+                await NotifyFinanceUsersAsync(
+                    voucher,
+                    notificationType: "ExpenseSubmitted",
+                    title: "Expense Voucher Submitted",
+                    message:
+                        $"Expense voucher {voucher.VoucherNumber} for " +
+                        $"₹{voucher.TotalAmount:N2} was submitted for approval.");
+            }
+
             TempData[submitted ? "Success" : "Error"] =
                 submitted
                     ? $"Expense Voucher '{voucher.VoucherNumber}' submitted for approval."
@@ -381,6 +395,7 @@ namespace AryamanBMS.Controllers
                 return Forbid();
             } 
             var voucher = await _voucherRepository.GetByIdAsync(id);
+
             if (voucher == null)
                 return NotFound();
 
@@ -392,10 +407,7 @@ namespace AryamanBMS.Controllers
 
             var userId = GetCurrentUserId();
 
-            bool approved =
-                await _voucherRepository.ApproveAsync(
-                    id,
-                    userId);
+            bool approved = await _voucherRepository.ApproveAsync(id,userId);
 
             if (!approved)
             {
@@ -404,7 +416,13 @@ namespace AryamanBMS.Controllers
 
                 return RedirectToAction(nameof(Index));
             }
-
+            await NotifyVoucherCreatorAsync(
+             voucher,
+             notificationType: "ExpenseApproved",
+             title: "Expense Voucher Approved",
+             message:
+                 $"Expense voucher {voucher.VoucherNumber} for " +
+                 $"₹{voucher.TotalAmount:N2} was approved.");
             TempData["Success"] = $"Expense Voucher '{voucher.VoucherNumber}' approved successfully.";
             return RedirectToAction(nameof(Index));
         }
@@ -421,6 +439,17 @@ namespace AryamanBMS.Controllers
                 return NotFound();
 
             bool posted = await _voucherRepository.PostAsync(id, GetCurrentUserId());
+
+            if (posted)
+            {
+                await NotifyVoucherCreatorAsync(
+                    voucher,
+                    notificationType: "ExpensePosted",
+                    title: "Expense Voucher Posted",
+                    message:
+                        $"Expense voucher {voucher.VoucherNumber} was posted " +
+                        $"to the accounts records.");
+            }
 
             TempData[posted ? "Success" : "Error"] =
                 posted
@@ -469,6 +498,14 @@ namespace AryamanBMS.Controllers
 
             await _voucherRepository.UpdateAsync(voucher);
             await _voucherRepository.SaveAsync();
+
+            await NotifyVoucherCreatorAsync(
+             voucher,
+             notificationType: "ExpenseReversed",
+             title: "Expense Voucher Reversed",
+             message:
+                 $"Expense voucher {voucher.VoucherNumber} was reversed. " +
+                 $"Reason: {voucher.ReversalReason}");
 
             TempData["Success"] = $"Expense Voucher '{voucher.VoucherNumber}' reversed.";
             return RedirectToAction(nameof(Details), new { id });
@@ -529,6 +566,14 @@ namespace AryamanBMS.Controllers
 
                 return RedirectToAction(nameof(Index));
             }
+
+            await NotifyVoucherCreatorAsync(
+              voucher,
+              notificationType: "ExpenseRejected",
+              title: "Expense Voucher Rejected",
+              message:
+                  $"Expense voucher {voucher.VoucherNumber} was rejected. " +
+                  $"Reason: {rejectionReason.Trim()}");
 
             TempData["Success"] =
                 $"Expense Voucher '{voucher.VoucherNumber}' rejected.";
@@ -717,6 +762,8 @@ namespace AryamanBMS.Controllers
                 new { id = voucherId });
         }
         // Helper Methods
+
+        #region Helpers
         private bool IsFinanceUser()
         {
             return User.IsInRole("Admin") || User.IsInRole("Finance");
@@ -1052,6 +1099,112 @@ namespace AryamanBMS.Controllers
                 _ => "application/octet-stream"
             };
         }
+
+        private async Task NotifyFinanceUsersAsync(
+    ExpenseVoucherModel voucher,
+    string notificationType,
+    string title,
+    string message)
+        {
+            var admins =
+                await _userManager.GetUsersInRoleAsync("Admin");
+
+            var financeUsers =
+                await _userManager.GetUsersInRoleAsync("Finance");
+
+            string currentUserId = GetCurrentUserId();
+
+            var recipients = admins
+                .Concat(financeUsers)
+                .Where(x =>
+                 x.IsActive &&
+                 x.Id != currentUserId)
+                .GroupBy(x => x.Id)
+                .Select(x => x.First())
+                .ToList();
+
+            foreach (var recipient in recipients)
+            {
+                bool exists =
+                    await _notificationService.ExistsAsync(
+                        recipient.Id,
+                        notificationType,
+                        "ExpenseVoucher",
+                        voucher.ExpenseVoucherId);
+
+                if (exists)
+                {
+                    continue;
+                }
+
+                await _notificationService.CreateAsync(
+                    userId: recipient.Id,
+                    title: title,
+                    message: message,
+                    notificationType: notificationType,
+                    referenceType: "ExpenseVoucher",
+                    referenceId: voucher.ExpenseVoucherId,
+                    actionUrl:
+                        $"/ExpenseVoucher/Details/{voucher.ExpenseVoucherId}");
+            }
+        }
+
+        private async Task NotifyVoucherCreatorAsync(
+    ExpenseVoucherModel voucher,
+    string notificationType,
+    string title,
+    string message)
+        {
+            if (string.IsNullOrWhiteSpace(voucher.CreatedByUserId))
+            {
+                return;
+            }
+
+            var creator =
+                await _userManager.FindByIdAsync(
+                    voucher.CreatedByUserId);
+
+            if (creator == null || !creator.IsActive)
+            {
+                return;
+            }
+
+            var roles =
+                await _userManager.GetRolesAsync(creator);
+
+            bool hasFinanceAccess =
+                roles.Contains("Admin") ||
+                roles.Contains("Finance");
+
+            if (!hasFinanceAccess)
+            {
+                return;
+            }
+
+            bool exists =
+                await _notificationService.ExistsAsync(
+                    creator.Id,
+                    notificationType,
+                    "ExpenseVoucher",
+                    voucher.ExpenseVoucherId);
+
+            if (exists)
+            {
+                return;
+            }
+
+            await _notificationService.CreateAsync(
+                userId: creator.Id,
+                title: title,
+                message: message,
+                notificationType: notificationType,
+                referenceType: "ExpenseVoucher",
+                referenceId: voucher.ExpenseVoucherId,
+                actionUrl:
+                    $"/ExpenseVoucher/Details/{voucher.ExpenseVoucherId}");
+        }
+
+        #endregion Helpers
     }
 }
 

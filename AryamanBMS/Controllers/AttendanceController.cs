@@ -575,10 +575,7 @@ namespace AryamanBMS.Controllers
             int selectedMonth = month ?? today.Month;
             int selectedYear = year ?? today.Year;
 
-            int totalDays =
-                DateTime.DaysInMonth(
-                    selectedYear,
-                    selectedMonth);
+            int totalDays = DateTime.DaysInMonth(selectedYear, selectedMonth);
 
             DateTime? selectedDate = null;
 
@@ -586,10 +583,7 @@ namespace AryamanBMS.Controllers
                 day.Value >= 1 &&
                 day.Value <= totalDays)
             {
-                selectedDate = new DateTime(
-                    selectedYear,
-                    selectedMonth,
-                    day.Value);
+                selectedDate = new DateTime(selectedYear, selectedMonth, day.Value);
             }
 
             var employees = _employeeRepository.Employees
@@ -598,44 +592,51 @@ namespace AryamanBMS.Controllers
                 .ThenBy(e => e.LastName)
                 .ToList();
 
-            var attendanceRecords =
-                _attendanceRepository.Attendances
+            var attendanceRecords = _attendanceRepository.Attendances
                 .Include(a => a.Employee)
                 .Where(a =>
                     a.AttendanceDate.Month == selectedMonth &&
                     a.AttendanceDate.Year == selectedYear)
                 .ToList();
 
+            DateTime summaryDate = selectedDate ?? today;
+
+            var summaryRecords = attendanceRecords
+                .Where(a => a.AttendanceDate.Date == summaryDate.Date)
+                .ToList();
+
+            var markedEmployeeIds = summaryRecords
+                .Select(a => a.EmployeeId)
+                .Distinct()
+                .ToHashSet();
+
             var vm = new AttendanceDashboardViewModel
             {
                 Month = selectedMonth,
                 Year = selectedYear,
-                TotalDays = totalDays
+                TotalDays = totalDays,
+                SummaryDate = summaryDate,
+                TotalActiveEmployees = employees.Count
             };
 
             foreach (var employee in employees)
             {
-                var employeeAttendance =
-                    new EmployeeAttendanceViewModel
-                    {
-                        EmployeeId = employee.Id,
-                        EmployeeCode = employee.EmployeeCode ?? string.Empty,
-                        EmployeeName = employee.FullName
-                    };
-
-                for (int calendarDay = 1;
-                     calendarDay <= totalDays;
-                     calendarDay++)
+                var employeeAttendance = new EmployeeAttendanceViewModel
                 {
-                    var record = attendanceRecords
-                        .FirstOrDefault(a =>
-                            a.EmployeeId == employee.Id &&
-                            a.AttendanceDate.Day == calendarDay);
+                    EmployeeId = employee.Id,
+                    EmployeeCode = employee.EmployeeCode ?? string.Empty,
+                    EmployeeName = employee.FullName
+                };
+
+                for (int calendarDay = 1; calendarDay <= totalDays; calendarDay++)
+                {
+                    var record = attendanceRecords.FirstOrDefault(a =>
+                        a.EmployeeId == employee.Id &&
+                        a.AttendanceDate.Day == calendarDay);
 
                     string status = record?.Status ?? "";
 
-                    employeeAttendance
-                        .DailyStatus[calendarDay] = status;
+                    employeeAttendance.DailyStatus[calendarDay] = status;
 
                     switch (status)
                     {
@@ -668,55 +669,87 @@ namespace AryamanBMS.Controllers
                 vm.Employees.Add(employeeAttendance);
             }
 
-            /*
-             Daily mode:
-             Cards and daily table use the selected date.
+            vm.PresentToday = summaryRecords.Count(a => a.Status == "P");
+            vm.AbsentToday = summaryRecords.Count(a => a.Status == "A");
+            vm.OnLeaveToday = summaryRecords.Count(a => a.Status == "L");
+            vm.OnDutyToday = summaryRecords.Count(a => a.Status == "OD");
+            vm.NotMarkedToday = Math.Max(0, employees.Count - markedEmployeeIds.Count);
 
-             Monthly mode:
-             Cards continue showing today's status.
-            */
-            DateTime summaryDate =
-                selectedDate ?? today;
+            vm.MissingCheckoutCount = summaryRecords.Count(a =>
+                a.CheckInTime.HasValue &&
+                !a.CheckOutTime.HasValue);
 
-            var summaryRecords =
-                attendanceRecords
-                .Where(a =>
-                    a.AttendanceDate.Date ==
-                    summaryDate.Date)
+            vm.AttendancePercentage = employees.Count > 0
+                ? Math.Round((decimal)vm.PresentToday / employees.Count * 100, 2)
+                : 0;
+
+            vm.StatusBuckets = BuildAttendanceBuckets(new List<AttendanceDashboardBucket>
+    {
+        new() { Label = "Present", Count = vm.PresentToday, CssClass = "bucket-success" },
+        new() { Label = "Absent", Count = vm.AbsentToday, CssClass = "bucket-danger" },
+        new() { Label = "Leave", Count = vm.OnLeaveToday, CssClass = "bucket-warning" },
+        new() { Label = "On Duty", Count = vm.OnDutyToday, CssClass = "bucket-info" },
+        new() { Label = "Not Marked", Count = vm.NotMarkedToday, CssClass = "bucket-neutral" }
+    });
+
+            vm.MonthlyStatusBuckets = BuildAttendanceBuckets(new List<AttendanceDashboardBucket>
+    {
+        new() { Label = "Present", Count = vm.Employees.Sum(x => x.PresentCount), CssClass = "bucket-success" },
+        new() { Label = "Absent", Count = vm.Employees.Sum(x => x.AbsentCount), CssClass = "bucket-danger" },
+        new() { Label = "Leave", Count = vm.Employees.Sum(x => x.LeaveCount), CssClass = "bucket-warning" },
+        new() { Label = "Holiday", Count = vm.Employees.Sum(x => x.HolidayCount), CssClass = "bucket-info" },
+        new() { Label = "Week Off", Count = vm.Employees.Sum(x => x.WeekOffCount), CssClass = "bucket-neutral" },
+        new() { Label = "On Duty", Count = vm.Employees.Sum(x => x.OnDutyCount), CssClass = "bucket-info" }
+    });
+
+            for (int calendarDay = 1; calendarDay <= totalDays; calendarDay++)
+            {
+                var dayRecords = attendanceRecords
+                    .Where(a => a.AttendanceDate.Day == calendarDay)
+                    .ToList();
+
+                int dayMarked = dayRecords
+                    .Select(a => a.EmployeeId)
+                    .Distinct()
+                    .Count();
+
+                int dayPresent = dayRecords.Count(a => a.Status == "P");
+
+                vm.DayTrends.Add(new AttendanceDashboardDayTrend
+                {
+                    Day = calendarDay,
+                    PresentCount = dayPresent,
+                    LeaveCount = dayRecords.Count(a => a.Status == "L"),
+                    AbsentCount = dayRecords.Count(a => a.Status == "A"),
+                    NotMarkedCount = Math.Max(0, employees.Count - dayMarked),
+                    PresentPercent = employees.Count > 0
+                        ? Math.Round((decimal)dayPresent / employees.Count * 100, 2)
+                        : 0
+                });
+            }
+
+            vm.NotMarkedEmployees = employees
+                .Where(e => !markedEmployeeIds.Contains(e.Id))
+                .Take(8)
+                .Select(e => ToAttendanceDashboardListItem(e, "Not marked", summaryDate.ToString("dd-MMM-yyyy")))
                 .ToList();
 
-            int presentCount =
-                summaryRecords.Count(a =>
-                    a.Status == "P");
+            vm.OnLeaveEmployees = summaryRecords
+                .Where(a => a.Status == "L")
+                .OrderBy(a => a.Employee!.FirstName)
+                .Take(8)
+                .Select(a => ToAttendanceDashboardListItem(a.Employee!, "Leave", a.Remarks))
+                .ToList();
 
-            int leaveCount =
-                summaryRecords.Count(a =>
-                    a.Status == "L");
-
-            int markedCount =
-                summaryRecords
-                .Select(a => a.EmployeeId)
-                .Distinct()
-                .Count();
-
-            int notMarkedCount =
-                Math.Max(
-                    0,
-                    employees.Count - markedCount);
-
-            decimal attendancePercentage =
-                employees.Count > 0
-                    ? Math.Round(
-                        (decimal)presentCount /
-                        employees.Count * 100,
-                        2)
-                    : 0;
-
-            vm.PresentToday = presentCount;
-            vm.OnLeaveToday = leaveCount;
-            vm.NotMarkedToday = notMarkedCount;
-            vm.AttendancePercentage =
-                attendancePercentage;
+            vm.MissingCheckoutEmployees = summaryRecords
+                .Where(a => a.CheckInTime.HasValue && !a.CheckOutTime.HasValue)
+                .OrderBy(a => a.Employee!.FirstName)
+                .Take(8)
+                .Select(a => ToAttendanceDashboardListItem(
+                    a.Employee!,
+                    "Missing checkout",
+                    a.CheckInTime?.ToString("hh:mm tt")))
+                .ToList();
 
             ViewBag.SelectedDay = day;
             ViewBag.SelectedMonth = selectedMonth;
@@ -724,16 +757,44 @@ namespace AryamanBMS.Controllers
             ViewBag.SelectedDate = selectedDate;
             ViewBag.IsDailyView = selectedDate.HasValue;
 
-            ViewBag.DailyAttendance =
-                selectedDate.HasValue
-                    ? summaryRecords
-                        .OrderBy(a => a.Employee!.FirstName)
-                        .ThenBy(a => a.Employee!
-                        .LastName)
-                        .ToList()
-                    : new List<AttendanceModel>();
+            ViewBag.DailyAttendance = selectedDate.HasValue
+                ? summaryRecords
+                    .OrderBy(a => a.Employee!.FirstName)
+                    .ThenBy(a => a.Employee!.LastName)
+                    .ToList()
+                : new List<AttendanceModel>();
 
             return View(vm);
+        }
+
+        private static List<AttendanceDashboardBucket> BuildAttendanceBuckets(
+    List<AttendanceDashboardBucket> buckets)
+        {
+            int total = buckets.Sum(x => x.Count);
+
+            foreach (var bucket in buckets)
+            {
+                bucket.Percent = total == 0
+                    ? 0
+                    : Math.Round((decimal)bucket.Count / total * 100, 2);
+            }
+
+            return buckets;
+        }
+
+        private static AttendanceDashboardListItem ToAttendanceDashboardListItem(
+            EmployeeModel employee,
+            string badge,
+            string? meta)
+        {
+            return new AttendanceDashboardListItem
+            {
+                EmployeeId = employee.Id,
+                EmployeeName = employee.FullName,
+                EmployeeCode = employee.EmployeeCode ?? string.Empty,
+                Badge = badge,
+                Meta = meta
+            };
         }
 
         [Authorize(Roles = "Admin,HR")]

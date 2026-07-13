@@ -1,0 +1,206 @@
+@model AryamanBMS.ViewModels.NotificationBellViewModel
+
+<div class="dropdown notification-dropdown">
+
+    <button type="button"
+            class="navbar-icon-button notification-bell-button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+            title="Notifications">
+
+        <i class="bi bi-bell"></i>
+
+        @if (Model.UnreadCount > 0)
+        {
+            <span class="notification-count">
+                @(Model.UnreadCount > 99 ? "99+" : Model.UnreadCount)
+            </span>
+        }
+
+    </button>
+
+    <div class="dropdown-menu dropdown-menu-end notification-menu">
+
+        <div class="notification-menu-header">
+
+            <div class="notification-header-row">
+
+                <div>
+                    <strong>Notifications</strong>
+
+                    @if (Model.UnreadCount > 0)
+                    {
+                        <small>
+                            @Model.UnreadCount unread
+                        </small>
+                    }
+                </div>
+
+                @if (Model.UnreadCount > 0)
+                {
+                    <form asp-controller="Notification"
+                          asp-action="MarkAllAsRead"
+                          method="post"
+                          class="notification-read-all-form">
+
+                        @Html.AntiForgeryToken()
+
+                        <button type="submit"
+                                class="notification-read-all-button">
+                            Mark all read
+                        </button>
+
+                    </form>
+                }
+
+            </div>
+
+        </div>
+
+        <div class="notification-list">
+
+            @if (!Model.Notifications.Any())
+            {
+                <div class="notification-empty">
+                    <i class="bi bi-bell-slash"></i>
+                    <span>No notifications</span>
+                </div>
+            }
+            else
+            {
+                @foreach (var notification in Model.Notifications)
+                {
+                    <a asp-controller="Notification"
+                    asp-action="Open"
+                    asp-route-id="@notification.Id"
+                    class="notification-item
+                           @(notification.IsRead
+                               ? ""
+                               : "notification-unread")">
+
+                <div class="notification-icon">
+
+                    @switch (notification.NotificationType)
+                            {
+                                case "TaskAssigned":
+                                    <i class="bi bi-person-check"></i>
+                                    break;
+
+                                case "TaskDueTomorrow":
+                                    <i class="bi bi-calendar-event"></i>
+                                    break;
+
+                                case "TaskDueToday":
+                                    <i class="bi bi-alarm"></i>
+                                    break;
+
+                                case "TaskOverdue":
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    break;
+
+                                case "Login":
+                                    <i class="bi bi-box-arrow-in-right"></i>
+                                    break;
+
+                                case "LeaveRequest":
+                                    <i class="bi bi-calendar-plus"></i>
+                                    break;
+
+                                case "LeaveApproved":
+                                    <i class="bi bi-calendar-check"></i>
+                                    break;
+
+                                case "LeaveRejected":
+                                    <i class="bi bi-calendar-x"></i>
+                                    break;
+
+                                case "InvoiceDue":
+                                    <i class="bi bi-receipt"></i>
+                                    break;
+
+                                case "PaymentReceived":
+                                    <i class="bi bi-cash-coin"></i>
+                                    break;
+
+                                case "InvoiceDueTomorrow":
+                                    <i class="bi bi-calendar-event"></i>
+                                    break;
+
+                                case "InvoiceDueToday":
+                                    <i class="bi bi-receipt-cutoff"></i>
+                                    break;
+
+                                case "InvoiceOverdue":
+                                    <i class="bi bi-exclamation-octagon"></i>
+                                    break;
+
+                                case "InvoiceSettled":
+                                    <i class="bi bi-check-circle"></i>
+                                    break;
+
+                                case "ExpenseSubmitted":
+                                    <i class="bi bi-send"></i>
+                                    break;
+
+                                case "ExpenseApproved":
+                                    <i class="bi bi-check-circle"></i>
+                                    break;
+
+                                case "ExpenseRejected":
+                                    <i class="bi bi-x-circle"></i>
+                                    break;
+
+                                case "ExpensePosted":
+                                    <i class="bi bi-journal-check"></i>
+                                    break;
+
+                                case "ExpenseReversed":
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                    break;
+
+                                default:
+                                    <i class="bi bi-info-circle"></i>
+                                    break;
+                            }
+
+                        </div>
+                    
+                    <div class="notification-content">
+                    
+                        <div class="notification-title">
+                            @notification.Title
+                        </div>
+                    
+                        <div class="notification-message">
+                            @notification.Message
+                        </div>
+                    
+                        <div class="notification-time">
+                            @notification.CreatedOn.ToString("dd MMM yyyy, hh:mm tt")
+                        </div>
+                    
+                    </div>
+                    
+                    @if (!notification.IsRead)
+                    {
+                        <span class="notification-unread-dot"></span>
+                    }
+                    
+             </a>
+                }
+            }
+
+        </div>
+
+        <div class="notification-menu-footer">
+
+            <a asp-controller="Notification"
+               asp-action="Index">
+                View all notifications
+            </a>
+
+        </div>
+
+    </div>
+
+</div>

@@ -1435,29 +1435,359 @@ namespace AryamanBMS.Controllers
         }
 
         [Authorize(Roles = "Admin,HR")]
-        public IActionResult Dashboard()
+        public async Task<IActionResult> Dashboard()
         {
-            var totalEmployees =
-                _employeeRepository.Employees.Count();
+            DateTime today = DateTime.Today;
+            DateTime monthStart = new(today.Year, today.Month, 1);
+            DateTime nextMonth = monthStart.AddMonths(1);
+            DateTime exitWindowEnd = today.AddDays(30);
 
-            var activeEmployees =
-                _employeeRepository.Employees.Count(x => x.IsActive);
+            int financialYearStartYear =
+                today.Month >= 4 ? today.Year : today.Year - 1;
 
-            var inactiveEmployees =
-                _employeeRepository.Employees.Count(x => !x.IsActive);
+            DateTime fyStart = new(financialYearStartYear, 4, 1);
+            DateTime fyEnd = fyStart.AddYears(1);
 
-            var recentEmployees =
-                _employeeRepository.Employees
+            var employees = await _employeeRepository.Employees
+                .AsNoTracking()
+                .Include(x => x.Department)
+                .Include(x => x.Designation)
+                .Include(x => x.Documents)
+                .ToListAsync();
+
+            var model = new EmployeeDashboardViewModel
+            {
+                Today = today,
+                FinancialYear = $"{financialYearStartYear}-{(financialYearStartYear + 1).ToString()[2..]}"
+            };
+
+            model.Headcount.TotalEmployees = employees.Count;
+            model.Headcount.ActiveEmployees = employees.Count(x => x.IsActive);
+            model.Headcount.InactiveEmployees = employees.Count(x => !x.IsActive);
+            model.Headcount.JoinedThisMonth = employees.Count(x =>
+                x.JoiningDate >= monthStart &&
+                x.JoiningDate < nextMonth);
+
+            model.Headcount.JoinedThisFinancialYear = employees.Count(x =>
+                x.JoiningDate >= fyStart &&
+                x.JoiningDate < fyEnd);
+
+            model.Headcount.UpcomingExits = employees.Count(x =>
+                x.LastWorkingDate.HasValue &&
+                x.LastWorkingDate.Value >= today &&
+                x.LastWorkingDate.Value <= exitWindowEnd);
+
+            model.Compliance.MissingPan = employees.Count(x =>
+                string.IsNullOrWhiteSpace(x.PanNo));
+
+            model.Compliance.MissingAadhaar = employees.Count(x =>
+                string.IsNullOrWhiteSpace(x.AadhaarNo));
+
+            model.Compliance.MissingUan = employees.Count(x =>
+                string.IsNullOrWhiteSpace(x.UanNo));
+
+            model.Compliance.MissingEsic = employees.Count(x =>
+                string.IsNullOrWhiteSpace(x.EsicNo));
+
+            model.Compliance.MissingOfficialEmail = employees.Count(x =>
+                string.IsNullOrWhiteSpace(x.OfficialEmail));
+
+            model.Compliance.MissingMobileNumber = employees.Count(x =>
+                string.IsNullOrWhiteSpace(x.MobileNumber));
+
+            model.Compliance.EmployeesWithoutDocuments = employees.Count(x =>
+                x.Documents == null || !x.Documents.Any());
+
+            model.DepartmentBuckets = BuildEmployeeBuckets(
+                employees
+                    .Where(x => x.IsActive)
+                    .GroupBy(x => x.Department?.DepartmentName ?? "Unassigned")
+                    .Select(x => new EmployeeDashboardBucket
+                    {
+                        Label = x.Key,
+                        Count = x.Count(),
+                        CssClass = "bucket-info"
+                    })
+                    .OrderByDescending(x => x.Count)
+                    .Take(6)
+                    .ToList());
+
+            model.EmploymentTypeBuckets = BuildEmployeeBuckets(
+                employees
+                    .Where(x => x.IsActive)
+                    .GroupBy(x => string.IsNullOrWhiteSpace(x.EmploymentType)
+                        ? "Not Set"
+                        : x.EmploymentType)
+                    .Select(x => new EmployeeDashboardBucket
+                    {
+                        Label = x.Key,
+                        Count = x.Count(),
+                        CssClass = "bucket-success"
+                    })
+                    .OrderByDescending(x => x.Count)
+                    .ToList());
+
+            model.GenderBuckets = BuildEmployeeBuckets(
+                employees
+                    .Where(x => x.IsActive)
+                    .GroupBy(x => string.IsNullOrWhiteSpace(x.Gender)
+                        ? "Not Set"
+                        : x.Gender)
+                    .Select(x => new EmployeeDashboardBucket
+                    {
+                        Label = x.Key,
+                        Count = x.Count(),
+                        CssClass = "bucket-warning"
+                    })
+                    .OrderByDescending(x => x.Count)
+                    .ToList());
+
+            model.RecentEmployees = employees
                 .OrderByDescending(x => x.Id)
                 .Take(5)
+                .Select(ToEmployeeDashboardListItem)
                 .ToList();
 
-            ViewBag.TotalEmployees = totalEmployees;
-            ViewBag.ActiveEmployees = activeEmployees;
-            ViewBag.InactiveEmployees = inactiveEmployees;
-            ViewBag.RecentEmployees = recentEmployees;
+            model.UpcomingExits = employees
+                .Where(x =>
+                    x.LastWorkingDate.HasValue &&
+                    x.LastWorkingDate.Value >= today &&
+                    x.LastWorkingDate.Value <= exitWindowEnd)
+                .OrderBy(x => x.LastWorkingDate)
+                .Take(5)
+                .Select(x =>
+                {
+                    var item = ToEmployeeDashboardListItem(x);
+                    item.Meta = x.LastWorkingDate?.ToString("dd-MMM-yyyy");
+                    item.Badge = "Exit";
+                    return item;
+                })
+                .ToList();
 
-            return View();
+            model.MissingComplianceEmployees = employees
+                .Where(x =>
+                    string.IsNullOrWhiteSpace(x.PanNo) ||
+                    string.IsNullOrWhiteSpace(x.AadhaarNo) ||
+                    string.IsNullOrWhiteSpace(x.UanNo) ||
+                    string.IsNullOrWhiteSpace(x.EsicNo) ||
+                    string.IsNullOrWhiteSpace(x.OfficialEmail) ||
+                    string.IsNullOrWhiteSpace(x.MobileNumber))
+                .OrderBy(x => x.EmployeeCode)
+                .Take(5)
+                .Select(x =>
+                {
+                    var item = ToEmployeeDashboardListItem(x);
+                    item.Meta = "Missing profile details";
+                    item.Badge = "Review";
+                    return item;
+                })
+                .ToList();
+
+            model.EmployeesWithoutDocuments = employees
+                .Where(x => x.Documents == null || !x.Documents.Any())
+                .OrderBy(x => x.EmployeeCode)
+                .Take(5)
+                .Select(x =>
+                {
+                    var item = ToEmployeeDashboardListItem(x);
+                    item.Meta = "No documents uploaded";
+                    item.Badge = "Docs";
+                    return item;
+                })
+                .ToList();
+
+            return View(model);
+        }
+
+        [Authorize(Roles = "Employee,Admin,HR,ProjectManager")]
+        [HttpGet]
+        public async Task<IActionResult> MyDashboard()
+        {
+            var user = await _userManager.GetUserAsync(User);
+
+            if (user == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var employee = await _employeeRepository.Employees
+                .AsNoTracking()
+                .Include(x => x.Department)
+                .Include(x => x.Designation)
+                .FirstOrDefaultAsync(x => x.ApplicationUserId == user.Id);
+
+            if (employee == null)
+            {
+                TempData["Error"] = "Employee profile is not linked with this user account.";
+                return RedirectToAction("Profile", "Account");
+            }
+
+            var today = DateTime.Today;
+            var monthStart = new DateTime(today.Year, today.Month, 1);
+            var nextMonth = monthStart.AddMonths(1);
+            var upcomingEnd = today.AddDays(14);
+
+            var todayAttendance = await _context.Attendances
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.EmployeeId == employee.Id &&
+                    x.AttendanceDate.Date == today);
+
+            var latestSalary = await _context.SalaryRecords
+                .AsNoTracking()
+                .Where(x => x.EmployeeId == employee.Id)
+                .OrderByDescending(x => x.Year)
+                .ThenByDescending(x => x.Month)
+                .FirstOrDefaultAsync();
+
+            var projectMemberships = await _context.ProjectMembers
+                .AsNoTracking()
+                .Include(x => x.Project)
+                .Where(x =>
+                    x.EmployeeId == employee.Id &&
+                    x.IsActive &&
+                    x.Project != null &&
+                    x.Project.IsActive)
+                .ToListAsync();
+
+            var projectIds = projectMemberships
+                .Select(x => x.ProjectId)
+                .Distinct()
+                .ToList();
+
+            var assignedTasks = await _context.ProjectTasks
+                .AsNoTracking()
+                .Include(x => x.Project)
+                .Where(x =>
+                    x.IsActive &&
+                    x.AssignedEmployeeId == employee.Id)
+                .OrderBy(x => x.DueDate ?? DateTime.MaxValue)
+                .Take(6)
+                .ToListAsync();
+
+            var upcomingMeetings = await _context.ProjectMeetings
+                .AsNoTracking()
+                .Include(x => x.Project)
+                .Include(x => x.Attendees)
+                .Where(x =>
+                    x.IsActive &&
+                    x.MeetingDate.Date >= today &&
+                    x.MeetingDate.Date <= upcomingEnd &&
+                    !string.Equals(x.MeetingStatus, "Cancelled") &&
+                    (
+                        projectIds.Contains(x.ProjectId) ||
+                        x.Attendees.Any(a => a.EmployeeId == employee.Id)
+                    ))
+                .OrderBy(x => x.MeetingDate)
+                .ThenBy(x => x.StartTime)
+                .Take(6)
+                .ToListAsync();
+
+            var leaveBalances = await _context.LeaveBalances
+                .AsNoTracking()
+                .Where(x => x.EmployeeId == employee.Id)
+                .ToListAsync();
+
+            var compOffCredits = await _context.CompOffCredits
+                .AsNoTracking()
+                .Where(x => x.EmployeeId == employee.Id)
+                .ToListAsync();
+
+            var model = new EmployeeMyDashboardViewModel
+            {
+                EmployeeId = employee.Id,
+                EmployeeName = employee.FullName,
+                EmployeeCode = employee.EmployeeCode ?? string.Empty,
+                DepartmentName = employee.Department?.DepartmentName,
+                DesignationName = employee.Designation?.DesignationName,
+
+                Attendance = new EmployeeTodayAttendanceCard
+                {
+                    IsMarked = todayAttendance != null,
+                    Status = todayAttendance?.Status ?? "Not Marked",
+                    CheckInTime = todayAttendance?.CheckInTime,
+                    CheckOutTime = todayAttendance?.CheckOutTime,
+                    WorkingHours = todayAttendance?.WorkingHours ?? 0
+                },
+
+                Leave = new EmployeeLeaveCard
+                {
+                    PendingApplications = await _context.LeaveApplications.CountAsync(x =>
+                        x.EmployeeId == employee.Id &&
+                        x.Status == "Pending"),
+
+                    ApprovedThisMonth = await _context.LeaveApplications.CountAsync(x =>
+                        x.EmployeeId == employee.Id &&
+                        x.Status == "Approved" &&
+                        x.FromDate >= monthStart &&
+                        x.FromDate < nextMonth),
+
+                    AvailableBalance = leaveBalances.Sum(x => x.BalanceDays),
+
+                    PendingCompOff = await _context.CompOffCredits.CountAsync(x =>
+                        x.EmployeeId == employee.Id &&
+                        x.Status == "Pending"),
+
+                    AvailableCompOff = compOffCredits
+                        .Where(x =>
+                            x.Status == "Approved" &&
+                            x.ExpiryDate >= today)
+                        .Sum(x => x.CreditDays - x.UsedDays)
+                },
+
+                Salary = latestSalary == null
+                    ? new EmployeeSalaryCard()
+                    : new EmployeeSalaryCard
+                    {
+                        SalaryRecordId = latestSalary.Id,
+                        Month = latestSalary.Month,
+                        Year = latestSalary.Year,
+                        NetSalary = latestSalary.NetSalary,
+                        PaymentStatus = latestSalary.PaymentStatus,
+                        IsPayslipReleased = latestSalary.IsPayslipReleased
+                    },
+
+                AssignedTasks = assignedTasks.Select(x => new EmployeeDashboardTaskItem
+                {
+                    TaskId = x.Id,
+                    ProjectId = x.ProjectId,
+                    TaskTitle = x.TaskTitle,
+                    ProjectName = x.Project?.ProjectName,
+                    Status = x.Status,
+                    Priority = x.Priority,
+                    DueDate = x.DueDate,
+                    ProgressPercent = x.ProgressPercent,
+                    IsOverdue =
+                        x.DueDate.HasValue &&
+                        x.DueDate.Value.Date < today &&
+                        x.Status != "Completed"
+                }).ToList(),
+
+                UpcomingMeetings = upcomingMeetings.Select(x => new EmployeeDashboardMeetingItem
+                {
+                    MeetingId = x.Id,
+                    ProjectId = x.ProjectId,
+                    MeetingTitle = x.MeetingTitle,
+                    ProjectName = x.Project?.ProjectName,
+                    MeetingDate = x.MeetingDate,
+                    StartTime = x.StartTime,
+                    MeetingStatus = x.MeetingStatus
+                }).ToList(),
+
+                MyProjects = projectMemberships.Select(x => new EmployeeDashboardProjectItem
+                {
+                    ProjectId = x.ProjectId,
+                    ProjectCode = x.Project?.ProjectCode ?? string.Empty,
+                    ProjectName = x.Project?.ProjectName ?? string.Empty,
+                    RoleInProject = x.RoleInProject,
+                    Status = x.Project?.Status ?? "-",
+                    OpenTaskCount = assignedTasks.Count(t =>
+                        t.ProjectId == x.ProjectId &&
+                        t.Status != "Completed")
+                }).ToList()
+            };
+
+            return View(model);
         }
 
         [Authorize]
@@ -1875,10 +2205,10 @@ namespace AryamanBMS.Controllers
 
 
         private void ValidatePreviousEmploymentPdf(
-IFormFile? file,
-string modelKey,
-string documentName,
-long maximumFileSize)
+          IFormFile? file,
+          string modelKey,
+          string documentName,
+          long maximumFileSize)
         {
             if (file == null || file.Length == 0)
             {
@@ -2038,6 +2368,35 @@ long maximumFileSize)
             }
 
             return 1;
+        }
+
+        private static List<EmployeeDashboardBucket> BuildEmployeeBuckets(
+             List<EmployeeDashboardBucket> buckets)
+        {
+            int total = buckets.Sum(x => x.Count);
+
+            foreach (var bucket in buckets)
+            {
+                bucket.Percent = total == 0
+                    ? 0
+                    : Math.Round((decimal)bucket.Count * 100 / total, 2);
+            }
+
+            return buckets;
+        }
+
+        private static EmployeeDashboardListItem ToEmployeeDashboardListItem(
+            EmployeeModel employee)
+        {
+            return new EmployeeDashboardListItem
+            {
+                EmployeeId = employee.Id,
+                EmployeeCode = employee.EmployeeCode ?? "-",
+                EmployeeName = employee.FullName,
+                Subtitle = employee.Department?.DepartmentName ?? "Unassigned",
+                Meta = employee.JoiningDate.ToString("dd-MMM-yyyy"),
+                Badge = employee.IsActive ? "Active" : "Inactive"
+            };
         }
     }
 }

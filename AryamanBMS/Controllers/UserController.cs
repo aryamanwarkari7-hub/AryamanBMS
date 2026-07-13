@@ -46,7 +46,14 @@ namespace AryamanBMS.Controllers
                     UserName = user.UserName ?? string.Empty,
                     Email = user.Email ?? string.Empty,
                     Role = roles.FirstOrDefault() ?? "Not Assigned",
-                    IsActive = user.IsActive
+                    IsActive = user.IsActive,
+
+                    ActivityStatus =string.IsNullOrWhiteSpace(user.ActivityStatus)
+                      ? "Offline"
+                      : user.ActivityStatus,
+
+                    ActivityStatusMessage = user.ActivityStatusMessage,
+                    LastSeenOn = user.LastSeenOn
                 });
             }
 

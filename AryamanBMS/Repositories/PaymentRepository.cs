@@ -332,11 +332,6 @@ namespace AryamanBMS.Repositories
             {
                 invoice.PaymentStatus = "Paid";
             }
-            else if (invoice.DueDate.HasValue &&
-             invoice.DueDate.Value.Date < DateTime.Today)
-            {
-                invoice.PaymentStatus = "Overdue";
-            }
             else if (paidAmount > 0)
             {
                 invoice.PaymentStatus = "Partially Paid";

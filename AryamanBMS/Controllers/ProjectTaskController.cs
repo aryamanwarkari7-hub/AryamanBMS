@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,HR,ProjectManager")]
+    [Authorize]
     public class ProjectTaskController : Controller
     {
         private readonly IProjectRepository _projectRepository;
@@ -15,15 +15,17 @@ namespace AryamanBMS.Controllers
         private readonly IProjectMemberRepository _projectMemberRepository;
         private readonly IProjectTimelineService _projectTimelineService;
         private readonly IProjectAccessService _projectAccessService;
+        private readonly INotificationService _notificationService;
         private readonly IEmployeeRepository _employeeRepository;
 
         public ProjectTaskController(
-            IProjectRepository projectRepository,
-            IProjectTaskRepository projectTaskRepository,
-            IProjectMemberRepository projectMemberRepository,
-            IProjectTimelineService projectTimelineService,
-            IProjectAccessService projectAccessService,
-            IEmployeeRepository employeeRepository)
+          IProjectRepository projectRepository,
+          IProjectTaskRepository projectTaskRepository,
+          IProjectMemberRepository projectMemberRepository,
+          IProjectTimelineService projectTimelineService,
+          IProjectAccessService projectAccessService,
+          IEmployeeRepository employeeRepository,
+          INotificationService notificationService)
         {
             _projectRepository = projectRepository;
             _projectTaskRepository = projectTaskRepository;
@@ -31,6 +33,7 @@ namespace AryamanBMS.Controllers
             _projectAccessService = projectAccessService;
             _projectTimelineService = projectTimelineService;
             _employeeRepository = employeeRepository;
+            _notificationService = notificationService;
         }
 
         [HttpGet]
@@ -118,6 +121,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,HR,ProjectManager")]
         public async Task<IActionResult> Create(int? projectId)
         {
             await LoadProjectsAsync();
@@ -146,6 +150,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,HR,ProjectManager")]
         public async Task<IActionResult> Create(ProjectTaskModel model)
         {
             if (!await _projectAccessService.CanAccessProjectAsync(
@@ -221,9 +226,9 @@ namespace AryamanBMS.Controllers
 
             await _projectTaskRepository.AddAsync(model);
             await _projectTaskRepository.SaveAsync();
+            await NotifyAssignedEmployeeAsync(model);
 
-            TempData["Success"] =
-                "Project task created successfully.";
+            TempData["Success"] =  "Project task created successfully.";
 
             await _projectTimelineService.AddEventAsync(
               projectId: model.ProjectId,
@@ -247,11 +252,35 @@ namespace AryamanBMS.Controllers
                 await _projectTaskRepository.GetDetailsAsync(id);
 
             if (task == null)
+            {
                 return NotFound();
+            }
 
-            if (!await _projectAccessService.CanAccessProjectAsync(
-              User,
-              task.ProjectId))
+            bool hasProjectAccess =
+                await _projectAccessService.CanAccessProjectAsync(
+                    User,
+                    task.ProjectId);
+
+            bool isAssignedEmployee = false;
+
+            var currentUserId =
+                User.FindFirst(
+                    System.Security.Claims.ClaimTypes.NameIdentifier)
+                ?.Value;
+
+            if (!string.IsNullOrWhiteSpace(currentUserId))
+            {
+                var employee = await _employeeRepository.Employees
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e =>
+                        e.ApplicationUserId == currentUserId);
+
+                isAssignedEmployee =
+                    employee != null &&
+                    task.AssignedEmployeeId == employee.Id;
+            }
+
+            if (!hasProjectAccess && !isAssignedEmployee)
             {
                 return Forbid();
             }
@@ -260,6 +289,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,HR,ProjectManager")]
         public async Task<IActionResult> Edit(int id)
         {
             var task =
@@ -283,6 +313,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,HR,ProjectManager")]
         public async Task<IActionResult> Edit(ProjectTaskModel model)
         {
 
@@ -406,8 +437,7 @@ namespace AryamanBMS.Controllers
                     newValue: $"{existing.ProgressPercent}%");
             }
 
-            if (previousAssignedEmployeeId !=
-                   existing.AssignedEmployeeId)
+            if (previousAssignedEmployeeId != existing.AssignedEmployeeId)
             {
                 string previousEmployeeName = "Unassigned";
                 string newEmployeeName = "Unassigned";
@@ -436,17 +466,31 @@ namespace AryamanBMS.Controllers
                         newEmployee?.FullName ?? "Unassigned";
                 }
 
+                if (existing.AssignedEmployeeId.HasValue)
+                {
+                    await NotifyAssignedEmployeeAsync(
+                        existing,
+                        isReassignment: true);
+                }
+
                 await _projectTimelineService.AddEventAsync(
-                    projectId: existing.ProjectId,
-                    eventType: "TaskReassigned",
-                    eventTitle: "Task assignee changed",
-                    eventDescription:
-                        $"Task {existing.TaskCode} - {existing.TaskTitle} was reassigned " +
-                        $"from {previousEmployeeName} to {newEmployeeName}.",
-                    relatedEntityType: "Task",
-                    relatedEntityId: existing.Id,
-                    previousValue: previousEmployeeName,
-                    newValue: newEmployeeName);
+                projectId: existing.ProjectId,
+                eventType: "TaskReassigned",
+                eventTitle: "Task assignee changed",
+                eventDescription:
+                    $"Task {existing.TaskCode} - {existing.TaskTitle} was reassigned " +
+                    $"from {previousEmployeeName} to {newEmployeeName}.",
+                relatedEntityType: "Task",
+                relatedEntityId: existing.Id,
+                previousValue: previousEmployeeName,
+                newValue: newEmployeeName);
+
+                if (existing.AssignedEmployeeId.HasValue)
+                {
+                    await NotifyAssignedEmployeeAsync(
+                        existing,
+                        isReassignment: true);
+                }
             }
 
             bool wasPreviouslyCompleted =
@@ -485,6 +529,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,HR,ProjectManager")]
         public async Task<IActionResult> Delete(int id)
         {
             var task =
@@ -505,6 +550,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,HR,ProjectManager")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var task =
@@ -534,6 +580,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,HR,ProjectManager")]
         public async Task<IActionResult> GetProjectMembers(int projectId)
         {
 
@@ -599,6 +646,46 @@ namespace AryamanBMS.Controllers
                     nameof(model.DueDate),
                     "Due date cannot be before start date.");
             }
+        }
+
+        private async Task NotifyAssignedEmployeeAsync(
+    ProjectTaskModel task,
+    bool isReassignment = false)
+        {
+            if (!task.AssignedEmployeeId.HasValue)
+            {
+                return;
+            }
+
+            var employee = await _employeeRepository.Employees
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e =>
+                    e.Id == task.AssignedEmployeeId.Value);
+
+            if (employee == null ||
+                string.IsNullOrWhiteSpace(employee.ApplicationUserId))
+            {
+                return;
+            }
+
+            string dueDateText = task.DueDate.HasValue
+                ? $" Due date: {task.DueDate.Value:dd MMM yyyy}."
+                : string.Empty;
+
+            string message = isReassignment
+                ? $"Task {task.TaskCode} - {task.TaskTitle} has been reassigned to you.{dueDateText}"
+                : $"Task {task.TaskCode} - {task.TaskTitle} has been assigned to you.{dueDateText}";
+
+            await _notificationService.CreateAsync(
+                userId: employee.ApplicationUserId,
+                title: isReassignment
+                    ? "Task Reassigned"
+                    : "New Task Assigned",
+                message: message,
+                notificationType: "TaskAssigned",
+                referenceType: "ProjectTask",
+                referenceId: task.Id,
+                actionUrl: $"/ProjectTask/Details/{task.Id}");
         }
     }
 }

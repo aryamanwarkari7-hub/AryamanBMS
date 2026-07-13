@@ -137,6 +137,12 @@ namespace AryamanBMS.Data
 
         public DbSet<FinancialSequenceModel> FinancialSequences { get; set; }
 
+        // Notification
+        public DbSet<NotificationModel> TableNotification { get; set; }
+
+        //Login History
+        public DbSet<LoginHistoryModel> TableLoginHistory { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -1084,6 +1090,86 @@ namespace AryamanBMS.Data
                 .HasForeignKey(x => x.NoticeId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // Notification
+            modelBuilder.Entity<NotificationModel>(entity =>
+            {
+                entity.ToTable("TableNotification");
+
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Title)
+                    .HasMaxLength(150)
+                    .IsRequired();
+
+                entity.Property(x => x.Message)
+                    .HasMaxLength(500)
+                    .IsRequired();
+
+                entity.Property(x => x.NotificationType)
+                    .HasMaxLength(50)
+                    .IsRequired();
+
+                entity.Property(x => x.ReferenceType)
+                    .HasMaxLength(100);
+
+                entity.Property(x => x.ActionUrl)
+                    .HasMaxLength(500);
+
+                entity.Property(x => x.IsRead)
+                    .HasDefaultValue(false);
+
+                entity.Property(x => x.CreatedOn)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasOne(x => x.User)
+                    .WithMany()
+                    .HasForeignKey(x => x.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(x => new
+                {
+                    x.UserId,
+                    x.IsRead,
+                    x.CreatedOn
+                });
+            });
+
+            // Login History
+            modelBuilder.Entity<LoginHistoryModel>(entity =>
+            {
+                entity.ToTable("TableLoginHistory");
+
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.AttemptedUserName)
+                    .HasMaxLength(256)
+                    .IsRequired();
+
+                entity.Property(x => x.EventType)
+                    .HasMaxLength(50)
+                    .IsRequired();
+
+                entity.Property(x => x.FailureReason)
+                    .HasMaxLength(250);
+
+                entity.Property(x => x.IpAddress)
+                    .HasMaxLength(45);
+
+                entity.Property(x => x.UserAgent)
+                    .HasMaxLength(500);
+
+                entity.Property(x => x.OccurredOn)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasOne(x => x.User)
+                    .WithMany()
+                    .HasForeignKey(x => x.UserId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(x => x.UserId);
+                entity.HasIndex(x => x.OccurredOn);
+                entity.HasIndex(x => x.EventType);
+            });
 
         }
     }

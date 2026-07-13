@@ -26,11 +26,32 @@
             Task Updates
         </a>
 
-        <a asp-action="Index"
-           asp-route-projectId="@Model.ProjectId"
-           class="btn-app btn-secondary-app">
-            Back
-        </a>
+        @if (User.IsInRole("Employee") &&
+                !User.IsInRole("Admin") &&
+                !User.IsInRole("HR") &&
+                !User.IsInRole("ProjectManager"))
+        {
+            <a asp-controller="Employee"
+               asp-action="MyTasks"
+               class="btn-app btn-secondary-app">
+
+                <i class="bi bi-arrow-left"></i>
+                Back to My Tasks
+
+            </a>
+        }
+        else
+        {
+            <a asp-controller="ProjectTask"
+               asp-action="Index"
+               asp-route-projectId="@Model.ProjectId"
+               class="btn-app btn-secondary-app">
+
+                <i class="bi bi-arrow-left"></i>
+                Back to Project Tasks
+
+            </a>
+        }
     </div>
 </div>
 

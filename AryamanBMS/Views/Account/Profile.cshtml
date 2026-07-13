@@ -1,46 +1,270 @@
-﻿@model AryamanBMS.Models.ApplicationUserModel
+﻿@model AryamanBMS.ViewModels.AccountProfileViewModel
 
 @{
     ViewData["Title"] = "My Profile";
 }
 
 <div class="module-header">
-
     <div>
-        <h2>My Profile</h2>
-        <p>View account information</p>
+        <h1 class="module-title">My Profile</h1>
+        <p class="module-subtitle">Account and linked employee information</p>
     </div>
 
+    <div class="module-header-actions">
+        <a asp-controller="Account"
+           asp-action="ChangePassword"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-key"></i>
+            Change Password
+        </a>
+    </div>
 </div>
 
-<div class="app-card">
+<div class="main-dashboard-layout">
+    <div class="app-card dashboard-section-card">
+        <div class="card-body text-center">
+            <div class="profile-photo-wrap">
+                @if (!string.IsNullOrWhiteSpace(Model.User.ProfilePhotoPath))
+                {
+                    <img src="@Model.User.ProfilePhotoPath"
+                         alt="Profile photo"
+                         class="profile-photo" />
+                }
+                else
+                {
+                    <div class="profile-photo profile-photo-initials">
+                        @Model.Initials
+                    </div>
+                }
+            </div>
 
-    <table class="app-table">
+            <h3 class="mt-3 mb-1">
+                @(Model.Employee?.FullName ?? Model.User.FullName ?? Model.User.UserName)
+            </h3>
 
-        <tbody>
+            <p class="text-muted mb-2">
+                @Model.RoleName
+            </p>
 
-            <tr>
-                <th width="250">Full Name</th>
-                <td>@Model.FullName</td>
-            </tr>
+            @if (Model.User.IsActive)
+            {
+                <span class="badge-success">Active Account</span>
+            }
+            else
+            {
+                <span class="badge-danger">Inactive Account</span>
+            }
 
-            <tr>
-                <th>Username</th>
-                <td>@Model.UserName</td>
-            </tr>
+            <form asp-action="UploadProfilePhoto"
+                  method="post"
+                  enctype="multipart/form-data"
+                  class="mt-4">
 
-            <tr>
-                <th>Email</th>
-                <td>@Model.Email</td>
-            </tr>
+                @Html.AntiForgeryToken()
 
-            <tr>
-                <th>Phone</th>
-                <td>@Model.PhoneNumber</td>
-            </tr>
+                <div class="form-group text-start">
+                    <label class="form-label">Profile Photo</label>
+                    <input type="file"
+                           name="profilePhoto"
+                           class="app-input"
+                           accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+                    <small class="form-text">JPG, PNG or WEBP. Maximum 2 MB.</small>
+                </div>
 
-        </tbody>
+                <button type="submit" class="btn-app btn-primary-app mt-3">
+                    <i class="bi bi-upload"></i>
+                    Upload Photo
+                </button>
+            </form>
+        </div>
+    </div>
 
-    </table>
+    <div class="app-card dashboard-section-card">
+        <div class="card-header">
+            <h5 class="card-title">Account Information</h5>
+        </div>
 
+        <div class="card-body">
+            <div class="profile-stack">
+                <div class="profile-info-row">
+                    <span>
+                        <i class="bi bi-person"></i>
+                        Username
+                    </span>
+                    <strong>@(Model.User.UserName ?? "-")</strong>
+                </div>
+
+                <div class="profile-info-row">
+                    <span>
+                        <i class="bi bi-envelope"></i>
+                        Email
+                    </span>
+                    <strong>
+                        @(
+                                                !string.IsNullOrWhiteSpace(Model.User.Email)
+                                                ? Model.User.Email
+                                                : Model.Employee?.OfficialEmail ?? "-"
+                                                )
+                    </strong>
+                </div>
+
+                <div class="profile-info-row">
+                    <span>
+                        <i class="bi bi-telephone"></i>
+                        Phone
+                    </span>
+                    <strong>
+                        @(
+                                                !string.IsNullOrWhiteSpace(Model.User.PhoneNumber)
+                                                ? Model.User.PhoneNumber
+                                                : Model.Employee?.MobileNumber ?? "-"
+                                                )
+                    </strong>
+                </div>
+
+                <div class="profile-info-row">
+                    <span>
+                        <i class="bi bi-shield-check"></i>
+                        Role
+                    </span>
+                    <strong>@Model.RoleName</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-card mt-4">
+
+        <div class="card-header">
+            <h5 class="card-title">Activity Status</h5>
+        </div>
+
+        <div class="card-body">
+
+            <form asp-controller="Account"
+                  asp-action="UpdateActivityStatus"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <input type="hidden"
+                       name="returnUrl"
+                       value="@Context.Request.Path@Context.Request.QueryString" />
+
+                <div class="form-grid-2">
+
+                    <div class="form-group">
+                        <label class="form-label">Current Status</label>
+
+                        <select name="activityStatus"
+                                class="app-select">
+
+                            <option value="Available" selected="@(Model.User.ActivityStatus == "Available" ? "selected" : null)">
+                                Available
+                            </option>
+
+                            <option value="Busy" selected="@(Model.User.ActivityStatus == "Busy" ? "selected" : null)">
+                                Busy
+                            </option>
+
+                            @* <option value="Away" selected="@(Model.User.ActivityStatus == "Away" ? "selected" : null)">
+                                Away
+                            </option> *@
+
+                            <option value="Do Not Disturb" selected="@(Model.User.ActivityStatus == "Do Not Disturb" ? "selected" : null)">
+                                Do Not Disturb
+                            </option>
+
+                            @* <option value="Offline" selected="@(Model.User.ActivityStatus == "Offline" ? "selected" : null)">
+                                Offline
+                            </option> *@
+
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Status Message</label>
+
+                        <input type="text"
+                               name="activityStatusMessage"
+                               value="@Model.User.ActivityStatusMessage"
+                               maxlength="150"
+                               class="app-input"
+                               placeholder="Optional message" />
+                    </div>
+
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit"
+                            class="btn-app btn-primary-app">
+                        Update Status
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    @if (Model.HasEmployeeProfile)
+    {
+        <div class="app-card dashboard-section-card dashboard-finance-card">
+            <div class="card-header">
+                <h5 class="card-title">Employee Information</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="profile-info-grid profile-info-grid-compact">
+                    <div>
+                        <label>Employee Code</label>
+                        <strong>@(Model.Employee?.EmployeeCode ?? "-")</strong>
+                    </div>
+
+                    <div>
+                        <label>Department</label>
+                        <strong>@(Model.Employee?.Department?.DepartmentName ?? "-")</strong>
+                    </div>
+
+                    <div>
+                        <label>Designation</label>
+                        <strong>@(Model.Employee?.Designation?.DesignationName ?? "-")</strong>
+                    </div>
+
+                    <div>
+                        <label>Joining Date</label>
+                        <strong>@Model.Employee?.JoiningDate.ToString("dd-MMM-yyyy")</strong>
+                    </div>
+
+                    <div>
+                        <label>Official Email</label>
+                        <strong>@(Model.Employee?.OfficialEmail ?? "-")</strong>
+                    </div>
+
+                    <div>
+                        <label>Mobile</label>
+                        <strong>@(Model.Employee?.MobileNumber ?? "-")</strong>
+                    </div>
+
+                    <div>
+                        <label>Employment Type</label>
+                        <strong>@(Model.Employee?.EmploymentType ?? "-")</strong>
+                    </div>
+
+                    <div>
+                        <label>Employee Status</label>
+                        @if (Model.Employee?.IsActive == true)
+                        {
+                            <span class="badge-success">Active</span>
+                        }
+                        else
+                        {
+                            <span class="badge-danger">Inactive</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 </div>

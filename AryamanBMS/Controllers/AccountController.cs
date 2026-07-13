@@ -1,10 +1,11 @@
 ﻿using AryamanBMS.Models;
-using AryamanBMS.ViewModels;
 using AryamanBMS.Repositories.Interfaces;
-using Microsoft.EntityFrameworkCore;
+using AryamanBMS.Services.Interfaces;
+using AryamanBMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
@@ -15,17 +16,29 @@ namespace AryamanBMS.Controllers
         private readonly UserManager<ApplicationUserModel> _userManager;
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IAttendanceRepository _attendanceRepository;
+        private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly INotificationService _notificationService;
+        private readonly ILogger<AccountController> _logger;
+        private readonly ILoginHistoryService _loginHistoryService;
 
         public AccountController(
-             SignInManager<ApplicationUserModel> signInManager,
-             UserManager<ApplicationUserModel> userManager,
-             IEmployeeRepository employeeRepository,
-             IAttendanceRepository attendanceRepository)
+            SignInManager<ApplicationUserModel> signInManager,
+            UserManager<ApplicationUserModel> userManager,
+            IEmployeeRepository employeeRepository,
+            IAttendanceRepository attendanceRepository,
+            IWebHostEnvironment webHostEnvironment,
+            INotificationService notificationService,
+            ILogger<AccountController> logger,
+            ILoginHistoryService loginHistoryService)
         {
             _signInManager = signInManager;
             _userManager = userManager;
             _employeeRepository = employeeRepository;
             _attendanceRepository = attendanceRepository;
+            _webHostEnvironment = webHostEnvironment;
+            _notificationService = notificationService;
+            _logger = logger;
+            _loginHistoryService = loginHistoryService;
         }
 
         // ==========================================
@@ -34,11 +47,28 @@ namespace AryamanBMS.Controllers
 
         [HttpGet]
         [AllowAnonymous]
-        public IActionResult Login()
+        public async Task<IActionResult> Login()
         {
             if (User.Identity != null && User.Identity.IsAuthenticated)
             {
-                return RedirectToAction("Index", "Dashboard");
+                var user = await _userManager.GetUserAsync(User);
+
+                if (user != null)
+                {
+                    if (string.IsNullOrWhiteSpace(user.ActivityStatus) ||
+                        user.ActivityStatus == "Offline")
+                    {
+                        await SetActivityStatusAsync(
+                           user,
+                           "Available",
+                           message: null,
+                           isManual: false);
+                    }
+
+                    return await RedirectByRoleAsync(user);
+                }
+
+                await _signInManager.SignOutAsync();
             }
 
             return View();
@@ -54,16 +84,36 @@ namespace AryamanBMS.Controllers
                 return View(model);
             }
 
-            var user = await _userManager.FindByNameAsync(model.UserName);
+            string attemptedUserName =
+                model.UserName?.Trim() ?? string.Empty;
+
+            var user =
+                await _userManager.FindByNameAsync(attemptedUserName);
 
             if (user == null)
             {
-                ModelState.AddModelError("", "Invalid username or password.");
+                await RecordLoginHistorySafeAsync(
+                    attemptedUserName: attemptedUserName,
+                    eventType: "UnknownUser",
+                    isSuccessful: false,
+                    failureReason: "No user account matched the supplied username.");
+
+                ModelState.AddModelError(
+                    "",
+                    "Invalid username or password.");
+
                 return View(model);
             }
 
             if (!user.IsActive)
             {
+                await RecordLoginHistorySafeAsync(
+                    attemptedUserName: attemptedUserName,
+                    eventType: "InactiveAccount",
+                    isSuccessful: false,
+                    userId: user.Id,
+                    failureReason: "Login attempted using an inactive account.");
+
                 ModelState.AddModelError(
                     "",
                     "Your account is inactive. Please contact the administrator.");
@@ -71,56 +121,68 @@ namespace AryamanBMS.Controllers
                 return View(model);
             }
 
-            // Standard Identity password execution check tracking lockouts defined in Program.cs
-            var result = await _signInManager.PasswordSignInAsync(
-                 user.UserName ?? model.UserName,
-                 model.Password,
-                 model.RememberMe,
-                 lockoutOnFailure: true);
+            var result =
+                await _signInManager.PasswordSignInAsync(
+                    user.UserName ?? attemptedUserName,
+                    model.Password,
+                    model.RememberMe,
+                    lockoutOnFailure: true);
 
             if (result.Succeeded)
             {
-                var roles = await _userManager.GetRolesAsync(user);
+                bool alreadyLoggedToday =
+                    await _loginHistoryService
+                        .HasSuccessfulLoginTodayAsync(user.Id);
 
-                if (roles.Contains("Employee") &&
-                    !roles.Contains("Admin") &&
-                    !roles.Contains("HR"))
+                if (!alreadyLoggedToday)
                 {
-                    var employee =
-                        await _employeeRepository.Employees
-                            .FirstOrDefaultAsync(e =>
-                                e.ApplicationUserId == user.Id);
+                    await RecordLoginHistorySafeAsync(
+                        attemptedUserName:
+                            user.UserName ?? attemptedUserName,
+                        eventType: "Login",
+                        isSuccessful: true,
+                        userId: user.Id);
 
-                    if (employee == null)
-                    {
-                        return RedirectToAction("Index", "Attendance");
-                    }
-
-                    bool attendanceMarked =
-                        await _attendanceRepository.Attendances
-                            .AnyAsync(a =>
-                                a.EmployeeId == employee.Id &&
-                                a.AttendanceDate.Date == DateTime.Today);
-
-                    if (!attendanceMarked)
-                    {
-                        return RedirectToAction("Index", "Attendance");
-                    }
-
-                    return RedirectToAction("Profile", "Employee");
+                    await NotifyAdminsOfLoginAsync(user);
                 }
 
-                return RedirectToAction("Index", "Dashboard");
+                await SetActivityStatusAsync(
+                    user,
+                    "Available",
+                    message: null,
+                    isManual: false);
+
+                return await RedirectByRoleAsync(user);
             }
 
-            // Lockout message response fallback
             if (result.IsLockedOut)
             {
-                ModelState.AddModelError("", "This account has been temporarily locked due to multiple failed entry attempts. Please wait 15 minutes.");
+                await RecordLoginHistorySafeAsync(
+                    attemptedUserName: attemptedUserName,
+                    eventType: "AccountLocked",
+                    isSuccessful: false,
+                    userId: user.Id,
+                    failureReason:
+                        "Account locked after repeated failed login attempts.");
+
+                ModelState.AddModelError(
+                    "",
+                    "This account has been temporarily locked due to multiple failed entry attempts. Please wait 15 minutes.");
+
                 return View(model);
             }
 
-            ModelState.AddModelError("", "Invalid username or password.");
+            await RecordLoginHistorySafeAsync(
+                attemptedUserName: attemptedUserName,
+                eventType: "InvalidPassword",
+                isSuccessful: false,
+                userId: user.Id,
+                failureReason: "Invalid password supplied.");
+
+            ModelState.AddModelError(
+                "",
+                "Invalid username or password.");
+
             return View(model);
         }
 
@@ -128,6 +190,13 @@ namespace AryamanBMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
+            var user = await _userManager.GetUserAsync(User);
+
+            if (user != null)
+            {
+                await SetActivityStatusAsync(user, "Offline");
+            }
+
             await _signInManager.SignOutAsync();
 
             return RedirectToAction(nameof(Login));
@@ -206,7 +275,104 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction("Login");
             }
 
-            return View(user);
+            var roles = await _userManager.GetRolesAsync(user);
+
+            var employee = await _employeeRepository.Employees
+                .AsNoTracking()
+                .Include(x => x.Department)
+                .Include(x => x.Designation)
+                .FirstOrDefaultAsync(x => x.ApplicationUserId == user.Id);
+
+            string displayName =
+                employee?.FullName ??
+                user.FullName ??
+                user.UserName ??
+                "User";
+
+            var model = new AccountProfileViewModel
+            {
+                User = user,
+                Employee = employee,
+                RoleName = roles.FirstOrDefault() ?? "-",
+                Initials = BuildInitials(displayName)
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UploadProfilePhoto(IFormFile? profilePhoto)
+        {
+            var user = await _userManager.GetUserAsync(User);
+
+            if (user == null)
+            {
+                return RedirectToAction(nameof(Login));
+            }
+
+            if (profilePhoto == null || profilePhoto.Length == 0)
+            {
+                TempData["Error"] = "Please select a profile photo.";
+                return RedirectToAction(nameof(Profile));
+            }
+
+            const long maxBytes = 2 * 1024 * 1024;
+
+            if (profilePhoto.Length > maxBytes)
+            {
+                TempData["Error"] = "Profile photo must be 2 MB or smaller.";
+                return RedirectToAction(nameof(Profile));
+            }
+
+            string extension = Path.GetExtension(profilePhoto.FileName).ToLowerInvariant();
+
+            string[] allowedExtensions = { ".jpg", ".jpeg", ".png", ".webp" };
+
+            if (!allowedExtensions.Contains(extension))
+            {
+                TempData["Error"] = "Only JPG, PNG or WEBP profile photos are allowed.";
+                return RedirectToAction(nameof(Profile));
+            }
+
+            string folderPath = Path.Combine(
+                _webHostEnvironment.WebRootPath,
+                "uploads",
+                "profile-photos");
+
+            Directory.CreateDirectory(folderPath);
+
+            string fileName = $"{user.Id}{extension}";
+
+            string fullPath = Path.Combine(folderPath, fileName);
+
+            using (var stream = new FileStream(fullPath, FileMode.Create))
+            {
+                await profilePhoto.CopyToAsync(stream);
+            }
+
+            user.ProfilePhotoPath = $"/uploads/profile-photos/{fileName}";
+
+            var result = await _userManager.UpdateAsync(user);
+
+            if (!result.Succeeded)
+            {
+                TempData["Error"] = "Profile photo could not be updated.";
+                return RedirectToAction(nameof(Profile));
+            }
+
+            TempData["Success"] = "Profile photo updated successfully.";
+            return RedirectToAction(nameof(Profile));
+        }
+
+        private static string BuildInitials(string name)
+        {
+            return string.Join(
+                "",
+                name.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                    .Take(2)
+                    .Select(x => x[0]))
+                .ToUpperInvariant();
         }
 
         [HttpGet]
@@ -324,5 +490,289 @@ namespace AryamanBMS.Controllers
 
             return View(model);
         }
+
+
+        #region Helpers
+        private async Task<IActionResult> RedirectByRoleAsync(ApplicationUserModel user)
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+
+            if (roles.Contains("Employee") &&
+                !roles.Contains("Admin") &&
+                !roles.Contains("HR"))
+            {
+                var employee = await _employeeRepository.Employees
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.ApplicationUserId == user.Id);
+
+                if (employee == null)
+                {
+                    return RedirectToAction("Index", "Attendance");
+                }
+
+                bool attendanceMarked = await _attendanceRepository.Attendances
+                    .AsNoTracking()
+                    .AnyAsync(x =>
+                        x.EmployeeId == employee.Id &&
+                        x.AttendanceDate.Date == DateTime.Today);
+
+                if (!attendanceMarked)
+                {
+                    return RedirectToAction("Index", "Attendance");
+                }
+
+                return RedirectToAction("MyDashboard", "Employee");
+            }
+
+            return RedirectToAction("Index", "Dashboard");
+        }
+
+        private static readonly HashSet<string> AllowedActivityStatuses =
+          new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Available",
+        "Busy",
+        "Away",
+        "Do Not Disturb",
+        "Offline"
+    };
+
+        private async Task SetActivityStatusAsync(
+          ApplicationUserModel user,
+          string status,
+          string? message = null,
+          bool isManual = false)
+        {
+            if (!AllowedActivityStatuses.Contains(status))
+            {
+                status = "Available";
+                isManual = false;
+            }
+
+            bool allowsStatusMessage =
+                status.Equals(
+                    "Busy",
+                    StringComparison.OrdinalIgnoreCase) ||
+                status.Equals(
+                    "Do Not Disturb",
+                    StringComparison.OrdinalIgnoreCase);
+
+            var now = DateTime.Now;
+
+            user.ActivityStatus = status;
+
+            user.ActivityStatusMessage =
+                allowsStatusMessage &&
+                !string.IsNullOrWhiteSpace(message)
+                    ? message.Trim()
+                    : null;
+
+            user.ActivityStatusUpdatedOn = now;
+            user.LastSeenOn = now;
+            user.IsActivityStatusManual = isManual;
+
+            await _userManager.UpdateAsync(user);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateActivityStatus(
+            string activityStatus,
+            string? activityStatusMessage,
+            string? returnUrl = null)
+        {
+            var user = await _userManager.GetUserAsync(User);
+
+            if (user == null)
+            {
+                return RedirectToAction(nameof(Login));
+            }
+
+            if (!AllowedActivityStatuses.Contains(activityStatus))
+            {
+                TempData["Error"] = "Invalid activity status.";
+                return RedirectToAction(nameof(Profile));
+            }
+
+            bool isManual =
+                activityStatus.Equals(
+                    "Busy",
+                    StringComparison.OrdinalIgnoreCase) ||
+                activityStatus.Equals(
+                    "Do Not Disturb",
+                    StringComparison.OrdinalIgnoreCase);
+
+            await SetActivityStatusAsync(
+                user,
+                activityStatus,
+                activityStatusMessage,
+                isManual);
+
+            TempData["Success"] = "Activity status updated.";
+
+            if (!string.IsNullOrWhiteSpace(returnUrl) &&
+                Url.IsLocalUrl(returnUrl))
+            {
+                return LocalRedirect(returnUrl);
+            }
+
+            return RedirectToAction(nameof(Profile));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ActivityHeartbeat(bool isActive)
+        {
+            var user = await _userManager.GetUserAsync(User);
+
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            var now = DateTime.Now;
+
+            user.LastSeenOn = now;
+
+            if (!user.IsActivityStatusManual &&
+                !string.Equals(
+                    user.ActivityStatus,
+                    "Offline",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                string requiredStatus = isActive
+                    ? "Available"
+                    : "Away";
+
+                if (!string.Equals(
+                    user.ActivityStatus,
+                    requiredStatus,
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    user.ActivityStatus = requiredStatus;
+                    user.ActivityStatusMessage = null;
+                    user.ActivityStatusUpdatedOn = now;
+                }
+            }
+
+            var result = await _userManager.UpdateAsync(user);
+
+            if (!result.Succeeded)
+            {
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    new
+                    {
+                        message = "Activity status could not be updated."
+                    });
+            }
+
+            return Ok(new
+            {
+                status = user.ActivityStatus,
+                lastSeenOn = user.LastSeenOn,
+                isManual = user.IsActivityStatusManual
+            });
+        }
+
+        private async Task NotifyAdminsOfLoginAsync(
+    ApplicationUserModel loggedInUser)
+        {
+            try
+            {
+                var admins =
+                    await _userManager.GetUsersInRoleAsync("Admin");
+
+                string displayName =
+                    !string.IsNullOrWhiteSpace(loggedInUser.FullName)
+                        ? loggedInUser.FullName
+                        : loggedInUser.UserName ?? "User";
+
+                string ipAddress =
+                    HttpContext.Connection.RemoteIpAddress?
+                        .MapToIPv4()
+                        .ToString()
+                    ?? "Unknown IP";
+
+                string loginTime =
+                    DateTime.Now.ToString("dd MMM yyyy, hh:mm tt");
+
+                foreach (var admin in admins)
+                {
+                    if (!admin.IsActive)
+                    {
+                        continue;
+                    }
+
+                    // Do not notify an Admin about their own login.
+                    if (admin.Id == loggedInUser.Id)
+                    {
+                        continue;
+                    }
+
+                    await _notificationService.CreateAsync(
+                        userId: admin.Id,
+                        title: "User Logged In",
+                        message:
+                            $"{displayName} logged in on " +
+                            $"{loginTime} from {ipAddress}.",
+                        notificationType: "Login",
+                        referenceType: "ApplicationUser",
+                        referenceId: null,
+                        actionUrl: "/User/Index");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Admin login notification failed for user {UserId}.",
+                    loggedInUser.Id);
+            }
+        }
+
+        private async Task RecordLoginHistorySafeAsync(
+            string attemptedUserName,
+            string eventType,
+            bool isSuccessful,
+            string? userId = null,
+            string? failureReason = null)
+        {
+            try
+            {
+                string ipAddress =
+                    HttpContext.Connection.RemoteIpAddress?
+                        .MapToIPv4()
+                        .ToString()
+                    ?? "Unknown";
+
+                string userAgent =
+                    Request.Headers.UserAgent.ToString();
+
+                if (userAgent.Length > 500)
+                {
+                    userAgent = userAgent[..500];
+                }
+
+                await _loginHistoryService.RecordAsync(
+                    attemptedUserName: attemptedUserName,
+                    eventType: eventType,
+                    isSuccessful: isSuccessful,
+                    userId: userId,
+                    failureReason: failureReason,
+                    ipAddress: ipAddress,
+                    userAgent: userAgent);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Login history could not be recorded for {UserName}.",
+                    attemptedUserName);
+            }
+        }
+
+        #endregion
     }
+
 }

@@ -1,0 +1,194 @@
+@model IEnumerable<AryamanBMS.Models.NotificationModel>
+
+@{
+    ViewData["Title"] = "Notifications";
+    int unreadCount = Model.Count(x => !x.IsRead);
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Notifications</h1>
+
+        <p class="module-subtitle">
+            Review your recent system activity
+        </p>
+    </div>
+
+    @if (unreadCount > 0)
+    {
+        <form asp-action="MarkAllAsRead"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <button type="submit"
+                    class="btn-app btn-secondary-app">
+
+                <i class="bi bi-check2-all"></i>
+                Mark all as read
+
+            </button>
+
+        </form>
+    }
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+
+        <h5 class="card-title">
+            Notification List
+        </h5>
+
+        @if (unreadCount > 0)
+        {
+            <span class="badge-warning">
+                @unreadCount unread
+            </span>
+        }
+
+    </div>
+
+    <div class="card-body p-0">
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <i class="bi bi-bell-slash"></i>
+                <p>No notifications found.</p>
+            </div>
+        }
+        else
+        {
+            <div class="notification-page-list">
+
+                @foreach (var notification in Model)
+                {
+                    <a asp-controller="Notification"
+                       asp-action="Open"
+                       asp-route-id="@notification.Id"
+                       class="notification-page-item
+                              @(notification.IsRead
+                                  ? ""
+                                  : "notification-page-unread")">
+
+                <div class="notification-icon">
+
+                    @switch (notification.NotificationType)
+                            {
+                                case "TaskAssigned":
+                                    <i class="bi bi-person-check"></i>
+                                    break;
+
+                                case "TaskDueTomorrow":
+                                    <i class="bi bi-calendar-event"></i>
+                                    break;
+
+                                case "TaskDueToday":
+                                    <i class="bi bi-alarm"></i>
+                                    break;
+
+                                case "TaskOverdue":
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    break;
+
+                                case "Login":
+                                    <i class="bi bi-box-arrow-in-right"></i>
+                                    break;
+
+                                case "LeaveRequest":
+                                    <i class="bi bi-calendar-plus"></i>
+                                    break;
+
+                                case "LeaveApproved":
+                                    <i class="bi bi-calendar-check"></i>
+                                    break;
+
+                                case "LeaveRejected":
+                                    <i class="bi bi-calendar-x"></i>
+                                    break;
+
+                                case "InvoiceDue":
+                                    <i class="bi bi-receipt"></i>
+                                    break;
+
+                                case "PaymentReceived":
+                                    <i class="bi bi-cash-coin"></i>
+                                    break;
+                                case "InvoiceDueTomorrow":
+                                    <i class="bi bi-calendar-event"></i>
+                                    break;
+
+                                case "InvoiceDueToday":
+                                    <i class="bi bi-receipt-cutoff"></i>
+                                    break;
+
+                                case "InvoiceOverdue":
+                                    <i class="bi bi-exclamation-octagon"></i>
+                                    break;
+
+                                case "ExpenseSubmitted":
+                                    <i class="bi bi-send"></i>
+                                    break;
+
+                                case "ExpenseApproved":
+                                    <i class="bi bi-check-circle"></i>
+                                    break;
+
+                                case "ExpenseRejected":
+                                    <i class="bi bi-x-circle"></i>
+                                    break;
+
+                                case "ExpensePosted":
+                                    <i class="bi bi-journal-check"></i>
+                                    break;
+
+                                case "ExpenseReversed":
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                    break;
+
+                                case "InvoiceSettled":
+                                    <i class="bi bi-check-circle"></i>
+                                    break;
+
+                                default:
+                                    <i class="bi bi-info-circle"></i>
+                                    break;
+                            }
+
+                        </div>
+
+                        <div class="notification-content">
+
+                            <div class="notification-title">
+                                @notification.Title
+                            </div>
+
+                            <div class="notification-message">
+                                @notification.Message
+                            </div>
+
+                            <div class="notification-time">
+                                @notification.CreatedOn.ToString(
+                                    "dd MMM yyyy, hh:mm tt")
+                            </div>
+
+                        </div>
+
+                        @if (!notification.IsRead)
+                        {
+                            <span class="notification-unread-dot"></span>
+                        }
+
+                    </a>
+                }
+
+            </div>
+        }
+
+    </div>
+
+</div>

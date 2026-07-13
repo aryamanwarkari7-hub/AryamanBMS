@@ -1,121 +1,449 @@
-﻿@using AryamanBMS.Models
+﻿@model AryamanBMS.ViewModels.MainDashboardViewModel
 
 @{
     ViewData["Title"] = "Dashboard";
 
-    var recentEmployees =
-    ViewBag.RecentEmployees as List<EmployeeModel>
-    ?? new List<EmployeeModel>();
+    string P(decimal value) =>
+        value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+
+    decimal activePercent = Model.Hr.TotalEmployees == 0
+        ? 0
+        : Math.Round((decimal)Model.Hr.ActiveEmployees * 100 / Model.Hr.TotalEmployees, 2);
+
+    decimal inactivePercent = Math.Min(100, activePercent + (Model.Hr.TotalEmployees == 0
+        ? 0
+        : Math.Round((decimal)Model.Hr.InactiveEmployees * 100 / Model.Hr.TotalEmployees, 2)));
+
+    decimal taskCompleted = Model.TaskHealthBuckets.ElementAtOrDefault(0)?.Percent ?? 0;
+    decimal taskInProgress = taskCompleted + (Model.TaskHealthBuckets.ElementAtOrDefault(1)?.Percent ?? 0);
+    decimal taskNotStarted = taskInProgress + (Model.TaskHealthBuckets.ElementAtOrDefault(2)?.Percent ?? 0);
+
+    decimal ageingFirst = Model.ReceivableBuckets.ElementAtOrDefault(0)?.Percent ?? 0;
+    decimal ageingSecond = ageingFirst + (Model.ReceivableBuckets.ElementAtOrDefault(1)?.Percent ?? 0);
+    decimal ageingThird = ageingSecond + (Model.ReceivableBuckets.ElementAtOrDefault(2)?.Percent ?? 0);
 }
 
 <div class="module-header">
-
     <div>
-        <h1 class="module-title">
-            Dashboard
-        </h1>
-
+        <h1 class="module-title">Dashboard</h1>
         <p class="module-subtitle">
-            Business Management Overview
+            Business overview for FY @Model.FinancialYear
         </p>
     </div>
 
+    <div class="module-header-actions">
+        <span class="status-badge status-info">
+            @Model.Today.ToString("dd MMM yyyy")
+        </span>
+        <span class="status-badge status-warning">
+            @Model.PendingApprovals Pending
+        </span>
+        <span class="status-badge status-danger">
+            @Model.OverdueItems Overdue
+        </span>
+    </div>
 </div>
 
-<div class="dashboard-grid">
+<div class="main-dashboard-layout">
 
-    <div class="stats-card">
-        <div class="stats-label">Departments</div>
-        <div class="stats-number">
-            @ViewBag.DepartmentCount
+    <section class="app-card dashboard-section-card">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">HR & Admin</h2>
+                <p class="card-subtitle">People, leave and employee movement</p>
+            </div>
         </div>
-    </div>
 
-    <div class="stats-card">
-        <div class="stats-label">Designations</div>
-        <div class="stats-number">
-            @ViewBag.DesignationCount
-        </div>
-    </div>
+        <div class="card-body">
+            <div class="dashboard-metric-grid">
+                <a asp-controller="Employee" asp-action="Index" class="dashboard-metric">
+                    <span>Total Employees</span>
+                    <strong>@Model.Hr.TotalEmployees</strong>
+                </a>
 
-    <div class="stats-card">
-        <div class="stats-label">Employees</div>
-        <div class="stats-number">
-            @ViewBag.EmployeeCount
-        </div>
-    </div>
+                <a asp-controller="Employee" asp-action="Index" class="dashboard-metric">
+                    <span>Active</span>
+                    <strong>@Model.Hr.ActiveEmployees</strong>
+                </a>
 
-    <div class="stats-card">
-        <div class="stats-label">Active Employees</div>
-        <div class="stats-number">
-            @ViewBag.ActiveEmployeeCount
-        </div>
-    </div>
+                <a asp-controller="LeaveApplication" asp-action="Index" class="dashboard-metric">
+                    <span>On Leave Today</span>
+                    <strong>@Model.Hr.OnLeaveToday</strong>
+                </a>
 
-</div>
+                <a asp-controller="LeaveApplication" asp-action="Index" class="dashboard-metric">
+                    <span>Pending Leaves</span>
+                    <strong>@Model.Hr.PendingLeaveApplications</strong>
+                </a>
 
-<br />
+                <a asp-controller="CompOffCredit" asp-action="Index" class="dashboard-metric">
+                    <span>Pending Comp Off</span>
+                    <strong>@Model.Hr.PendingCompOffRequests</strong>
+                </a>
 
-<div class="app-card table-card">
+                <a asp-controller="Employee" asp-action="Index" class="dashboard-metric">
+                    <span>Upcoming Exits</span>
+                    <strong>@Model.Hr.UpcomingExits</strong>
+                </a>
+            </div>
 
-    <div class="card-header">
-        <h5 class="card-title">
-            Recent Employees
-        </h5>
-    </div>
+            <div class="dashboard-visual-row">
+                <div class="dashboard-chart-panel">
+                    <div class="dashboard-list-title">Employee Status</div>
 
-    <div class="card-body">
+                    <div class="dashboard-donut-wrap">
+                        <div class="dashboard-donut"
+                             style="--seg-1:@P(activePercent)%; --seg-2:@P(inactivePercent)%;">
+                            <div>
+                                <strong>@Model.Hr.ActiveEmployees</strong>
+                                <span>Active</span>
+                            </div>
+                        </div>
 
-        <div class="table-responsive">
+                        <div class="dashboard-legend">
+                            <span><i class="legend-dot bucket-info"></i>Active @Model.Hr.ActiveEmployees</span>
+                            <span><i class="legend-dot bucket-neutral"></i>Inactive @Model.Hr.InactiveEmployees</span>
+                            <span><i class="legend-dot bucket-warning"></i>On Leave @Model.Hr.OnLeaveToday</span>
+                        </div>
+                    </div>
+                </div>
 
-            <table class="app-table">
+                <div class="dashboard-bars dashboard-chart-panel">
+                    <div class="dashboard-list-title">Department Mix</div>
 
-                <thead>
-
-                    <tr>
-                        <th>Code</th>
-                        <th>Name</th>
-                        <th>Department</th>
-                        <th>Designation</th>
-                        <th>Joining Date</th>
-                    </tr>
-
-                </thead>
-
-                <tbody>
-
-                    @foreach (var employee in recentEmployees)
+                    @foreach (var bucket in Model.DepartmentEmployeeBuckets)
                     {
-                        <tr>
-
-                            <td>@employee.EmployeeCode</td>
-
-                            <td>
-                                @employee.FirstName
-                                @employee.LastName
-                            </td>
-
-                            <td>
-                                @employee.Department?.DepartmentName
-                            </td>
-
-                            <td>
-                                @employee.Designation?.DesignationName
-                            </td>
-
-                            <td>
-                                @employee.JoiningDate.ToString("dd-MMM-yyyy")
-                            </td>
-
-                        </tr>
+                        <div class="dashboard-bar-row">
+                            <div>
+                                <span>@bucket.Label</span>
+                                <strong>@bucket.Count</strong>
+                            </div>
+                            <div class="dashboard-bar-track">
+                                <span class="dashboard-bar-fill @bucket.CssClass"
+                                      style="width:@bucket.Percent%">
+                                </span>
+                            </div>
+                        </div>
                     }
+                </div>
+            </div>
 
-                </tbody>
+            <div class="dashboard-list dashboard-compact-list">
+                <div class="dashboard-list-title">Recent Employees</div>
 
-            </table>
+                @if (!Model.RecentEmployees.Any())
+                {
+                    <div class="dashboard-empty-state">
+                        No recent employees.
+                    </div>
+                }
+                else
+                {
+                    @foreach (var item in Model.RecentEmployees)
+                    {
+                        <a asp-controller="@item.Controller"
+                           asp-action="@item.Action"
+                           asp-route-id="@item.RouteId"
+                           class="dashboard-list-row dashboard-list-link">
+                            <div>
+                                <strong>@item.Title</strong>
+                                <span>@item.Subtitle</span>
+                            </div>
+                            <span class="dashboard-row-meta">@item.Meta</span>
+                        </a>
+                    }
+                }
+            </div>
+        </div>
+    </section>
 
+    <section class="app-card dashboard-section-card">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Project Management</h2>
+                <p class="card-subtitle">Delivery, tasks, risks and action items</p>
+            </div>
         </div>
 
-    </div>
+        <div class="card-body">
+            <div class="dashboard-metric-grid">
+                <a asp-controller="Project" asp-action="Index" class="dashboard-metric">
+                    <span>Total Projects</span>
+                    <strong>@Model.Projects.TotalProjects</strong>
+                </a>
+
+                <a asp-controller="Project" asp-action="Index" class="dashboard-metric">
+                    <span>Active Projects</span>
+                    <strong>@Model.Projects.ActiveProjects</strong>
+                </a>
+
+                <a asp-controller="ProjectTask" asp-action="Index" class="dashboard-metric">
+                    <span>Open Tasks</span>
+                    <strong>@Model.Projects.OpenTasks</strong>
+                </a>
+
+                <a asp-controller="ProjectTask" asp-action="Index" class="dashboard-metric metric-danger">
+                    <span>Overdue Tasks</span>
+                    <strong>@Model.Projects.OverdueTasks</strong>
+                </a>
+
+                <a asp-controller="Risk" asp-action="Index" class="dashboard-metric">
+                    <span>Open Risks</span>
+                    <strong>@Model.Projects.OpenRisks</strong>
+                </a>
+
+                <a asp-controller="MOM" asp-action="Index" class="dashboard-metric">
+                    <span>Pending Actions</span>
+                    <strong>@Model.Projects.PendingActionItems</strong>
+                </a>
+            </div>
+
+            <div class="dashboard-visual-row">
+                <div class="dashboard-bars dashboard-chart-panel">
+                    <div class="dashboard-list-title">Project Status</div>
+
+                    @foreach (var bucket in Model.ProjectStatusBuckets)
+                    {
+                        <div class="dashboard-bar-row">
+                            <div>
+                                <span>@bucket.Label</span>
+                                <strong>@bucket.Count</strong>
+                            </div>
+                            <div class="dashboard-bar-track">
+                                <span class="dashboard-bar-fill @bucket.CssClass"
+                                      style="width:@bucket.Percent%">
+                                </span>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="dashboard-chart-panel">
+                    <div class="dashboard-list-title">Task Health</div>
+
+                    <div class="dashboard-donut-wrap">
+                        <div class="dashboard-donut dashboard-donut-task"
+                             style="--seg-1:@P(taskCompleted)%; --seg-2:@P(taskInProgress)%; --seg-3:@P(taskNotStarted)%;">
+                            <div>
+                                <strong>@Model.Projects.OpenTasks</strong>
+                                <span>Open</span>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-legend">
+                            @foreach (var bucket in Model.TaskHealthBuckets)
+                            {
+                                <span><i class="legend-dot @bucket.CssClass"></i>@bucket.Label @bucket.Count</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-list">
+                <div class="dashboard-list-title">Overdue Tasks</div>
+
+                @if (!Model.OverdueTasks.Any())
+                {
+                    <div class="dashboard-empty-state">
+                        No overdue tasks.
+                    </div>
+                }
+                else
+                {
+                    @foreach (var item in Model.OverdueTasks)
+                    {
+                        <a asp-controller="@item.Controller"
+                           asp-action="@item.Action"
+                           asp-route-id="@item.RouteId"
+                           class="dashboard-list-row dashboard-list-link">
+                            <div>
+                                <strong>@item.Title</strong>
+                                <span>@item.Subtitle</span>
+                            </div>
+                            <span class="dashboard-row-meta">@item.Meta</span>
+                        </a>
+                    }
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="app-card dashboard-section-card dashboard-finance-card">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Accounts & Finance</h2>
+                <p class="card-subtitle">Billing, receivables, expenses, GST and assets</p>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="dashboard-metric-grid finance-grid">
+                <a asp-controller="Invoice" asp-action="Index" class="dashboard-metric">
+                    <span>Total Invoiced</span>
+                    <strong>₹@Model.Finance.TotalInvoiced.ToString("N0")</strong>
+                </a>
+
+                <a asp-controller="Receivables" asp-action="Index" class="dashboard-metric">
+                    <span>Outstanding</span>
+                    <strong>₹@Model.Finance.OutstandingReceivables.ToString("N0")</strong>
+                </a>
+
+                <a asp-controller="Receivables" asp-action="Ageing" class="dashboard-metric metric-danger">
+                    <span>Overdue</span>
+                    <strong>₹@Model.Finance.OverdueReceivables.ToString("N0")</strong>
+                </a>
+
+                <a asp-controller="PaymentReceipt" asp-action="Index" class="dashboard-metric">
+                    <span>This Month Collection</span>
+                    <strong>₹@Model.Finance.CollectionThisMonth.ToString("N0")</strong>
+                </a>
+
+                <a asp-controller="Invoice" asp-action="Index" class="dashboard-metric">
+                    <span>Draft Invoices</span>
+                    <strong>@Model.Finance.DraftInvoices</strong>
+                </a>
+
+                <a asp-controller="ExpenseVoucher" asp-action="Index" class="dashboard-metric">
+                    <span>Pending Expenses</span>
+                    <strong>@Model.Finance.PendingExpenseVouchers</strong>
+                </a>
+
+                <a asp-controller="AdvanceReceipt" asp-action="Index" class="dashboard-metric">
+                    <span>Advance Balance</span>
+                    <strong>₹@Model.Finance.AdvanceReceiptBalance.ToString("N0")</strong>
+                </a>
+
+                <a asp-controller="Gst" asp-action="Dashboard" class="dashboard-metric">
+                    <span>Net GST Payable</span>
+                    <strong>₹@Model.Finance.NetGstPayable.ToString("N0")</strong>
+                </a>
+            </div>
+
+            <div class="dashboard-trend-panel">
+                <div class="dashboard-list-title">Invoice vs Collection - Last 6 Months</div>
+
+                <div class="dashboard-trend-chart">
+                    @foreach (var bucket in Model.MonthlyInvoiceCollectionBuckets)
+                    {
+                        <div class="trend-month">
+                            <div class="trend-bars">
+                                <span class="trend-bar trend-invoiced"
+                                      style="height:@bucket.Percent%"
+                                      title='Invoiced ₹@bucket.Amount.ToString("N0")'>
+                                </span>
+                                <span class="trend-bar trend-collected"
+                                      style="height:@bucket.Count%"
+                                      title="Collected">
+                                </span>
+                            </div>
+                            <strong>@bucket.Label</strong>
+                        </div>
+                    }
+                </div>
+
+                <div class="dashboard-legend dashboard-trend-legend">
+                    <span><i class="legend-dot bucket-info"></i>Invoiced</span>
+                    <span><i class="legend-dot bucket-success"></i>Collected</span>
+                </div>
+            </div>
+
+            <div class="dashboard-finance-lower">
+                <div class="dashboard-chart-panel">
+                    <div class="dashboard-list-title">Receivables Ageing</div>
+
+                    <div class="dashboard-donut-wrap">
+                        <div class="dashboard-donut dashboard-donut-ageing"
+                             style="--seg-1:@P(ageingFirst)%; --seg-2:@P(ageingSecond)%; --seg-3:@P(ageingThird)%;">
+                            <div>
+                                <strong>₹@Model.Finance.OutstandingReceivables.ToString("N0")</strong>
+                                <span>Open</span>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-legend">
+                            @foreach (var bucket in Model.ReceivableBuckets)
+                            {
+                                <span><i class="legend-dot @bucket.CssClass"></i>@bucket.Label days ₹@bucket.Amount.ToString("N0")</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-bars dashboard-chart-panel">
+                    <div class="dashboard-list-title">Finance Pressure</div>
+
+                    @foreach (var bucket in Model.FinancePressureBuckets)
+                    {
+                        <div class="dashboard-bar-row">
+                            <div>
+                                <span>@bucket.Label</span>
+                                <strong>₹@bucket.Amount.ToString("N0")</strong>
+                            </div>
+                            <div class="dashboard-bar-track">
+                                <span class="dashboard-bar-fill @bucket.CssClass"
+                                      style="width:@bucket.Percent%">
+                                </span>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="dashboard-list">
+                    <div class="dashboard-list-title">Overdue Invoices</div>
+
+                    @if (!Model.OverdueInvoices.Any())
+                    {
+                        <div class="dashboard-empty-state">
+                            No overdue invoices.
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model.OverdueInvoices)
+                        {
+                            <a asp-controller="@item.Controller"
+                               asp-action="@item.Action"
+                               asp-route-id="@item.RouteId"
+                               class="dashboard-list-row dashboard-list-link">
+                                <div>
+                                    <strong>@item.Title</strong>
+                                    <span>@item.Subtitle</span>
+                                </div>
+                                <span class="dashboard-row-meta">₹@item.Meta</span>
+                            </a>
+                        }
+                    }
+                </div>
+
+                <div class="dashboard-list">
+                    <div class="dashboard-list-title">Pending Expenses</div>
+
+                    @if (!Model.PendingExpenses.Any())
+                    {
+                        <div class="dashboard-empty-state">
+                            No pending expenses.
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model.PendingExpenses)
+                        {
+                            <a asp-controller="@item.Controller"
+                               asp-action="@item.Action"
+                               asp-route-id="@item.RouteId"
+                               class="dashboard-list-row dashboard-list-link">
+                                <div>
+                                    <strong>@item.Title</strong>
+                                    <span>@item.Subtitle</span>
+                                </div>
+                                <span class="dashboard-row-meta">₹@item.Meta</span>
+                            </a>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
 
 </div>
