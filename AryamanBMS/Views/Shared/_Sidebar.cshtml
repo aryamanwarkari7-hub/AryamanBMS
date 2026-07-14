@@ -131,6 +131,10 @@
 
     bool isEmployeeActive = currentController == "Employee";
 
+    bool isEmployeeSelfServiceActive =
+    currentController == "ExpenseVoucher" ||
+    currentController == "OfficeAsset";
+
     bool isProjectSetupActive =
     (currentController == "Project" && currentAction != "Overview") ||
     currentController == "ProjectMember";
@@ -864,6 +868,71 @@
                 </div>
             </div>
         }
+
+        @* Employee Self-Service *@
+        @if (isEmployeeOnly)
+        {
+            <div class="menu-group">
+
+                <button class="menu-group-header
+                    @(isEmployeeSelfServiceActive
+                                            ? "active-menu"
+                                            : "")"
+                                                 type="button"
+                                                 data-bs-toggle="collapse"
+                                                 data-bs-target="#employeeSelfServiceMenu"
+                                                 aria-expanded="@isEmployeeSelfServiceActive
+                                                 .ToString()
+                                                 .ToLower()">
+
+                    <div class="menu-group-left">
+                        <i class="bi bi-person-check"></i>
+                        <span>Employee Self-Service</span>
+                    </div>
+
+                    <i class="bi bi-chevron-down"></i>
+
+                </button>
+
+                <div class="collapse
+                 @(isEmployeeSelfServiceActive
+                                      ? "show"
+                                      : "")"
+                                           id="employeeSelfServiceMenu"
+                                           data-bs-parent="#sidebarAccordion">
+
+                    <div class="submenu">
+
+                        <a asp-controller="ExpenseVoucher"
+                           asp-action="Index"
+                           class="submenu-item
+                       @(currentController == "ExpenseVoucher"
+                                                  ? "active-menu"
+                                                  : "")">
+
+                            <i class="bi bi-receipt"></i>
+                            <span>My Expense Claims</span>
+
+                        </a>
+
+                        <a asp-controller="OfficeAsset"
+                           asp-action="MyAssets"
+                           class="submenu-item
+                       @(currentController == "OfficeAsset"
+                                                  ? "active-menu"
+                                                  : "")">
+
+                        <i class="bi bi-pc-display"></i>
+                        <span>My Assigned Assets</span>
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+                }
 
         @* Accounts & Finance *@
         @if (canAccessAccounts)

@@ -74,8 +74,7 @@ namespace AryamanBMS.Repositories
                 .ToListAsync();
         }
 
-        public async Task<List<OfficeAssetModel>> GetByCategoryAsync(
-            string assetCategory)
+        public async Task<List<OfficeAssetModel>> GetByCategoryAsync(string assetCategory)
         {
             return await Assets
                 .Where(x => x.AssetCategory == assetCategory)
@@ -135,52 +134,101 @@ namespace AryamanBMS.Repositories
         }
 
         public async Task AssignAsync(
-            int officeAssetId,
-            int employeeId,
-            string assignedByUserId,
-            string? conditionOnAssignment,
-            string? remarks)
+    int officeAssetId,
+    int employeeId,
+    string assignedByUserId,
+    string? conditionOnAssignment,
+    string? remarks)
         {
             await using var transaction =
                 await _context.Database.BeginTransactionAsync();
 
-            var asset = await _context.OfficeAssets
-                .FirstAsync(x => x.OfficeAssetId == officeAssetId);
-
-            var employee = await _context.Employees
-                .FirstAsync(x => x.Id == employeeId);
-
-            var activeAssignment = await _context.OfficeAssetAssignmentHistories
-                .FirstOrDefaultAsync(x =>
-                    x.OfficeAssetId == officeAssetId &&
-                    x.IsActive);
-
-            if (activeAssignment != null)
+            try
             {
-                throw new InvalidOperationException(
-                    "This asset is already assigned.");
+                var asset = await _context.OfficeAssets
+                    .FirstOrDefaultAsync(x =>
+                        x.OfficeAssetId == officeAssetId);
+
+                if (asset == null)
+                {
+                    throw new InvalidOperationException(
+                        "Office asset was not found.");
+                }
+
+                if (!asset.IsActive)
+                {
+                    throw new InvalidOperationException(
+                        "Archived assets cannot be assigned.");
+                }
+
+                if (asset.Status == "Disposed")
+                {
+                    throw new InvalidOperationException(
+                        "Disposed assets cannot be assigned.");
+                }
+
+                var employee = await _context.Employees
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x =>
+                        x.Id == employeeId &&
+                        x.IsActive);
+
+                if (employee == null)
+                {
+                    throw new InvalidOperationException(
+                        "The selected employee was not found or is inactive.");
+                }
+
+                bool alreadyAssigned =
+                    await _context.OfficeAssetAssignmentHistories
+                        .AnyAsync(x =>
+                            x.OfficeAssetId == officeAssetId &&
+                            x.IsActive);
+
+                if (alreadyAssigned)
+                {
+                    throw new InvalidOperationException(
+                        "This asset already has an active assignment.");
+                }
+
+                var now = DateTime.Now;
+
+                var history =
+                    new OfficeAssetAssignmentHistoryModel
+                    {
+                        OfficeAssetId = asset.OfficeAssetId,
+                        EmployeeId = employee.Id,
+                        AssignedByUserId = assignedByUserId,
+                        AssignedOn = now,
+                        ConditionOnAssignment =
+                            string.IsNullOrWhiteSpace(conditionOnAssignment)
+                                ? null
+                                : conditionOnAssignment.Trim(),
+                        Remarks =
+                            string.IsNullOrWhiteSpace(remarks)
+                                ? null
+                                : remarks.Trim(),
+                        IsActive = true,
+                        CreatedOn = now
+                    };
+
+                asset.AssignedEmployeeId = employee.Id;
+                asset.AssignedTo = employee.FullName;
+                asset.Status = "InUse";
+                asset.UpdatedOn = now;
+
+                await _context.OfficeAssetAssignmentHistories
+                    .AddAsync(history);
+
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
             }
-
-            var history = new OfficeAssetAssignmentHistoryModel
+            catch
             {
-                OfficeAssetId = officeAssetId,
-                EmployeeId = employeeId,
-                AssignedByUserId = assignedByUserId,
-                ConditionOnAssignment = conditionOnAssignment,
-                Remarks = remarks,
-                IsActive = true,
-                AssignedOn = DateTime.Now,
-                CreatedOn = DateTime.Now
-            };
-
-            asset.AssignedEmployeeId = employee.Id;
-            asset.AssignedTo = employee.FullName;
-            asset.Status = "InUse";
-            asset.UpdatedOn = DateTime.Now;
-
-            await _context.OfficeAssetAssignmentHistories.AddAsync(history);
-            await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task ReturnAsync(

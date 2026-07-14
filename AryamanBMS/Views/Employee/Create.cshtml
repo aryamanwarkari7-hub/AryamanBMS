@@ -1,96 +1,174 @@
 ﻿@model EmployeeFormViewModel
+
 @{
-    string currentPermanentCity = Model.Employee.City ?? string.Empty;
-    string currentPermanentPin = Model.Employee.PinCode ?? string.Empty;
-    string currentLocalCity = Model.Employee.LocalCity ?? string.Empty;
-    string currentLocalPin = Model.Employee.LocalPinCode ?? string.Empty;
-    int currentDesignationId = Model.Employee.DesignationId;
+    ViewData["Title"] = "Add Employee";
+
+    string currentPermanentCity =
+        Model.Employee.City ?? string.Empty;
+
+    string currentPermanentPin =
+        Model.Employee.PinCode ?? string.Empty;
+
+    string currentLocalCity =
+        Model.Employee.LocalCity ?? string.Empty;
+
+    string currentLocalPin =
+        Model.Employee.LocalPinCode ?? string.Empty;
+
+    int currentDesignationId =
+        Model.Employee.DesignationId;
 }
 
 <div class="module-header">
+
     <div>
         <h1 class="module-title">Add Employee</h1>
-        <p class="module-subtitle">Create a new employee</p>
-    </div>
-</div>
 
+        <p class="module-subtitle">
+            Create a new employee
+        </p>
+    </div>
+
+</div>
 
 <form asp-action="Create"
       method="post"
       enctype="multipart/form-data">
 
+    @Html.AntiForgeryToken()
+
     @if (!ViewData.ModelState.IsValid)
     {
-        <div asp-validation-summary="ModelOnly"
+        <div asp-validation-summary="All"
              class="app-alert app-alert-danger mb-3">
         </div>
-    }
 
-    @if (!ViewData.ModelState.IsValid)
-    {
         <div class="app-alert app-alert-warning mb-3">
-            Newly selected files are cleared after a validation error.
-            Please select them again. Existing saved documents remain available.
+            If you selected any files, please select them again because
+            browsers clear newly selected files after a validation error.
         </div>
     }
 
-
     <div class="app-card">
+
         <div class="card-header">
-            <h5 class="card-title">Basic Information</h5>
+            <h5 class="card-title">
+                Basic Information
+            </h5>
         </div>
 
         <div class="card-body">
+
             <div class="form-grid-2">
 
                 <div class="form-group">
-                    <label class="form-label">Employee Code</label>
-                    <input asp-for="Employee.EmployeeCode" class="app-input" />
-                    <span asp-validation-for="Employee.EmployeeCode" class="validation-message"></span>
+
+                    <label asp-for="Employee.EmployeeCode"
+                           class="form-label">
+                        Employee Code
+                    </label>
+
+                    <input asp-for="Employee.EmployeeCode"
+                           class="app-input" />
+
+                    <span asp-validation-for="Employee.EmployeeCode"
+                          class="validation-message">
+                    </span>
+
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Gender</label>
-                    <select asp-for="Employee.Gender" class="app-select">
+
+                    <label asp-for="Employee.Gender"
+                           class="form-label">
+                        Gender
+                    </label>
+
+                    <select asp-for="Employee.Gender"
+                            class="app-select">
+
                         <option value="">Select Gender</option>
-                        <option>Male</option>
-                        <option>Female</option>
-                        <option>Other</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+
                     </select>
+
                     <span asp-validation-for="Employee.Gender"
-                          class="validation-message"></span>
+                          class="validation-message">
+                    </span>
+
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">First Name</label>
-                    <input asp-for="Employee.FirstName" class="app-input" />
-                    <span asp-validation-for="Employee.FirstName" class="validation-message"></span>
+
+                    <label asp-for="Employee.FirstName"
+                           class="form-label">
+                        First Name
+                    </label>
+
+                    <input asp-for="Employee.FirstName"
+                           class="app-input" />
+
+                    <span asp-validation-for="Employee.FirstName"
+                          class="validation-message">
+                    </span>
+
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Middle Name</label>
+
+                    <label asp-for="Employee.MiddleName"
+                           class="form-label">
+                        Middle Name
+                    </label>
 
                     <input asp-for="Employee.MiddleName"
                            class="app-input" />
 
                     <span asp-validation-for="Employee.MiddleName"
-                          class="validation-message"></span>
+                          class="validation-message">
+                    </span>
+
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Last Name</label>
-                    <input asp-for="Employee.LastName" class="app-input" />
-                    <span asp-validation-for="Employee.LastName" class="validation-message"></span>
+
+                    <label asp-for="Employee.LastName"
+                           class="form-label">
+                        Last Name
+                    </label>
+
+                    <input asp-for="Employee.LastName"
+                           class="app-input" />
+
+                    <span asp-validation-for="Employee.LastName"
+                          class="validation-message">
+                    </span>
+
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Date Of Birth</label>
-                    <input asp-for="Employee.DateOfBirth" type="date" class="app-input" />
-                    <span asp-validation-for="Employee.DateOfBirth" class="validation-message"></span>
+
+                    <label asp-for="Employee.DateOfBirth"
+                           class="form-label">
+                        Date Of Birth
+                    </label>
+
+                    <input asp-for="Employee.DateOfBirth"
+                           type="date"
+                           class="app-input" />
+
+                    <span asp-validation-for="Employee.DateOfBirth"
+                          class="validation-message">
+                    </span>
+
                 </div>
 
             </div>
+
         </div>
+
     </div>
 
     <div class="app-card">

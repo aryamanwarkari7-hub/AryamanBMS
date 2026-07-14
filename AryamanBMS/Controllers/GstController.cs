@@ -31,48 +31,11 @@ namespace AryamanBMS.Controllers
         private readonly IFileStorageService _fileStorageService;
         private readonly UserManager<ApplicationUserModel> _userManager;
         private readonly ILogger<GstController> _logger;
+        private readonly INotificationService _notificationService;
 
         private const string DocumentFolder = "GstDocuments";
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> VerifySnapshot(
-          int month,
-          int year)
-        {
-            var snapshot =
-                await _snapshotRepository.GetByMonthYearAsync(
-                    month,
-                    year);
-
-            if (snapshot == null)
-                return NotFound();
-
-            if (IsGstPeriodClosed(snapshot))
-            {
-                TempData["Error"] =
-                    "Locked GST periods cannot be verified again.";
-
-                return RedirectToAction(
-                    nameof(Dashboard),
-                    new { month, year });
-            }
-
-            bool verified =
-                await _snapshotRepository.VerifyAsync(
-                    month,
-                    year,
-                    _userManager.GetUserId(User) ?? string.Empty);
-
-            TempData[verified ? "Success" : "Error"] =
-                verified
-                    ? "GST snapshot verified successfully."
-                    : "Only calculated GST snapshots can be verified.";
-
-            return RedirectToAction(
-                nameof(Dashboard),
-                new { month, year });
-        }
+        
 
         /// <summary>
         /// Constructor with dependency injection
@@ -87,7 +50,8 @@ namespace AryamanBMS.Controllers
            IGstDocumentRepository documentRepository,
            IFileStorageService fileStorageService,
            UserManager<ApplicationUserModel> userManager,
-           ILogger<GstController> logger)
+           ILogger<GstController> logger,
+           INotificationService notificationService)
         {
             _calculationService = calculationService;
             _dashboardService = dashboardService;
@@ -99,6 +63,7 @@ namespace AryamanBMS.Controllers
             _fileStorageService = fileStorageService;
             _userManager = userManager;
             _logger = logger;
+            _notificationService = notificationService;
         }
 
         #region Index - Landing Page
@@ -224,59 +189,139 @@ namespace AryamanBMS.Controllers
         /// <returns>Redirect to Dashboard with success/error message</returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Generate(int month, int year)
+        public async Task<IActionResult> Generate(
+    int month,
+    int year)
         {
             try
             {
-                // Validate inputs
                 if (month < 1 || month > 12)
                 {
-                    TempData["Error"] = "Invalid month. Please select a valid month.";
+                    TempData["Error"] =
+                        "Invalid month. Please select a valid month.";
+
                     return RedirectToAction(nameof(Index));
                 }
 
-                if (year < 2000 || year > DateTime.Now.Year + 1)
+                if (year < 2000 ||
+                    year > DateTime.Now.Year + 1)
                 {
-                    TempData["Error"] = "Invalid year selected.";
+                    TempData["Error"] =
+                        "Invalid year selected.";
+
                     return RedirectToAction(nameof(Index));
                 }
 
-                _logger.LogInformation($"Generating GST snapshot for {month}/{year}");
+                _logger.LogInformation(
+                    "Generating GST snapshot for {Month}/{Year}",
+                    month,
+                    year);
 
-                // Check if snapshot is already locked
-                var isLocked = await _calculationService.IsSnapshotLockedAsync(month, year);
+                bool isLocked =
+                    await _calculationService
+                        .IsSnapshotLockedAsync(
+                            month,
+                            year);
+
                 if (isLocked)
                 {
-                    TempData["Error"] = "This GST snapshot is already filed and cannot be regenerated.";
-                    return RedirectToAction(nameof(Dashboard), new { month, year });
+                    TempData["Error"] =
+                        "This GST snapshot is already filed and cannot be regenerated.";
+
+                    return RedirectToAction(
+                        nameof(Dashboard),
+                        new { month, year });
                 }
 
-                // Generate the monthly snapshot
-                var snapshot = await _calculationService.GenerateMonthlySnapshotAsync(month, year);
+                var existingSnapshot =
+                    await _snapshotRepository
+                        .GetByMonthYearAsync(
+                            month,
+                            year);
 
-                if (snapshot != null)
+                bool isRegeneration =
+                    existingSnapshot != null;
+
+                var snapshot =
+                    await _calculationService
+                        .GenerateMonthlySnapshotAsync(
+                            month,
+                            year);
+
+                if (snapshot == null)
                 {
-                    TempData["Success"] = $"GST snapshot generated successfully for {GetMonthName(month)} {year}.";
-                    _logger.LogInformation($"GST snapshot generated: OutputGST={snapshot.TotalOutputGST}, InputGST={snapshot.TotalInputGST}, NetPayable={snapshot.NetGSTPayable}");
-                }
-                else
-                {
-                    TempData["Warning"] = "Snapshot generated but no data was calculated for this period.";
+                    TempData["Warning"] =
+                        "Snapshot generated but no data was calculated for this period.";
+
+                    return RedirectToAction(
+                        nameof(Dashboard),
+                        new { month, year });
                 }
 
-                return RedirectToAction(nameof(Dashboard), new { month, year });
+                string? actionUserId =
+                    _userManager.GetUserId(User);
+
+                if (!string.IsNullOrWhiteSpace(actionUserId))
+                {
+                    try
+                    {
+                        await NotifyGstSnapshotGeneratedAsync(
+                            snapshot,
+                            actionUserId,
+                            isRegeneration);
+                    }
+                    catch (Exception notificationException)
+                    {
+                        _logger.LogWarning(
+                            notificationException,
+                            "GST snapshot notification failed for {Month}/{Year}",
+                            month,
+                            year);
+                    }
+                }
+
+                TempData["Success"] = isRegeneration
+                    ? $"GST snapshot regenerated successfully for {GetMonthName(month)} {year}."
+                    : $"GST snapshot generated successfully for {GetMonthName(month)} {year}.";
+
+                _logger.LogInformation(
+                    "GST snapshot generated. Output GST: {OutputGST}, Input GST: {InputGST}, Net payable: {NetPayable}",
+                    snapshot.TotalOutputGST,
+                    snapshot.TotalInputGST,
+                    snapshot.NetGSTPayable);
+
+                return RedirectToAction(
+                    nameof(Dashboard),
+                    new { month, year });
             }
             catch (InvalidOperationException ex)
             {
-                _logger.LogWarning(ex, $"GST snapshot not generated for {month}/{year}");
+                _logger.LogWarning(
+                    ex,
+                    "GST snapshot not generated for {Month}/{Year}",
+                    month,
+                    year);
+
                 TempData["Warning"] = ex.Message;
-                return RedirectToAction(nameof(Index), new { month, year });
+
+                return RedirectToAction(
+                    nameof(Index),
+                    new { month, year });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error generating GST snapshot for {month}/{year}");
-                TempData["Error"] = "Unable to generate GST snapshot right now. Please check the selected period and try again.";
-                return RedirectToAction(nameof(Dashboard), new { month, year });
+                _logger.LogError(
+                    ex,
+                    "Error generating GST snapshot for {Month}/{Year}",
+                    month,
+                    year);
+
+                TempData["Error"] =
+                    "Unable to generate GST snapshot right now. Please check the selected period and try again.";
+
+                return RedirectToAction(
+                    nameof(Dashboard),
+                    new { month, year });
             }
         }
 
@@ -1049,6 +1094,46 @@ namespace AryamanBMS.Controllers
             };
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> VerifySnapshot(
+          int month,
+          int year)
+        {
+            var snapshot =
+                await _snapshotRepository.GetByMonthYearAsync(
+                    month,
+                    year);
+
+            if (snapshot == null)
+                return NotFound();
+
+            if (IsGstPeriodClosed(snapshot))
+            {
+                TempData["Error"] =
+                    "Locked GST periods cannot be verified again.";
+
+                return RedirectToAction(
+                    nameof(Dashboard),
+                    new { month, year });
+            }
+
+            bool verified =
+                await _snapshotRepository.VerifyAsync(
+                    month,
+                    year,
+                    _userManager.GetUserId(User) ?? string.Empty);
+
+            TempData[verified ? "Success" : "Error"] =
+                verified
+                    ? "GST snapshot verified successfully."
+                    : "Only calculated GST snapshots can be verified.";
+
+            return RedirectToAction(
+                nameof(Dashboard),
+                new { month, year });
+        }
+
         #endregion
 
         #region Optional API Methods
@@ -1317,6 +1402,65 @@ namespace AryamanBMS.Controllers
             return RedirectToAction(
                 nameof(Dashboard),
                 new { month, year });
+        }
+        private async Task NotifyGstSnapshotGeneratedAsync(
+    GstMonthlySnapshotModel snapshot,
+    string actionUserId,
+    bool isRegeneration)
+        {
+            var admins =
+                await _userManager.GetUsersInRoleAsync("Admin");
+
+            var financeUsers =
+                await _userManager.GetUsersInRoleAsync("Finance");
+
+            var recipients = admins
+                .Concat(financeUsers)
+                .Where(x =>
+                    x.IsActive &&
+                    x.Id != actionUserId)
+                .GroupBy(x => x.Id)
+                .Select(x => x.First())
+                .ToList();
+
+            string notificationType = isRegeneration
+                ? "GstSnapshotRegenerated"
+                : "GstSnapshotGenerated";
+
+            string title = isRegeneration
+                ? "GST Snapshot Regenerated"
+                : "GST Snapshot Generated";
+
+            string monthName =
+                GetMonthName(snapshot.Month);
+
+            foreach (var recipient in recipients)
+            {
+                bool exists =
+                    await _notificationService.ExistsAsync(
+                        recipient.Id,
+                        notificationType,
+                        "GstSnapshot",
+                        snapshot.SnapshotId);
+
+                if (exists)
+                {
+                    continue;
+                }
+
+                await _notificationService.CreateAsync(
+                    userId: recipient.Id,
+                    title: title,
+                    message:
+                        $"{monthName} {snapshot.Year} GST snapshot was " +
+                        $"{(isRegeneration ? "regenerated" : "generated")}. " +
+                        $"Net GST payable: ₹{snapshot.NetGSTPayable:N2}.",
+                    notificationType: notificationType,
+                    referenceType: "GstSnapshot",
+                    referenceId: snapshot.SnapshotId,
+                    actionUrl:
+                        $"/Gst/Dashboard?month={snapshot.Month}&year={snapshot.Year}");
+            }
         }
 
         #endregion

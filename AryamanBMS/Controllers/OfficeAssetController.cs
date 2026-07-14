@@ -4,13 +4,14 @@ using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,Finance")]
+    [Authorize]
     public class OfficeAssetController : Controller
     {
         private static readonly string[] AllowedStatuses =
@@ -27,19 +28,27 @@ namespace AryamanBMS.Controllers
         private readonly IOfficeAssetRepository _repository;
         private readonly ApplicationDbContext _context;
         private readonly IFileStorageService _fileStorageService;
+        private readonly INotificationService _notificationService;
+
+        private readonly UserManager<ApplicationUserModel> _userManager;
 
         private const string DocumentFolder = "OfficeAssetDocuments";
 
         public OfficeAssetController(
             IOfficeAssetRepository repository,
             ApplicationDbContext context,
-            IFileStorageService fileStorageService)
+            IFileStorageService fileStorageService,
+            UserManager<ApplicationUserModel> userManager,
+            INotificationService notificationService)
         {
             _repository = repository;
             _context = context;
             _fileStorageService = fileStorageService;
+            _userManager = userManager;
+            _notificationService = notificationService;
         }
 
+        [Authorize(Roles = "Admin,Finance")]
         [HttpGet]
         public async Task<IActionResult> Index(
             string? financialYear,
@@ -76,9 +85,12 @@ namespace AryamanBMS.Controllers
             return View(assets);
         }
 
+        [Authorize(Roles = "Admin,Finance")]
         [HttpGet]
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
+            await LoadAssetLookupsAsync();
+
             return View(new OfficeAssetModel
             {
                 PurchaseDate = DateTime.Today,
@@ -87,6 +99,7 @@ namespace AryamanBMS.Controllers
             });
         }
 
+        [Authorize(Roles = "Admin,Finance")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(OfficeAssetModel model)
@@ -102,6 +115,7 @@ namespace AryamanBMS.Controllers
 
             if (!ModelState.IsValid)
             {
+                await LoadAssetLookupsAsync();
                 return View(model);
             }
 
@@ -112,6 +126,7 @@ namespace AryamanBMS.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [Authorize(Roles = "Admin,Finance")]
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
@@ -120,10 +135,11 @@ namespace AryamanBMS.Controllers
             {
                 return NotFound();
             }
-
+            await LoadAssetLookupsAsync();
             return View(asset);
         }
 
+        [Authorize(Roles = "Admin,Finance")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, OfficeAssetModel model)
@@ -153,6 +169,9 @@ namespace AryamanBMS.Controllers
                 model.AssignedTo = existing.AssignedTo;
                 model.IsActive = existing.IsActive;
                 model.CreatedOn = existing.CreatedOn;
+
+                await LoadAssetLookupsAsync();
+
                 return View(model);
             }
 
@@ -210,6 +229,7 @@ namespace AryamanBMS.Controllers
             return RedirectToAction(nameof(Details), new { id });
         }
 
+        [Authorize(Roles = "Admin,Finance")]
         [HttpGet]
         public async Task<IActionResult> Details(int id)
         {
@@ -224,6 +244,8 @@ namespace AryamanBMS.Controllers
             return View(asset);
         }
 
+
+        [Authorize(Roles = "Admin,Finance")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Assign(
@@ -266,6 +288,37 @@ namespace AryamanBMS.Controllers
                     conditionOnAssignment?.Trim(),
                     remarks?.Trim());
 
+                var employee = await _context.Employees
+                     .AsNoTracking()
+                     .FirstOrDefaultAsync(x =>
+                         x.Id == employeeId);
+
+                if (employee != null &&
+                    !string.IsNullOrWhiteSpace(employee.ApplicationUserId))
+                {
+                    bool notificationExists =
+                        await _notificationService.ExistsAsync(
+                            employee.ApplicationUserId,
+                            "OfficeAssetAssigned",
+                            "OfficeAsset",
+                            asset.OfficeAssetId);
+
+                    if (!notificationExists)
+                    {
+                        await _notificationService.CreateAsync(
+                            userId: employee.ApplicationUserId,
+                            title: "Office Asset Assigned",
+                            message:
+                                $"{asset.AssetName} ({asset.AssetCode}) " +
+                                $"has been assigned to you.",
+                            notificationType: "OfficeAssetAssigned",
+                            referenceType: "OfficeAsset",
+                            referenceId: asset.OfficeAssetId,
+                            actionUrl:
+                                $"/OfficeAsset/MyAssetDetails/{asset.OfficeAssetId}");
+                    }
+                }
+
                 TempData["Success"] = "Asset assigned successfully.";
             }
             catch (Exception)
@@ -276,25 +329,39 @@ namespace AryamanBMS.Controllers
             return RedirectToAction(nameof(Details), new { id });
         }
 
+
+        [Authorize(Roles = "Admin,Finance")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Return(
-            int id,
-            string? conditionOnReturn,
-            string? remarks)
+    int id,
+    string? conditionOnReturn,
+    string? remarks)
         {
             var asset = await _repository.GetByIdAsync(id);
+
             if (asset == null)
             {
                 return NotFound();
             }
 
-            var activeAssignment = await _repository.GetActiveAssignmentAsync(id);
+            var activeAssignment =
+                await _repository.GetActiveAssignmentAsync(id);
+
             if (activeAssignment == null)
             {
-                TempData["Error"] = "This asset has no active assignment.";
-                return RedirectToAction(nameof(Details), new { id });
+                TempData["Error"] =
+                    "This asset has no active assignment.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
             }
+
+            var employee = await _context.Employees
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.Id == activeAssignment.EmployeeId);
 
             try
             {
@@ -304,16 +371,54 @@ namespace AryamanBMS.Controllers
                     conditionOnReturn?.Trim(),
                     remarks?.Trim());
 
-                TempData["Success"] = "Asset returned successfully.";
+                if (employee != null &&
+                    !string.IsNullOrWhiteSpace(
+                        employee.ApplicationUserId))
+                {
+                    bool notificationExists =
+                        await _notificationService.ExistsAsync(
+                            employee.ApplicationUserId,
+                            "OfficeAssetReturned",
+                            "OfficeAssetAssignment",
+                            activeAssignment.OfficeAssetAssignmentHistoryId);
+
+                    if (!notificationExists)
+                    {
+                        await _notificationService.CreateAsync(
+                            userId:
+                                employee.ApplicationUserId,
+                            title:
+                                "Office Asset Returned",
+                            message:
+                                $"{asset.AssetName} " +
+                                $"({asset.AssetCode}) has been " +
+                                $"marked as returned.",
+                            notificationType:
+                                "OfficeAssetReturned",
+                            referenceType:
+                                "OfficeAssetAssignment",
+                            referenceId:
+                                activeAssignment.OfficeAssetAssignmentHistoryId,
+                            actionUrl:
+                                "/OfficeAsset/MyAssets");
+                    }
+                }
+
+                TempData["Success"] =
+                    "Asset returned successfully.";
             }
             catch (Exception)
             {
-                TempData["Error"] = "Asset return could not be completed.";
+                TempData["Error"] =
+                    "Asset return could not be completed.";
             }
 
-            return RedirectToAction(nameof(Details), new { id });
+            return RedirectToAction(
+                nameof(Details),
+                new { id });
         }
 
+        [Authorize(Roles = "Admin,Finance")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
@@ -322,6 +427,7 @@ namespace AryamanBMS.Controllers
             return RedirectToAction(nameof(Details), new { id });
         }
 
+        [Authorize(Roles = "Admin,Finance")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Archive(int id, string reason)
@@ -368,6 +474,8 @@ namespace AryamanBMS.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+
+        [Authorize(Roles = "Admin,Finance")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Capitalize(int id)
@@ -395,53 +503,138 @@ namespace AryamanBMS.Controllers
             return RedirectToAction(nameof(Details), new { id });
         }
 
+        [Authorize(Roles = "Admin,Finance")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddMaintenance(
-            int id,
-            DateTime maintenanceDate,
-            string maintenanceType,
-            string? serviceVendorName,
-            decimal cost,
-            string? issueDescription,
-            string? resolution,
-            string status)
+    int id,
+    DateTime maintenanceDate,
+    string maintenanceType,
+    string? serviceVendorName,
+    decimal cost,
+    string? issueDescription,
+    string? resolution,
+    string status)
         {
             var asset = await _repository.GetByIdAsync(id);
+
             if (asset == null)
+            {
                 return NotFound();
+            }
 
             if (cost < 0)
             {
-                TempData["Error"] = "Maintenance cost cannot be negative.";
-                return RedirectToAction(nameof(Details), new { id });
+                TempData["Error"] =
+                    "Maintenance cost cannot be negative.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
             }
 
-            await _context.OfficeAssetMaintenances.AddAsync(new OfficeAssetMaintenanceModel
-            {
-                OfficeAssetId = id,
-                MaintenanceDate = maintenanceDate,
-                MaintenanceType = maintenanceType?.Trim() ?? "Repair",
-                ServiceVendorName = serviceVendorName?.Trim(),
-                Cost = cost,
-                IssueDescription = issueDescription?.Trim(),
-                Resolution = resolution?.Trim(),
-                Status = string.IsNullOrWhiteSpace(status) ? "Completed" : status.Trim(),
-                CreatedByUserId = GetCurrentUserId()
-            });
+            var employee = asset.AssignedEmployeeId.HasValue
+                ? await _context.Employees
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x =>
+                        x.Id == asset.AssignedEmployeeId.Value)
+                : null;
 
-            asset.Status = "UnderRepair";
-            if (string.Equals(status, "Completed", StringComparison.OrdinalIgnoreCase))
-            {
-                asset.Status = asset.AssignedEmployeeId.HasValue ? "InUse" : "Idle";
-            }
+            string maintenanceStatus =
+                string.IsNullOrWhiteSpace(status)
+                    ? "Completed"
+                    : status.Trim();
+
+            var maintenance =
+                new OfficeAssetMaintenanceModel
+                {
+                    OfficeAssetId = id,
+                    MaintenanceDate = maintenanceDate,
+                    MaintenanceType =
+                        string.IsNullOrWhiteSpace(maintenanceType)
+                            ? "Repair"
+                            : maintenanceType.Trim(),
+                    ServiceVendorName =
+                        string.IsNullOrWhiteSpace(serviceVendorName)
+                            ? null
+                            : serviceVendorName.Trim(),
+                    Cost = cost,
+                    IssueDescription =
+                        string.IsNullOrWhiteSpace(issueDescription)
+                            ? null
+                            : issueDescription.Trim(),
+                    Resolution =
+                        string.IsNullOrWhiteSpace(resolution)
+                            ? null
+                            : resolution.Trim(),
+                    Status = maintenanceStatus,
+                    CreatedByUserId = GetCurrentUserId()
+                };
+
+            await _context.OfficeAssetMaintenances
+                .AddAsync(maintenance);
+
+            bool isCompleted =
+                maintenanceStatus.Equals(
+                    "Completed",
+                    StringComparison.OrdinalIgnoreCase);
+
+            asset.Status = isCompleted
+                ? asset.AssignedEmployeeId.HasValue
+                    ? "InUse"
+                    : "Idle"
+                : "UnderRepair";
 
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Asset maintenance entry added.";
-            return RedirectToAction(nameof(Details), new { id });
+            if (employee != null &&
+                !string.IsNullOrWhiteSpace(
+                    employee.ApplicationUserId))
+            {
+                string notificationType = isCompleted
+                    ? "OfficeAssetMaintenanceCompleted"
+                    : "OfficeAssetUnderRepair";
+
+                string notificationTitle = isCompleted
+                    ? "Asset Maintenance Completed"
+                    : "Asset Sent for Maintenance";
+
+                string notificationMessage = isCompleted
+                    ? $"{asset.AssetName} ({asset.AssetCode}) maintenance has been completed."
+                    : $"{asset.AssetName} ({asset.AssetCode}) has been sent for maintenance.";
+
+                bool notificationExists =
+                    await _notificationService.ExistsAsync(
+                        employee.ApplicationUserId,
+                        notificationType,
+                        "OfficeAssetMaintenance",
+                        maintenance.OfficeAssetMaintenanceId);
+
+                if (!notificationExists)
+                {
+                    await _notificationService.CreateAsync(
+                        userId: employee.ApplicationUserId,
+                        title: notificationTitle,
+                        message: notificationMessage,
+                        notificationType: notificationType,
+                        referenceType: "OfficeAssetMaintenance",
+                        referenceId:
+                            maintenance.OfficeAssetMaintenanceId,
+                        actionUrl:
+                            $"/OfficeAsset/MyAssetDetails/{asset.OfficeAssetId}");
+                }
+            }
+
+            TempData["Success"] =
+                "Asset maintenance entry added.";
+
+            return RedirectToAction(
+                nameof(Details),
+                new { id });
         }
 
+
+        [Authorize(Roles = "Admin,Finance")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Verify(
@@ -477,6 +670,7 @@ namespace AryamanBMS.Controllers
             return RedirectToAction(nameof(Details), new { id });
         }
 
+        [Authorize(Roles = "Admin,Finance")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UploadDocument(
@@ -516,6 +710,89 @@ namespace AryamanBMS.Controllers
 
             TempData["Success"] = "Asset document uploaded.";
             return RedirectToAction(nameof(Details), new { id });
+        }
+
+        [Authorize(Roles = "Employee")]
+        [HttpGet]
+        public async Task<IActionResult> MyAssets()
+        {
+            string userId =
+                _userManager.GetUserId(User)
+                ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Challenge();
+            }
+
+            var employee =
+                await _context.Employees
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x =>
+                        x.ApplicationUserId == userId);
+
+            if (employee == null)
+            {
+                TempData["Error"] =
+                    "No employee record is linked to your user account.";
+
+                return View(new List<OfficeAssetModel>());
+            }
+
+            var assets =
+                await _context.OfficeAssets
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.AssignedEmployeeId == employee.Id &&
+                        x.IsActive)
+                    .OrderBy(x => x.AssetName)
+                    .ThenBy(x => x.AssetCode)
+                    .ToListAsync();
+
+            return View(assets);
+        }
+
+        [Authorize(Roles = "Employee")]
+        [HttpGet]
+        public async Task<IActionResult> MyAssetDetails(int id)
+        {
+            string userId =
+                _userManager.GetUserId(User)
+                ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Challenge();
+            }
+
+            var employee =
+                await _context.Employees
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x =>
+                        x.ApplicationUserId == userId);
+
+            if (employee == null)
+            {
+                TempData["Error"] =
+                    "No employee record is linked to your user account.";
+
+                return RedirectToAction(nameof(MyAssets));
+            }
+
+            var asset =
+                await _context.OfficeAssets
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x =>
+                        x.OfficeAssetId == id &&
+                        x.AssignedEmployeeId == employee.Id &&
+                        x.IsActive);
+
+            if (asset == null)
+            {
+                return Forbid();
+            }
+
+            return View(asset);
         }
 
         private async Task ValidateAssetAsync(
@@ -724,6 +1001,20 @@ namespace AryamanBMS.Controllers
         private string GetCurrentUserId()
         {
             return User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+        }
+        private async Task LoadAssetLookupsAsync()
+        {
+            ViewBag.Vendors = await _context.Vendors
+                .AsNoTracking()
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.VendorName)
+                .ToListAsync();
+
+            ViewBag.States = await _context.States
+                .AsNoTracking()
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.StateName)
+                .ToListAsync();
         }
     }
 }

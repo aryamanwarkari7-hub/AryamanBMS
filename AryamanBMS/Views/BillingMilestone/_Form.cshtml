@@ -10,31 +10,51 @@
     <div class="card-body">
         <div class="form-grid-2">
             <div class="form-group">
-                <label asp-for="PurchaseWorkOrderId" class="form-label">PO / WO</label>
-                <select asp-for="PurchaseWorkOrderId" class="app-select">
+                <label asp-for="PurchaseWorkOrderId"
+                       class="form-label">
+                    PO / WO
+                </label>
+
+                <select asp-for="PurchaseWorkOrderId"
+                        id="PurchaseWorkOrderId"
+                        class="app-select"
+                        data-project-url="@Url.Action(
+                                        "GetProjectsByPurchaseOrder",
+                                        "BillingMilestone")">
+
                     <option value="">Select PO / WO</option>
+
                     @foreach (var order in ViewBag.PurchaseOrders)
                     {
                         <option value="@order.PurchaseOrderId">
                             @order.OrderNumber - @order.Client?.ClientName
                         </option>
                     }
+
                 </select>
-                <span asp-validation-for="PurchaseWorkOrderId" class="validation-message"></span>
+
+                <span asp-validation-for="PurchaseWorkOrderId"
+                      class="validation-message"></span>
             </div>
 
             <div class="form-group">
-                <label asp-for="ProjectId" class="form-label">Project</label>
-                <select asp-for="ProjectId" class="app-select">
-                    <option value="">None</option>
-                    @foreach (var project in ViewBag.Projects)
-                    {
-                        <option value="@project.Id">
-                            @project.ProjectCode - @project.ProjectName
-                        </option>
-                    }
+                <label asp-for="ProjectId"
+                       class="form-label">
+                    Project
+                </label>
+
+                <select asp-for="ProjectId"
+                        id="ProjectId"
+                        class="app-select"
+                        data-selected-project-id="@Model.ProjectId"
+                        disabled>
+
+                    <option value="">Select Project</option>
+
                 </select>
-                <span asp-validation-for="ProjectId" class="validation-message"></span>
+
+                <span asp-validation-for="ProjectId"
+                      class="validation-message"></span>
             </div>
 
             <div class="form-group">

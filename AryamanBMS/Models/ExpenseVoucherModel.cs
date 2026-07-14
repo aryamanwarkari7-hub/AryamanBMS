@@ -9,7 +9,7 @@ namespace AryamanBMS.Models
         [Key]
         public int ExpenseVoucherId { get; set; }
 
-        [Required]
+        //[Required]
         [StringLength(50)]
         public string VoucherNumber { get; set; } = string.Empty;
 

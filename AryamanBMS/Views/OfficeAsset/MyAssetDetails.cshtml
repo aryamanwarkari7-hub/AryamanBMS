@@ -1,0 +1,102 @@
+﻿@model AryamanBMS.Models.OfficeAssetModel
+
+@{
+    ViewData["Title"] = "Asset Details";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">Asset Details</h1>
+        <p class="module-subtitle">
+            View information about the office asset assigned to you.
+        </p>
+    </div>
+
+    <a asp-action="MyAssets"
+       class="btn-app btn-secondary-app">
+        <i class="bi bi-arrow-left"></i>
+        Back
+    </a>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">
+            @Model.AssetName
+        </h5>
+    </div>
+
+    <div class="card-body">
+
+        <table class="app-table">
+            <tbody>
+
+                <tr>
+                    <th>Asset Code</th>
+                    <td>@Model.AssetCode</td>
+                </tr>
+
+                <tr>
+                    <th>Asset Name</th>
+                    <td>@Model.AssetName</td>
+                </tr>
+
+                <tr>
+                    <th>Category</th>
+                    <td>@Model.AssetCategory</td>
+                </tr>
+
+                <tr>
+                    <th>Brand</th>
+                    <td>
+                        @(string.IsNullOrWhiteSpace(Model.Brand)
+                                                ? "-"
+                                                : Model.Brand)
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Model</th>
+                    <td>
+                        @(string.IsNullOrWhiteSpace(Model.ModelNumber)
+                                                ? "-"
+                                                : Model.ModelNumber)
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Serial Number</th>
+                    <td>
+                        @(string.IsNullOrWhiteSpace(Model.SerialNumber)
+                                                ? "-"
+                                                : Model.SerialNumber)
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Status</th>
+                    <td>
+                        <span class="status-badge">
+                            @Model.Status
+                        </span>
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Assigned To</th>
+                    <td>
+                        @(string.IsNullOrWhiteSpace(Model.AssignedTo)
+                                                ? "-"
+                                                : Model.AssignedTo)
+                    </td>
+                </tr>
+
+            </tbody>
+        </table>
+
+    </div>
+
+</div>

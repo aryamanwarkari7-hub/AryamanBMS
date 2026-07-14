@@ -139,9 +139,31 @@
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="VendorName" class="form-label">Vendor Name</label>
-                    <input asp-for="VendorName" class="app-input" placeholder="Enter vendor name" />
-                    <span asp-validation-for="VendorName" class="validation-message"></span>
+                    <label asp-for="VendorId"
+                           class="form-label">
+                        Purchase Vendor
+                    </label>
+
+                    <select asp-for="VendorId"
+                            class="app-select"
+                            id="purchaseVendorSelect">
+
+                        <option value="">Select Vendor</option>
+
+                        @foreach (var vendor in ViewBag.Vendors)
+                        {
+                            <option value="@vendor.VendorId"
+                                    data-gstin="@vendor.GSTIN"
+                                    data-state="@vendor.State"
+                                    data-statecode="@vendor.StateCode">
+                                @vendor.VendorName
+                            </option>
+                        }
+
+                    </select>
+
+                    <span asp-validation-for="VendorId"
+                          class="validation-message"></span>
                 </div>
 
                 <div class="form-group">

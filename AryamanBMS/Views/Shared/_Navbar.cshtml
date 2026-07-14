@@ -1,6 +1,7 @@
 ﻿@using AryamanBMS.Models
 @using Microsoft.AspNetCore.Identity
 @inject UserManager<ApplicationUserModel> UserManager
+
 @{
     var currentController =
         ViewContext.RouteData.Values["controller"]?.ToString();
@@ -32,6 +33,16 @@
             initials = $"{nameParts.First()[0]}{nameParts.Last()[0]}".ToUpper();
         }
     }
+
+    bool isFinanceUser =
+        User.IsInRole("Admin") ||
+        User.IsInRole("Finance");
+
+    bool isEmployeeOnly =
+        User.IsInRole("Employee") &&
+        !isFinanceUser;
+
+    
 }
 
 <div class="top-navbar">

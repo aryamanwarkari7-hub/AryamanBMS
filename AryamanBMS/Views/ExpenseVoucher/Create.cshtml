@@ -1,7 +1,25 @@
 @model ExpenseVoucherModel
 
 @{
-    string title = Model.ExpenseVoucherId == 0 ? "Create Expense Voucher" : "Edit Expense Voucher";
+    bool isFinanceUser =
+        User.IsInRole("Admin") ||
+        User.IsInRole("Finance");
+
+    bool isEmployeeOnly =
+        User.IsInRole("Employee") &&
+        !isFinanceUser;
+
+    bool isCreate =
+        Model.ExpenseVoucherId == 0;
+
+    string title = isEmployeeOnly
+        ? isCreate
+            ? "Create Expense Claim"
+            : "Edit Expense Claim"
+        : isCreate
+            ? "Create Expense Voucher"
+            : "Edit Expense Voucher";
+
     ViewData["Title"] = title;
 }
 
@@ -10,7 +28,9 @@
     <div>
         <h1 class="module-title">@title.ToUpper()</h1>
         <p class="module-subtitle">
-            Record expense details, GST and vendor invoice information.
+            @(isEmployeeOnly
+                        ? "Enter and submit your business expense claim."
+                        : "Record expense details, GST and vendor invoice information.")
         </p>
     </div>
 
@@ -30,10 +50,16 @@
 
     <div class="card-header">
         <div>
-            <h2 class="card-title">Voucher Information</h2>
-            <p class="card-subtitle">
-                Enter basic voucher and category details.
-            </p>
+                <h2 class="card-title">
+                    @(isEmployeeOnly
+                                        ? "Claim Information"
+                                        : "Voucher Information")
+                </h2>
+                <p class="card-subtitle">
+                    @(isEmployeeOnly
+                                        ? "Enter the expense date, category and business purpose."
+                                        : "Enter basic voucher and category details.")
+                </p>
         </div>
     </div>
 
@@ -41,17 +67,23 @@
         
             @Html.AntiForgeryToken()
 
-            <div asp-validation-summary="ModelOnly"
+            <div asp-validation-summary="All"
                  class="app-alert-danger">
             </div>
-                @if (Model.ExpenseVoucherId != 0)
-                {
-                    <input type="hidden" asp-for="ExpenseVoucherId" />
-                    <div class="app-alert-info">
-                        <strong>Voucher Number:</strong> @Model.VoucherNumber<br />
-                        <strong>Status:</strong> @Model.Status
-                    </div>
-                }
+            @if (Model.ExpenseVoucherId != 0)
+            {
+                <input type="hidden" asp-for="ExpenseVoucherId" />
+                <div class="app-alert-info">
+                <strong>
+                    @(isEmployeeOnly
+                                        ? "Claim Number:"
+                                        : "Voucher Number:")
+            </strong>
+            @Model.VoucherNumber
+            <br />
+                    <strong>Status:</strong> @Model.Status
+                </div>
+            }
 
             <div class="form-grid-2">
 
@@ -338,18 +370,82 @@
             </div>
 
             <div class="form-grid-3">
+
                 <div class="form-group">
-                    <label asp-for="CompanyStateCode" class="form-label">Company State Code</label>
-                    <input asp-for="CompanyStateCode" class="app-input" maxlength="2" />
+                    <label asp-for="CompanyStateCode"
+                           class="form-label">
+                        Company State
+                    </label>
+
+                    <select asp-for="CompanyStateCode"
+                            class="app-select"
+                            id="companyStateDropdown">
+
+                        <option value="">Select State</option>
+
+                        @foreach (var state in ViewBag.States)
+                        {
+                            <option value="@state.StateCode">
+                                @state.StateName (@state.StateCode)
+                            </option>
+                        }
+
+                    </select>
+
+                    <span asp-validation-for="CompanyStateCode"
+                          class="validation-message"></span>
                 </div>
+
                 <div class="form-group">
-                    <label asp-for="VendorStateCode" class="form-label">Vendor State Code</label>
-                    <input asp-for="VendorStateCode" class="app-input" id="vendorStateCodeInput" maxlength="2" />
+                    <label asp-for="VendorStateCode"
+                           class="form-label">
+                        Vendor State
+                    </label>
+
+                    <select asp-for="VendorStateCode"
+                            class="app-select"
+                            id="vendorStateCodeInput">
+
+                        <option value="">Select State</option>
+
+                        @foreach (var state in ViewBag.States)
+                        {
+                            <option value="@state.StateCode">
+                                @state.StateName (@state.StateCode)
+                            </option>
+                        }
+
+                    </select>
+
+                    <span asp-validation-for="VendorStateCode"
+                          class="validation-message"></span>
                 </div>
+
                 <div class="form-group">
-                    <label asp-for="PlaceOfSupplyStateCode" class="form-label">Place of Supply State Code</label>
-                    <input asp-for="PlaceOfSupplyStateCode" class="app-input" maxlength="2" />
+                    <label asp-for="PlaceOfSupplyStateCode"
+                           class="form-label">
+                        Place of Supply
+                    </label>
+
+                    <select asp-for="PlaceOfSupplyStateCode"
+                            class="app-select"
+                            id="placeOfSupplyStateDropdown">
+
+                        <option value="">Select State</option>
+
+                        @foreach (var state in ViewBag.States)
+                        {
+                            <option value="@state.StateCode">
+                                @state.StateName (@state.StateCode)
+                            </option>
+                        }
+
+                    </select>
+
+                    <span asp-validation-for="PlaceOfSupplyStateCode"
+                          class="validation-message"></span>
                 </div>
+
             </div>
 
             <div class="form-group">
@@ -370,9 +466,17 @@
     <div class="app-card">
         <div class="card-body form-actions">
 
-            <button type="submit" class="btn-app btn-primary-app">
+            <button type="submit"
+                    class="btn-app btn-primary-app">
                 <i class="bi bi-check-circle"></i>
-                Save
+
+                @(isEmployeeOnly
+                                ? isCreate
+                                ? "Save Expense Claim"
+                                : "Update Expense Claim"
+                                : isCreate
+                                ? "Save Voucher"
+                                : "Update Voucher")
             </button>
 
             <a asp-action="Index" class="btn-app btn-secondary-app">

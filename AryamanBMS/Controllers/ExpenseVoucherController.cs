@@ -20,16 +20,20 @@ namespace AryamanBMS.Controllers
         private readonly UserManager<ApplicationUserModel> _userManager;
         private readonly ApplicationDbContext _context;
         private readonly INotificationService _notificationService;
+        private readonly ILogger<ExpenseVoucherController> _logger;
+        private readonly ILocationRepository _locationRepository;
 
         private const string DocumentFolder = "ExpenseVoucherDocuments";
 
         public ExpenseVoucherController(
-             IExpenseVoucherRepository voucherRepository,
-             IExpenseCategoryRepository categoryRepository,
-             IFileStorageService fileStorageService,
-             UserManager<ApplicationUserModel> userManager,
-             ApplicationDbContext context,
-             INotificationService notificationService)
+           IExpenseVoucherRepository voucherRepository,
+           IExpenseCategoryRepository categoryRepository,
+           IFileStorageService fileStorageService,
+           UserManager<ApplicationUserModel> userManager,
+           ApplicationDbContext context,
+           INotificationService notificationService,
+           ILocationRepository locationRepository,
+           ILogger<ExpenseVoucherController> logger)
         {
             _voucherRepository = voucherRepository;
             _categoryRepository = categoryRepository;
@@ -37,6 +41,8 @@ namespace AryamanBMS.Controllers
             _userManager = userManager;
             _context = context;
             _notificationService = notificationService;
+            _locationRepository = locationRepository;
+            _logger = logger;
         }
 
         public async Task<IActionResult> Index(string? status, int? categoryId, string? search)
@@ -354,33 +360,55 @@ namespace AryamanBMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Submit(int id)
         {
-            var voucher = await _voucherRepository.GetByIdAsync(id);
+            var voucher =
+                await _voucherRepository.GetByIdAsync(id);
+
             if (voucher == null)
+            {
                 return NotFound();
+            }
 
             if (!CanModifyDraftVoucher(voucher))
             {
-                TempData["Error"] = "Only accessible draft vouchers can be submitted.";
+                TempData["Error"] =
+                    "Only your own Draft expense claim can be submitted.";
+
                 return RedirectToAction(nameof(Index));
             }
 
-            bool submitted = await _voucherRepository.SubmitAsync(id, GetCurrentUserId());
+            bool submitted =
+                await _voucherRepository.SubmitAsync(
+                    id,
+                    GetCurrentUserId());
 
-            if (submitted)
+            if (!submitted)
+            {
+                TempData["Error"] =
+                    "Expense claim could not be submitted.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            try
             {
                 await NotifyFinanceUsersAsync(
                     voucher,
                     notificationType: "ExpenseSubmitted",
-                    title: "Expense Voucher Submitted",
+                    title: "Expense Claim Submitted",
                     message:
-                        $"Expense voucher {voucher.VoucherNumber} for " +
+                        $"Expense claim {voucher.VoucherNumber} for " +
                         $"₹{voucher.TotalAmount:N2} was submitted for approval.");
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Expense notification failed for voucher {VoucherId}.",
+                    voucher.ExpenseVoucherId);
+            }
 
-            TempData[submitted ? "Success" : "Error"] =
-                submitted
-                    ? $"Expense Voucher '{voucher.VoucherNumber}' submitted for approval."
-                    : "Expense voucher could not be submitted.";
+            TempData["Success"] =
+                $"Expense claim '{voucher.VoucherNumber}' submitted for approval.";
 
             return RedirectToAction(nameof(Index));
         }
@@ -786,20 +814,30 @@ namespace AryamanBMS.Controllers
         }
         private async Task LoadLookups()
         {
-            ViewBag.Categories = await _categoryRepository.GetAllActiveAsync();
-            ViewBag.Vendors = await _context.Vendors
-                .AsNoTracking()
-                .Where(x => x.IsActive)
-                .OrderBy(x => x.VendorName)
-                .ToListAsync();
-            ViewBag.Projects = await _context.Projects
-                .AsNoTracking()
-                .OrderBy(x => x.ProjectName)
-                .ToListAsync();
-            ViewBag.Departments = await _context.Departments
-                .AsNoTracking()
-                .OrderBy(x => x.DepartmentName)
-                .ToListAsync();
+            ViewBag.Categories =
+                await _categoryRepository.GetAllActiveAsync();
+
+            ViewBag.Vendors =
+                await _context.Vendors
+                    .AsNoTracking()
+                    .Where(x => x.IsActive)
+                    .OrderBy(x => x.VendorName)
+                    .ToListAsync();
+
+            ViewBag.Projects =
+                await _context.Projects
+                    .AsNoTracking()
+                    .OrderBy(x => x.ProjectName)
+                    .ToListAsync();
+
+            ViewBag.Departments =
+                await _context.Departments
+                    .AsNoTracking()
+                    .OrderBy(x => x.DepartmentName)
+                    .ToListAsync();
+
+            ViewBag.States =
+                await _locationRepository.GetActiveStatesAsync();
         }
 
         private string GetCurrentFinancialYear()
@@ -1172,11 +1210,12 @@ namespace AryamanBMS.Controllers
             var roles =
                 await _userManager.GetRolesAsync(creator);
 
-            bool hasFinanceAccess =
+            bool canReceiveExpenseNotification =
                 roles.Contains("Admin") ||
-                roles.Contains("Finance");
+                roles.Contains("Finance") ||
+                roles.Contains("Employee");
 
-            if (!hasFinanceAccess)
+            if (!canReceiveExpenseNotification)
             {
                 return;
             }

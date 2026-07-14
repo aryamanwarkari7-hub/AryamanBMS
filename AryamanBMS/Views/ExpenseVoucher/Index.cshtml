@@ -5,18 +5,36 @@
     string status = ViewBag.Status as string ?? "";
     int? categoryId = ViewBag.CategoryId as int?;
     string search = ViewBag.Search as string ?? "";
+
+    bool isFinanceUser =
+        User.IsInRole("Admin") ||
+        User.IsInRole("Finance");
+
+    bool isEmployeeOnly =
+        User.IsInRole("Employee") &&
+        !isFinanceUser;
 }
 
 <div class="module-header">
     <div>
-        <h1 class="module-title">EXPENSE VOUCHERS</h1>
+        <h1 class="module-title">
+            @(isEmployeeOnly
+                        ? "My Expense Claims"
+                        : "Expense Vouchers")
+        </h1>
         <p class="module-subtitle">
-            Manage expense entries, GST and approval status
+            @(isEmployeeOnly
+                        ? "Create and track your own expense claims"
+                        : "Manage company expense vouchers")
         </p>
     </div>
     <div class="module-header-actions">
-        <a href="@Url.Action("Create")" class="btn-app btn-primary-app">
-            <i class="bi bi-plus-circle"></i> New Voucher
+        <a asp-action="Create"
+           class="btn-app btn-primary-app">
+            <i class="bi bi-plus-lg"></i>
+            @(isEmployeeOnly
+                        ? "New Expense Claim"
+                        : "New Voucher")
         </a>
     </div>
 </div>

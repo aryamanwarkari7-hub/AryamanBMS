@@ -1,0 +1,94 @@
+﻿@model IEnumerable<AryamanBMS.Models.OfficeAssetModel>
+
+@{
+    ViewData["Title"] = "My Assigned Assets";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">My Assigned Assets</h1>
+        <p class="module-subtitle">
+            View office assets currently assigned to you.
+        </p>
+    </div>
+
+</div>
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+        <h5 class="card-title">Assigned Asset List</h5>
+    </div>
+
+    <div class="card-body">
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                No office assets are currently assigned to you.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+
+                <table class="app-table">
+
+                    <thead>
+                        <tr>
+                            <th>Asset Code</th>
+                            <th>Asset Name</th>
+                            <th>Category</th>
+                            <th>Brand / Model</th>
+                            <th>Serial Number</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var asset in Model)
+                        {
+                            <tr>
+                                <td>@asset.AssetCode</td>
+                                <td>@asset.AssetName</td>
+                                <td>@asset.AssetCategory</td>
+                                <td>
+                                    @(string.IsNullOrWhiteSpace(asset.Brand)
+                                                                ? "-"
+                                                                : asset.Brand)
+
+                            @if (!string.IsNullOrWhiteSpace(asset.ModelNumber))
+                                    {
+                                        <span>/ @asset.ModelNumber</span>
+                                    }
+                                </td>
+                                <td>@(asset.SerialNumber ?? "-")</td>
+                                <td>
+                                    <span class="status-badge">
+                                        @asset.Status
+                                    </span>
+                                </td>
+                                <td>
+                                    <a asp-action="MyAssetDetails"
+                                       asp-route-id="@asset.OfficeAssetId"
+                                       class="btn-app btn-sm-app btn-secondary-app">
+                                        <i class="bi bi-eye"></i>
+                                        View
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+    </div>
+
+</div>

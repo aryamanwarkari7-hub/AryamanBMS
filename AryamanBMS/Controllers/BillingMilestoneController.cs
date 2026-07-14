@@ -172,6 +172,38 @@ namespace AryamanBMS.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetProjectsByPurchaseOrder(
+    int purchaseOrderId)
+        {
+            var order = await _context.PurchaseOrders
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.PurchaseOrderId == purchaseOrderId &&
+                    x.IsActive &&
+                    x.Status != "Cancelled");
+
+            if (order == null)
+            {
+                return Json(Array.Empty<object>());
+            }
+
+            var projects = await _context.Projects
+                .AsNoTracking()
+                .Where(x =>
+                    x.Id == order.ClientId)
+                .OrderBy(x => x.ProjectName)
+                .Select(x => new
+                {
+                    id = x.Id,
+                    projectCode = x.ProjectCode,
+                    projectName = x.ProjectName
+                })
+                .ToListAsync();
+
+            return Json(projects);
+        }
+
         private async Task LoadDropdownsAsync()
         {
             ViewBag.PurchaseOrders =
@@ -185,11 +217,7 @@ namespace AryamanBMS.Controllers
                     .ThenBy(x => x.OrderNumber)
                     .ToListAsync();
 
-            ViewBag.Projects =
-                await _context.Projects
-                    .AsNoTracking()
-                    .OrderBy(x => x.ProjectName)
-                    .ToListAsync();
+            
         }
 
         private static void Normalize(BillingMilestoneModel model)
@@ -253,17 +281,18 @@ namespace AryamanBMS.Controllers
 
             if (model.ProjectId.HasValue)
             {
-                bool projectExists =
+                bool projectMatchesOrderClient =
                     await _context.Projects
                         .AsNoTracking()
                         .AnyAsync(x =>
-                            x.Id == model.ProjectId.Value);
+                            x.Id == model.ProjectId.Value &&
+                            x.Id == order.ClientId);
 
-                if (!projectExists)
+                if (!projectMatchesOrderClient)
                 {
                     ModelState.AddModelError(
                         nameof(model.ProjectId),
-                        "Selected project is invalid.");
+                        "Selected project does not belong to the PO / WO client.");
                 }
             }
 
@@ -336,5 +365,7 @@ namespace AryamanBMS.Controllers
                         model.MilestoneValue - model.BilledValue,
                         2));
         }
+
+
     }
 }

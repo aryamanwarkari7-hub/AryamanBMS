@@ -20,27 +20,52 @@
         }
 
         function filterBillingMilestones() {
-            var selectedWorkOrderId = $("#PurchaseWorkOrderId").val();
+            var workOrderId = $("#PurchaseWorkOrderId").val();
+            var milestoneDropdown = $("#BillingMilestoneId");
+            var currentMilestoneId = milestoneDropdown.val();
 
-            $("#BillingMilestoneId option").each(function () {
+            milestoneDropdown.find("option").each(function () {
                 var option = $(this);
-                var milestoneWorkOrderId = option.data("work-order-id");
 
                 if (!option.val()) {
-                    option.show();
+                    option.prop("hidden", false);
+                    option.prop("disabled", false);
                     return;
                 }
 
-                option.toggle(
-                    !selectedWorkOrderId ||
-                    milestoneWorkOrderId == selectedWorkOrderId);
+                var milestoneWorkOrderId =
+                    option.attr("data-work-order-id");
+
+                var matchesSelectedOrder =
+                    workOrderId &&
+                    String(milestoneWorkOrderId) === String(workOrderId);
+
+                option.prop("hidden", !matchesSelectedOrder);
+                option.prop("disabled", !matchesSelectedOrder);
             });
 
-            var selectedMilestone = $("#BillingMilestoneId option:selected");
+            if (!workOrderId) {
+                milestoneDropdown.val("");
+                milestoneDropdown.prop("disabled", true);
+                return;
+            }
 
-            if (selectedMilestone.val() &&
-                selectedMilestone.data("work-order-id") != selectedWorkOrderId) {
-                $("#BillingMilestoneId").val("");
+            milestoneDropdown.prop("disabled", false);
+
+            var selectedOption =
+                milestoneDropdown.find(
+                    'option[value="' + currentMilestoneId + '"]'
+                );
+
+            if (
+                currentMilestoneId &&
+                selectedOption.length &&
+                !selectedOption.prop("disabled")
+            ) {
+                milestoneDropdown.val(currentMilestoneId);
+            }
+            else {
+                milestoneDropdown.val("");
             }
         }
 

@@ -340,11 +340,10 @@ namespace AryamanBMS.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(
-          int id,
-          string cancellationReason)
+    int id,
+    string cancellationReason)
         {
-            if (string.IsNullOrWhiteSpace(
-                    cancellationReason))
+            if (string.IsNullOrWhiteSpace(cancellationReason))
             {
                 TempData["Error"] =
                     "Cancellation reason is required.";
@@ -354,7 +353,10 @@ namespace AryamanBMS.Controllers
                     new { id });
             }
 
-            if (cancellationReason.Trim().Length > 500)
+            cancellationReason =
+                cancellationReason.Trim();
+
+            if (cancellationReason.Length > 500)
             {
                 TempData["Error"] =
                     "Cancellation reason cannot exceed 500 characters.";
@@ -377,22 +379,65 @@ namespace AryamanBMS.Controllers
                     new { id });
             }
 
-            bool cancelled =
-                await _paymentRepository.CancelAsync(
-                    id,
-                    userId,
-                    cancellationReason);
+            var receipt =
+                await _paymentRepository.GetByIdAsync(id);
 
-            if (!cancelled)
+            if (receipt == null)
             {
-                TempData["Error"] =
-                    "Payment receipt could not be cancelled.";
-
-                return RedirectToAction(nameof(Index));
+                return NotFound();
             }
 
-            TempData["Success"] =
-                "Payment receipt cancelled successfully.";
+            if (receipt.IsCancelled)
+            {
+                TempData["Error"] =
+                    "This payment receipt is already cancelled.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
+            }
+
+            try
+            {
+                bool cancelled =
+                    await _paymentRepository.CancelAsync(
+                        id,
+                        userId,
+                        cancellationReason);
+
+                if (!cancelled)
+                {
+                    TempData["Error"] =
+                        "Payment receipt could not be cancelled.";
+
+                    return RedirectToAction(nameof(Index));
+                }
+
+                try
+                {
+                    await NotifyPaymentReceiptCancelledAsync(
+                        receipt,
+                        userId,
+                        cancellationReason);
+                }
+                catch
+                {
+                    // Receipt cancellation remains successful
+                    // even if notification creation fails.
+                }
+
+                TempData["Success"] =
+                    "Payment receipt cancelled successfully.";
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["Error"] = ex.Message;
+            }
+            catch (Exception)
+            {
+                TempData["Error"] =
+                    "An unexpected error occurred while cancelling the payment receipt.";
+            }
 
             return RedirectToAction(nameof(Index));
         }
@@ -689,6 +734,64 @@ namespace AryamanBMS.Controllers
                                 $"/Invoice/Details/{invoice.InvoiceId}");
                     }
                 }
+            }
+        }
+
+        private async Task NotifyPaymentReceiptCancelledAsync(
+    PaymentReceiptModel receipt,
+    string actionUserId,
+    string cancellationReason)
+        {
+            var admins =
+                await _userManager.GetUsersInRoleAsync("Admin");
+
+            var financeUsers =
+                await _userManager.GetUsersInRoleAsync("Finance");
+
+            var recipients = admins
+                .Concat(financeUsers)
+                .Where(x =>
+                    x.IsActive &&
+                    x.Id != actionUserId)
+                .GroupBy(x => x.Id)
+                .Select(x => x.First())
+                .ToList();
+
+            string clientName =
+                receipt.Client?.ClientName ?? "Client";
+
+            string invoiceNumber =
+                receipt.Invoice?.InvoiceNo ?? "invoice";
+
+            foreach (var recipient in recipients)
+            {
+                bool notificationExists =
+                    await _notificationService.ExistsAsync(
+                        recipient.Id,
+                        "PaymentReceiptCancelled",
+                        "PaymentReceipt",
+                        receipt.PaymentReceiptId);
+
+                if (notificationExists)
+                {
+                    continue;
+                }
+
+                await _notificationService.CreateAsync(
+                    userId: recipient.Id,
+                    title: "Payment Receipt Cancelled",
+                    message:
+                        $"Receipt {receipt.ReceiptNo} for ₹{receipt.AmountReceived:N2} " +
+                        $"from {clientName} against {invoiceNumber} was cancelled. " +
+                        $"Reason: {cancellationReason}",
+                    notificationType:
+                        "PaymentReceiptCancelled",
+                    referenceType:
+                        "PaymentReceipt",
+                    referenceId:
+                        receipt.PaymentReceiptId,
+                    actionUrl:
+                        $"/PaymentReceipt/Details/{receipt.PaymentReceiptId}");
             }
         }
 

@@ -3,6 +3,7 @@ using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Identity;
 
 using AryamanBMS.Data;
 using Microsoft.EntityFrameworkCore;
@@ -17,19 +18,25 @@ namespace AryamanBMS.Controllers
         private readonly IInvoiceRepository _invoiceRepository;
         private readonly IFileStorageService _fileStorageService;
         private readonly IInvoiceDocumentService _invoiceDocumentService;
+        private readonly INotificationService _notificationService;
+        private readonly UserManager<ApplicationUserModel> _userManager;
 
         private readonly ApplicationDbContext _context;
 
         public InvoiceController(
-             IInvoiceRepository invoiceRepository,
-             IFileStorageService fileStorageService,
-             IInvoiceDocumentService invoiceDocumentService,
-             ApplicationDbContext context)
+          IInvoiceRepository invoiceRepository,
+          IFileStorageService fileStorageService,
+          IInvoiceDocumentService invoiceDocumentService,
+          ApplicationDbContext context,
+          INotificationService notificationService,
+          UserManager<ApplicationUserModel> userManager)
         {
             _invoiceRepository = invoiceRepository;
             _fileStorageService = fileStorageService;
             _invoiceDocumentService = invoiceDocumentService;
             _context = context;
+            _notificationService = notificationService;
+            _userManager = userManager;
         }
 
         #region Index
@@ -815,7 +822,7 @@ namespace AryamanBMS.Controllers
                     new { id });
             }
 
-            var userId =
+            string? userId =
                 User.FindFirstValue(
                     ClaimTypes.NameIdentifier);
 
@@ -824,16 +831,41 @@ namespace AryamanBMS.Controllers
                 return Unauthorized();
             }
 
-            invoice.InvoiceStatus = "Issued";
-            invoice.IssuedByUserId = userId;
-            invoice.IssuedOn = DateTime.Now;
-            invoice.ModifiedOn = DateTime.Now;
+            try
+            {
+                invoice.InvoiceStatus = "Issued";
+                invoice.IssuedByUserId = userId;
+                invoice.IssuedOn = DateTime.Now;
+                invoice.ModifiedOn = DateTime.Now;
 
-            await _invoiceRepository.UpdateAsync(invoice);
-            await _invoiceRepository.SaveAsync();
+                await _invoiceRepository.UpdateAsync(invoice);
+                await _invoiceRepository.SaveAsync();
 
-            TempData["Success"] =
-                "Invoice issued successfully.";
+                try
+                {
+                    await NotifyInvoiceIssuedAsync(
+                        invoice,
+                        userId);
+                }
+                catch
+                {
+                    // Invoice issuance must remain successful
+                    // even if notification creation fails.
+                }
+
+                TempData["Success"] =
+                    "Invoice issued successfully.";
+            }
+            catch (DbUpdateException)
+            {
+                TempData["Error"] =
+                    "Invoice could not be issued because the database update failed.";
+            }
+            catch (Exception)
+            {
+                TempData["Error"] =
+                    "An unexpected error occurred while issuing the invoice.";
+            }
 
             return RedirectToAction(
                 nameof(Details),
@@ -841,6 +873,8 @@ namespace AryamanBMS.Controllers
         }
 
         #endregion
+
+
 
         #region Cancel Invoice
 
@@ -867,8 +901,7 @@ namespace AryamanBMS.Controllers
 
             if (invoice.PaymentStatus == "Paid")
             {
-                TempData["Error"] =
-                    "A paid invoice cannot be cancelled directly.";
+                TempData["Error"] = "A paid invoice cannot be cancelled directly.";
 
                 return RedirectToAction(
                     nameof(Details),
@@ -880,9 +913,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Cancel(
-            int id,
-            string cancellationReason)
+        public async Task<IActionResult> Cancel(int id,string cancellationReason)
         {
             var invoice =
                 await _invoiceRepository.GetByIdAsync(id);
@@ -933,23 +964,46 @@ namespace AryamanBMS.Controllers
                 return Unauthorized();
             }
 
-            invoice.InvoiceStatus =
-                "Cancelled";
+            invoice.InvoiceStatus =  "Cancelled";
 
-            invoice.CancelledByUserId =
-                userId;
+            invoice.CancelledByUserId =  userId;
 
-            invoice.CancelledOn =
-                DateTime.Now;
+            invoice.CancelledOn =  DateTime.Now;
 
-            invoice.CancellationReason =
-                cancellationReason.Trim();
+            invoice.CancellationReason =  cancellationReason.Trim();
 
-            invoice.ModifiedOn =
-                DateTime.Now;
+            invoice.ModifiedOn =  DateTime.Now;
 
-            await _invoiceRepository.UpdateAsync(invoice);
-            await _invoiceRepository.SaveAsync();
+            try
+            {
+                await _invoiceRepository.UpdateAsync(invoice);
+                await _invoiceRepository.SaveAsync();
+
+                try
+                {
+                    await NotifyInvoiceCancelledAsync(
+                        invoice,
+                        userId);
+                }
+                catch
+                {
+                    // Cancellation remains successful
+                    // even if notification creation fails.
+                }
+
+                TempData["Success"] =
+                    "Invoice cancelled successfully.";
+            }
+            catch (DbUpdateException)
+            {
+                TempData["Error"] =
+                    "Invoice could not be cancelled because the database update failed.";
+            }
+            catch (Exception)
+            {
+                TempData["Error"] =
+                    "An unexpected error occurred while cancelling the invoice.";
+            }
 
             TempData["Success"] =
                 "Invoice cancelled successfully.";
@@ -1626,24 +1680,31 @@ namespace AryamanBMS.Controllers
                 return;
             }
 
-            decimal alreadyBilled =
-                await _context.Invoices
-                    .AsNoTracking()
-                    .Where(x =>
-                        x.PurchaseWorkOrderId == order.PurchaseOrderId &&
-                        x.InvoiceId != model.InvoiceId &&
-                        !x.IsDeleted &&
-                        x.InvoiceStatus != "Cancelled")
-                    .SumAsync(x => x.GrandTotal);
+            decimal alreadyBilledTaxableAmount = await _context.Invoices
+        .AsNoTracking()
+        .Where(x =>
+            x.PurchaseWorkOrderId == order.PurchaseOrderId &&
+            x.InvoiceId != model.InvoiceId &&
+            !x.IsDeleted &&
+            x.InvoiceStatus != "Cancelled")
+        .SumAsync(x =>
+            x.SubTotal - x.Discount);
 
-            decimal availableBilling =
-                order.OrderAmount.Value - alreadyBilled;
+            decimal availableBillingAmount =
+                order.OrderAmount.Value -
+                alreadyBilledTaxableAmount;
 
-            if (model.GrandTotal > availableBilling)
+            decimal currentInvoiceTaxableAmount =
+                model.SubTotal - model.Discount;
+
+            if (currentInvoiceTaxableAmount >
+                availableBillingAmount)
             {
                 ModelState.AddModelError(
                     nameof(model.PurchaseWorkOrderId),
-                    $"Billing exceeds Purchase Order value. Available billable amount is {availableBilling:N2}.");
+                    $"Billing exceeds the Purchase Order value. " +
+                    $"Available taxable billable amount is " +
+                    $"{availableBillingAmount:N2}.");
             }
         }
 
@@ -1702,11 +1763,114 @@ namespace AryamanBMS.Controllers
                     "This milestone has already been invoiced.");
             }
 
-            if (model.GrandTotal > milestone.MilestoneValue)
+            decimal currentInvoiceTaxableAmount = model.SubTotal - model.Discount;
+
+            if (currentInvoiceTaxableAmount >
+                milestone.MilestoneValue)
             {
                 ModelState.AddModelError(
                     nameof(model.BillingMilestoneId),
-                    $"Invoice total cannot exceed milestone value {milestone.MilestoneValue:N2}.");
+                    $"Invoice taxable amount cannot exceed milestone value " +
+                    $"{milestone.MilestoneValue:N2}.");
+            }
+        }
+
+        private async Task NotifyInvoiceIssuedAsync(
+    InvoiceModel invoice,
+    string actionUserId)
+        {
+            var admins =
+                await _userManager.GetUsersInRoleAsync("Admin");
+
+            var financeUsers =
+                await _userManager.GetUsersInRoleAsync("Finance");
+
+            var recipients = admins
+                .Concat(financeUsers)
+                .Where(x =>
+                    x.IsActive &&
+                    x.Id != actionUserId)
+                .GroupBy(x => x.Id)
+                .Select(x => x.First())
+                .ToList();
+
+            string clientName =
+                invoice.Client?.ClientName ?? "Client";
+
+            foreach (var recipient in recipients)
+            {
+                bool exists =
+                    await _notificationService.ExistsAsync(
+                        recipient.Id,
+                        "InvoiceIssued",
+                        "Invoice",
+                        invoice.InvoiceId);
+
+                if (exists)
+                {
+                    continue;
+                }
+
+                await _notificationService.CreateAsync(
+                    userId: recipient.Id,
+                    title: "Invoice Issued",
+                    message:
+                        $"Invoice {invoice.InvoiceNo} for {clientName} " +
+                        $"has been issued for ₹{invoice.GrandTotal:N2}.",
+                    notificationType: "InvoiceIssued",
+                    referenceType: "Invoice",
+                    referenceId: invoice.InvoiceId,
+                    actionUrl:
+                        $"/Invoice/Details/{invoice.InvoiceId}");
+            }
+        }
+
+        private async Task NotifyInvoiceCancelledAsync(
+    InvoiceModel invoice,
+    string actionUserId)
+        {
+            var admins =
+                await _userManager.GetUsersInRoleAsync("Admin");
+
+            var financeUsers =
+                await _userManager.GetUsersInRoleAsync("Finance");
+
+            var recipients = admins
+                .Concat(financeUsers)
+                .Where(x =>
+                    x.IsActive &&
+                    x.Id != actionUserId)
+                .GroupBy(x => x.Id)
+                .Select(x => x.First())
+                .ToList();
+
+            string clientName =
+                invoice.Client?.ClientName ?? "Client";
+
+            foreach (var recipient in recipients)
+            {
+                bool exists =
+                    await _notificationService.ExistsAsync(
+                        recipient.Id,
+                        "InvoiceCancelled",
+                        "Invoice",
+                        invoice.InvoiceId);
+
+                if (exists)
+                {
+                    continue;
+                }
+
+                await _notificationService.CreateAsync(
+                    userId: recipient.Id,
+                    title: "Invoice Cancelled",
+                    message:
+                        $"Invoice {invoice.InvoiceNo} for {clientName} " +
+                        $"has been cancelled.",
+                    notificationType: "InvoiceCancelled",
+                    referenceType: "Invoice",
+                    referenceId: invoice.InvoiceId,
+                    actionUrl: "/Invoice/Index");
             }
         }
 

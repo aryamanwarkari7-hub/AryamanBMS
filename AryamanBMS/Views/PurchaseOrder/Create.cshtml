@@ -41,6 +41,78 @@
         </div>
     </div>
 
-@section Scripts {
+@section Scripts
+{
     <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        $(function () {
+            const orderDropdown =
+                $("#PurchaseWorkOrderId");
+
+            const projectDropdown =
+                $("#ProjectId");
+
+            const selectedProjectId =
+                String(
+                    projectDropdown.data("selected-project-id") || ""
+                );
+
+            function loadProjects(orderId) {
+                projectDropdown
+                    .empty()
+                    .append(
+                        '<option value="">Select Project</option>'
+                    )
+                    .prop("disabled", true);
+
+                if (!orderId) {
+                    return;
+                }
+
+                const url =
+                    orderDropdown.data("project-url");
+
+                $.get(url, { purchaseOrderId: orderId })
+                    .done(function (projects) {
+                        projects.forEach(function (project) {
+                            const option =
+                                $("<option></option>")
+                                    .val(project.id)
+                                    .text(
+                                        project.projectCode +
+                                        " - " +
+                                        project.projectName
+                                    );
+
+                            projectDropdown.append(option);
+                        });
+
+                        projectDropdown.prop(
+                            "disabled",
+                            projects.length === 0
+                        );
+
+                        if (selectedProjectId) {
+                            projectDropdown.val(
+                                selectedProjectId
+                            );
+                        }
+                    })
+                    .fail(function () {
+                        alert(
+                            "Projects could not be loaded for the selected PO / WO."
+                        );
+                    });
+            }
+
+            orderDropdown.on("change", function () {
+                loadProjects($(this).val());
+            });
+
+            if (orderDropdown.val()) {
+                loadProjects(orderDropdown.val());
+            }
+        });
+    </script>
 }
