@@ -7,9 +7,9 @@ namespace AryamanBMS.ViewModels
     {
         public int? Id { get; set; }
 
-        [Required]
+        
         [StringLength(150)]
-        public string CompanyName { get; set; } = string.Empty;
+        public string? CompanyName { get; set; }
 
         [StringLength(100)]
         public string? Designation { get; set; }
@@ -20,11 +20,11 @@ namespace AryamanBMS.ViewModels
         [StringLength(50)]
         public string? EmploymentType { get; set; }
 
-        [Required]
+        
         [DataType(DataType.Date)]
         public DateTime? StartDate { get; set; }
 
-        [Required]
+        
         [DataType(DataType.Date)]
         public DateTime? EndDate { get; set; }
 

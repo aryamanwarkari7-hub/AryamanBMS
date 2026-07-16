@@ -3,6 +3,7 @@ using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
 using AryamanBMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,19 +17,28 @@ namespace AryamanBMS.Controllers
         private readonly IProjectRepository _projectRepository;
         private readonly IProjectTimelineService _projectTimelineService;
         private readonly IProjectAccessService _projectAccessService;
+        private readonly UserManager<ApplicationUserModel> _userManager;
+        private readonly INotificationService _notificationService;
+        private readonly ILogger<MOMController> _logger;
 
         public MOMController(
           IProjectMeetingRepository meetingRepository,
           IProjectMemberRepository projectMemberRepository,
           IProjectRepository projectRepository,
           IProjectTimelineService projectTimelineService,
-          IProjectAccessService projectAccessService)
+          IProjectAccessService projectAccessService,
+          UserManager<ApplicationUserModel> userManager,
+          INotificationService notificationService,
+          ILogger<MOMController> logger)
         {
             _meetingRepository = meetingRepository;
             _projectMemberRepository = projectMemberRepository;
             _projectTimelineService = projectTimelineService;
             _projectRepository = projectRepository;
             _projectAccessService = projectAccessService;
+            _userManager = userManager;
+            _notificationService = notificationService;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -167,6 +177,17 @@ namespace AryamanBMS.Controllers
              relatedEntityType: "Meeting",
              relatedEntityId: model.Id,
              newValue: model.MeetingStatus);
+
+            await NotifyProjectMembersAsync(
+                projectId: model.ProjectId,
+                notificationType: "ProjectMeetingCreated",
+                title: "Project Meeting Created",
+                message:
+                    $"Meeting '{model.MeetingTitle}' is scheduled for " +
+                    $"{model.MeetingDate:dd-MMM-yyyy}.",
+                referenceType: "ProjectMeeting",
+                referenceId: model.Id,
+                actionUrl: $"/MOM/Details/{model.Id}");
 
             TempData["Success"] =
                 "Meeting created successfully.";
@@ -522,6 +543,19 @@ namespace AryamanBMS.Controllers
             await _meetingRepository.AddActionItemAsync(model);
             await _meetingRepository.SaveAsync();
 
+            if (model.AssignedEmployeeId.HasValue)
+            {
+                await NotifyEmployeeAsync(
+                    employeeId: model.AssignedEmployeeId.Value,
+                    notificationType: "MomActionAssigned",
+                    title: "MOM Action Assigned",
+                    message:
+                        $"MOM action '{model.ActionTitle}' has been assigned to you.",
+                    referenceType: "ProjectMeetingAction",
+                    referenceId: model.Id,
+                    actionUrl: $"/MOM/Details/{model.MeetingId}");
+            }
+
             TempData["Success"] =
                 "Meeting action item added successfully.";
 
@@ -742,6 +776,136 @@ namespace AryamanBMS.Controllers
                 ModelState.AddModelError(
                     nameof(model.NextMeetingDate),
                     "Next meeting date cannot be before the meeting date.");
+            }
+        }
+
+        private async Task NotifyEmployeeAsync(
+            int employeeId,
+            string notificationType,
+            string title,
+            string message,
+            string referenceType,
+            int referenceId,
+            string actionUrl)
+        {
+            try
+            {
+                var employees =
+                    await _meetingRepository.GetActiveEmployeesAsync();
+
+                var employee =
+                    employees.FirstOrDefault(x => x.Id == employeeId);
+
+                if (string.IsNullOrWhiteSpace(employee?.ApplicationUserId))
+                {
+                    return;
+                }
+
+                var recipient = await _userManager.FindByIdAsync(employee.ApplicationUserId);
+
+                if (recipient == null || !recipient.IsActive)
+                {
+                    return;
+                }
+
+                bool exists = await _notificationService.ExistsAsync(
+                    recipient.Id,
+                    notificationType,
+                    referenceType,
+                    referenceId);
+
+                if (exists)
+                {
+                    return;
+                }
+
+                await _notificationService.CreateAsync(
+                    recipient.Id,
+                    title,
+                    message,
+                    notificationType,
+                    referenceType,
+                    referenceId,
+                    actionUrl);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "MOM notification failed. Type: {NotificationType}, Reference: {ReferenceType}/{ReferenceId}",
+                    notificationType,
+                    referenceType,
+                    referenceId);
+            }
+        }
+
+        private async Task NotifyProjectMembersAsync(
+            int projectId,
+            string notificationType,
+            string title,
+            string message,
+            string referenceType,
+            int referenceId,
+            string actionUrl)
+        {
+            try
+            {
+                var members = await _projectMemberRepository.ProjectMembers
+                    .AsNoTracking()
+                    .Include(x => x.Employee)
+                    .Where(x =>
+                        x.ProjectId == projectId &&
+                        x.IsActive &&
+                        x.Employee != null &&
+                        x.Employee.IsActive &&
+                        x.Employee.ApplicationUserId != null)
+                    .ToListAsync();
+
+                foreach (var member in members)
+                {
+                    string? userId = member.Employee?.ApplicationUserId;
+
+                    if (string.IsNullOrWhiteSpace(userId))
+                    {
+                        continue;
+                    }
+
+                    var recipient = await _userManager.FindByIdAsync(userId);
+
+                    if (recipient == null || !recipient.IsActive)
+                    {
+                        continue;
+                    }
+
+                    bool exists = await _notificationService.ExistsAsync(
+                        recipient.Id,
+                        notificationType,
+                        referenceType,
+                        referenceId);
+
+                    if (exists)
+                    {
+                        continue;
+                    }
+
+                    await _notificationService.CreateAsync(
+                        recipient.Id,
+                        title,
+                        message,
+                        notificationType,
+                        referenceType,
+                        referenceId,
+                        actionUrl);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Project meeting notification failed. Type: {NotificationType}, Reference: {ReferenceType}/{ReferenceId}",
+                    notificationType,
+                    referenceType,
+                    referenceId);
             }
         }
 

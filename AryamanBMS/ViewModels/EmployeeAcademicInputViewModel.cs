@@ -7,8 +7,7 @@ namespace AryamanBMS.ViewModels
     {
         public int? Id { get; set; }
 
-        [Required]
-        public string QualificationLevel { get; set; } = string.Empty;
+        public string? QualificationLevel { get; set; }
 
         public string? CourseName { get; set; }
 

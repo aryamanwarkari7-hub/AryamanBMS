@@ -466,13 +466,6 @@ namespace AryamanBMS.Controllers
                         newEmployee?.FullName ?? "Unassigned";
                 }
 
-                if (existing.AssignedEmployeeId.HasValue)
-                {
-                    await NotifyAssignedEmployeeAsync(
-                        existing,
-                        isReassignment: true);
-                }
-
                 await _projectTimelineService.AddEventAsync(
                 projectId: existing.ProjectId,
                 eventType: "TaskReassigned",
@@ -685,7 +678,7 @@ namespace AryamanBMS.Controllers
                 notificationType: "TaskAssigned",
                 referenceType: "ProjectTask",
                 referenceId: task.Id,
-                actionUrl: $"/ProjectTask/Details/{task.Id}");
+                actionUrl: $"/EmployeeProject/TaskDetails/{task.Id}");
         }
     }
 }

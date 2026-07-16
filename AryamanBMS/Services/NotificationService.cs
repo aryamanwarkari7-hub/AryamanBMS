@@ -1,6 +1,8 @@
-﻿using AryamanBMS.Data;
+using AryamanBMS.Data;
+using AryamanBMS.Hubs;
 using AryamanBMS.Models;
 using AryamanBMS.Services.Interfaces;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Services
@@ -8,11 +10,14 @@ namespace AryamanBMS.Services
     public class NotificationService : INotificationService
     {
         private readonly ApplicationDbContext _context;
+        private readonly IHubContext<NotificationHub> _notificationHub;
 
         public NotificationService(
-            ApplicationDbContext context)
+            ApplicationDbContext context,
+            IHubContext<NotificationHub> notificationHub)
         {
             _context = context;
+            _notificationHub = notificationHub;
         }
 
         public async Task CreateAsync(
@@ -75,9 +80,45 @@ namespace AryamanBMS.Services
             _context.TableNotification.Add(notification);
 
             await _context.SaveChangesAsync();
+
+            var notificationPreference =
+                await _context.Users
+                    .AsNoTracking()
+                    .Where(x => x.Id == userId)
+                    .Select(x => new
+                    {
+                        x.EnableRealtimeNotifications
+                    })
+                    .FirstOrDefaultAsync();
+
+            if (notificationPreference?.EnableRealtimeNotifications != true)
+            {
+                return;
+            }
+
+            var unreadCount = await GetUnreadCountAsync(userId);
+
+            await _notificationHub.Clients
+                .User(userId)
+                .SendAsync(
+                    "ReceiveNotification",
+                    new
+                    {
+                        notification.Id,
+                        notification.Title,
+                        notification.Message,
+                        notification.NotificationType,
+                        notification.ActionUrl,
+                        CreatedOn =
+                            notification.CreatedOn.ToString(
+                                "dd MMM yyyy, hh:mm tt"),
+                        UnreadCount = unreadCount
+                    });
         }
 
-        public async Task<List<NotificationModel>> GetRecentAsync(string userId,int count = 10)
+        public async Task<List<NotificationModel>> GetRecentAsync(
+            string userId,
+            int count = 10)
         {
             if (count <= 0)
             {
@@ -97,7 +138,8 @@ namespace AryamanBMS.Services
                 .ToListAsync();
         }
 
-        public async Task<List<NotificationModel>> GetAllAsync(string userId)
+        public async Task<List<NotificationModel>> GetAllAsync(
+            string userId)
         {
             return await _context.TableNotification
                 .AsNoTracking()
@@ -126,7 +168,9 @@ namespace AryamanBMS.Services
                     !x.IsRead);
         }
 
-        public async Task<bool> MarkAsReadAsync(  int notificationId, string userId)
+        public async Task<bool> MarkAsReadAsync(
+            int notificationId,
+            string userId)
         {
             var notification =
                 await _context.TableNotification
@@ -179,10 +223,10 @@ namespace AryamanBMS.Services
         }
 
         public async Task<bool> ExistsAsync(
-          string userId,
-          string notificationType,
-          string referenceType,
-          int referenceId)
+            string userId,
+            string notificationType,
+            string referenceType,
+            int referenceId)
         {
             return await _context.TableNotification
                 .AsNoTracking()

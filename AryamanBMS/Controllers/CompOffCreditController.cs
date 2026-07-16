@@ -1,5 +1,6 @@
-﻿using AryamanBMS.Models;
+using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
+using AryamanBMS.Services.Interfaces;
 using AryamanBMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -23,11 +24,19 @@ namespace AryamanBMS.Controllers
         private readonly UserManager<ApplicationUserModel>
             _userManager;
 
+        private readonly INotificationService
+            _notificationService;
+
+        private readonly ILogger<CompOffCreditController>
+            _logger;
+
         public CompOffCreditController(
             ICompOffCreditRepository compOffCreditRepository,
             IAttendanceRepository attendanceRepository,
             IEmployeeRepository employeeRepository,
-            UserManager<ApplicationUserModel> userManager)
+            UserManager<ApplicationUserModel> userManager,
+            INotificationService notificationService,
+            ILogger<CompOffCreditController> logger)
         {
             _compOffCreditRepository =
                 compOffCreditRepository;
@@ -40,6 +49,12 @@ namespace AryamanBMS.Controllers
 
             _userManager =
                 userManager;
+
+            _notificationService =
+                notificationService;
+
+            _logger =
+                logger;
         }
 
         [HttpGet]
@@ -242,6 +257,17 @@ namespace AryamanBMS.Controllers
             await _compOffCreditRepository
                 .SaveAsync();
 
+            await NotifyHrUsersAsync(
+                notificationType: "CompOffRequested",
+                title: "Comp Off Requested",
+                message:
+                    $"{employee!.FullName} requested {compOffCredit.CreditDays:0.##} " +
+                    $"day(s) Comp Off for {compOffCredit.WorkedDate:dd-MMM-yyyy}.",
+                referenceType: "CompOffCredit",
+                referenceId: compOffCredit.Id,
+                actionUrl: "/CompOffCredit/Index",
+                actionUserId: user.Id);
+
             TempData["Success"] =
                 "Comp Off request submitted successfully for HR approval.";
 
@@ -297,6 +323,15 @@ namespace AryamanBMS.Controllers
 
             await _compOffCreditRepository.SaveAsync();
 
+            await NotifyEmployeeCompOffAsync(
+                compOffCredit,
+                notificationType: "CompOffApproved",
+                title: "Comp Off Approved",
+                message:
+                    $"Your Comp Off request for {compOffCredit.WorkedDate:dd-MMM-yyyy} " +
+                    $"has been approved. Credit: {compOffCredit.CreditDays:0.##} day(s).",
+                actionUrl: "/CompOffCredit/Index");
+
             TempData["Success"] =
                 "Comp Off request approved successfully.";
 
@@ -336,10 +371,136 @@ namespace AryamanBMS.Controllers
 
             await _compOffCreditRepository.SaveAsync();
 
+            await NotifyEmployeeCompOffAsync(
+                compOffCredit,
+                notificationType: "CompOffRejected",
+                title: "Comp Off Rejected",
+                message:
+                    $"Your Comp Off request for {compOffCredit.WorkedDate:dd-MMM-yyyy} " +
+                    "has been rejected.",
+                actionUrl: "/CompOffCredit/Index");
+
             TempData["Success"] =
                 "Comp Off request rejected successfully.";
 
             return RedirectToAction(nameof(Index));
+        }
+
+        private async Task NotifyEmployeeCompOffAsync(
+            CompOffCreditModel compOffCredit,
+            string notificationType,
+            string title,
+            string message,
+            string actionUrl)
+        {
+            try
+            {
+                string? recipientUserId =
+                    compOffCredit.Employee?.ApplicationUserId;
+
+                if (string.IsNullOrWhiteSpace(recipientUserId))
+                {
+                    return;
+                }
+
+                var recipient =
+                    await _userManager.FindByIdAsync(recipientUserId);
+
+                if (recipient == null || !recipient.IsActive)
+                {
+                    return;
+                }
+
+                bool exists =
+                    await _notificationService.ExistsAsync(
+                        recipient.Id,
+                        notificationType,
+                        "CompOffCredit",
+                        compOffCredit.Id);
+
+                if (exists)
+                {
+                    return;
+                }
+
+                await _notificationService.CreateAsync(
+                    userId: recipient.Id,
+                    title: title,
+                    message: message,
+                    notificationType: notificationType,
+                    referenceType: "CompOffCredit",
+                    referenceId: compOffCredit.Id,
+                    actionUrl: actionUrl);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Comp Off notification failed. Type: {NotificationType}, CompOffCreditId: {CompOffCreditId}",
+                    notificationType,
+                    compOffCredit.Id);
+            }
+        }
+
+        private async Task NotifyHrUsersAsync(
+            string notificationType,
+            string title,
+            string message,
+            string referenceType,
+            int referenceId,
+            string actionUrl,
+            string? actionUserId)
+        {
+            try
+            {
+                var admins =
+                    await _userManager.GetUsersInRoleAsync("Admin");
+
+                var hrUsers =
+                    await _userManager.GetUsersInRoleAsync("HR");
+
+                var recipients = admins
+                    .Concat(hrUsers)
+                    .Where(x =>
+                        x.IsActive &&
+                        x.Id != actionUserId)
+                    .GroupBy(x => x.Id)
+                    .Select(x => x.First())
+                    .ToList();
+
+                foreach (var recipient in recipients)
+                {
+                    bool exists =
+                        await _notificationService.ExistsAsync(
+                            recipient.Id,
+                            notificationType,
+                            referenceType,
+                            referenceId);
+
+                    if (exists)
+                    {
+                        continue;
+                    }
+
+                    await _notificationService.CreateAsync(
+                        userId: recipient.Id,
+                        title: title,
+                        message: message,
+                        notificationType: notificationType,
+                        referenceType: referenceType,
+                        referenceId: referenceId,
+                        actionUrl: actionUrl);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Comp Off broadcast notification failed. Type: {NotificationType}, Reference: {ReferenceType}/{ReferenceId}",
+                    notificationType,
+                    referenceType,
+                    referenceId);
+            }
         }
 
         private static bool IsWorkingAttendanceStatus(

@@ -1,4 +1,5 @@
 using AryamanBMS.Data;
+using AryamanBMS.Hubs;
 using AryamanBMS.Middleware;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories;
@@ -21,6 +22,8 @@ builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
 });
+
+builder.Services.AddSignalR();
 
 var connectionString =
     builder.Configuration.GetConnectionString("DefaultConnection")
@@ -186,6 +189,8 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Account}/{action=Login}/{id?}");
+
+app.MapHub<NotificationHub>("/notificationHub");
 
 
 using (var scope = app.Services.CreateScope())

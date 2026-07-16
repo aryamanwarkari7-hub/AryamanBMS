@@ -1,5 +1,9 @@
 ﻿@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 
+@using AryamanBMS.Models
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<ApplicationUserModel> UserManager
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -96,6 +100,19 @@
     </div>    
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        var layoutUser = await UserManager.GetUserAsync(User);
+
+        <script>
+            window.aryamanNotificationPreferences = {
+                toast: @((layoutUser?.EnableNotificationToast ?? true).ToString().ToLowerInvariant()),
+                sound: @((layoutUser?.EnableNotificationSound ?? false).ToString().ToLowerInvariant())
+            };
+        </script>
+        <script src="~/lib/signalr/signalr.min.js" asp-append-version="true"></script>
+        <script src="~/js/notification-realtime.js" asp-append-version="true"></script>
+    }
     <script src="~/js/site.js" asp-append-version="true"></script>
     
     @await RenderSectionAsync("Scripts", required: false)

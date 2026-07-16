@@ -49,7 +49,7 @@
                     <select name="statusFilter"
                             class="app-select">
 
-                        @if ((string)ViewBag.Status == "Active")
+                        @if ((string)ViewBag.StatusFilter == "Active")
                         {
                             <option value="Active" selected>Active</option>
                         }
@@ -58,7 +58,7 @@
                             <option value="Active">Active</option>
                         }
 
-                        @if ((string)ViewBag.Status == "Inactive")
+                        @if ((string)ViewBag.StatusFilter == "Inactive")
                         {
                             <option value="Inactive" selected>Inactive</option>
                         }
@@ -67,7 +67,7 @@
                             <option value="Inactive">Inactive</option>
                         }
 
-                        @if ((string)ViewBag.Status == "All")
+                        @if ((string)ViewBag.StatusFilter == "All")
                         {
                             <option value="All" selected>All</option>
                         }
@@ -76,6 +76,36 @@
                             <option value="All">All</option>
                         }
 
+                    </select>
+
+                    <select name="sortBy" class="app-select">
+                        <option value="EmployeeCode" selected="@(ViewBag.SortBy == "EmployeeCode")">
+                            Sort by Code
+                        </option>
+                        <option value="Name" selected="@(ViewBag.SortBy == "Name")">
+                            Sort by Name
+                        </option>
+                        <option value="Department" selected="@(ViewBag.SortBy == "Department")">
+                            Sort by Department
+                        </option>
+                        <option value="Designation" selected="@(ViewBag.SortBy == "Designation")">
+                            Sort by Designation
+                        </option>
+                        <option value="JoiningDate" selected="@(ViewBag.SortBy == "JoiningDate")">
+                            Sort by Joining Date
+                        </option>
+                        <option value="Status" selected="@(ViewBag.SortBy == "Status")">
+                            Sort by Status
+                        </option>
+                    </select>
+
+                    <select name="sortOrder" class="app-select">
+                        <option value="asc" selected="@(ViewBag.SortOrder == "asc")">
+                            Ascending
+                        </option>
+                        <option value="desc" selected="@(ViewBag.SortOrder == "desc")">
+                            Descending
+                        </option>
                     </select>
 
                     <div class="filter-form-actions">

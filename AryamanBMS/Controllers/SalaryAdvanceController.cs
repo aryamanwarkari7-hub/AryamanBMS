@@ -1,6 +1,8 @@
 using AryamanBMS.Data;
 using AryamanBMS.Models;
+using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -11,10 +13,20 @@ namespace AryamanBMS.Controllers
     public class SalaryAdvanceController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUserModel> _userManager;
+        private readonly INotificationService _notificationService;
+        private readonly ILogger<SalaryAdvanceController> _logger;
 
-        public SalaryAdvanceController(ApplicationDbContext context)
+        public SalaryAdvanceController(
+            ApplicationDbContext context,
+            UserManager<ApplicationUserModel> userManager,
+            INotificationService notificationService,
+            ILogger<SalaryAdvanceController> logger)
         {
             _context = context;
+            _userManager = userManager;
+            _notificationService = notificationService;
+            _logger = logger;
         }
 
         public async Task<IActionResult> Index()
@@ -66,6 +78,24 @@ namespace AryamanBMS.Controllers
 
             await _context.SalaryAdvances.AddAsync(model);
             await _context.SaveChangesAsync();
+
+            var advance = await _context.SalaryAdvances
+                .Include(x => x.Employee)
+                .FirstOrDefaultAsync(x => x.SalaryAdvanceId == model.SalaryAdvanceId);
+
+            if (advance != null)
+            {
+                await NotifyEmployeeAsync(
+                    advance.Employee,
+                    notificationType: "SalaryAdvanceCreated",
+                    title: "Salary Advance Created",
+                    message:
+                        $"Salary advance of ₹{advance.AdvanceAmount:N2} " +
+                        $"has been created. Monthly recovery: ₹{advance.MonthlyRecoveryAmount:N2}.",
+                    referenceType: "SalaryAdvance",
+                    referenceId: advance.SalaryAdvanceId,
+                    actionUrl: "/Employee/MyDashboard");
+            }
 
             TempData["Success"] =
                 "Salary advance created successfully.";
@@ -127,6 +157,61 @@ namespace AryamanBMS.Controllers
                 ModelState.AddModelError(
                     nameof(model.RecoveryStartMonth),
                     "Recovery start month is invalid.");
+            }
+        }
+
+        private async Task NotifyEmployeeAsync(
+            EmployeeModel? employee,
+            string notificationType,
+            string title,
+            string message,
+            string referenceType,
+            int referenceId,
+            string actionUrl)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(employee?.ApplicationUserId))
+                {
+                    return;
+                }
+
+                var recipient =
+                    await _userManager.FindByIdAsync(employee.ApplicationUserId);
+
+                if (recipient == null || !recipient.IsActive)
+                {
+                    return;
+                }
+
+                bool exists = await _notificationService.ExistsAsync(
+                    recipient.Id,
+                    notificationType,
+                    referenceType,
+                    referenceId);
+
+                if (exists)
+                {
+                    return;
+                }
+
+                await _notificationService.CreateAsync(
+                    recipient.Id,
+                    title,
+                    message,
+                    notificationType,
+                    referenceType,
+                    referenceId,
+                    actionUrl);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Salary advance notification failed. Type: {NotificationType}, Reference: {ReferenceType}/{ReferenceId}",
+                    notificationType,
+                    referenceType,
+                    referenceId);
             }
         }
     }

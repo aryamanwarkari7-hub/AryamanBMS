@@ -1,8 +1,10 @@
-﻿using AryamanBMS.Models;
+using AryamanBMS.Data;
+using AryamanBMS.Models;
 using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
@@ -11,13 +13,16 @@ namespace AryamanBMS.Controllers
     {
         private readonly INotificationService _notificationService;
         private readonly UserManager<ApplicationUserModel> _userManager;
+        private readonly ApplicationDbContext _context;
 
         public NotificationController(
             INotificationService notificationService,
-            UserManager<ApplicationUserModel> userManager)
+            UserManager<ApplicationUserModel> userManager,
+            ApplicationDbContext context)
         {
             _notificationService = notificationService;
             _userManager = userManager;
+            _context = context;
         }
 
         [HttpGet]
@@ -89,6 +94,119 @@ namespace AryamanBMS.Controllers
 
             TempData["Success"] =
                 "All notifications marked as read.";
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdatePreferences(
+            bool enableRealtimeNotifications,
+            bool enableNotificationToast,
+            bool enableNotificationSound,
+            string? returnUrl = null)
+        {
+            var user = await _userManager.GetUserAsync(User);
+
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            user.EnableRealtimeNotifications =
+                enableRealtimeNotifications;
+
+            user.EnableNotificationToast =
+                enableNotificationToast;
+
+            user.EnableNotificationSound =
+                enableNotificationSound;
+
+            var result = await _userManager.UpdateAsync(user);
+
+            if (!result.Succeeded)
+            {
+                TempData["Error"] =
+                    "Notification preferences could not be updated.";
+
+                return RedirectToLocal(returnUrl);
+            }
+
+            TempData["Success"] =
+                "Notification preferences updated successfully.";
+
+            return RedirectToLocal(returnUrl);
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Audit(
+            string? searchText,
+            string? notificationType,
+            string? readStatus)
+        {
+            var query =
+                _context.TableNotification
+                    .AsNoTracking()
+                    .Include(x => x.User)
+                    .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(searchText))
+            {
+                var keyword = searchText.Trim();
+
+                query = query.Where(x =>
+                    x.Title.Contains(keyword) ||
+                    x.Message.Contains(keyword) ||
+                    x.UserId.Contains(keyword) ||
+                    (x.User != null &&
+                     ((x.User.FullName ?? string.Empty).Contains(keyword) ||
+                      (x.User.Email ?? string.Empty).Contains(keyword))));
+            }
+
+            if (!string.IsNullOrWhiteSpace(notificationType))
+            {
+                query = query.Where(x =>
+                    x.NotificationType == notificationType);
+            }
+
+            if (readStatus == "Unread")
+            {
+                query = query.Where(x => !x.IsRead);
+            }
+            else if (readStatus == "Read")
+            {
+                query = query.Where(x => x.IsRead);
+            }
+
+            ViewBag.SearchText = searchText;
+            ViewBag.NotificationType = notificationType;
+            ViewBag.ReadStatus = readStatus;
+
+            ViewBag.NotificationTypes =
+                await _context.TableNotification
+                    .AsNoTracking()
+                    .Select(x => x.NotificationType)
+                    .Distinct()
+                    .OrderBy(x => x)
+                    .ToListAsync();
+
+            var notifications =
+                await query
+                    .OrderByDescending(x => x.CreatedOn)
+                    .Take(300)
+                    .ToListAsync();
+
+            return View(notifications);
+        }
+
+        private IActionResult RedirectToLocal(string? returnUrl)
+        {
+            if (!string.IsNullOrWhiteSpace(returnUrl) &&
+                Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
 
             return RedirectToAction(nameof(Index));
         }

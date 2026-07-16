@@ -2,6 +2,7 @@
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,19 +17,28 @@ namespace AryamanBMS.Controllers
 
         private readonly IProjectTimelineService _projectTimelineService;
         private readonly IProjectAccessService _projectAccessService;
+        private readonly UserManager<ApplicationUserModel> _userManager;
+        private readonly INotificationService _notificationService;
+        private readonly ILogger<RiskController> _logger;
 
         public RiskController(
           IProjectRiskRepository riskRepository,
           IProjectMemberRepository projectMemberRepository,
           IProjectRepository projectRepository,
           IProjectTimelineService projectTimelineService,
-          IProjectAccessService projectAccessService)
+          IProjectAccessService projectAccessService,
+          UserManager<ApplicationUserModel> userManager,
+          INotificationService notificationService,
+          ILogger<RiskController> logger)
         {
             _riskRepository = riskRepository;
             _projectMemberRepository = projectMemberRepository;
             _projectRepository = projectRepository;
             _projectTimelineService = projectTimelineService;
             _projectAccessService = projectAccessService;
+            _userManager = userManager;
+            _notificationService = notificationService;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -192,6 +202,20 @@ namespace AryamanBMS.Controllers
               relatedEntityId: model.Id,
               newValue: model.RiskStatus);
 
+            if (model.RiskOwnerEmployeeId.HasValue)
+            {
+                await NotifyRiskOwnerAsync(
+                    employeeId: model.RiskOwnerEmployeeId.Value,
+                    notificationType: "ProjectRiskAssigned",
+                    title: "Project Risk Assigned",
+                    message:
+                        $"Risk '{model.RiskTitle}' has been assigned to you. " +
+                        $"Severity: {model.Severity}.",
+                    referenceType: "ProjectRisk",
+                    referenceId: model.Id,
+                    actionUrl: "/Employee/MyDashboard");
+            }
+
             TempData["Success"] =
                 "Project risk created successfully.";
 
@@ -332,6 +356,20 @@ namespace AryamanBMS.Controllers
                     relatedEntityId: existing.Id,
                     previousValue: previousStatus,
                     newValue: existing.RiskStatus);
+
+                if (existing.RiskOwnerEmployeeId.HasValue)
+                {
+                    await NotifyRiskOwnerAsync(
+                        employeeId: existing.RiskOwnerEmployeeId.Value,
+                        notificationType: "ProjectRiskStatusChanged",
+                        title: "Risk Status Changed",
+                        message:
+                            $"Risk '{existing.RiskTitle}' changed from " +
+                            $"{previousStatus} to {existing.RiskStatus}.",
+                        referenceType: "ProjectRisk",
+                        referenceId: existing.Id,
+                        actionUrl: "/Employee/MyDashboard");
+                }
             }
             if (!string.Equals(
                 previousSeverity,
@@ -349,6 +387,20 @@ namespace AryamanBMS.Controllers
                     relatedEntityId: existing.Id,
                     previousValue: previousSeverity,
                     newValue: existing.Severity);
+
+                if (existing.RiskOwnerEmployeeId.HasValue)
+                {
+                    await NotifyRiskOwnerAsync(
+                        employeeId: existing.RiskOwnerEmployeeId.Value,
+                        notificationType: "ProjectRiskSeverityChanged",
+                        title: "Risk Severity Changed",
+                        message:
+                            $"Risk '{existing.RiskTitle}' severity changed from " +
+                            $"{previousSeverity} to {existing.Severity}.",
+                        referenceType: "ProjectRisk",
+                        referenceId: existing.Id,
+                        actionUrl: "/Employee/MyDashboard");
+                }
             }
             bool wasResolved =
                 string.Equals(
@@ -492,6 +544,67 @@ namespace AryamanBMS.Controllers
                     .ToListAsync();
 
             return Json(members);
+        }
+
+        private async Task NotifyRiskOwnerAsync(
+            int employeeId,
+            string notificationType,
+            string title,
+            string message,
+            string referenceType,
+            int referenceId,
+            string actionUrl)
+        {
+            try
+            {
+                var employees =
+                    await _riskRepository.GetActiveEmployeesAsync();
+
+                var employee =
+                    employees.FirstOrDefault(x => x.Id == employeeId);
+
+                if (string.IsNullOrWhiteSpace(employee?.ApplicationUserId))
+                {
+                    return;
+                }
+
+                var recipient =
+                    await _userManager.FindByIdAsync(employee.ApplicationUserId);
+
+                if (recipient == null || !recipient.IsActive)
+                {
+                    return;
+                }
+
+                bool exists = await _notificationService.ExistsAsync(
+                    recipient.Id,
+                    notificationType,
+                    referenceType,
+                    referenceId);
+
+                if (exists)
+                {
+                    return;
+                }
+
+                await _notificationService.CreateAsync(
+                    recipient.Id,
+                    title,
+                    message,
+                    notificationType,
+                    referenceType,
+                    referenceId,
+                    actionUrl);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Project risk notification failed. Type: {NotificationType}, Reference: {ReferenceType}/{ReferenceId}",
+                    notificationType,
+                    referenceType,
+                    referenceId);
+            }
         }
 
         private async Task LoadDropdownsAsync(int? projectId = null)

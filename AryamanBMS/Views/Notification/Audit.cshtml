@@ -1,0 +1,146 @@
+@model IEnumerable<AryamanBMS.Models.NotificationModel>
+
+@{
+    ViewData["Title"] = "Notification Audit";
+    var notificationTypes =
+        ViewBag.NotificationTypes as IEnumerable<string> ?? Enumerable.Empty<string>();
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Notification Audit</h1>
+        <p class="module-subtitle">Admin view of generated notifications</p>
+    </div>
+</div>
+
+<div class="app-card mb-4">
+    <div class="card-body">
+        <form method="get" class="filter-form-row">
+            <div class="form-group">
+            <input type="text"
+                   name="searchText"
+                   value="@ViewBag.SearchText"
+                   class="app-input"
+                   placeholder="Search user, title or message" />
+            </div>
+
+            <div class="form-group">
+            <select name="notificationType" class="app-select">
+                <option value="">All Types</option>
+                @foreach (var type in notificationTypes)
+                {
+                    <option value="@type"
+                            selected="@(ViewBag.NotificationType == type)">
+                        @type
+                    </option>
+                }
+            </select>
+            </div>
+
+            <div class="form-group">
+            <select name="readStatus" class="app-select">
+                <option value="">All Statuses</option>
+                <option value="Unread" selected="@(ViewBag.ReadStatus == "Unread")">
+                    Unread
+                </option>
+                <option value="Read" selected="@(ViewBag.ReadStatus == "Read")">
+                    Read
+                </option>
+            </select>
+            </div>
+
+            <div class="filter-form-actions">
+            <button type="submit" class="btn-app btn-primary-app">
+                <i class="bi bi-search"></i>
+                Search
+            </button>
+
+            <a asp-action="Audit" class="btn-app btn-secondary-app">
+                <i class="bi bi-arrow-clockwise"></i>
+                Reset
+            </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="app-card table-card">
+    <div class="card-header">
+        <h5 class="card-title">Latest Notifications</h5>
+        <span class="badge-secondary">@Model.Count() shown</span>
+    </div>
+
+    <div class="card-body">
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                No notifications found.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="app-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Type</th>
+                            <th>Title</th>
+                            <th>Reference</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Read On</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var notification in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>
+                                        @(notification.User?.FullName ??
+                                          notification.User?.Email ??
+                                          notification.UserId)
+                                    </strong>
+                                    <div class="text-muted">
+                                        @(notification.User?.Email ?? notification.UserId)
+                                    </div>
+                                </td>
+                                <td>@notification.NotificationType</td>
+                                <td>
+                                    <strong>@notification.Title</strong>
+                                    <div class="text-muted">
+                                        @notification.Message
+                                    </div>
+                                </td>
+                                <td>
+                                    @(notification.ReferenceType ?? "-")
+                                    @if (notification.ReferenceId.HasValue)
+                                    {
+                                        <span>#@notification.ReferenceId</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (notification.IsRead)
+                                    {
+                                        <span class="badge-success">Read</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-warning">Unread</span>
+                                    }
+                                </td>
+                                <td>
+                                    @notification.CreatedOn.ToString("dd-MMM-yyyy hh:mm tt")
+                                </td>
+                                <td>
+                                    @(notification.ReadOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

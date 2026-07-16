@@ -8,7 +8,7 @@ namespace AryamanBMS.Models
 
         public int EmployeeId { get; set; }
 
-        [Required]
+        
         [StringLength(100)]
         public string QualificationLevel { get; set; } = string.Empty;
 

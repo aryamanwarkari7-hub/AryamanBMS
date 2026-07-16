@@ -55,6 +55,8 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> Index(
            string? searchText,
            string statusFilter = "All",
+           string sortBy = "EmployeeCode",
+           string sortOrder = "asc",
            int page = 1)
         {
             const int pageSize = 5;
@@ -96,9 +98,19 @@ namespace AryamanBMS.Controllers
                          StringComparison.OrdinalIgnoreCase)) ||
 
                     (!string.IsNullOrEmpty(e.OfficialEmail) &&
-                     e.OfficialEmail.Contains(
-                         searchText,
-                         StringComparison.OrdinalIgnoreCase)));
+                       e.OfficialEmail.Contains(
+                           searchText,
+                           StringComparison.OrdinalIgnoreCase)) ||
+                      
+                      (!string.IsNullOrEmpty(e.PersonalEmail) &&
+                       e.PersonalEmail.Contains(
+                           searchText,
+                           StringComparison.OrdinalIgnoreCase)) ||
+                      
+                      (!string.IsNullOrEmpty(e.MobileNumber) &&
+                       e.MobileNumber.Contains(
+                           searchText,
+                           StringComparison.OrdinalIgnoreCase)));
             }
 
             if (statusFilter == "Active")
@@ -110,8 +122,35 @@ namespace AryamanBMS.Controllers
                 employees = employees.Where(e => !e.IsActive);
             }
 
-            employees = employees
-                .OrderBy(e => e.EmployeeCode);
+            bool descending =
+    string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
+
+            employees = sortBy switch
+            {
+                "Name" => descending
+                    ? employees.OrderByDescending(e => e.FirstName).ThenByDescending(e => e.LastName)
+                    : employees.OrderBy(e => e.FirstName).ThenBy(e => e.LastName),
+
+                "Department" => descending
+                    ? employees.OrderByDescending(e => e.Department!=null? e.Department.DepartmentName:null)
+                    : employees.OrderBy(e => e.Department != null ? e.Department.DepartmentName : null),
+
+                "Designation" => descending
+             ? employees.OrderByDescending(e => e.Designation != null ? e.Designation.DesignationName : null)
+             : employees.OrderBy(e => e.Designation != null ? e.Designation.DesignationName : null),
+
+                "JoiningDate" => descending
+                    ? employees.OrderByDescending(e => e.JoiningDate)
+                    : employees.OrderBy(e => e.JoiningDate),
+
+                "Status" => descending
+                    ? employees.OrderByDescending(e => e.IsActive)
+                    : employees.OrderBy(e => e.IsActive),
+
+                _ => descending
+                    ? employees.OrderByDescending(e => e.EmployeeCode)
+                    : employees.OrderBy(e => e.EmployeeCode)
+            };
 
             int totalRecords = employees.Count();
 
@@ -141,6 +180,8 @@ namespace AryamanBMS.Controllers
             if (!string.IsNullOrWhiteSpace(statusFilter))
             {
                 routeValues["statusFilter"] = statusFilter;
+                routeValues["sortBy"] = sortBy;
+                routeValues["sortOrder"] = sortOrder;
             }
 
             var model = new PagedListViewModel<EmployeeModel>
@@ -160,6 +201,9 @@ namespace AryamanBMS.Controllers
 
             ViewBag.SearchText = searchText;
             ViewBag.StatusFilter = statusFilter;
+            ViewBag.SortBy = sortBy;
+            ViewBag.SortOrder = sortOrder; 
+            ViewBag.TotalRecords = totalRecords;
 
             return View(model);
         }
@@ -202,6 +246,38 @@ namespace AryamanBMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(EmployeeFormViewModel model)
         {
+            model.Academics ??= new List<EmployeeAcademicInputViewModel>();
+            model.PreviousEmployments ??= new List<EmployeePreviousEmploymentInputViewModel>();
+
+            for (int i = model.PreviousEmployments.Count - 1; i >= 0; i--)
+            {
+                if (IsBlankPreviousEmploymentRow(model.PreviousEmployments[i]))
+                {
+                    ModelState.Remove($"PreviousEmployments[{i}].CompanyName");
+                    ModelState.Remove($"PreviousEmployments[{i}].StartDate");
+                    ModelState.Remove($"PreviousEmployments[{i}].EndDate");
+                    model.PreviousEmployments.RemoveAt(i);
+                }
+            }
+
+            for (int i = model.Academics.Count - 1; i >= 0; i--)
+            {
+                if (IsBlankAcademicRow(model.Academics[i]))
+                {
+                    ModelState.Remove($"Academics[{i}].QualificationLevel");
+                    ModelState.Remove($"Academics[{i}].Documents");
+                    model.Academics.RemoveAt(i);
+                }
+            }
+
+            model.Academics = model.Academics
+                .Where(x => !IsBlankAcademicRow(x))
+                .ToList();
+
+            model.PreviousEmployments = model.PreviousEmployments
+                .Where(x => !IsBlankPreviousEmploymentRow(x))
+                .ToList();
+
             var employee = model.Employee;
 
             bool codeExists = await _employeeRepository.Employees
@@ -246,18 +322,16 @@ namespace AryamanBMS.Controllers
             {
                 var academic = model.Academics[i];
 
-                bool isNewQualification = !academic.Id.HasValue;
-
-                bool hasNewDocument =
-                    academic.Documents != null &&
-                    academic.Documents.Any(x => x != null && x.Length > 0);
-
-                if (isNewQualification && !hasNewDocument)
+                if (string.IsNullOrWhiteSpace(academic.QualificationLevel))
                 {
                     ModelState.AddModelError(
-                        $"Academics[{i}].Documents",
-                        "Please upload a document for the new qualification.");
+                        $"Academics[{i}].QualificationLevel",
+                        "Qualification level is required when academic details are entered.");
                 }
+
+                ValidateAcademicDocuments(
+                    academic.Documents,
+                    $"Academics[{i}].Documents");
             }
 
             model.PreviousEmployments ??=
@@ -319,7 +393,7 @@ namespace AryamanBMS.Controllers
                         new EmployeePreviousEmploymentModel
                         {
                             EmployeeId = employee.Id,
-                            CompanyName = input.CompanyName.Trim(),
+                            CompanyName = input.CompanyName!.Trim(),
                             Designation = input.Designation,
                             Department = input.Department,
                             EmploymentType = input.EmploymentType,
@@ -374,10 +448,15 @@ namespace AryamanBMS.Controllers
 
                 foreach (var input in model.Academics)
                 {
+                    if (IsBlankAcademicRow(input))
+                    {
+                        continue;
+                    }
+
                     var academic = new EmployeeAcademicModel
                     {
                         EmployeeId = employee.Id,
-                        QualificationLevel = input.QualificationLevel,
+                        QualificationLevel = input.QualificationLevel ?? string.Empty,
                         CourseName = input.CourseName,
                         Specialization = input.Specialization,
                         InstituteName = input.InstituteName,
@@ -614,6 +693,27 @@ namespace AryamanBMS.Controllers
             model.Academics ??=
                 new List<EmployeeAcademicInputViewModel>();
 
+            for (int i = 0; i < model.Academics.Count; i++)
+            {
+                var academic = model.Academics[i];
+
+                if (IsBlankAcademicRow(academic))
+                {
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(academic.QualificationLevel))
+                {
+                    ModelState.AddModelError(
+                        $"Academics[{i}].QualificationLevel",
+                        "Qualification level is required when academic details are entered.");
+                }
+
+                ValidateAcademicDocuments(
+                    academic.Documents,
+                    $"Academics[{i}].Documents");
+            }
+
             model.RemovedAcademicIds ??=
                 new List<int>();
 
@@ -638,6 +738,31 @@ namespace AryamanBMS.Controllers
                         : $"New-{x.Index}")
                 .Select(x => x.First().Academic)
                 .ToList();
+
+            for (int i = model.PreviousEmployments.Count - 1; i >= 0; i--)
+            {
+                if (!model.PreviousEmployments[i].Id.HasValue &&
+                    IsBlankPreviousEmploymentRow(model.PreviousEmployments[i]))
+                {
+                    ModelState.Remove($"PreviousEmployments[{i}].CompanyName");
+                    ModelState.Remove($"PreviousEmployments[{i}].StartDate");
+                    ModelState.Remove($"PreviousEmployments[{i}].EndDate");
+
+                    model.PreviousEmployments.RemoveAt(i);
+                }
+            }
+
+            for (int i = model.Academics.Count - 1; i >= 0; i--)
+            {
+                if (!model.Academics[i].Id.HasValue &&
+                    IsBlankAcademicRow(model.Academics[i]))
+                {
+                    ModelState.Remove($"Academics[{i}].QualificationLevel");
+                    ModelState.Remove($"Academics[{i}].Documents");
+
+                    model.Academics.RemoveAt(i);
+                }
+            }
 
             model.StatutoryDocuments ??=
                 new List<EmployeeDocumentInputViewModel>();
@@ -772,12 +897,12 @@ namespace AryamanBMS.Controllers
                         .ToListAsync();
 
                 var existingPreviousEmployments =
-    await _employeePreviousEmploymentRepository
-        .PreviousEmployments
-        .Include(x => x.Documents)
-        .Where(x =>
-            x.EmployeeId == inputEmployee.Id)
-        .ToListAsync();
+                   await _employeePreviousEmploymentRepository
+                       .PreviousEmployments
+                       .Include(x => x.Documents)
+                       .Where(x =>
+                           x.EmployeeId == inputEmployee.Id)
+                       .ToListAsync();
 
                 var submittedPreviousEmploymentIds =
                     model.PreviousEmployments
@@ -805,9 +930,9 @@ namespace AryamanBMS.Controllers
                 }
 
                 var previousEmploymentPairs =
-    new List<(
-        EmployeePreviousEmploymentInputViewModel Input,
-        EmployeePreviousEmploymentModel Entity)>();
+                new List<(
+                    EmployeePreviousEmploymentInputViewModel Input,
+                    EmployeePreviousEmploymentModel Entity)>();
 
                 foreach (var input in model.PreviousEmployments)
                 {
@@ -834,7 +959,7 @@ namespace AryamanBMS.Controllers
                                 "Previous employment record not found.");
 
                         previousEmployment.CompanyName =
-                            input.CompanyName.Trim();
+                            input.CompanyName!.Trim();
 
                         previousEmployment.Designation =
                             input.Designation;
@@ -895,7 +1020,7 @@ namespace AryamanBMS.Controllers
                                 EmployeeId = inputEmployee.Id,
 
                                 CompanyName =
-                                    input.CompanyName.Trim(),
+                                    input.CompanyName!.Trim(),
 
                                 Designation =
                                     input.Designation,
@@ -1008,6 +1133,10 @@ namespace AryamanBMS.Controllers
 
                 foreach (var input in model.Academics)
                 {
+                    if (!input.Id.HasValue && IsBlankAcademicRow(input))
+                    {
+                        continue;
+                    }
                     EmployeeAcademicModel academic;
 
                     if (input.Id.HasValue)
@@ -1018,7 +1147,7 @@ namespace AryamanBMS.Controllers
                                 "Academic record not found.");
 
                         academic.QualificationLevel =
-                            input.QualificationLevel;
+                            input.QualificationLevel ?? string.Empty;
 
                         academic.CourseName = input.CourseName;
                         academic.Specialization = input.Specialization;
@@ -1043,7 +1172,7 @@ namespace AryamanBMS.Controllers
                         {
                             EmployeeId = inputEmployee.Id,
                             QualificationLevel =
-                                input.QualificationLevel,
+                                input.QualificationLevel ?? string.Empty,
                             CourseName = input.CourseName,
                             Specialization = input.Specialization,
                             InstituteName = input.InstituteName,
@@ -2397,6 +2526,95 @@ namespace AryamanBMS.Controllers
                 Meta = employee.JoiningDate.ToString("dd-MMM-yyyy"),
                 Badge = employee.IsActive ? "Active" : "Inactive"
             };
+        }
+
+        private static bool IsBlankAcademicRow(EmployeeAcademicInputViewModel academic)
+        {
+            bool hasDocument =
+                academic.Documents != null &&
+                academic.Documents.Any(x => x != null && x.Length > 0);
+
+            return
+                string.IsNullOrWhiteSpace(academic.QualificationLevel) &&
+                string.IsNullOrWhiteSpace(academic.CourseName) &&
+                string.IsNullOrWhiteSpace(academic.Specialization) &&
+                string.IsNullOrWhiteSpace(academic.InstituteName) &&
+                string.IsNullOrWhiteSpace(academic.BoardOrUniversity) &&
+                !academic.PassingYear.HasValue &&
+                string.IsNullOrWhiteSpace(academic.ResultType) &&
+                !academic.Score.HasValue &&
+                string.IsNullOrWhiteSpace(academic.Grade) &&
+                !academic.IsHighestQualification &&
+                !hasDocument;
+        }
+
+        private static bool IsBlankPreviousEmploymentRow(
+            EmployeePreviousEmploymentInputViewModel employment)
+        {
+            return
+                string.IsNullOrWhiteSpace(employment.CompanyName) &&
+                string.IsNullOrWhiteSpace(employment.Designation) &&
+                string.IsNullOrWhiteSpace(employment.Department) &&
+                string.IsNullOrWhiteSpace(employment.EmploymentType) &&
+                !employment.StartDate.HasValue &&
+                !employment.EndDate.HasValue &&
+                !employment.LastSalary.HasValue &&
+                string.IsNullOrWhiteSpace(employment.ReasonForLeaving) &&
+                string.IsNullOrWhiteSpace(employment.CompanyAddress) &&
+                string.IsNullOrWhiteSpace(employment.CompanyCity) &&
+                string.IsNullOrWhiteSpace(employment.CompanyState) &&
+                string.IsNullOrWhiteSpace(employment.CompanyPinCode) &&
+                string.IsNullOrWhiteSpace(employment.CompanyWebsite) &&
+                string.IsNullOrWhiteSpace(employment.HRContactName) &&
+                string.IsNullOrWhiteSpace(employment.HRContactEmail) &&
+                string.IsNullOrWhiteSpace(employment.HRContactNumber) &&
+                employment.ExperienceLetter == null &&
+                employment.RelievingLetter == null;
+        }
+
+        private void ValidateAcademicDocuments(
+            List<IFormFile>? files,
+            string modelKey)
+        {
+            if (files == null || !files.Any())
+            {
+                return;
+            }
+
+            const long maximumFileSize = 5 * 1024 * 1024;
+
+            string[] allowedExtensions =
+            {
+        ".pdf",
+        ".jpg",
+        ".jpeg",
+        ".png"
+    };
+
+            foreach (var file in files)
+            {
+                if (file == null || file.Length == 0)
+                {
+                    continue;
+                }
+
+                string extension =
+                    Path.GetExtension(file.FileName).ToLowerInvariant();
+
+                if (!allowedExtensions.Contains(extension))
+                {
+                    ModelState.AddModelError(
+                        modelKey,
+                        "Academic documents must be PDF, JPG, JPEG or PNG files.");
+                }
+
+                if (file.Length > maximumFileSize)
+                {
+                    ModelState.AddModelError(
+                        modelKey,
+                        "Academic document cannot exceed 5 MB.");
+                }
+            }
         }
     }
 }

@@ -15,23 +15,34 @@
         </p>
     </div>
 
-    @if (unreadCount > 0)
-    {
-        <form asp-action="MarkAllAsRead"
-              method="post">
+    <div class="module-header-actions">
+        @if (User.IsInRole("Admin"))
+        {
+            <a asp-action="Audit"
+               class="btn-app btn-secondary-app">
+                <i class="bi bi-shield-check"></i>
+                Audit
+            </a>
+        }
 
-            @Html.AntiForgeryToken()
+        @if (unreadCount > 0)
+        {
+            <form asp-action="MarkAllAsRead"
+                  method="post">
 
-            <button type="submit"
-                    class="btn-app btn-secondary-app">
+                @Html.AntiForgeryToken()
 
-                <i class="bi bi-check2-all"></i>
-                Mark all as read
+                <button type="submit"
+                        class="btn-app btn-secondary-app">
 
-            </button>
+                    <i class="bi bi-check2-all"></i>
+                    Mark all as read
 
-        </form>
-    }
+                </button>
+
+            </form>
+        }
+    </div>
 
 </div>
 
@@ -111,6 +122,30 @@
                                     <i class="bi bi-calendar-x"></i>
                                     break;
 
+                                case "LeaveCancellationRequested":
+                                    <i class="bi bi-calendar-minus"></i>
+                                    break;
+
+                                case "LeaveCancellationApproved":
+                                    <i class="bi bi-calendar2-x"></i>
+                                    break;
+
+                                case "LeaveCancellationRejected":
+                                    <i class="bi bi-calendar2-check"></i>
+                                    break;
+
+                                case "CompOffRequested":
+                                    <i class="bi bi-clock-history"></i>
+                                    break;
+
+                                case "CompOffApproved":
+                                    <i class="bi bi-clock"></i>
+                                    break;
+
+                                case "CompOffRejected":
+                                    <i class="bi bi-clock-fill"></i>
+                                    break;
+
                                 case "InvoiceDue":
                                     <i class="bi bi-receipt"></i>
                                     break;
@@ -178,12 +213,76 @@
                                     <i class="bi bi-receipt-cutoff"></i>
                                     break;
 
+                                case "PayslipReleased":
+                                    <i class="bi bi-file-earmark-person"></i>
+                                    break;
+
+                                case "SalaryPaid":
+                                    <i class="bi bi-wallet2"></i>
+                                    break;
+
+                                case "VendorPaymentMade":
+                                    <i class="bi bi-bank2"></i>
+                                    break;
+
+                                case "SalaryAdvanceCreated":
+                                    <i class="bi bi-cash-stack"></i>
+                                    break;
+
+                                case "FullAndFinalCreated":
+                                    <i class="bi bi-file-earmark-lock"></i>
+                                    break;
+
+                                case "ProjectMeetingCreated":
+                                    <i class="bi bi-people"></i>
+                                    break;
+
+                                case "MomActionAssigned":
+                                    <i class="bi bi-list-check"></i>
+                                    break;
+
+                                case "ProjectRiskAssigned":
+                                    <i class="bi bi-shield-exclamation"></i>
+                                    break;
+
+                                case "ProjectRiskStatusChanged":
+                                    <i class="bi bi-arrow-repeat"></i>
+                                    break;
+
+                                case "ProjectRiskSeverityChanged":
+                                    <i class="bi bi-exclamation-diamond"></i>
+                                    break;
+
                                 case "GstSnapshotGenerated":
                                     <i class="bi bi-calculator"></i>
                                     break;
 
                                 case "GstSnapshotRegenerated":
                                     <i class="bi bi-arrow-repeat"></i>
+                                    break;
+
+                                case "GstSnapshotVerified":
+                                    <i class="bi bi-patch-check"></i>
+                                    break;
+
+                                case "Gstr1Filed":
+                                    <i class="bi bi-file-earmark-check"></i>
+                                    break;
+
+                                case "Gstr3BFiled":
+                                    <i class="bi bi-file-earmark-check-fill"></i>
+                                    break;
+
+                                case "GstChallanPaid":
+                                    <i class="bi bi-bank"></i>
+                                    break;
+
+                                case "GstSnapshotLocked":
+                                    <i class="bi bi-lock"></i>
+                                    break;
+
+                                case "GstSnapshotReopened":
+                                    <i class="bi bi-unlock"></i>
                                     break;
 
                                 default:

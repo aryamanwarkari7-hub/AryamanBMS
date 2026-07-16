@@ -17,5 +17,11 @@ namespace AryamanBMS.Models
         public DateTime? LastSeenOn { get; set; }
 
         public bool IsActivityStatusManual { get; set; } = false;
+
+        public bool EnableRealtimeNotifications { get; set; } = true;
+
+        public bool EnableNotificationToast { get; set; } = true;
+
+        public bool EnableNotificationSound { get; set; } = false;
     }
 }

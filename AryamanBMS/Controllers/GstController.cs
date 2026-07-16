@@ -588,6 +588,9 @@ namespace AryamanBMS.Controllers
                     snapshotId,
                     returnType);
 
+            string? previousReturnStatus =
+                gstReturn?.Status;
+
             if (gstReturn != null &&
                 string.Equals(
                     gstReturn.Status,
@@ -644,12 +647,52 @@ namespace AryamanBMS.Controllers
 
             await _returnRepository.SaveAsync();
 
+            bool becameFiled =
+                !string.Equals(
+                    previousReturnStatus,
+                    "Filed",
+                    StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(
+                    status,
+                    "Filed",
+                    StringComparison.OrdinalIgnoreCase);
+
             if (status == "Filed")
             {
                 await _snapshotRepository.MarkFiledAsync(
                     snapshot.Month,
                     snapshot.Year,
                     _userManager.GetUserId(User) ?? string.Empty);
+            }
+
+            if (becameFiled)
+            {
+                string notificationType =
+                    returnType == "GSTR1"
+                        ? "Gstr1Filed"
+                        : "Gstr3BFiled";
+
+                string title =
+                    returnType == "GSTR1"
+                        ? "GSTR-1 Filed"
+                        : "GSTR-3B Filed";
+
+                string returnLabel =
+                    returnType == "GSTR1"
+                        ? "GSTR-1"
+                        : "GSTR-3B";
+
+                await NotifyGstUsersAsync(
+                    notificationType: notificationType,
+                    title: title,
+                    message:
+                        $"{returnLabel} for {GetMonthName(snapshot.Month)} {snapshot.Year} " +
+                        $"has been filed. ARN: {gstReturn.ArnNumber}.",
+                    referenceType: "GstReturn",
+                    referenceId: gstReturn.GstReturnId,
+                    actionUrl:
+                        $"/Gst/Dashboard?month={snapshot.Month}&year={snapshot.Year}",
+                    actionUserId: _userManager.GetUserId(User));
             }
 
             TempData["Success"] =
@@ -770,6 +813,9 @@ namespace AryamanBMS.Controllers
                 await _challanRepository.GetByChallanNumberAsync(
                     challanNumber.Trim());
 
+            string? previousChallanStatus =
+                challan?.Status;
+
             if (challan != null &&
                 string.Equals(
                     challan.Status,
@@ -824,6 +870,32 @@ namespace AryamanBMS.Controllers
             challan.UpdatedOn = DateTime.Now;
 
             await _challanRepository.SaveAsync();
+
+            bool becamePaid =
+                !string.Equals(
+                    previousChallanStatus,
+                    "Paid",
+                    StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(
+                    status,
+                    "Paid",
+                    StringComparison.OrdinalIgnoreCase);
+
+            if (becamePaid)
+            {
+                await NotifyGstUsersAsync(
+                    notificationType: "GstChallanPaid",
+                    title: "GST Challan Paid",
+                    message:
+                        $"GST challan {challan.ChallanNumber} for " +
+                        $"{GetMonthName(snapshot.Month)} {snapshot.Year} " +
+                        $"has been paid. Amount: ₹{challan.AmountPaid:N2}.",
+                    referenceType: "GstChallan",
+                    referenceId: challan.ChallanId,
+                    actionUrl:
+                        $"/Gst/Dashboard?month={snapshot.Month}&year={snapshot.Year}",
+                    actionUserId: _userManager.GetUserId(User));
+            }
 
             TempData["Success"] =
                 "GST challan updated successfully.";
@@ -1124,6 +1196,20 @@ namespace AryamanBMS.Controllers
                     year,
                     _userManager.GetUserId(User) ?? string.Empty);
 
+            if (verified)
+            {
+                await NotifyGstUsersAsync(
+                    notificationType: "GstSnapshotVerified",
+                    title: "GST Snapshot Verified",
+                    message:
+                        $"GST snapshot for {GetMonthName(month)} {year} has been verified.",
+                    referenceType: "GstSnapshot",
+                    referenceId: snapshot.SnapshotId,
+                    actionUrl:
+                        $"/Gst/Dashboard?month={month}&year={year}",
+                    actionUserId: _userManager.GetUserId(User));
+            }
+
             TempData[verified ? "Success" : "Error"] =
                 verified
                     ? "GST snapshot verified successfully."
@@ -1295,6 +1381,17 @@ namespace AryamanBMS.Controllers
                     new { month, year });
             }
 
+            await NotifyGstUsersAsync(
+                notificationType: "GstSnapshotLocked",
+                title: "GST Period Locked",
+                message:
+                    $"GST period for {GetMonthName(month)} {year} has been locked.",
+                referenceType: "GstSnapshot",
+                referenceId: snapshot.SnapshotId,
+                actionUrl:
+                    $"/Gst/Dashboard?month={month}&year={year}",
+                actionUserId: filedByUserId);
+
             TempData["Success"] =
                 $"GST snapshot for {GetMonthName(month)} {year} " +
                 "was locked successfully.";
@@ -1384,7 +1481,7 @@ namespace AryamanBMS.Controllers
                     month,
                     year,
                     reopenedByUserId,
-                    reason);
+                    reason.Trim());
 
             if (!reopened)
             {
@@ -1396,6 +1493,21 @@ namespace AryamanBMS.Controllers
                     new { month, year });
             }
 
+            string reopenReason =
+                reason.Trim();
+
+            await NotifyGstUsersAsync(
+                notificationType: "GstSnapshotReopened",
+                title: "GST Period Reopened",
+                message:
+                    $"GST period for {GetMonthName(month)} {year} has been reopened. " +
+                    $"Reason: {reopenReason}",
+                referenceType: "GstSnapshot",
+                referenceId: snapshot.SnapshotId,
+                actionUrl:
+                    $"/Gst/Dashboard?month={month}&year={year}",
+                actionUserId: reopenedByUserId);
+
             TempData["Success"] =
                 $"GST snapshot for {GetMonthName(month)} {year} reopened successfully.";
 
@@ -1404,25 +1516,10 @@ namespace AryamanBMS.Controllers
                 new { month, year });
         }
         private async Task NotifyGstSnapshotGeneratedAsync(
-    GstMonthlySnapshotModel snapshot,
-    string actionUserId,
-    bool isRegeneration)
+            GstMonthlySnapshotModel snapshot,
+            string actionUserId,
+            bool isRegeneration)
         {
-            var admins =
-                await _userManager.GetUsersInRoleAsync("Admin");
-
-            var financeUsers =
-                await _userManager.GetUsersInRoleAsync("Finance");
-
-            var recipients = admins
-                .Concat(financeUsers)
-                .Where(x =>
-                    x.IsActive &&
-                    x.Id != actionUserId)
-                .GroupBy(x => x.Id)
-                .Select(x => x.First())
-                .ToList();
-
             string notificationType = isRegeneration
                 ? "GstSnapshotRegenerated"
                 : "GstSnapshotGenerated";
@@ -1434,14 +1531,54 @@ namespace AryamanBMS.Controllers
             string monthName =
                 GetMonthName(snapshot.Month);
 
+            await NotifyGstUsersAsync(
+                notificationType: notificationType,
+                title: title,
+                message:
+                    $"{monthName} {snapshot.Year} GST snapshot was " +
+                    $"{(isRegeneration ? "regenerated" : "generated")}. " +
+                    $"Net GST payable: ₹{snapshot.NetGSTPayable:N2}.",
+                referenceType: "GstSnapshot",
+                referenceId: snapshot.SnapshotId,
+                actionUrl:
+                    $"/Gst/Dashboard?month={snapshot.Month}&year={snapshot.Year}",
+                actionUserId: actionUserId);
+        }
+
+        private async Task NotifyGstUsersAsync(
+            string notificationType,
+            string title,
+            string message,
+            string referenceType,
+            int referenceId,
+            string actionUrl,
+            string? actionUserId)
+        {
+            try
+            {
+                var admins =
+                    await _userManager.GetUsersInRoleAsync("Admin");
+
+                var financeUsers =
+                    await _userManager.GetUsersInRoleAsync("Finance");
+
+                var recipients = admins
+                    .Concat(financeUsers)
+                    .Where(x =>
+                        x.IsActive &&
+                        x.Id != actionUserId)
+                    .GroupBy(x => x.Id)
+                    .Select(x => x.First())
+                    .ToList();
+
             foreach (var recipient in recipients)
             {
                 bool exists =
                     await _notificationService.ExistsAsync(
                         recipient.Id,
                         notificationType,
-                        "GstSnapshot",
-                        snapshot.SnapshotId);
+                        referenceType,
+                        referenceId);
 
                 if (exists)
                 {
@@ -1451,15 +1588,21 @@ namespace AryamanBMS.Controllers
                 await _notificationService.CreateAsync(
                     userId: recipient.Id,
                     title: title,
-                    message:
-                        $"{monthName} {snapshot.Year} GST snapshot was " +
-                        $"{(isRegeneration ? "regenerated" : "generated")}. " +
-                        $"Net GST payable: ₹{snapshot.NetGSTPayable:N2}.",
+                    message: message,
                     notificationType: notificationType,
-                    referenceType: "GstSnapshot",
-                    referenceId: snapshot.SnapshotId,
-                    actionUrl:
-                        $"/Gst/Dashboard?month={snapshot.Month}&year={snapshot.Year}");
+                    referenceType: referenceType,
+                    referenceId: referenceId,
+                    actionUrl: actionUrl);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "GST notification failed. Type: {NotificationType}, Reference: {ReferenceType}/{ReferenceId}",
+                    notificationType,
+                    referenceType,
+                    referenceId);
             }
         }
 

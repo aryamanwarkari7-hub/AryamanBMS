@@ -2,6 +2,7 @@
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interface;
+using AryamanBMS.Services.Interfaces;
 using AryamanBMS.ViewModels;
 using ClosedXML.Excel;
 using AryamanBMS.Data;
@@ -20,6 +21,8 @@ namespace AryamanBMS.Controllers
         private readonly IEmployeeRepository _employeeRepository;
         private readonly UserManager<ApplicationUserModel> _userManager;
         private readonly ApplicationDbContext _context;
+        private readonly INotificationService _notificationService;
+        private readonly ILogger<SalaryController> _logger;
 
         // Service
         private readonly ISalaryExcelImportService _salaryExcelImportService;
@@ -33,7 +36,9 @@ namespace AryamanBMS.Controllers
       ISalaryExcelImportService salaryExcelImportService,
       ISalaryAttendanceSummaryService salaryAttendanceSummaryService,
       IWebHostEnvironment webHostEnvironment,
-      ApplicationDbContext context)
+      ApplicationDbContext context,
+      INotificationService notificationService,
+      ILogger<SalaryController> logger)
         {
             _salaryRecordRepository = salaryRecordRepository;
             _employeeRepository = employeeRepository;
@@ -42,6 +47,8 @@ namespace AryamanBMS.Controllers
             _salaryAttendanceSummaryService = salaryAttendanceSummaryService;
             _webHostEnvironment = webHostEnvironment;
             _context = context;
+            _notificationService = notificationService;
+            _logger = logger;
         }
 
         [Authorize(Roles = "Admin,HR")]
@@ -251,6 +258,9 @@ namespace AryamanBMS.Controllers
                     });
             }
 
+            string previousPaymentStatus =
+                salary.PaymentStatus;
+
             salary.PaymentStatus = "Paid";
             salary.PaidOn = DateTime.Now;
             salary.PaidByUserId =
@@ -258,6 +268,21 @@ namespace AryamanBMS.Controllers
 
             await _salaryRecordRepository.UpdateAsync(salary);
             await _salaryRecordRepository.SaveAsync();
+
+            if (!string.Equals(
+                    previousPaymentStatus,
+                    "Paid",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                await NotifyEmployeeSalaryAsync(
+                    salary,
+                    notificationType: "SalaryPaid",
+                    title: "Salary Paid",
+                    message:
+                        $"Salary for {GetMonthName(salary.Month)} {salary.Year} " +
+                        $"has been paid. Net salary: ₹{salary.NetSalary:N2}.",
+                    actionUrl: "/Salary/MySalary");
+            }
 
             TempData["Success"] =
                 "Salary marked as paid.";
@@ -429,6 +454,9 @@ namespace AryamanBMS.Controllers
             }
             else
             {
+                bool wasPayslipReleased =
+                    salary.IsPayslipReleased;
+
                 salary.IsPayslipReleased = true;
                 salary.PayslipReleasedByUserId =
                     User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -436,6 +464,18 @@ namespace AryamanBMS.Controllers
 
                 await _salaryRecordRepository.UpdateAsync(salary);
                 await _salaryRecordRepository.SaveAsync();
+
+                if (!wasPayslipReleased)
+                {
+                    await NotifyEmployeeSalaryAsync(
+                        salary,
+                        notificationType: "PayslipReleased",
+                        title: "Payslip Released",
+                        message:
+                            $"Your payslip for {GetMonthName(salary.Month)} {salary.Year} " +
+                            "has been released.",
+                        actionUrl: $"/Salary/Payslip/{salary.Id}");
+                }
 
                 TempData["Success"] =
                     "Payslip released.";
@@ -1047,6 +1087,69 @@ namespace AryamanBMS.Controllers
     .ToList();
 
             return View(salaries);
+        }
+
+        private async Task NotifyEmployeeSalaryAsync(
+            SalaryRecordModel salary,
+            string notificationType,
+            string title,
+            string message,
+            string actionUrl)
+        {
+            try
+            {
+                string? recipientUserId =
+                    salary.Employee?.ApplicationUserId;
+
+                if (string.IsNullOrWhiteSpace(recipientUserId))
+                {
+                    return;
+                }
+
+                var recipient =
+                    await _userManager.FindByIdAsync(recipientUserId);
+
+                if (recipient == null || !recipient.IsActive)
+                {
+                    return;
+                }
+
+                bool exists =
+                    await _notificationService.ExistsAsync(
+                        recipient.Id,
+                        notificationType,
+                        "SalaryRecord",
+                        salary.Id);
+
+                if (exists)
+                {
+                    return;
+                }
+
+                await _notificationService.CreateAsync(
+                    userId: recipient.Id,
+                    title: title,
+                    message: message,
+                    notificationType: notificationType,
+                    referenceType: "SalaryRecord",
+                    referenceId: salary.Id,
+                    actionUrl: actionUrl);
+            }
+            catch (Exception ex)
+            {
+                // Salary actions must remain successful even if notification creation fails.
+                _logger.LogWarning(
+                    ex,
+                    "Salary notification failed. Type: {NotificationType}, SalaryRecordId: {SalaryRecordId}",
+                    notificationType,
+                    salary.Id);
+            }
+        }
+
+        private static string GetMonthName(int month)
+        {
+            return new System.Globalization.CultureInfo("en-US")
+                .DateTimeFormat.GetMonthName(month);
         }
         
         [HttpPost]

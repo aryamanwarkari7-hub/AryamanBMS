@@ -1,5 +1,6 @@
 using AryamanBMS.Data;
 using AryamanBMS.Models;
+using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -13,13 +14,19 @@ namespace AryamanBMS.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUserModel> _userManager;
+        private readonly INotificationService _notificationService;
+        private readonly ILogger<VendorPaymentController> _logger;
 
         public VendorPaymentController(
             ApplicationDbContext context,
-            UserManager<ApplicationUserModel> userManager)
+            UserManager<ApplicationUserModel> userManager,
+            INotificationService notificationService,
+            ILogger<VendorPaymentController> logger)
         {
             _context = context;
             _userManager = userManager;
+            _notificationService = notificationService;
+            _logger = logger;
         }
 
         public async Task<IActionResult> Index(int? vendorId)
@@ -140,6 +147,17 @@ namespace AryamanBMS.Controllers
 
             await RefreshVoucherPaymentStatus(model.ExpenseVoucherId);
 
+            await NotifyFinanceUsersAsync(
+                notificationType: "VendorPaymentMade",
+                title: "Vendor Payment Recorded",
+                message:
+                    $"Vendor payment {model.PaymentNo} of ₹{model.AmountPaid:N2} " +
+                    "has been recorded.",
+                referenceType: "VendorPayment",
+                referenceId: model.VendorPaymentId,
+                actionUrl: "/VendorPayment/Index",
+                actionUserId: _userManager.GetUserId(User));
+
             TempData["Success"] = $"Vendor payment '{model.PaymentNo}' recorded successfully.";
             return RedirectToAction(nameof(Index));
         }
@@ -196,6 +214,61 @@ namespace AryamanBMS.Controllers
             voucher.UpdatedOn = DateTime.Now;
 
             await _context.SaveChangesAsync();
+        }
+
+        private async Task NotifyFinanceUsersAsync(
+            string notificationType,
+            string title,
+            string message,
+            string referenceType,
+            int referenceId,
+            string actionUrl,
+            string? actionUserId)
+        {
+            try
+            {
+                var admins = await _userManager.GetUsersInRoleAsync("Admin");
+                var financeUsers = await _userManager.GetUsersInRoleAsync("Finance");
+
+                var recipients = admins
+                    .Concat(financeUsers)
+                    .Where(x => x.IsActive && x.Id != actionUserId)
+                    .GroupBy(x => x.Id)
+                    .Select(x => x.First())
+                    .ToList();
+
+                foreach (var recipient in recipients)
+                {
+                    bool exists = await _notificationService.ExistsAsync(
+                        recipient.Id,
+                        notificationType,
+                        referenceType,
+                        referenceId);
+
+                    if (exists)
+                    {
+                        continue;
+                    }
+
+                    await _notificationService.CreateAsync(
+                        recipient.Id,
+                        title,
+                        message,
+                        notificationType,
+                        referenceType,
+                        referenceId,
+                        actionUrl);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Vendor payment notification failed. Type: {NotificationType}, Reference: {ReferenceType}/{ReferenceId}",
+                    notificationType,
+                    referenceType,
+                    referenceId);
+            }
         }
 
         private static string GetCurrentFinancialYear()

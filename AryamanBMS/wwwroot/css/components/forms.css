@@ -128,6 +128,50 @@
     white-space: nowrap;
 }
 
+.form-check-app {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--card-bg);
+    cursor: pointer;
+    transition: border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+    .form-check-app:hover {
+        border-color: var(--primary-color);
+        background: var(--primary-accent-tint);
+    }
+
+    .form-check-app input[type="checkbox"] {
+        margin-top: 3px;
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+        accent-color: var(--primary-color);
+    }
+
+    .form-check-app span {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+    }
+
+    .form-check-app strong {
+        color: var(--text-primary);
+        font-size: var(--font-sm);
+        line-height: 1.2;
+    }
+
+    .form-check-app small {
+        color: var(--text-secondary);
+        font-size: var(--font-xs);
+        line-height: 1.3;
+    }
+
 @media (max-width: 576px) {
     .filter-form-row {
         grid-template-columns: 1fr;

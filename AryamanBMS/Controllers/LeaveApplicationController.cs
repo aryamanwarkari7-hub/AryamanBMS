@@ -1,6 +1,7 @@
 ﻿using AryamanBMS.Extensions;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
+using AryamanBMS.Services.Interfaces;
 using AryamanBMS.ViewModels;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
@@ -21,6 +22,8 @@ namespace AryamanBMS.Controllers
         private readonly UserManager<ApplicationUserModel> _userManager;
         private readonly ICompOffCreditRepository _compOffCreditRepository;
         private readonly ICompOffUsageRepository _compOffUsageRepository;
+        private readonly INotificationService _notificationService;
+        private readonly ILogger<LeaveApplicationController> _logger;
 
         public LeaveApplicationController(
               ILeaveApplicationRepository leaveApplicationRepository,
@@ -30,7 +33,9 @@ namespace AryamanBMS.Controllers
               ILeaveBalanceRepository leaveBalanceRepository,
               UserManager<ApplicationUserModel> userManager,
               ICompOffCreditRepository compOffCreditRepository,
-              ICompOffUsageRepository compOffUsageRepository)
+              ICompOffUsageRepository compOffUsageRepository,
+              INotificationService notificationService,
+              ILogger<LeaveApplicationController> logger)
         {
             _leaveApplicationRepository = leaveApplicationRepository;
             _leaveTypeRepository = leaveTypeRepository;
@@ -40,6 +45,8 @@ namespace AryamanBMS.Controllers
             _userManager = userManager;
             _compOffCreditRepository = compOffCreditRepository;
             _compOffUsageRepository = compOffUsageRepository;
+            _notificationService = notificationService;
+            _logger = logger;
         }
 
         public async Task<IActionResult> Index(
@@ -339,6 +346,18 @@ namespace AryamanBMS.Controllers
                 await _leaveApplicationRepository.AddAsync(leaveApplication);
 
                 await _leaveApplicationRepository.SaveAsync();
+
+                await NotifyHrUsersAsync(
+                    notificationType: "LeaveRequest",
+                    title: "Leave Request Submitted",
+                    message:
+                        $"{employee?.FullName ?? "Employee"} submitted leave request " +
+                        $"{leaveApplication.ApplicationNumber} for " +
+                        $"{leaveApplication.FromDate:dd-MMM-yyyy} to {leaveApplication.ToDate:dd-MMM-yyyy}.",
+                    referenceType: "LeaveApplication",
+                    referenceId: leaveApplication.Id,
+                    actionUrl: $"/LeaveApplication/Details/{leaveApplication.Id}",
+                    actionUserId: user.Id);
 
                 TempData["Success"] = "Leave application submitted successfully.";
 
@@ -651,6 +670,16 @@ namespace AryamanBMS.Controllers
 
             await _attendanceRepository.SaveAsync();
 
+            await NotifyEmployeeLeaveAsync(
+                leaveApplication,
+                notificationType: "LeaveApproved",
+                title: "Leave Approved",
+                message:
+                    $"Your leave request {leaveApplication.ApplicationNumber} " +
+                    $"has been approved for {leaveApplication.FromDate:dd-MMM-yyyy} " +
+                    $"to {leaveApplication.ToDate:dd-MMM-yyyy}.",
+                actionUrl: $"/LeaveApplication/Details/{leaveApplication.Id}");
+
             TempData["Success"] = isCompOff ? "Comp Off leave approved, credits consumed and attendance marked."
         : requiresBalance
             ? "Leave application approved, balance updated and attendance marked."
@@ -686,6 +715,15 @@ namespace AryamanBMS.Controllers
 
             await _leaveApplicationRepository.UpdateAsync(leaveApplication);
             await _leaveApplicationRepository.SaveAsync();
+
+            await NotifyEmployeeLeaveAsync(
+                leaveApplication,
+                notificationType: "LeaveRejected",
+                title: "Leave Rejected",
+                message:
+                    $"Your leave request {leaveApplication.ApplicationNumber} " +
+                    $"has been rejected.",
+                actionUrl: $"/LeaveApplication/Details/{leaveApplication.Id}");
 
             TempData["Success"] =
                 "Leave application rejected.";
@@ -857,6 +895,17 @@ namespace AryamanBMS.Controllers
                 .UpdateAsync(leaveApplication);
 
             await _leaveApplicationRepository.SaveAsync();
+
+            await NotifyHrUsersAsync(
+                notificationType: "LeaveCancellationRequested",
+                title: "Leave Cancellation Requested",
+                message:
+                    $"{leaveApplication.Employee?.FullName ?? "Employee"} requested cancellation for " +
+                    $"leave {leaveApplication.ApplicationNumber}.",
+                referenceType: "LeaveApplication",
+                referenceId: leaveApplication.Id,
+                actionUrl: $"/LeaveApplication/Details/{leaveApplication.Id}",
+                actionUserId: _userManager.GetUserId(User));
 
             TempData["Success"] =
                 "Leave cancellation request submitted successfully.";
@@ -1067,6 +1116,15 @@ namespace AryamanBMS.Controllers
 
             await _attendanceRepository.SaveAsync();
 
+            await NotifyEmployeeLeaveAsync(
+                leaveApplication,
+                notificationType: "LeaveCancellationApproved",
+                title: "Leave Cancellation Approved",
+                message:
+                    $"Cancellation for leave request {leaveApplication.ApplicationNumber} " +
+                    "has been approved.",
+                actionUrl: $"/LeaveApplication/Details/{leaveApplication.Id}");
+
             TempData["Success"] =
     isCompOff
         ? "Comp Off cancellation approved. Credit restored and attendance updated."
@@ -1121,10 +1179,136 @@ namespace AryamanBMS.Controllers
 
             await _leaveApplicationRepository.SaveAsync();
 
+            await NotifyEmployeeLeaveAsync(
+                leaveApplication,
+                notificationType: "LeaveCancellationRejected",
+                title: "Leave Cancellation Rejected",
+                message:
+                    $"Cancellation for leave request {leaveApplication.ApplicationNumber} " +
+                    "has been rejected.",
+                actionUrl: $"/LeaveApplication/Details/{leaveApplication.Id}");
+
             TempData["Success"] =
                 "Leave cancellation request rejected.";
 
             return RedirectToAction(nameof(Index));
+        }
+
+        private async Task NotifyEmployeeLeaveAsync(
+            LeaveApplicationModel leaveApplication,
+            string notificationType,
+            string title,
+            string message,
+            string actionUrl)
+        {
+            try
+            {
+                string? recipientUserId =
+                    leaveApplication.Employee?.ApplicationUserId;
+
+                if (string.IsNullOrWhiteSpace(recipientUserId))
+                {
+                    return;
+                }
+
+                var recipient =
+                    await _userManager.FindByIdAsync(recipientUserId);
+
+                if (recipient == null || !recipient.IsActive)
+                {
+                    return;
+                }
+
+                bool exists =
+                    await _notificationService.ExistsAsync(
+                        recipient.Id,
+                        notificationType,
+                        "LeaveApplication",
+                        leaveApplication.Id);
+
+                if (exists)
+                {
+                    return;
+                }
+
+                await _notificationService.CreateAsync(
+                    userId: recipient.Id,
+                    title: title,
+                    message: message,
+                    notificationType: notificationType,
+                    referenceType: "LeaveApplication",
+                    referenceId: leaveApplication.Id,
+                    actionUrl: actionUrl);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Leave notification failed. Type: {NotificationType}, LeaveApplicationId: {LeaveApplicationId}",
+                    notificationType,
+                    leaveApplication.Id);
+            }
+        }
+
+        private async Task NotifyHrUsersAsync(
+            string notificationType,
+            string title,
+            string message,
+            string referenceType,
+            int referenceId,
+            string actionUrl,
+            string? actionUserId)
+        {
+            try
+            {
+                var admins =
+                    await _userManager.GetUsersInRoleAsync("Admin");
+
+                var hrUsers =
+                    await _userManager.GetUsersInRoleAsync("HR");
+
+                var recipients = admins
+                    .Concat(hrUsers)
+                    .Where(x =>
+                        x.IsActive &&
+                        x.Id != actionUserId)
+                    .GroupBy(x => x.Id)
+                    .Select(x => x.First())
+                    .ToList();
+
+                foreach (var recipient in recipients)
+                {
+                    bool exists =
+                        await _notificationService.ExistsAsync(
+                            recipient.Id,
+                            notificationType,
+                            referenceType,
+                            referenceId);
+
+                    if (exists)
+                    {
+                        continue;
+                    }
+
+                    await _notificationService.CreateAsync(
+                        userId: recipient.Id,
+                        title: title,
+                        message: message,
+                        notificationType: notificationType,
+                        referenceType: referenceType,
+                        referenceId: referenceId,
+                        actionUrl: actionUrl);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Leave broadcast notification failed. Type: {NotificationType}, Reference: {ReferenceType}/{ReferenceId}",
+                    notificationType,
+                    referenceType,
+                    referenceId);
+            }
         }
 
         [Authorize(Roles = "Admin,HR")]

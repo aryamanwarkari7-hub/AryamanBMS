@@ -248,14 +248,14 @@ namespace AryamanBMS.Controllers
                 new { userId = user.Id, token = token },
                 protocol: Request.Scheme);
 
-            // 4. DEVELOPMENT LOGGING (Simulating the output under your domain context)
-            // You can copy this link straight out of your Output window in Visual Studio to test your Reset page!
-            Console.WriteLine("\n==========================================================");
-            Console.WriteLine($"[ARYAMAN BMS RESET LINK]: {callbackUrl}");
-            Console.WriteLine("==========================================================\n");
+            if (_webHostEnvironment.IsDevelopment())
+            {
+                _logger.LogInformation(
+                    "ARYAMAN BMS development reset link generated: {ResetLink}",
+                    callbackUrl);
 
-            // Storing it in TempData so you can print it or access it easily while testing offline
-            TempData["DebugResetLink"] = callbackUrl;
+                TempData["DebugResetLink"] = callbackUrl;
+            }
 
             TempData["SuccessMessage"] = "If an active workspace profile is linked, verification tracking instructions have been generated.";
             return RedirectToAction(nameof(ForgotPassword));

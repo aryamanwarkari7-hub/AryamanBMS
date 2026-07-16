@@ -208,6 +208,83 @@
 
     </div>
 
+    <div class="app-card mt-4">
+
+        <div class="card-header">
+            <h5 class="card-title">Notification Preferences</h5>
+        </div>
+
+        <div class="card-body">
+
+            <form asp-controller="Notification"
+                  asp-action="UpdatePreferences"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <input type="hidden"
+                       name="returnUrl"
+                       value="@Context.Request.Path@Context.Request.QueryString" />
+
+                <div class="form-grid-2">
+
+                    <label class="form-check-app">
+                        <input type="checkbox"
+                               name="enableRealtimeNotifications"
+                               value="true"
+                               checked="@Model.User.EnableRealtimeNotifications" />
+                        <input type="hidden"
+                               name="enableRealtimeNotifications"
+                               value="false" />
+                        <span>
+                            <strong>Real-time notifications</strong>
+                            <small>Update the navbar bell without refreshing.</small>
+                        </span>
+                    </label>
+
+                    <label class="form-check-app">
+                        <input type="checkbox"
+                               name="enableNotificationToast"
+                               value="true"
+                               checked="@Model.User.EnableNotificationToast" />
+                        <input type="hidden"
+                               name="enableNotificationToast"
+                               value="false" />
+                        <span>
+                            <strong>Toast popup</strong>
+                            <small>Show a small popup when a notification arrives.</small>
+                        </span>
+                    </label>
+
+                    <label class="form-check-app">
+                        <input type="checkbox"
+                               name="enableNotificationSound"
+                               value="true"
+                               checked="@Model.User.EnableNotificationSound" />
+                        <input type="hidden"
+                               name="enableNotificationSound"
+                               value="false" />
+                        <span>
+                            <strong>Notification sound</strong>
+                            <small>Play a soft sound with live notifications.</small>
+                        </span>
+                    </label>
+
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit"
+                            class="btn-app btn-primary-app">
+                        Save Preferences
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
     @if (Model.HasEmployeeProfile)
     {
         <div class="app-card dashboard-section-card dashboard-finance-card">
