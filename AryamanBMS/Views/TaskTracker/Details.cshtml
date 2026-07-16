@@ -2,156 +2,177 @@
 
 @{
     ViewData["Title"] = "Task Update Details";
+
+    string projectText =
+        $"{Model.ProjectTask?.Project?.ProjectCode ?? "-"} - {Model.ProjectTask?.Project?.ProjectName ?? "-"}";
+
+    string taskText =
+        $"{Model.ProjectTask?.TaskCode ?? "-"} - {Model.ProjectTask?.TaskTitle ?? "-"}";
+
+    string activeClass = Model.IsActive ? "badge-success" : "badge-danger";
+    string activeText = Model.IsActive ? "Active" : "Inactive";
 }
 
 <div class="module-header">
-
     <div>
         <h1 class="module-title">Task Update Details</h1>
-
         <p class="module-subtitle">
-            View recorded task update information
+            Recorded task update, hours and progress notes
         </p>
     </div>
 
-    <div class="d-flex gap-2">
-
+    <div class="module-header-actions">
         <a asp-action="Edit"
            asp-route-id="@Model.Id"
            class="btn-app btn-primary-app">
-
             <i class="bi bi-pencil"></i>
             Edit
-
         </a>
 
         <a asp-action="Index"
            asp-route-projectTaskId="@Model.ProjectTaskId"
            class="btn-app btn-secondary-app">
-
+            <i class="bi bi-arrow-left"></i>
             Back
-
         </a>
-
     </div>
-
 </div>
 
-<div class="app-card">
+<div class="detail-page">
 
-    <div class="card-header">
-        <h5 class="card-title">Task Update Information</h5>
+    <div class="detail-summary-grid">
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Update Date</div>
+            <div class="detail-summary-value">
+                @Model.ProgressDate.ToString("dd-MMM-yyyy")
+            </div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Hours Worked</div>
+            <div class="detail-summary-value">
+                @Model.HoursWorked.ToString("0.00")
+            </div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Completion</div>
+            <div class="detail-summary-value">
+                @Model.CompletionPercentage%
+            </div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Active Status</div>
+            <div class="detail-summary-value">
+                <span class="@activeClass">@activeText</span>
+            </div>
+        </div>
     </div>
 
-    <div class="card-body">
+    <div class="detail-grid-2">
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Task Update Information</h5>
+            </div>
 
-        <table class="app-table">
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Project</span>
+                        <strong class="detail-info-value">@projectText</strong>
+                    </div>
 
-            <tbody>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Task</span>
+                        <strong class="detail-info-value">@taskText</strong>
+                    </div>
 
-                <tr>
-                    <th>Project</th>
-                    <td>
-                        @Model.ProjectTask?.Project?.ProjectCode -
-                        @Model.ProjectTask?.Project?.ProjectName
-                    </td>
-                </tr>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Update Date</span>
+                        <strong class="detail-info-value">
+                            @Model.ProgressDate.ToString("dd-MMM-yyyy")
+                        </strong>
+                    </div>
 
-                <tr>
-                    <th>Task</th>
-                    <td>
-                        @Model.ProjectTask?.TaskCode -
-                        @Model.ProjectTask?.TaskTitle
-                    </td>
-                </tr>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Hours Worked</span>
+                        <strong class="detail-info-value">
+                            @Model.HoursWorked.ToString("0.00")
+                        </strong>
+                    </div>
 
-                <tr>
-                    <th>Update Date</th>
-                    <td>
-                        @Model.ProgressDate.ToString("dd-MM-yyyy")
-                    </td>
-                </tr>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Active Status</span>
+                        <strong class="detail-info-value">
+                            <span class="@activeClass">@activeText</span>
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                <tr>
-                    <th>Hours Worked</th>
-                    <td>
-                        @Model.HoursWorked.ToString("0.00")
-                    </td>
-                </tr>
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Progress</h5>
+            </div>
 
-                <tr>
-                    <th>Task Completion %</th>
-                    <td>
-                        <strong>
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Task Completion</span>
+                        <strong class="detail-info-value">
                             @Model.CompletionPercentage%
                         </strong>
+                    </div>
 
-                        <div class="progress progress-compact mt-2">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Created On</span>
+                        <strong class="detail-info-value">
+                            @Model.CreatedOn.ToString("dd-MMM-yyyy hh:mm tt")
+                        </strong>
+                    </div>
 
-                            <div class="progress-bar"
-                                 role="progressbar"
-                                 style="width: @Model.CompletionPercentage%;"
-                                 aria-valuenow="@Model.CompletionPercentage"
-                                 aria-valuemin="0"
-                                 aria-valuemax="100">
-                            </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Updated On</span>
+                        <strong class="detail-info-value">
+                            @(Model.UpdatedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")
+                        </strong>
+                    </div>
+                </div>
 
+                <div class="mt-3">
+                    <div class="progress progress-compact">
+                        <div class="progress-bar"
+                             role="progressbar"
+                             style="width: @Model.CompletionPercentage%;"
+                             aria-valuenow="@Model.CompletionPercentage"
+                             aria-valuemin="0"
+                             aria-valuemax="100">
                         </div>
-                    </td>
-                </tr>
-
-                <tr>
-                    <th>Active Status</th>
-                    <td>
-                        @if (Model.IsActive)
-                        {
-                            <span class="status-badge status-active">
-                                Active
-                            </span>
-                        }
-                        else
-                        {
-                            <span class="status-badge status-inactive">
-                                Inactive
-                            </span>
-                        }
-                    </td>
-                </tr>
-
-                <tr>
-                    <th>Created On</th>
-                    <td>
-                        @Model.CreatedOn.ToString("dd-MM-yyyy hh:mm tt")
-                    </td>
-                </tr>
-
-                <tr>
-                    <th>Updated On</th>
-                    <td>
-                        @(Model.UpdatedOn?.ToString("dd-MM-yyyy hh:mm tt") ?? "-")
-                    </td>
-                </tr>
-
-            </tbody>
-
-        </table>
-
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-</div>
+    <div class="app-card">
+        <div class="card-header">
+            <h5 class="card-title">Update Notes</h5>
+        </div>
 
-<div class="app-card">
-
-    <div class="card-header">
-        <h5 class="card-title">Update Notes</h5>
-    </div>
-
-    <div class="card-body">
-
-        <p class="mb-0">
-            @Model.ProgressNotes
-        </p>
-
+        <div class="card-body">
+            <div class="detail-note-box">
+                @if (!string.IsNullOrWhiteSpace(Model.ProgressNotes))
+                {
+                    @Model.ProgressNotes
+                }
+                else
+                {
+                    <span>No update notes provided.</span>
+                }
+            </div>
+        </div>
     </div>
 
 </div>

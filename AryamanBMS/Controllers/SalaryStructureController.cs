@@ -18,14 +18,70 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(
+           string? search,
+           string sortBy = "EmployeeCode",
+           string sortOrder = "asc")
         {
-            var salaryStructures =
-                await _context.EmployeeSalaryStructures
+            var query =
+                _context.EmployeeSalaryStructures
                     .Include(x => x.Employee)
-                    .OrderBy(x => x.Employee!.EmployeeCode)
-                    .ThenByDescending(x => x.EffectiveFrom)
-                    .ToListAsync();
+                    .AsNoTracking()
+                    .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                string keyword = search.Trim().ToLower();
+
+                query = query.Where(x =>
+                   x.Employee != null &&
+                   (
+                       (x.Employee.EmployeeCode ?? string.Empty).ToLower().Contains(keyword) ||
+                       (x.Employee.FirstName ?? string.Empty).ToLower().Contains(keyword) ||
+                       (x.Employee.LastName ?? string.Empty).ToLower().Contains(keyword)
+                   ));
+            }
+
+            bool desc =
+                string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
+
+            query = sortBy switch
+            {
+                "EmployeeName" => desc
+                    ? query.OrderByDescending(x => x.Employee!.FirstName)
+                           .ThenByDescending(x => x.Employee!.LastName)
+                    : query.OrderBy(x => x.Employee!.FirstName)
+                           .ThenBy(x => x.Employee!.LastName),
+
+                "EffectiveFrom" => desc
+                    ? query.OrderByDescending(x => x.EffectiveFrom)
+                    : query.OrderBy(x => x.EffectiveFrom),
+
+                "ActualSalary" => desc
+                    ? query.OrderByDescending(x => x.ActualSalary)
+                    : query.OrderBy(x => x.ActualSalary),
+
+                "Status" => desc
+                    ? query.OrderByDescending(x => x.IsActive)
+                    : query.OrderBy(x => x.IsActive),
+
+                "UpdatedOn" => desc
+                    ? query.OrderByDescending(x => x.UpdatedOn)
+                    : query.OrderBy(x => x.UpdatedOn),
+
+                _ => desc
+                    ? query.OrderByDescending(x => x.Employee!.EmployeeCode)
+                           .ThenByDescending(x => x.EffectiveFrom)
+                    : query.OrderBy(x => x.Employee!.EmployeeCode)
+                           .ThenByDescending(x => x.EffectiveFrom)
+            };
+
+            var salaryStructures =
+                await query.ToListAsync();
+
+            ViewBag.Search = search;
+            ViewBag.SortBy = sortBy;
+            ViewBag.SortOrder = sortOrder;
 
             return View(salaryStructures);
         }

@@ -14,9 +14,21 @@
 
 .form-label {
     font-size: var(--font-sm);
-    font-weight: var(--fw-medium);
+    font-weight: var(--fw-semibold);
     color: var(--text-secondary);
     margin-bottom: 0;
+}
+
+.required-star,
+.text-danger {
+    color: var(--danger-color);
+}
+
+.required-star {
+    font-weight: var(--fw-bold);
+    font-size: 15px;
+    line-height: 1;
+    margin-left: 2px;
 }
 
 /* ==========================================
@@ -31,18 +43,63 @@
     width: 100%;
     height: 44px;
     padding: 10px 14px;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-muted);
     border-radius: var(--radius-md);
-    background-color: var(--card-bg);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.72)), var(--card-bg);
     font-size: var(--font-sm);
     color: var(--text-primary);
-    transition: var(--transition-fast);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
+}
+
+.app-select,
+.form-select {
+    cursor: pointer;
 }
 
 .app-textarea {
     min-height: 120px;
     resize: vertical;
+    line-height: 1.5;
 }
+
+/* ==========================================
+   FILE INPUT BUTTON
+========================================== */
+
+.app-input[type="file"],
+.form-control[type="file"] {
+    height: 44px;
+    padding: 5px 8px;
+    cursor: pointer;
+    line-height: 32px;
+    align-content: center;
+    overflow: hidden;
+}
+
+    .app-input[type="file"]::file-selector-button,
+    .form-control[type="file"]::file-selector-button {
+        height: 32px;
+        max-width: 118px;
+        margin: 0 10px 0 0;
+        padding: 0 10px;
+        border: 1px solid rgba(32, 114, 175, 0.28);
+        border-radius: var(--radius-sm);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent), var(--primary-accent-tint);
+        color: var(--primary-color);
+        font-size: var(--font-sm);
+        font-weight: var(--fw-semibold);
+        line-height: 30px;
+        vertical-align: middle;
+        cursor: pointer;
+        transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+    }
+
+        .app-input[type="file"]::file-selector-button:hover,
+        .form-control[type="file"]::file-selector-button:hover {
+            border-color: var(--primary-color);
+            background: rgba(32, 114, 175, 0.14);
+            color: var(--primary-color);
+        }
 
     /* ==========================================
    FOCUS STATE
@@ -55,7 +112,20 @@
     .form-select:focus {
         outline: none;
         border-color: var(--primary-color);
+        background: var(--card-bg);
         box-shadow: var(--shadow-focus);
+    }
+
+    /* ==========================================
+   HOVER STATE
+========================================== */
+
+    .app-input:hover,
+    .app-select:hover,
+    .app-textarea:hover,
+    .form-control:hover,
+    .form-select:hover {
+        border-color: rgba(32, 114, 175, 0.32);
     }
 
     /* ==========================================
@@ -68,14 +138,42 @@
         color: var(--text-muted);
     }
 
+    /* ==========================================
+   DISABLED / READONLY
+========================================== */
+
+    .app-input:disabled,
+    .app-select:disabled,
+    .app-textarea:disabled,
+    .form-control:disabled,
+    .form-select:disabled,
+    .app-input[readonly],
+    .form-control[readonly] {
+        background: var(--table-th-bg);
+        color: var(--text-muted);
+        cursor: not-allowed;
+        box-shadow: none;
+    }
+
 /* ==========================================
    VALIDATION
 ========================================== */
 
-.validation-message {
+.validation-message,
+.field-validation-error {
     font-size: var(--font-xs);
     color: var(--danger-color);
+    font-weight: var(--fw-medium);
 }
+
+.input-validation-error {
+    border-color: var(--danger-color) !important;
+    background: var(--danger-soft) !important;
+}
+
+    .input-validation-error:focus {
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.16);
+    }
 
 /* ==========================================
    FORM GRIDS
@@ -128,21 +226,27 @@
     white-space: nowrap;
 }
 
+/* ==========================================
+   CHECKBOX / TOGGLE STYLE
+========================================== */
+
 .form-check-app {
     display: flex;
     align-items: flex-start;
     gap: var(--space-md);
     padding: var(--space-md);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-muted);
     border-radius: var(--radius-md);
-    background: var(--card-bg);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.76)), var(--card-bg);
     cursor: pointer;
-    transition: border-color var(--transition-fast), background-color var(--transition-fast);
+    transition: border-color var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
 }
 
     .form-check-app:hover {
-        border-color: var(--primary-color);
+        border-color: rgba(32, 114, 175, 0.34);
         background: var(--primary-accent-tint);
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+        transform: translateY(-1px);
     }
 
     .form-check-app input[type="checkbox"] {
@@ -172,6 +276,17 @@
         line-height: 1.3;
     }
 
+/* ==========================================
+   FORM RESPONSIVENESS
+========================================== */
+
+@media (max-width: 992px) {
+    .form-grid-3,
+    .form-grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 @media (max-width: 576px) {
     .filter-form-row {
         grid-template-columns: 1fr;
@@ -189,19 +304,7 @@
             width: 100%;
             justify-content: center;
         }
-}
-/* ==========================================
-   FORM RESPONSIVENESS
-========================================== */
 
-@media (max-width: 992px) {
-    .form-grid-3,
-    .form-grid-4 {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-@media (max-width: 576px) {
     .form-grid-2,
     .form-grid-3,
     .form-grid-4 {

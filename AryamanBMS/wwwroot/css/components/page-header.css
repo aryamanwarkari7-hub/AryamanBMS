@@ -1,64 +1,157 @@
-﻿.module-header {
+﻿/* ==========================================
+   MODULE / PAGE HEADER
+========================================== */
+
+.module-header {
+    position: relative;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
+    gap: var(--space-xl);
+    margin: var(--space-xl);
     padding: 24px 28px;
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.92)), var(--card-bg);
+    border: 1px solid var(--border-muted);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-    margin:var(--space-xl);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 30px rgba(15, 23, 42, 0.07);
+    overflow: hidden;
 }
+
+    .module-header::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 18px;
+        bottom: 18px;
+        width: 4px;
+        border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+        background: var(--primary-color);
+    }
+
+    .module-header::after {
+        content: "";
+        position: absolute;
+        right: -42px;
+        top: -42px;
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: rgba(32, 114, 175, 0.055);
+        pointer-events: none;
+    }
+
+/* ==========================================
+   HEADER TEXT
+========================================== */
+
+.module-title {
+    margin: 0;
+    font-size: var(--font-2xl);
+    font-weight: 800;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0;
+    line-height: 1.15;
+}
+
+.module-subtitle {
+    margin-top: 8px;
+    color: var(--text-secondary);
+    font-size: var(--font-md);
+    line-height: 1.45;
+}
+
+/* ==========================================
+   HEADER ACTIONS
+========================================== */
+
 .module-header-actions {
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-sm);
     justify-content: flex-end;
     align-items: center;
+    flex-shrink: 0;
 }
 
-.module-title {
-    margin: 0;
-    font-size: var(--font-3xl);
-    font-weight: 700;
-    color: var(--text-primary);
-    text-transform:uppercase;
-}
+    .module-header-actions .dropdown {
+        display: inline-flex;
+    }
 
-.module-subtitle {
-    margin-top: 6px;
-    color: var(--text-secondary);
-    font-size: var(--font-md);
-}
+    .module-header-actions .dropdown-toggle {
+        width: auto;
+    }
 
-.module-header-actions .dropdown {
-    display: inline-flex;
-}
+    .module-header-actions .dropdown-menu {
+        min-width: 220px;
+        padding: 8px;
+        border: 1px solid var(--border-muted);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-dropdown);
+    }
 
-.module-header-actions .dropdown-toggle {
-    width: auto;
-}
+    .module-header-actions .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 40px;
+        border-radius: var(--radius-sm);
+        font-weight: var(--fw-semibold);
+    }
 
-.module-header-actions .dropdown-menu {
-    min-width: 220px;
-    padding: 8px;
-    border: 1px solid var(--border-muted);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-dropdown);
-}
+        .module-header-actions .dropdown-item i {
+            color: var(--primary-color);
+        }
 
-.module-header-actions .dropdown-item {
+/* ==========================================
+   HEADER META PILLS
+========================================== */
+
+.module-header-meta {
     display: flex;
     align-items: center;
-    gap: 10px;
-    min-height: 40px;
-    border-radius: 6px;
-    font-weight: 600;
+    justify-content: flex-end;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
 }
 
-    .module-header-actions .dropdown-item i {
-        color: var(--primary-color);
+.module-meta-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 34px;
+    padding: 7px 11px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border-muted);
+    background: rgba(255, 255, 255, 0.78);
+    color: var(--text-secondary);
+    font-size: var(--font-sm);
+    font-weight: var(--fw-semibold);
+    white-space: nowrap;
+}
+
+    .module-meta-pill i {
+        font-size: 0.95rem;
+    }
+
+    .module-meta-pill.info {
+        color: var(--info-soft-text);
+        background: var(--info-soft);
+        border-color: var(--info-soft-border);
+    }
+
+    .module-meta-pill.warning {
+        color: var(--warning-soft-text);
+        background: var(--warning-soft);
+        border-color: rgba(245, 158, 11, 0.28);
+    }
+
+    .module-meta-pill.danger {
+        color: var(--danger-soft-text);
+        background: var(--danger-soft);
+        border-color: var(--danger-soft-border);
     }
 
 /* ==========================================
@@ -76,28 +169,28 @@
         overflow: hidden;
     }
 
-    .module-header > div:first-child {
-        width: 100%;
-        min-width: 0;
-    }
+        .module-header > div:first-child {
+            width: 100%;
+            min-width: 0;
+        }
 
-    .module-header > div:not(:first-child) {
-        width: 100%;
-        min-width: 0;
-        display: grid !important;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: var(--space-sm) !important;
-    }
+        .module-header > div:not(:first-child) {
+            width: 100%;
+            min-width: 0;
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: var(--space-sm) !important;
+        }
 
-    .module-header > div:not(:first-child) .btn-app,
-    .module-header > div:not(:first-child) .btn {
-        width: 100%;
-        min-width: 0;
-        max-width: 100%;
-        justify-content: center;
-        text-align: center;
-        white-space: normal;
-    }
+            .module-header > div:not(:first-child) .btn-app,
+            .module-header > div:not(:first-child) .btn {
+                width: 100%;
+                min-width: 0;
+                max-width: 100%;
+                justify-content: center;
+                text-align: center;
+                white-space: normal;
+            }
 
     .module-header-actions {
         width: 100%;
@@ -106,18 +199,14 @@
         justify-content: stretch;
     }
 
-    .module-header-actions .btn-app,
-    .module-header-actions .btn {
-        width: 100%;
-        justify-content: center;
-    }
+        .module-header-actions .btn-app,
+        .module-header-actions .btn {
+            width: 100%;
+            justify-content: center;
+        }
 
-    .module-header > .btn-app,
-    .module-header > .btn {
-        width: 100%;
-        max-width: 100%;
-        justify-content: center;
-        white-space: normal;
+    .module-header-meta {
+        justify-content: flex-start;
     }
 
     .module-title {
@@ -151,5 +240,13 @@
     .module-header-actions {
         grid-template-columns: 1fr;
     }
-}
 
+    .module-header-meta {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .module-meta-pill {
+        justify-content: center;
+    }
+}

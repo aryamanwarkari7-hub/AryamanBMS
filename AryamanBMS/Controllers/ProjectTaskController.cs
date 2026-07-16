@@ -42,6 +42,8 @@ namespace AryamanBMS.Controllers
             string? searchText,
             string? status,
             string? priority,
+            string sortBy = "CreatedOn",
+            string sortOrder = "desc",
             int page = 1)
         {
             const int pageSize = 10;
@@ -96,10 +98,53 @@ namespace AryamanBMS.Controllers
                 tasks = tasks.Where(t => t.Priority == priority);
             }
 
+            bool desc =
+                string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
+
+            tasks = sortBy switch
+            {
+                "TaskCode" => desc
+                    ? tasks.OrderByDescending(t => t.TaskCode)
+                    : tasks.OrderBy(t => t.TaskCode),
+
+                "TaskTitle" => desc
+                    ? tasks.OrderByDescending(t => t.TaskTitle)
+                    : tasks.OrderBy(t => t.TaskTitle),
+
+                "Project" => desc
+                    ? tasks.OrderByDescending(t => t.Project!.ProjectCode)
+                    : tasks.OrderBy(t => t.Project!.ProjectCode),
+
+                "AssignedTo" => desc
+                    ? tasks.OrderByDescending(t => t.AssignedEmployee!.FirstName)
+                        .ThenByDescending(t => t.AssignedEmployee!.LastName)
+                    : tasks.OrderBy(t => t.AssignedEmployee!.FirstName)
+                        .ThenBy(t => t.AssignedEmployee!.LastName),
+
+                "Priority" => desc
+                    ? tasks.OrderByDescending(t => t.Priority)
+                    : tasks.OrderBy(t => t.Priority),
+
+                "Status" => desc
+                    ? tasks.OrderByDescending(t => t.Status)
+                    : tasks.OrderBy(t => t.Status),
+
+                "Progress" => desc
+                    ? tasks.OrderByDescending(t => t.ProgressPercent)
+                    : tasks.OrderBy(t => t.ProgressPercent),
+
+                "DueDate" => desc
+                    ? tasks.OrderByDescending(t => t.DueDate)
+                    : tasks.OrderBy(t => t.DueDate),
+
+                _ => desc
+                    ? tasks.OrderByDescending(t => t.CreatedOn)
+                    : tasks.OrderBy(t => t.CreatedOn)
+            };
+
             int totalRecords = await tasks.CountAsync();
 
             var data = await tasks
-                .OrderByDescending(t => t.Id)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -113,6 +158,8 @@ namespace AryamanBMS.Controllers
             ViewBag.SearchText = searchText;
             ViewBag.Status = status;
             ViewBag.Priority = priority;
+            ViewBag.SortBy = sortBy;
+            ViewBag.SortOrder = sortOrder;
             ViewBag.CurrentPage = page;
             ViewBag.TotalPages =
                 (int)Math.Ceiling(totalRecords / (double)pageSize);

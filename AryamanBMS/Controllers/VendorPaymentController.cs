@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Text;
 
 namespace AryamanBMS.Controllers
 {
@@ -29,14 +30,20 @@ namespace AryamanBMS.Controllers
             _logger = logger;
         }
 
-        public async Task<IActionResult> Index(int? vendorId)
+        public async Task<IActionResult> Index(
+            int? vendorId,
+            string? search,
+            DateTime? fromDate,
+            DateTime? toDate,
+            string sortBy = "PaymentDate",
+            string sortOrder = "desc",
+            int page = 1)
         {
             var payments = await _context.VendorPayments
                 .AsNoTracking()
                 .Where(x => x.IsActive)
                 .Include(x => x.Vendor)
                 .Include(x => x.ExpenseVoucher)
-                .OrderByDescending(x => x.PaymentDate)
                 .ToListAsync();
 
             if (vendorId.HasValue)
@@ -46,9 +53,149 @@ namespace AryamanBMS.Controllers
                     .ToList();
             }
 
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                string keyword = search.Trim().ToLower();
+
+                payments = payments
+                    .Where(x =>
+                        (!string.IsNullOrWhiteSpace(x.PaymentNo) &&
+                            x.PaymentNo.ToLower().Contains(keyword)) ||
+                        (x.Vendor != null &&
+                            !string.IsNullOrWhiteSpace(x.Vendor.VendorName) &&
+                            x.Vendor.VendorName.ToLower().Contains(keyword)) ||
+                        (x.ExpenseVoucher != null &&
+                            !string.IsNullOrWhiteSpace(x.ExpenseVoucher.VoucherNumber) &&
+                            x.ExpenseVoucher.VoucherNumber.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(x.PaymentMode) &&
+                            x.PaymentMode.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(x.TransactionReference) &&
+                            x.TransactionReference.ToLower().Contains(keyword)))
+                    .ToList();
+            }
+
+            if (fromDate.HasValue)
+            {
+                payments = payments
+                    .Where(x => x.PaymentDate.Date >= fromDate.Value.Date)
+                    .ToList();
+            }
+
+            if (toDate.HasValue)
+            {
+                payments = payments
+                    .Where(x => x.PaymentDate.Date <= toDate.Value.Date)
+                    .ToList();
+            }
+
+            bool desc =
+                string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
+
+            payments = sortBy switch
+            {
+                "PaymentNo" => desc
+                    ? payments.OrderByDescending(x => x.PaymentNo).ToList()
+                    : payments.OrderBy(x => x.PaymentNo).ToList(),
+
+                "Vendor" => desc
+                    ? payments.OrderByDescending(x => x.Vendor?.VendorName).ToList()
+                    : payments.OrderBy(x => x.Vendor?.VendorName).ToList(),
+
+                "Voucher" => desc
+                    ? payments.OrderByDescending(x => x.ExpenseVoucher?.VoucherNumber).ToList()
+                    : payments.OrderBy(x => x.ExpenseVoucher?.VoucherNumber).ToList(),
+
+                "Mode" => desc
+                    ? payments.OrderByDescending(x => x.PaymentMode).ToList()
+                    : payments.OrderBy(x => x.PaymentMode).ToList(),
+
+                "Reference" => desc
+                    ? payments.OrderByDescending(x => x.TransactionReference).ToList()
+                    : payments.OrderBy(x => x.TransactionReference).ToList(),
+
+                "Amount" => desc
+                    ? payments.OrderByDescending(x => x.AmountPaid).ToList()
+                    : payments.OrderBy(x => x.AmountPaid).ToList(),
+
+                _ => desc
+                    ? payments.OrderByDescending(x => x.PaymentDate).ToList()
+                    : payments.OrderBy(x => x.PaymentDate).ToList()
+            };
+
+            const int pageSize = 20;
+            int totalRecords = payments.Count;
+
+            payments = payments
+                .Skip((Math.Max(page, 1) - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
             await LoadLookups();
             ViewBag.VendorId = vendorId;
+            ViewBag.Search = search;
+            ViewBag.FromDate = fromDate;
+            ViewBag.ToDate = toDate;
+            ViewBag.SortBy = sortBy;
+            ViewBag.SortOrder = sortOrder;
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages =
+                (int)Math.Ceiling(totalRecords / (double)pageSize);
             return View(payments);
+        }
+
+        public async Task<IActionResult> ExportCsv(
+            int? vendorId,
+            string? search,
+            DateTime? fromDate,
+            DateTime? toDate)
+        {
+            var payments = await _context.VendorPayments
+                .AsNoTracking()
+                .Where(x => x.IsActive)
+                .Include(x => x.Vendor)
+                .Include(x => x.ExpenseVoucher)
+                .ToListAsync();
+
+            if (vendorId.HasValue)
+                payments = payments.Where(x => x.VendorId == vendorId.Value).ToList();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                string keyword = search.Trim().ToLower();
+                payments = payments.Where(x =>
+                    (!string.IsNullOrWhiteSpace(x.PaymentNo) && x.PaymentNo.ToLower().Contains(keyword)) ||
+                    (x.Vendor != null && !string.IsNullOrWhiteSpace(x.Vendor.VendorName) && x.Vendor.VendorName.ToLower().Contains(keyword)) ||
+                    (x.ExpenseVoucher != null && !string.IsNullOrWhiteSpace(x.ExpenseVoucher.VoucherNumber) && x.ExpenseVoucher.VoucherNumber.ToLower().Contains(keyword)) ||
+                    (!string.IsNullOrWhiteSpace(x.PaymentMode) && x.PaymentMode.ToLower().Contains(keyword)) ||
+                    (!string.IsNullOrWhiteSpace(x.TransactionReference) && x.TransactionReference.ToLower().Contains(keyword)))
+                    .ToList();
+            }
+
+            if (fromDate.HasValue)
+                payments = payments.Where(x => x.PaymentDate.Date >= fromDate.Value.Date).ToList();
+
+            if (toDate.HasValue)
+                payments = payments.Where(x => x.PaymentDate.Date <= toDate.Value.Date).ToList();
+
+            var csv = new StringBuilder();
+            csv.AppendLine("Payment No,Date,Vendor,Voucher,Mode,Reference,Amount");
+
+            foreach (var item in payments.OrderByDescending(x => x.PaymentDate))
+            {
+                csv.AppendLine(string.Join(",",
+                    Csv(item.PaymentNo),
+                    Csv(item.PaymentDate.ToString("dd-MMM-yyyy")),
+                    Csv(item.Vendor?.VendorName),
+                    Csv(item.ExpenseVoucher?.VoucherNumber),
+                    Csv(item.PaymentMode),
+                    Csv(item.TransactionReference),
+                    item.AmountPaid.ToString("0.00")));
+            }
+
+            return File(
+                Encoding.UTF8.GetBytes(csv.ToString()),
+                "text/csv",
+                $"vendor-payments-{DateTime.Now:yyyyMMddHHmmss}.csv");
         }
 
         public async Task<IActionResult> Create(int? expenseVoucherId)
@@ -277,6 +424,12 @@ namespace AryamanBMS.Controllers
             int fyStart = today.Month >= 4 ? today.Year : today.Year - 1;
             int fyEnd = fyStart + 1;
             return $"{fyStart}-{fyEnd.ToString().Substring(2)}";
+        }
+
+        private static string Csv(string? value)
+        {
+            value ??= string.Empty;
+            return $"\"{value.Replace("\"", "\"\"")}\"";
         }
     }
 }

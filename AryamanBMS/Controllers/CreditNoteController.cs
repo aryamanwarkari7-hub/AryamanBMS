@@ -17,15 +17,70 @@ namespace AryamanBMS.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(
+    string? search,
+    string sortBy = "CreatedOn",
+    string sortOrder = "desc")
         {
-            var notes =
-                await _context.CreditNotes
+            var query =
+                _context.CreditNotes
                     .AsNoTracking()
                     .Include(x => x.OriginalInvoice)
                         .ThenInclude(x => x!.Client)
-                    .OrderByDescending(x => x.CreatedOn)
-                    .ToListAsync();
+                    .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                string keyword = search.Trim().ToLower();
+
+                query = query.Where(x =>
+                    x.CreditNoteNo.ToLower().Contains(keyword) ||
+                    x.Reason.ToLower().Contains(keyword) ||
+                    (x.GSTPeriod != null &&
+                        x.GSTPeriod.ToLower().Contains(keyword)) ||
+                    (x.OriginalInvoice != null &&
+                        x.OriginalInvoice.InvoiceNo.ToLower().Contains(keyword)) ||
+                    (x.OriginalInvoice != null &&
+                        x.OriginalInvoice.Client != null &&
+                        x.OriginalInvoice.Client.ClientName.ToLower().Contains(keyword)));
+            }
+
+            bool desc =
+                string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
+
+            query = sortBy switch
+            {
+                "CreditNoteNo" => desc
+                    ? query.OrderByDescending(x => x.CreditNoteNo)
+                    : query.OrderBy(x => x.CreditNoteNo),
+
+                "Invoice" => desc
+                    ? query.OrderByDescending(x => x.OriginalInvoice!.InvoiceNo)
+                    : query.OrderBy(x => x.OriginalInvoice!.InvoiceNo),
+
+                "Client" => desc
+                    ? query.OrderByDescending(x => x.OriginalInvoice!.Client!.ClientName)
+                    : query.OrderBy(x => x.OriginalInvoice!.Client!.ClientName),
+
+                "TotalCredit" => desc
+                    ? query.OrderByDescending(x => x.TotalCredit)
+                    : query.OrderBy(x => x.TotalCredit),
+
+                "ApprovedOn" => desc
+                    ? query.OrderByDescending(x => x.ApprovedOn)
+                    : query.OrderBy(x => x.ApprovedOn),
+
+                _ => desc
+                    ? query.OrderByDescending(x => x.CreatedOn)
+                    : query.OrderBy(x => x.CreatedOn)
+            };
+
+            var notes =
+                await query.ToListAsync();
+
+            ViewBag.Search = search;
+            ViewBag.SortBy = sortBy;
+            ViewBag.SortOrder = sortOrder;
 
             return View(notes);
         }

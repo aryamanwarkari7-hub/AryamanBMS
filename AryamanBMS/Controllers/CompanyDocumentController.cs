@@ -28,10 +28,100 @@ namespace AryamanBMS.Controllers
 
         #region Index
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(
+            string? search,
+            int? categoryId,
+            string? status,
+            string sortBy = "CreatedOn",
+            string sortOrder = "desc")
         {
             var documents =
                 await _documentRepository.GetAllAsync();
+
+            if (categoryId.HasValue && categoryId.Value > 0)
+            {
+                documents = documents
+                    .Where(x => x.DocumentCategoryId == categoryId.Value)
+                    .ToList();
+            }
+
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                documents = status switch
+                {
+                    "Active" => documents.Where(x => x.IsActive).ToList(),
+                    "Archived" => documents.Where(x => !x.IsActive).ToList(),
+                    "Expired" => documents
+                        .Where(x => x.ExpiryDate.HasValue && x.ExpiryDate.Value.Date < DateTime.Today)
+                        .ToList(),
+                    "Expiring" => documents
+                        .Where(x =>
+                            x.ExpiryDate.HasValue &&
+                            x.ExpiryDate.Value.Date >= DateTime.Today &&
+                            x.ExpiryDate.Value.Date <= DateTime.Today.AddDays(30))
+                        .ToList(),
+                    _ => documents
+                };
+            }
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                string keyword = search.Trim().ToLower();
+
+                documents = documents
+                    .Where(x =>
+                        (!string.IsNullOrWhiteSpace(x.DocumentName) &&
+                            x.DocumentName.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(x.DocumentNumber) &&
+                            x.DocumentNumber.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(x.IssuedBy) &&
+                            x.IssuedBy.ToLower().Contains(keyword)) ||
+                        (x.Category != null &&
+                            !string.IsNullOrWhiteSpace(x.Category.CategoryName) &&
+                            x.Category.CategoryName.ToLower().Contains(keyword)))
+                    .ToList();
+            }
+
+            bool desc =
+                string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
+
+            documents = sortBy switch
+            {
+                "Document" => desc
+                    ? documents.OrderByDescending(x => x.DocumentName).ToList()
+                    : documents.OrderBy(x => x.DocumentName).ToList(),
+
+                "Category" => desc
+                    ? documents.OrderByDescending(x => x.Category?.CategoryName).ToList()
+                    : documents.OrderBy(x => x.Category?.CategoryName).ToList(),
+
+                "DocumentNo" => desc
+                    ? documents.OrderByDescending(x => x.DocumentNumber).ToList()
+                    : documents.OrderBy(x => x.DocumentNumber).ToList(),
+
+                "IssueDate" => desc
+                    ? documents.OrderByDescending(x => x.IssueDate).ToList()
+                    : documents.OrderBy(x => x.IssueDate).ToList(),
+
+                "ExpiryDate" => desc
+                    ? documents.OrderByDescending(x => x.ExpiryDate).ToList()
+                    : documents.OrderBy(x => x.ExpiryDate).ToList(),
+
+                "Active" => desc
+                    ? documents.OrderByDescending(x => x.IsActive).ToList()
+                    : documents.OrderBy(x => x.IsActive).ToList(),
+
+                _ => desc
+                    ? documents.OrderByDescending(x => x.CreatedOn).ToList()
+                    : documents.OrderBy(x => x.CreatedOn).ToList()
+            };
+
+            ViewBag.Search = search;
+            ViewBag.CategoryId = categoryId;
+            ViewBag.Status = status;
+            ViewBag.SortBy = sortBy;
+            ViewBag.SortOrder = sortOrder;
+            ViewBag.Categories = await _categoryRepository.GetAllAsync();
 
             return View(documents);
         }

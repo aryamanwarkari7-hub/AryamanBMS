@@ -2,6 +2,13 @@
 
 @{
     ViewData["Title"] = "Vendor Payments";
+
+    int? vendorId = ViewBag.VendorId as int?;
+    string search = ViewBag.Search as string ?? "";
+    DateTime? fromDate = ViewBag.FromDate as DateTime?;
+    DateTime? toDate = ViewBag.ToDate as DateTime?;
+    string sortBy = ViewBag.SortBy as string ?? "PaymentDate";
+    string sortOrder = ViewBag.SortOrder as string ?? "desc";
 }
 
 <div class="module-header">
@@ -14,10 +21,91 @@
             <i class="bi bi-plus-circle"></i>
             New Payment
         </a>
+
+        <a asp-action="ExportCsv"
+           asp-route-vendorId="@vendorId"
+           asp-route-search="@search"
+           asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
+           asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-download"></i>
+            Export
+        </a>
     </div>
 </div>
 
 <div class="app-card table-card">
+    <div class="card-header">
+        <form method="get" class="w-100">
+            <div class="filter-row">
+                <div class="filter-field filter-field-wide">
+                    <input name="search"
+                           value="@search"
+                           class="app-input"
+                           placeholder="Payment no, vendor, voucher, mode or reference" />
+                </div>
+
+                <div class="filter-field">
+                    <select name="vendorId" class="app-select">
+                        <option value="">All Vendors</option>
+                        @foreach (var vendor in ViewBag.Vendors)
+                        {
+                            <option value="@vendor.Value"
+                                    selected="@(vendorId.HasValue && vendorId.Value.ToString() == vendor.Value)">
+                                @vendor.Text
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <div class="filter-field">
+                    <select name="sortBy" class="app-select">
+                        <option value="PaymentDate" selected="@(sortBy == "PaymentDate")">Sort by Date</option>
+                        <option value="PaymentNo" selected="@(sortBy == "PaymentNo")">Sort by Payment No</option>
+                        <option value="Vendor" selected="@(sortBy == "Vendor")">Sort by Vendor</option>
+                        <option value="Voucher" selected="@(sortBy == "Voucher")">Sort by Voucher</option>
+                        <option value="Mode" selected="@(sortBy == "Mode")">Sort by Mode</option>
+                        <option value="Reference" selected="@(sortBy == "Reference")">Sort by Reference</option>
+                        <option value="Amount" selected="@(sortBy == "Amount")">Sort by Amount</option>
+                    </select>
+                </div>
+
+                <div class="filter-field">
+                    <select name="sortOrder" class="app-select">
+                        <option value="asc" selected="@(sortOrder == "asc")">Ascending</option>
+                        <option value="desc" selected="@(sortOrder == "desc")">Descending</option>
+                    </select>
+                </div>
+
+                <div class="filter-field">
+                    <input type="date"
+                           name="fromDate"
+                           value="@fromDate?.ToString("yyyy-MM-dd")"
+                           class="app-input" />
+                </div>
+
+                <div class="filter-field">
+                    <input type="date"
+                           name="toDate"
+                           value="@toDate?.ToString("yyyy-MM-dd")"
+                           class="app-input" />
+                </div>
+
+                <div class="filter-actions">
+                    <button type="submit" class="btn-app btn-primary-app">
+                        <i class="bi bi-search"></i>
+                        Search
+                    </button>
+
+                    <a asp-action="Index" class="btn-app btn-secondary-app">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        Reset
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
     <div class="card-body">
         <div class="table-responsive">
             <table class="app-table">
@@ -33,20 +121,51 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var item in Model)
+                    @if (Model.Any())
+                    {
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td><strong>@item.PaymentNo</strong></td>
+                                <td>@item.PaymentDate.ToString("dd MMM yyyy")</td>
+                                <td>@(item.Vendor?.VendorName ?? "-")</td>
+                                <td>@(item.ExpenseVoucher?.VoucherNumber ?? "-")</td>
+                                <td>@item.PaymentMode</td>
+                                <td>@(item.TransactionReference ?? "-")</td>
+                                <td class="text-end">₹ @item.AmountPaid.ToString("N2")</td>
+                            </tr>
+                        }
+                    }
+                    else
                     {
                         <tr>
-                            <td><strong>@item.PaymentNo</strong></td>
-                            <td>@item.PaymentDate.ToString("dd MMM yyyy")</td>
-                            <td>@(item.Vendor?.VendorName ?? "-")</td>
-                            <td>@(item.ExpenseVoucher?.VoucherNumber ?? "-")</td>
-                            <td>@item.PaymentMode</td>
-                            <td>@(item.TransactionReference ?? "-")</td>
-                            <td class="text-end">₹ @item.AmountPaid.ToString("N2")</td>
+                            <td colspan="7" class="empty-state">
+                                No vendor payments found.
+                            </td>
                         </tr>
                     }
                 </tbody>
             </table>
         </div>
+
+        @if ((ViewBag.TotalPages ?? 1) > 1)
+        {
+            <div class="pagination-container">
+                @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                {
+                    <a asp-action="Index"
+                       asp-route-page="@i"
+                       asp-route-vendorId="@vendorId"
+                       asp-route-search="@search"
+                       asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
+                       asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
+                       asp-route-sortBy="@sortBy"
+                       asp-route-sortOrder="@sortOrder"
+                       class="page-link-app @(i == ViewBag.CurrentPage ? "active" : "")">
+                        @i
+                    </a>
+                }
+            </div>
+        }
     </div>
 </div>

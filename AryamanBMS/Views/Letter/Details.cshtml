@@ -2,100 +2,155 @@
 
 @{
     ViewData["Title"] = "Letter Details";
+
+    string employeeText =
+        $"{Model.Employee?.FullName ?? "-"} ({Model.Employee?.EmployeeCode ?? "-"})";
 }
 
 <div class="module-header">
-
     <div>
-        <h1 class="module-title">Letter Details</h1>
-        <p class="module-subtitle">
-            View issued letter information
-        </p>
+        <h1 class="module-title">@Model.LetterNumber</h1>
+        <p class="module-subtitle">Issued letter information and uploaded document</p>
     </div>
 
-    <a asp-action="Index"
-       class="btn-app btn-secondary-app">
-        Back
-    </a>
-
-</div>
-
-<div class="app-card">
-
-    <div class="card-header">
-        <h5 class="card-title">
-            @Model.LetterNumber
-        </h5>
-    </div>
-
-    <div class="card-body">
-
-        <div class="form-grid-2">
-
-            <div>
-                <strong>Letter Type</strong>
-                <br />
-                @Model.LetterType
-            </div>
-
-            <div>
-                <strong>Employee</strong>
-                <br />
-                @Model.Employee?.FullName
-                (@Model.Employee?.EmployeeCode)
-            </div>
-
-            <div>
-                <strong>Issued By</strong>
-                <br />
-                @(Model.IssuedBy ?? "-")
-            </div>
-
-            <div>
-                <strong>Issued On</strong>
-                <br />
-                @Model.IssuedOn.ToString("dd-MMM-yyyy hh:mm tt")
-            </div>
-
-        </div>
-
-        <hr />
-
-        <div>
-            <strong>Subject</strong>
-            <p>@Model.Subject</p>
-        </div>
-
-        <div>
-            <strong>Body</strong>
-            <div class="app-card mt-2">
-                <div class="card-body">
-                    @foreach (var line in (Model.Remark ?? string.Empty).Split(
-                                        Environment.NewLine,
-                                        StringSplitOptions.None))
-                    {
-                        @line
-                        <br />
-                    }
-                </div>
-            </div>
-        </div>
-
+    <div class="module-header-actions">
         @if (!string.IsNullOrWhiteSpace(Model.DocumentPath))
         {
-            <hr />
-
             <a asp-action="DownloadDocument"
                asp-route-id="@Model.Id"
                target="_blank"
                class="btn-app btn-primary-app">
-
                 <i class="bi bi-file-earmark-pdf"></i>
-                View Uploaded Document
-
+                View Document
             </a>
         }
 
+        <a asp-action="Index" class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
+</div>
+
+<div class="detail-page">
+
+    <div class="detail-summary-grid">
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Letter Type</div>
+            <div class="detail-summary-value">@(Model.LetterType ?? "-")</div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Employee</div>
+            <div class="detail-summary-value">@employeeText</div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Issued By</div>
+            <div class="detail-summary-value">@(Model.IssuedBy ?? "-")</div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Issued On</div>
+            <div class="detail-summary-value">@Model.IssuedOn.ToString("dd-MMM-yyyy hh:mm tt")</div>
+        </div>
+    </div>
     </div>
 
+<div class="detail-grid-2">
+    <div class="app-card">
+        <div class="card-header">
+            <h5 class="card-title">Letter Information</h5>
+        </div>
+
+        <div class="card-body">
+            <div class="detail-info-list">
+                <div class="detail-info-row">
+                    <span class="detail-info-label">Letter Number</span>
+                    <span class="detail-info-value">@Model.LetterNumber</span>
+                </div>
+
+                <div class="detail-info-row">
+                    <span class="detail-info-label">Letter Type</span>
+                    <span class="detail-info-value">@(Model.LetterType ?? "-")</span>
+                </div>
+
+                <div class="detail-info-row">
+                    <span class="detail-info-label">Employee</span>
+                    <span class="detail-info-value">@employeeText</span>
+                </div>
+
+                <div class="detail-info-row">
+                    <span class="detail-info-label">Issued By</span>
+                    <span class="detail-info-value">@(Model.IssuedBy ?? "-")</span>
+                </div>
+
+                <div class="detail-info-row">
+                    <span class="detail-info-label">Issued On</span>
+                    <span class="detail-info-value">@Model.IssuedOn.ToString("dd-MMM-yyyy hh:mm tt")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-card">
+        <div class="card-header">
+            <h5 class="card-title">Document</h5>
+        </div>
+
+        <div class="card-body">
+            @if (!string.IsNullOrWhiteSpace(Model.DocumentPath))
+            {
+                <div class="detail-note-box">
+                    Uploaded document is available for this letter.
+                </div>
+
+                <div class="mt-3">
+                    <a asp-action="DownloadDocument"
+                       asp-route-id="@Model.Id"
+                       target="_blank"
+                       class="btn-app btn-primary-app">
+                        <i class="bi bi-file-earmark-pdf"></i>
+                        View Uploaded Document
+                    </a>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    No uploaded document attached.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="app-card mt-4">
+    <div class="card-header">
+        <h5 class="card-title">Subject</h5>
+    </div>
+
+    <div class="card-body">
+        <div class="detail-note-box">
+            @(Model.Subject ?? "-")
+        </div>
+    </div>
+</div>
+
+<div class="app-card mt-4">
+    <div class="card-header">
+        <h5 class="card-title">Letter Body</h5>
+    </div>
+
+    <div class="card-body">
+        <div class="detail-note-box">
+            @foreach (var line in (Model.Remark ?? string.Empty).Split(
+                        Environment.NewLine,
+                        StringSplitOptions.None))
+            {
+                @line
+                <br />
+            }
+        </div>
+    </div>
 </div>

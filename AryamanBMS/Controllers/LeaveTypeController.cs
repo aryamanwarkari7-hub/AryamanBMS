@@ -16,13 +16,44 @@ namespace AryamanBMS.Controllers
             _leaveTypeRepository = leaveTypeRepository;
         }
 
-        public IActionResult Index()
+        public IActionResult Index(
+    string? searchText,
+    string sortBy = "LeaveName",
+    string sortOrder = "asc")
         {
-            var leaveTypes = _leaveTypeRepository.LeaveTypes
-                .OrderBy(x => x.LeaveCode)
-                .ToList();
+            var leaveTypes = _leaveTypeRepository.LeaveTypes.AsQueryable();
 
-            return View(leaveTypes);
+            if (!string.IsNullOrWhiteSpace(searchText))
+            {
+                string search = searchText.Trim();
+
+                leaveTypes = leaveTypes.Where(x =>
+                    x.LeaveCode.Contains(search) ||
+                    x.LeaveName.Contains(search));
+            }
+
+            bool desc = string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
+
+            leaveTypes = sortBy switch
+            {
+                "LeaveCode" => desc
+                    ? leaveTypes.OrderByDescending(x => x.LeaveCode)
+                    : leaveTypes.OrderBy(x => x.LeaveCode),
+
+                "Status" => desc
+                    ? leaveTypes.OrderByDescending(x => x.IsActive)
+                    : leaveTypes.OrderBy(x => x.IsActive),
+
+                _ => desc
+                    ? leaveTypes.OrderByDescending(x => x.LeaveName)
+                    : leaveTypes.OrderBy(x => x.LeaveName)
+            };
+
+            ViewBag.SearchText = searchText;
+            ViewBag.SortBy = sortBy;
+            ViewBag.SortOrder = sortOrder;
+
+            return View(leaveTypes.ToList());
         }
 
         [HttpGet]

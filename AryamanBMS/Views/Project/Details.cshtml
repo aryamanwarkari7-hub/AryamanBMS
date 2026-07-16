@@ -2,216 +2,197 @@
 
 @{
     ViewData["Title"] = "Project Details";
+
+    string statusClass = Model.Status switch
+    {
+        "Completed" => "badge-success",
+        "Cancelled" or "On Hold" => "badge-danger",
+        "In Progress" => "badge-info",
+        _ => "badge-warning"
+    };
+
+    string activeClass = Model.IsActive ? "badge-success" : "badge-danger";
+    string activeText = Model.IsActive ? "Active" : "Inactive";
 }
 
 <div class="module-header">
-
     <div>
-        <h1 class="module-title">Project Details</h1>
-
+        <h1 class="module-title">@Model.ProjectName</h1>
         <p class="module-subtitle">
-            View project information
+            Project profile, schedule, budget and scope information
         </p>
     </div>
 
     <div class="module-header-actions">
-
         <a asp-action="Edit"
            asp-route-id="@Model.Id"
            class="btn-app btn-primary-app">
-
             <i class="bi bi-pencil"></i>
             Edit Project
-
         </a>
 
         <a asp-action="Dashboard"
            asp-route-id="@Model.Id"
            class="btn-app btn-primary-app">
-
             <i class="bi bi-kanban"></i>
             Workspace
-
         </a>
 
-        
-
         <a asp-controller="ProjectTimeline"
-         asp-action="Index"
-         asp-route-projectId="@Model.Id"
-         class="btn-app btn-secondary-app">
-         
-          <i class="bi bi-clock-history"></i>
-            Activity  Timeline
+           asp-action="Index"
+           asp-route-projectId="@Model.Id"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-clock-history"></i>
+            Activity Timeline
+        </a>
 
-         </a>
-
-        
-
-    </div>
-
-</div>
-
-
-<div class="app-card">
-
-    <div class="card-header">
-        <h5 class="card-title">Basic Information</h5>
-    </div>
-
-    <div class="card-body">
-
-        <table class="app-table">
-            <tbody>
-
-                <tr>
-                    <th>Project Code</th>
-                    <td>@Model.ProjectCode</td>
-                </tr>
-
-                <tr>
-                    <th>Project Name</th>
-                    <td>@Model.ProjectName</td>
-                </tr>
-
-                <tr>
-                    <th>Project Type</th>
-                    <td>@Model.ProjectType</td>
-                </tr>
-
-                <tr>
-                    <th>Client Name</th>
-                    <td>@(Model.ClientName ?? "-")</td>
-                </tr>
-
-                <tr>
-                    <th>Project Manager</th>
-                    <td>@(Model.ProjectManager?.FullName ?? "-")</td>
-                </tr>
-
-                <tr>
-                    <th>Status</th>
-                    <td>
-                        @if (Model.Status == "Completed")
-                        {
-                            <span class="badge-success">Completed</span>
-                        }
-                        else if (Model.Status == "Cancelled" || Model.Status == "On Hold")
-                        {
-                            <span class="badge-danger">@Model.Status</span>
-                        }
-                        else
-                        {
-                            <span class="badge-warning">@Model.Status</span>
-                        }
-                    </td>
-                </tr>
-
-                <tr>
-                    <th>Priority</th>
-                    <td>@Model.Priority</td>
-                </tr>
-
-                <tr>
-                    <th>Active Status</th>
-                    <td>
-                        @if (Model.IsActive)
-                        {
-                            <span class="badge-success">Active</span>
-                        }
-                        else
-                        {
-                            <span class="badge-danger">Inactive</span>
-                        }
-                    </td>
-                </tr>
-
-            </tbody>
-        </table>
-
-    </div>
-
-</div>
-
-<div class="app-card">
-
-    <div class="card-header">
-        <h5 class="card-title">Schedule and Budget</h5>
-    </div>
-
-    <div class="card-body">
-
-        <table class="app-table">
-            <tbody>
-
-                <tr>
-                    <th>Start Date</th>
-                    <td>@(Model.StartDate?.ToString("dd-MMM-yyyy") ?? "-")</td>
-                </tr>
-
-                <tr>
-                    <th>End Date</th>
-                    <td>@(Model.EndDate?.ToString("dd-MMM-yyyy") ?? "-")</td>
-                </tr>
-
-                <tr>
-                    <th>Budget</th>
-                    <td>₹@Model.Budget.ToString("N2")</td>
-                </tr>
-
-                <tr>
-                    <th>Created On</th>
-                    <td>@Model.CreatedOn.ToString("dd-MMM-yyyy hh:mm tt")</td>
-                </tr>
-
-                <tr>
-                    <th>Updated On</th>
-                    <td>@(Model.UpdatedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")</td>
-                </tr>
-
-            </tbody>
-        </table>
-
-    </div>
-
-</div>
-
-<div class="app-card">
-
-    <div class="card-header">
-        <h5 class="card-title">Project Description</h5>
-    </div>
-
-    <div class="card-body">
-
-        <table class="app-table">
-            <tbody>
-
-                <tr>
-                    <th>Business Objective</th>
-                    <td class="pre-wrap-cell">@(Model.BusinessObjective ?? "-")</td>
-                </tr>
-
-                <tr>
-                    <th>Scope</th>
-                    <td class="pre-wrap-cell">@(Model.Scope ?? "-")</td>
-                </tr>
-
-            </tbody>
-        </table>
-
-    </div>
-    
-
-</div>
-<div class="app-card">
-    <div class="card-body">
-       
-        <a asp-action="Index" class="btn-app btn-secondary-app">
+        <a asp-action="Index"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
             Back
         </a>
     </div>
 </div>
 
+<div class="detail-page">
 
+    <div class="detail-summary-grid">
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Project Code</div>
+            <div class="detail-summary-value">@Model.ProjectCode</div>
+        </div>
 
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Status</div>
+            <div class="detail-summary-value">
+                <span class="@statusClass">@(Model.Status ?? "-")</span>
+            </div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Priority</div>
+            <div class="detail-summary-value">@(Model.Priority ?? "-")</div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Budget</div>
+            <div class="detail-summary-value">₹ @Model.Budget.ToString("N2")</div>
+        </div>
+    </div>
+
+    <div class="detail-grid-2">
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Basic Information</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Project Code</span>
+                        <strong class="detail-info-value">@Model.ProjectCode</strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Project Name</span>
+                        <strong class="detail-info-value">@Model.ProjectName</strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Project Type</span>
+                        <strong class="detail-info-value">@(Model.ProjectType ?? "-")</strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Client Name</span>
+                        <strong class="detail-info-value">@(Model.ClientName ?? "-")</strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Project Manager</span>
+                        <strong class="detail-info-value">@(Model.ProjectManager?.FullName ?? "-")</strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Active Status</span>
+                        <strong class="detail-info-value">
+                            <span class="@activeClass">@activeText</span>
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Schedule and Budget</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Start Date</span>
+                        <strong class="detail-info-value">
+                            @(Model.StartDate?.ToString("dd-MMM-yyyy") ?? "-")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">End Date</span>
+                        <strong class="detail-info-value">
+                            @(Model.EndDate?.ToString("dd-MMM-yyyy") ?? "-")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Budget</span>
+                        <strong class="detail-info-value">
+                            ₹ @Model.Budget.ToString("N2")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Created On</span>
+                        <strong class="detail-info-value">
+                            @Model.CreatedOn.ToString("dd-MMM-yyyy hh:mm tt")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Updated On</span>
+                        <strong class="detail-info-value">
+                            @(Model.UpdatedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-grid-2">
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Business Objective</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-note-box">
+                    @(Model.BusinessObjective ?? "-")
+                </div>
+            </div>
+        </div>
+
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Scope</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-note-box">
+                    @(Model.Scope ?? "-")
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>

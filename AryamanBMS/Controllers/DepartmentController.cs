@@ -22,8 +22,10 @@ namespace AryamanBMS.Controllers
         }
 
         public async Task<IActionResult> Index(
-        string? searchText,
-        int page = 1)
+    string? searchText,
+    string sortBy = "DepartmentName",
+    string sortOrder = "asc",
+    int page = 1)
         {
             const int pageSize = 5;
 
@@ -39,14 +41,26 @@ namespace AryamanBMS.Controllers
                     d.DisplayCode.Contains(searchText));
             }
 
-            departments = departments
-                .OrderBy(d => d.Id);
+            bool desc =  string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
+
+            departments = sortBy switch
+            {
+                "Status" => desc
+                    ? departments.OrderByDescending(d => d.IsActive)
+                    : departments.OrderBy(d => d.IsActive),
+
+                _ => desc
+                    ? departments.OrderByDescending(d => d.DepartmentName)
+                    : departments.OrderBy(d => d.DepartmentName)
+            };
 
             var routeValues = new Dictionary<string, string>();
 
             if (!string.IsNullOrWhiteSpace(searchText))
             {
                 routeValues["searchText"] = searchText;
+                ViewBag.SortBy = sortBy;
+                ViewBag.SortOrder = sortOrder;
             }
 
             var model = await departments.ToPagedListAsync(

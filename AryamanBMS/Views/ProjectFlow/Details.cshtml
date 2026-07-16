@@ -2,159 +2,188 @@
 
 @{
     ViewData["Title"] = "Milestone Details";
+
+    string projectText =
+        $"{Model.Project?.ProjectCode ?? "-"} - {Model.Project?.ProjectName ?? "-"}";
+
+    string stageStatusClass = Model.StageStatus switch
+    {
+        "Completed" => "badge-success",
+        "In Progress" => "badge-info",
+        "Delayed" or "Overdue" => "badge-danger",
+        "On Hold" => "badge-warning",
+        _ => "badge-secondary"
+    };
+
+    string activeClass = Model.IsActive ? "badge-success" : "badge-danger";
+    string activeText = Model.IsActive ? "Active" : "Inactive";
 }
 
 <div class="module-header">
-
     <div>
-        <h1 class="module-title">Milestone Details</h1>
+        <h1 class="module-title">@Model.StageName</h1>
         <p class="module-subtitle">
-            View project milestone information
+            Project milestone schedule, sequence and progress status
         </p>
     </div>
 
-    <div class="d-flex gap-2">
-
+    <div class="module-header-actions">
         <a asp-action="Edit"
            asp-route-id="@Model.Id"
-           class="btn-app btn-primary-app btn-icon">
-
+           class="btn-app btn-primary-app">
             <i class="bi bi-pencil"></i>
             Edit
-
         </a>
 
         <a asp-action="Index"
            asp-route-projectId="@Model.ProjectId"
-           class="btn-app btn-secondary-app btn-icon">
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
             Back
         </a>
-
-    </div>
-
-</div>
-
-<div class="app-card">
-
-    <div class="card-header">
-        <h5 class="card-title">Milestone Information</h5>
-    </div>
-
-    <div class="card-body">
-
-        <table class="app-table">
-
-            <tbody>
-
-                <tr>
-                    <th>Project</th>
-                    <td>
-                        @Model.Project?.ProjectCode -
-                        @Model.Project?.ProjectName
-                    </td>
-                </tr>
-
-                <tr>
-                    <th>Sequence</th>
-                    <td>@Model.StageOrder</td>
-                </tr>
-
-                <tr>
-                    <th>Milestone Name</th>
-                    <td>@Model.StageName</td>
-                </tr>
-
-                <tr>
-                    <th>Milestone Status</th>
-                    <td>@Model.StageStatus</td>
-                </tr>
-
-                <tr>
-                    <th>Planned Start</th>
-                    <td>
-                        @(Model.PlannedStartDate?.ToString("dd-MM-yyyy") ?? "-")
-                    </td>
-                </tr>
-
-                <tr>
-                    <th>Planned End</th>
-                    <td>
-                        @(Model.PlannedEndDate?.ToString("dd-MM-yyyy") ?? "-")
-                    </td>
-                </tr>
-
-                <tr>
-                    <th>Actual Start</th>
-                    <td>
-                        @(Model.ActualStartDate?.ToString("dd-MM-yyyy") ?? "-")
-                    </td>
-                </tr>
-
-                <tr>
-                    <th>Actual End</th>
-                    <td>
-                        @(Model.ActualEndDate?.ToString("dd-MM-yyyy") ?? "-")
-                    </td>
-                </tr>
-
-                <tr>
-                    <th>Status</th>
-                    <td>
-                        @if (Model.IsActive)
-                        {
-                            <span class="status-badge status-active">
-                                Active
-                            </span>
-                        }
-                        else
-                        {
-                            <span class="status-badge status-inactive">
-                                Inactive
-                            </span>
-                        }
-                    </td>
-                </tr>
-
-                <tr>
-                    <th>Created On</th>
-                    <td>
-                        @Model.CreatedOn.ToString("dd-MM-yyyy hh:mm tt")
-                    </td>
-                </tr>
-
-                <tr>
-                    <th>Updated On</th>
-                    <td>
-                        @(Model.UpdatedOn?.ToString("dd-MM-yyyy hh:mm tt") ?? "-")
-                    </td>
-                </tr>
-
-            </tbody>
-
-        </table>
-
     </div>
 </div>
 
-<div class="app-card">
+<div class="detail-page">
 
-    <div class="card-header">
-        <h5 class="card-title">Remarks</h5>
+    <div class="detail-summary-grid">
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Sequence</div>
+            <div class="detail-summary-value">@Model.StageOrder</div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Milestone Status</div>
+            <div class="detail-summary-value">
+                <span class="@stageStatusClass">@(Model.StageStatus ?? "-")</span>
+            </div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Planned End</div>
+            <div class="detail-summary-value">
+                @(Model.PlannedEndDate?.ToString("dd-MMM-yyyy") ?? "-")
+            </div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Active Status</div>
+            <div class="detail-summary-value">
+                <span class="@activeClass">@activeText</span>
+            </div>
+        </div>
     </div>
 
-    <div class="card-body">
+    <div class="detail-grid-2">
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Milestone Information</h5>
+            </div>
 
-        @if (!string.IsNullOrWhiteSpace(Model.Remarks))
-        {
-            <p class="mb-0">@Model.Remarks</p>
-        }
-        else
-        {
-            <p class="text-muted mb-0">
-                No remarks provided.
-            </p>
-        }
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Project</span>
+                        <strong class="detail-info-value">@projectText</strong>
+                    </div>
 
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Sequence</span>
+                        <strong class="detail-info-value">@Model.StageOrder</strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Milestone Name</span>
+                        <strong class="detail-info-value">@Model.StageName</strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Milestone Status</span>
+                        <strong class="detail-info-value">
+                            <span class="@stageStatusClass">@(Model.StageStatus ?? "-")</span>
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Active Status</span>
+                        <strong class="detail-info-value">
+                            <span class="@activeClass">@activeText</span>
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Schedule</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Planned Start</span>
+                        <strong class="detail-info-value">
+                            @(Model.PlannedStartDate?.ToString("dd-MMM-yyyy") ?? "-")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Planned End</span>
+                        <strong class="detail-info-value">
+                            @(Model.PlannedEndDate?.ToString("dd-MMM-yyyy") ?? "-")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Actual Start</span>
+                        <strong class="detail-info-value">
+                            @(Model.ActualStartDate?.ToString("dd-MMM-yyyy") ?? "-")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Actual End</span>
+                        <strong class="detail-info-value">
+                            @(Model.ActualEndDate?.ToString("dd-MMM-yyyy") ?? "-")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Created On</span>
+                        <strong class="detail-info-value">
+                            @Model.CreatedOn.ToString("dd-MMM-yyyy hh:mm tt")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Updated On</span>
+                        <strong class="detail-info-value">
+                            @(Model.UpdatedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-card">
+        <div class="card-header">
+            <h5 class="card-title">Remarks</h5>
+        </div>
+
+        <div class="card-body">
+            <div class="detail-note-box">
+                @if (!string.IsNullOrWhiteSpace(Model.Remarks))
+                {
+                    @Model.Remarks
+                }
+                else
+                {
+                    <span>No remarks provided.</span>
+                }
+            </div>
+        </div>
     </div>
 
 </div>

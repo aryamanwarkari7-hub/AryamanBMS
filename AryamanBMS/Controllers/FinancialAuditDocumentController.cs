@@ -4,6 +4,7 @@ using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace AryamanBMS.Controllers
@@ -40,7 +41,14 @@ namespace AryamanBMS.Controllers
         [HttpGet]
         public async Task<IActionResult> Index(
             string? financialYear,
-            string? category)
+            string? category,
+            string? search,
+            string? status,
+            DateTime? fromDate,
+            DateTime? toDate,
+            string sortBy = "UploadedOn",
+            string sortOrder = "desc",
+            int page = 1)
         {
             var documents = await _repository.GetAllAsync();
 
@@ -58,10 +66,169 @@ namespace AryamanBMS.Controllers
                     .ToList();
             }
 
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                documents = status switch
+                {
+                    "Active" => documents.Where(x => x.IsActive && !x.IsFinalized).ToList(),
+                    "Archived" => documents.Where(x => !x.IsActive).ToList(),
+                    "Finalized" => documents.Where(x => x.IsFinalized).ToList(),
+                    _ => documents
+                };
+            }
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                string keyword = search.Trim().ToLower();
+
+                documents = documents
+                    .Where(x =>
+                        (!string.IsNullOrWhiteSpace(x.FileName) &&
+                            x.FileName.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(x.Remarks) &&
+                            x.Remarks.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(x.FinancialYear) &&
+                            x.FinancialYear.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(x.DocumentCategory) &&
+                            x.DocumentCategory.ToLower().Contains(keyword)))
+                    .ToList();
+            }
+
+            if (fromDate.HasValue)
+            {
+                documents = documents
+                    .Where(x => x.UploadedOn.Date >= fromDate.Value.Date)
+                    .ToList();
+            }
+
+            if (toDate.HasValue)
+            {
+                documents = documents
+                    .Where(x => x.UploadedOn.Date <= toDate.Value.Date)
+                    .ToList();
+            }
+
+            bool desc =
+                string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
+
+            documents = sortBy switch
+            {
+                "Category" => desc
+                    ? documents.OrderByDescending(x => x.DocumentCategory).ToList()
+                    : documents.OrderBy(x => x.DocumentCategory).ToList(),
+
+                "FinancialYear" => desc
+                    ? documents.OrderByDescending(x => x.FinancialYear).ToList()
+                    : documents.OrderBy(x => x.FinancialYear).ToList(),
+
+                "FileName" => desc
+                    ? documents.OrderByDescending(x => x.FileName).ToList()
+                    : documents.OrderBy(x => x.FileName).ToList(),
+
+                "Status" => desc
+                    ? documents.OrderByDescending(x => x.IsFinalized)
+                        .ThenByDescending(x => x.IsActive)
+                        .ToList()
+                    : documents.OrderBy(x => x.IsFinalized)
+                        .ThenBy(x => x.IsActive)
+                        .ToList(),
+
+                _ => desc
+                    ? documents.OrderByDescending(x => x.UploadedOn).ToList()
+                    : documents.OrderBy(x => x.UploadedOn).ToList()
+            };
+
+            const int pageSize = 20;
+            int totalRecords = documents.Count;
+
+            documents = documents
+                .Skip((Math.Max(page, 1) - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
             ViewBag.FilterFinancialYear = financialYear;
             ViewBag.FilterCategory = category;
+            ViewBag.Search = search;
+            ViewBag.Status = status;
+            ViewBag.FromDate = fromDate;
+            ViewBag.ToDate = toDate;
+            ViewBag.SortBy = sortBy;
+            ViewBag.SortOrder = sortOrder;
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages =
+                (int)Math.Ceiling(totalRecords / (double)pageSize);
 
             return View(documents);
+        }
+
+        public async Task<IActionResult> ExportCsv(
+            string? financialYear,
+            string? category,
+            string? search,
+            string? status,
+            DateTime? fromDate,
+            DateTime? toDate)
+        {
+            var documents = await _repository.GetAllAsync();
+
+            if (!string.IsNullOrWhiteSpace(financialYear))
+                documents = documents.Where(x => x.FinancialYear == financialYear).ToList();
+
+            if (!string.IsNullOrWhiteSpace(category))
+                documents = documents.Where(x => x.DocumentCategory == category).ToList();
+
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                documents = status switch
+                {
+                    "Active" => documents.Where(x => x.IsActive && !x.IsFinalized).ToList(),
+                    "Archived" => documents.Where(x => !x.IsActive).ToList(),
+                    "Finalized" => documents.Where(x => x.IsFinalized).ToList(),
+                    _ => documents
+                };
+            }
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                string keyword = search.Trim().ToLower();
+                documents = documents.Where(x =>
+                    (!string.IsNullOrWhiteSpace(x.FileName) && x.FileName.ToLower().Contains(keyword)) ||
+                    (!string.IsNullOrWhiteSpace(x.Remarks) && x.Remarks.ToLower().Contains(keyword)) ||
+                    (!string.IsNullOrWhiteSpace(x.FinancialYear) && x.FinancialYear.ToLower().Contains(keyword)) ||
+                    (!string.IsNullOrWhiteSpace(x.DocumentCategory) && x.DocumentCategory.ToLower().Contains(keyword)))
+                    .ToList();
+            }
+
+            if (fromDate.HasValue)
+                documents = documents.Where(x => x.UploadedOn.Date >= fromDate.Value.Date).ToList();
+
+            if (toDate.HasValue)
+                documents = documents.Where(x => x.UploadedOn.Date <= toDate.Value.Date).ToList();
+
+            var csv = new StringBuilder();
+            csv.AppendLine("Category,Financial Year,File Name,Remarks,Uploaded On,Status");
+
+            foreach (var item in documents.OrderByDescending(x => x.UploadedOn))
+            {
+                string documentStatus = item.IsFinalized
+                    ? "Finalized"
+                    : item.IsActive
+                        ? "Active"
+                        : "Archived";
+
+                csv.AppendLine(string.Join(",",
+                    Csv(item.DocumentCategory),
+                    Csv(item.FinancialYear),
+                    Csv(item.FileName),
+                    Csv(item.Remarks),
+                    Csv(item.UploadedOn.ToString("dd-MMM-yyyy hh:mm tt")),
+                    Csv(documentStatus)));
+            }
+
+            return File(
+                Encoding.UTF8.GetBytes(csv.ToString()),
+                "text/csv",
+                $"financial-audit-documents-{DateTime.Now:yyyyMMddHHmmss}.csv");
         }
 
         [HttpGet]
@@ -466,6 +633,12 @@ namespace AryamanBMS.Controllers
                 ".png" => "image/png",
                 _ => "application/octet-stream"
             };
+        }
+
+        private static string Csv(string? value)
+        {
+            value ??= string.Empty;
+            return $"\"{value.Replace("\"", "\"\"")}\"";
         }
     }
 }

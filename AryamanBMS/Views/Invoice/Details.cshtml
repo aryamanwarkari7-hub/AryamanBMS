@@ -11,45 +11,39 @@
         "Draft" => "badge-secondary",
         "Generated" => "badge-info",
         "Sent" => "badge-primary",
+        "Issued" => "badge-success",
+        "Overdue" => "badge-danger",
         _ => "badge-secondary"
     };
 
     bool isProforma = Model.InvoiceType == "Proforma Invoice";
+    bool hasDocx = ViewBag.CurrentDocx is bool docx && docx;
+    bool hasPdf = ViewBag.CurrentPdf is bool pdf && pdf;
 
-    bool hasDocx =  ViewBag.CurrentDocx is bool docx &&   docx;
-
-    bool hasPdf =   ViewBag.CurrentPdf is bool pdf && pdf;
+    string taxType = Model.IsInterState
+        ? "Interstate - IGST"
+        : "Intrastate - CGST + SGST";
 }
 
 <div class="module-header">
     <div>
-        <h1 class="module-title">Invoice Details</h1>
+        <h1 class="module-title">@Model.InvoiceNo</h1>
         <p class="module-subtitle">
-            <span class="badge-secondary">@Model.InvoiceNo</span>
-            <span class="@StatusBadge(Model.InvoiceStatus)">
-                @Model.InvoiceStatus
-            </span>
+            Invoice details, billing items, tax summary and document actions
         </p>
     </div>
 
     <div class="module-header-actions">
-
         <form asp-action="GenerateDocuments"
               asp-route-id="@Model.InvoiceId"
               method="post"
               class="d-inline">
-
             @Html.AntiForgeryToken()
 
-            <button type="submit"
-                    class="btn-app btn-success-app">
+            <button type="submit" class="btn-app btn-success-app">
                 <i class="bi bi-file-earmark-plus"></i>
-
-                @(hasDocx || hasPdf
-                                ? "Regenerate Documents"
-                                : "Generate Documents")
+                @(hasDocx || hasPdf ? "Regenerate Documents" : "Generate Documents")
             </button>
-
         </form>
 
         @if (hasDocx)
@@ -58,7 +52,6 @@
                asp-route-id="@Model.InvoiceId"
                asp-route-format="DOCX"
                class="btn-app btn-primary-app">
-
                 <i class="bi bi-file-earmark-word"></i>
                 Download DOCX
             </a>
@@ -70,7 +63,6 @@
                asp-route-id="@Model.InvoiceId"
                asp-route-format="PDF"
                class="btn-app btn-danger-app">
-
                 <i class="bi bi-file-earmark-pdf"></i>
                 Download PDF
             </a>
@@ -79,7 +71,6 @@
         <a asp-action="DocumentHistory"
            asp-route-id="@Model.InvoiceId"
            class="btn-app btn-secondary-app">
-
             <i class="bi bi-clock-history"></i>
             Document History
         </a>
@@ -87,7 +78,6 @@
         <a asp-action="Print"
            asp-route-id="@Model.InvoiceId"
            class="btn-app btn-success-app">
-
             <i class="bi bi-printer"></i>
             Preview / Print
         </a>
@@ -98,37 +88,29 @@
                   asp-route-id="@Model.InvoiceId"
                   method="post"
                   class="d-inline">
-
                 @Html.AntiForgeryToken()
 
                 <button type="submit"
                         class="btn-app btn-success-app"
                         data-confirm="Issue this invoice? It will no longer be freely editable.">
-
                     <i class="bi bi-send"></i>
                     Issue Invoice
                 </button>
-
             </form>
-        }     
 
-        @if (Model.InvoiceStatus == "Draft")
-        {
             <a asp-action="Edit"
                asp-route-id="@Model.InvoiceId"
                class="btn-app btn-primary-app">
-
                 <i class="bi bi-pencil"></i>
                 Edit Invoice
             </a>
         }
-        @if (Model.InvoiceStatus != "Cancelled" &&
-                Model.PaymentStatus != "Paid")
+
+        @if (Model.InvoiceStatus != "Cancelled" && Model.PaymentStatus != "Paid")
         {
             <a asp-action="Cancel"
                asp-route-id="@Model.InvoiceId"
                class="btn-app btn-danger-app">
-
                 <i class="bi bi-x-circle"></i>
                 Cancel Invoice
             </a>
@@ -136,286 +118,338 @@
 
         <a asp-action="Index"
            class="btn-app btn-secondary-app">
-
             <i class="bi bi-arrow-left"></i>
             Back
         </a>
-
     </div>
 </div>
 
-<div class="app-card">
-    <div class="card-header">
-        <h5 class="card-title">Invoice Information</h5>
+<div class="detail-page">
+
+    <div class="detail-summary-grid">
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Invoice Status</div>
+            <div class="detail-summary-value">
+                <span class="@StatusBadge(Model.InvoiceStatus)">
+                    @Model.InvoiceStatus
+                </span>
+            </div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Payment Status</div>
+            <div class="detail-summary-value">
+                <span class="@StatusBadge(Model.PaymentStatus)">
+                    @Model.PaymentStatus
+                </span>
+            </div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Grand Total</div>
+            <div class="detail-summary-value">
+                ₹ @Model.GrandTotal.ToString("N2")
+            </div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Balance</div>
+            <div class="detail-summary-value">
+                ₹ @Model.BalanceAmount.ToString("N2")
+            </div>
+        </div>
     </div>
 
-    <div class="card-body">
-        <div class="form-grid-2">
-
-            <div class="form-group">
-                <label class="form-label">Invoice No</label>
-                <div>@Model.InvoiceNo</div>
+    <div class="detail-grid-2">
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Invoice Information</h5>
             </div>
 
-            <div class="form-group">
-                <label class="form-label">
-                    Invoice Type
-                </label>
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Invoice No</span>
+                        <strong class="detail-info-value">@Model.InvoiceNo</strong>
+                    </div>
 
-                <div>
-                    <span class="badge-info">
-                        @Model.InvoiceType
-                    </span>
-                </div>
-            </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Invoice Type</span>
+                        <strong class="detail-info-value">
+                            <span class="badge-info">@Model.InvoiceType</span>
+                        </strong>
+                    </div>
 
-            <div class="form-group">
-                <label class="form-label">Invoice Date</label>
-                <div>@Model.InvoiceDate.ToString("dd-MMM-yyyy")</div>
-            </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Invoice Date</span>
+                        <strong class="detail-info-value">
+                            @Model.InvoiceDate.ToString("dd-MMM-yyyy")
+                        </strong>
+                    </div>
 
-            <div class="form-group">
-                <label class="form-label">Client</label>
-                <div>@(Model.Client?.ClientName ?? "-")</div>
-            </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Due Date</span>
+                        <strong class="detail-info-value">
+                            @(Model.DueDate?.ToString("dd-MMM-yyyy") ?? "-")
+                        </strong>
+                    </div>
 
-            <div class="form-group">
-                <label class="form-label">Status</label>
-                <div>
-                    <span class="@StatusBadge(Model.InvoiceStatus)">
-                        @Model.InvoiceStatus
-                    </span>
-                </div>
-            </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Client</span>
+                        <strong class="detail-info-value">
+                            @(Model.Client?.ClientName ?? "-")
+                        </strong>
+                    </div>
 
-            <div class="form-group">
-                <label class="form-label">Project</label>
-                <div>@(Model.ProjectName ?? "-")</div>
-            </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Project</span>
+                        <strong class="detail-info-value">
+                            @(Model.ProjectName ?? "-")
+                        </strong>
+                    </div>
 
-            @if (!isProforma)
-            {
-                <div class="form-group">
-                    <label class="form-label">
-                        GST No
-                    </label>
-
-                    <div>
-                        @(Model.GSTNo ?? "-")
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Payment Terms</span>
+                        <strong class="detail-info-value">
+                            @(Model.PaymentTerms ?? "-")
+                        </strong>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <div class="form-group">
-                    <label class="form-label">
-                        Tax Type
-                    </label>
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">GST and Billing</h5>
+            </div>
 
-                    <div>
-                        @(Model.IsInterState
-                                            ? "Interstate - IGST"
-                                            : "Intrastate - CGST + SGST")
+            <div class="card-body">
+                <div class="detail-info-list">
+                    @if (!isProforma)
+                    {
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">GST No</span>
+                            <strong class="detail-info-value">
+                                @(Model.GSTNo ?? "-")
+                            </strong>
+                        </div>
+
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Tax Type</span>
+                            <strong class="detail-info-value">@taxType</strong>
+                        </div>
+
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">SAC Code</span>
+                            <strong class="detail-info-value">
+                                @(Model.SACCode ?? "-")
+                            </strong>
+                        </div>
+                    }
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Billing Address</span>
+                        <strong class="detail-info-value">
+                            @(string.IsNullOrWhiteSpace(Model.BillingAddress) ? "-" : Model.BillingAddress)
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Remarks</span>
+                        <strong class="detail-info-value">
+                            @(string.IsNullOrWhiteSpace(Model.Remarks) ? "-" : Model.Remarks)
+                        </strong>
+                    </div>
                 </div>
             </div>
-                        }
-
-            <div class="form-group">
-                <label class="form-label">Due Date</label>
-                <div>@(Model.DueDate?.ToString("dd-MMM-yyyy") ?? "-")</div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Payment Terms</label>
-                <div>@(Model.PaymentTerms ?? "-")</div>
-            </div>
-
-        </div>
-
-        <div class="form-group mt-3">
-            <label class="form-label">Billing Address</label>
-            <div>@(string.IsNullOrWhiteSpace(Model.BillingAddress) ? "-" : Model.BillingAddress)</div>
-        </div>
-
-        <div class="form-group mt-3">
-            <label class="form-label">Remarks</label>
-            <div>@(string.IsNullOrWhiteSpace(Model.Remarks) ? "-" : Model.Remarks)</div>
-        </div>
-
-        
-
-        @if (!isProforma)
-        {
-            <div class="form-group">
-                <label class="form-label">SAC Code</label>
-                <div>@(Model.SACCode ?? "-")</div>
-            </div>
-        }
-
-        
-    </div>
-</div>
-
-<div class="app-card table-card">
-    <div class="card-header">
-        <h5 class="card-title">Invoice Items</h5>
-    </div>
-
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="app-table">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Item</th>
-                        <th>Description</th>
-                        <th class="text-end">Qty</th>
-                        <th>Unit</th>
-                        <th class="text-end">Rate</th>
-
-                        @if (!isProforma)
-                        {
-                            <th class="text-end">GST %</th>
-                            <th class="text-end">GST Amount</th>
-                        }
-
-                        <th class="text-end">Amount</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @{
-                        int sr = 1;
-                    }
-
-                    @if (Model.InvoiceDetails.Any())
-                    {
-                        foreach (var item in Model.InvoiceDetails)
-                        {
-                            <tr>
-                                <td>@sr</td>
-                                <td>@item.ItemName</td>
-                                <td>@item.Description</td>
-                                <td class="text-end">@item.Qty.ToString("N2")</td>
-                                <td>@item.Unit</td>
-                                <td class="text-end">@item.Rate.ToString("N2")</td>
-                                @if (!isProforma)
-                                {
-                                    <td class="text-end">
-                                        @item.GSTPercent.ToString("N2")
-                                    </td>
-
-                                    <td class="text-end">
-                                        @item.GSTAmount.ToString("N2")
-                                    </td>
-                                }
-
-                                <td class="text-end">
-                                    @item.Amount.ToString("N2")
-                                </td>
-                            </tr>
-
-                            sr++;
-                        }
-                    }
-                    else
-                    {
-                    <td colspan="@(isProforma ? 7 : 9)"
-                        class="text-center text-muted py-4">
-                        No invoice items found.
-                    </td>
-                    }
-                </tbody>
-            </table>
         </div>
     </div>
-</div>
 
-<div class="app-card">
-    <div class="card-header">
-        <h5 class="card-title">Invoice Summary</h5>
-    </div>
-
-    <div class="card-body">
-        <table class="app-table">
-            <tbody>
-                <tr>
-                    <th>Sub Total</th>
-                    <td class="text-end">@Model.SubTotal.ToString("N2")</td>
-                </tr>
-
-                <tr>
-                    <th>Discount</th>
-                    <td class="text-end">@Model.Discount.ToString("N2")</td>
-                </tr>
-
-                @if (!isProforma)
-                {
-                    @if (Model.IsInterState)
-                    {
-                        <tr>
-                            <th>IGST</th>
-                            <td class="text-end">
-                                @Model.GSTAmount.ToString("N2")
-                            </td>
-                        </tr>
-                    }
-                    else
-                    {
-                        <tr>
-                            <th>CGST</th>
-                            <td class="text-end">
-                                @((Model.GSTAmount / 2).ToString("N2"))
-                            </td>
-                        </tr>
-
-                        <tr>
-                            <th>SGST</th>
-                            <td class="text-end">
-                                @((Model.GSTAmount / 2).ToString("N2"))
-                            </td>
-                        </tr>
-                    }
-                }
-
-                <tr>
-                    <th>Grand Total</th>
-                    <td class="text-end">
-                        <strong>@Model.GrandTotal.ToString("N2")</strong>
-                    </td>
-                </tr>
-
-                <tr>
-                    <th>Paid Amount</th>
-                    <td class="text-end">
-                        <span class="badge-success">@Model.PaidAmount.ToString("N2")</span>
-                    </td>
-                </tr>
-
-                <tr>
-                    <th>Balance</th>
-                    <td class="text-end">
-                        <span class="badge-danger">@Model.BalanceAmount.ToString("N2")</span>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</div>
-
-@if (!string.IsNullOrWhiteSpace(Model.AttachmentPath))
-{
-    <div class="app-card">
+    <div class="app-card table-card">
         <div class="card-header">
-            <h5 class="card-title">Attachment</h5>
+            <h5 class="card-title">Invoice Items</h5>
         </div>
 
         <div class="card-body">
-            <a asp-action="DownloadAttachment"
-               asp-route-id="@Model.InvoiceId"
-               class="btn-app btn-primary-app">
+            <div class="table-responsive">
+                <table class="app-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Item</th>
+                            <th>Description</th>
+                            <th class="text-end">Qty</th>
+                            <th>Unit</th>
+                            <th class="text-end">Rate</th>
 
-                <i class="bi bi-paperclip"></i>
-                Download Attachment
-            </a>
+                            @if (!isProforma)
+                            {
+                                <th class="text-end">GST %</th>
+                                <th class="text-end">GST Amount</th>
+                            }
+
+                            <th class="text-end">Amount</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @{
+                            int sr = 1;
+                        }
+
+                        @if (Model.InvoiceDetails.Any())
+                        {
+                            foreach (var item in Model.InvoiceDetails)
+                            {
+                                <tr>
+                                    <td>@sr</td>
+                                    <td>@item.ItemName</td>
+                                    <td>@item.Description</td>
+                                    <td class="text-end">@item.Qty.ToString("N2")</td>
+                                    <td>@item.Unit</td>
+                                    <td class="text-end">@item.Rate.ToString("N2")</td>
+
+                                    @if (!isProforma)
+                                    {
+                                        <td class="text-end">@item.GSTPercent.ToString("N2")</td>
+                                        <td class="text-end">@item.GSTAmount.ToString("N2")</td>
+                                    }
+
+                                    <td class="text-end">@item.Amount.ToString("N2")</td>
+                                </tr>
+
+                                sr++;
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="@(isProforma ? 7 : 9)" class="empty-state">
+                                    No invoice items found.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
-}
+
+    <div class="detail-grid-2">
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Invoice Summary</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Sub Total</span>
+                        <strong class="detail-info-value">
+                            ₹ @Model.SubTotal.ToString("N2")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Discount</span>
+                        <strong class="detail-info-value">
+                            ₹ @Model.Discount.ToString("N2")
+                        </strong>
+                    </div>
+
+                    @if (!isProforma)
+                    {
+                        if (Model.IsInterState)
+                        {
+                            <div class="detail-info-row">
+                                <span class="detail-info-label">IGST</span>
+                                <strong class="detail-info-value">
+                                    ₹ @Model.GSTAmount.ToString("N2")
+                                </strong>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="detail-info-row">
+                                <span class="detail-info-label">CGST</span>
+                                <strong class="detail-info-value">
+                                    ₹ @((Model.GSTAmount / 2).ToString("N2"))
+                                </strong>
+                            </div>
+
+                            <div class="detail-info-row">
+                                <span class="detail-info-label">SGST</span>
+                                <strong class="detail-info-value">
+                                    ₹ @((Model.GSTAmount / 2).ToString("N2"))
+                                </strong>
+                            </div>
+                        }
+                    }
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Grand Total</span>
+                        <strong class="detail-info-value">
+                            ₹ @Model.GrandTotal.ToString("N2")
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Payment Summary</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Paid Amount</span>
+                        <strong class="detail-info-value">
+                            <span class="badge-success">
+                                ₹ @Model.PaidAmount.ToString("N2")
+                            </span>
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Balance</span>
+                        <strong class="detail-info-value">
+                            <span class="badge-danger">
+                                ₹ @Model.BalanceAmount.ToString("N2")
+                            </span>
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Payment Status</span>
+                        <strong class="detail-info-value">
+                            <span class="@StatusBadge(Model.PaymentStatus)">
+                                @Model.PaymentStatus
+                            </span>
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.AttachmentPath))
+    {
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Attachment</h5>
+            </div>
+
+            <div class="card-body">
+                <a asp-action="DownloadAttachment"
+                   asp-route-id="@Model.InvoiceId"
+                   class="btn-app btn-primary-app">
+                    <i class="bi bi-paperclip"></i>
+                    Download Attachment
+                </a>
+            </div>
+        </div>
+    }
+
+</div>

@@ -51,6 +51,50 @@
                        placeholder="Search designation name or code"
                        autocomplete="off" />
 
+                <div class="form-group">
+                    <select name="sortBy"
+                            class="app-select">
+
+                        <option value="DesignationName"
+                                selected="@(ViewBag.SortBy == "DesignationName")">
+                            Sort by Name
+                        </option>
+
+                        <option value="DisplayCode"
+                                selected="@(ViewBag.SortBy == "DisplayCode")">
+                            Sort by Code
+                        </option>
+
+                        <option value="Department"
+                                selected="@(ViewBag.SortBy == "Department")">
+                            Sort by Department
+                        </option>
+
+                        <option value="Status"
+                                selected="@(ViewBag.SortBy == "Status")">
+                            Sort by Status
+                        </option>
+
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <select name="sortOrder"
+                            class="app-select">
+
+                        <option value="asc"
+                                selected="@(ViewBag.SortOrder == "asc")">
+                            Ascending
+                        </option>
+
+                        <option value="desc"
+                                selected="@(ViewBag.SortOrder == "desc")">
+                            Descending
+                        </option>
+
+                    </select>
+                </div>
+
                 <div class="filter-form-actions">
                     <button type="submit"
                             class="btn-app btn-primary-app">

@@ -2,6 +2,12 @@
 
 @{
     ViewData["Title"] = "Company Documents";
+
+    string search = ViewBag.Search as string ?? "";
+    int? categoryId = ViewBag.CategoryId as int?;
+    string statusFilter = ViewBag.Status as string ?? "";
+    string sortBy = ViewBag.SortBy as string ?? "CreatedOn";
+    string sortOrder = ViewBag.SortOrder as string ?? "desc";
 }
 
 <div class="module-header">
@@ -33,18 +39,115 @@
         </div>
 
         <div class="card-body">
-            <div class="form-grid-3">
-                <div class="form-group">
-                    <label class="form-label">Search</label>
-                    <input type="text"
-                           id="searchBox"
-                           class="app-input"
-                           data-table-filter-target="#documentTable"
-                           placeholder="Search document, category or number" />
-                </div>
-            </div>
+            <form method="get" class="w-100 mb-3">
+                <input type="hidden"
+                       name="status"
+                       value="@statusFilter" />
 
-        <div class="card-body">
+                <div class="filter-row">
+                    <div class="filter-field filter-field-wide">
+                        <input name="search"
+                               value="@search"
+                               class="app-input"
+                               placeholder="Document, category, number or issuer" />
+                    </div>
+
+                    <div class="filter-field">
+                        <select name="categoryId" class="app-select">
+                            <option value="">All Categories</option>
+                            @foreach (var category in ViewBag.Categories)
+                            {
+                                <option value="@category.DocumentCategoryId"
+                                        selected="@(categoryId.HasValue && categoryId.Value == category.DocumentCategoryId)">
+                                    @category.CategoryName
+                                </option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="filter-field">
+                        <select name="sortBy" class="app-select">
+                            <option value="CreatedOn" selected="@(sortBy == "CreatedOn")">Sort by Uploaded</option>
+                            <option value="Document" selected="@(sortBy == "Document")">Sort by Document</option>
+                            <option value="Category" selected="@(sortBy == "Category")">Sort by Category</option>
+                            <option value="DocumentNo" selected="@(sortBy == "DocumentNo")">Sort by Document No</option>
+                            <option value="IssueDate" selected="@(sortBy == "IssueDate")">Sort by Issue Date</option>
+                            <option value="ExpiryDate" selected="@(sortBy == "ExpiryDate")">Sort by Expiry Date</option>
+                            <option value="Active" selected="@(sortBy == "Active")">Sort by Active</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-field">
+                        <select name="sortOrder" class="app-select">
+                            <option value="asc" selected="@(sortOrder == "asc")">Ascending</option>
+                            <option value="desc" selected="@(sortOrder == "desc")">Descending</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-actions">
+                        <button type="submit" class="btn-app btn-primary-app">
+                            <i class="bi bi-search"></i>
+                            Search
+                        </button>
+
+                        <a asp-action="Index" class="btn-app btn-secondary-app">
+                            <i class="bi bi-arrow-clockwise"></i>
+                            Reset
+                        </a>
+                    </div>
+                </div>
+            </form>
+
+            <div class="module-header-actions justify-content-start mb-3">
+                <a asp-action="Index"
+                   asp-route-search="@search"
+                   asp-route-categoryId="@categoryId"
+                   asp-route-sortBy="@sortBy"
+                   asp-route-sortOrder="@sortOrder"
+                   class="btn-app @(string.IsNullOrWhiteSpace(statusFilter) ? "btn-primary-app" : "btn-secondary-app")">
+                    All
+                </a>
+
+                <a asp-action="Index"
+                   asp-route-search="@search"
+                   asp-route-categoryId="@categoryId"
+                   asp-route-status="Active"
+                   asp-route-sortBy="@sortBy"
+                   asp-route-sortOrder="@sortOrder"
+                   class="btn-app @(statusFilter == "Active" ? "btn-primary-app" : "btn-secondary-app")">
+                    Active
+                </a>
+
+                <a asp-action="Index"
+                   asp-route-search="@search"
+                   asp-route-categoryId="@categoryId"
+                   asp-route-status="Archived"
+                   asp-route-sortBy="@sortBy"
+                   asp-route-sortOrder="@sortOrder"
+                   class="btn-app @(statusFilter == "Archived" ? "btn-primary-app" : "btn-secondary-app")">
+                    Archived
+                </a>
+
+                <a asp-action="Index"
+                   asp-route-search="@search"
+                   asp-route-categoryId="@categoryId"
+                   asp-route-status="Expiring"
+                   asp-route-sortBy="@sortBy"
+                   asp-route-sortOrder="@sortOrder"
+                   class="btn-app @(statusFilter == "Expiring" ? "btn-primary-app" : "btn-secondary-app")">
+                    Expiring
+                </a>
+
+                <a asp-action="Index"
+                   asp-route-search="@search"
+                   asp-route-categoryId="@categoryId"
+                   asp-route-status="Expired"
+                   asp-route-sortBy="@sortBy"
+                   asp-route-sortOrder="@sortOrder"
+                   class="btn-app @(statusFilter == "Expired" ? "btn-primary-app" : "btn-secondary-app")">
+                    Expired
+                </a>
+            </div>
 
             <div class="table-responsive">
 
@@ -216,7 +319,3 @@
     </div>
 
 </div>
-
-@section Scripts {
-    <script src="~/js/table-filter.js" asp-append-version="true"></script>
-}

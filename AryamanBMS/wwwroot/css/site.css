@@ -169,45 +169,49 @@ textarea {
     color: var(--secondary-color);
 }
 
-/* System state pages */
+
+/* ==========================================
+   SYSTEM STATE PAGES
+   Access Denied / Not Found / Error / Coming Soon
+========================================== */
 
 .state-page {
     position: relative;
     overflow: hidden;
-    min-height: calc(100vh - 76px);
+    min-height: calc(100vh - var(--navbar-height));
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 48px 24px;
-    background: linear-gradient( 135deg, rgba(15, 23, 42, 0.04), rgba(37, 99, 235, 0.06) ), radial-gradient( circle at 18% 20%, rgba(37, 99, 235, 0.12), transparent 28% ), radial-gradient( circle at 82% 72%, rgba(239, 68, 68, 0.10), transparent 26% ), var(--page-bg);
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.04), rgba(32, 114, 175, 0.06)), radial-gradient(circle at 18% 20%, rgba(32, 114, 175, 0.12), transparent 28%), radial-gradient(circle at 82% 72%, rgba(245, 158, 11, 0.10), transparent 26%), var(--page-bg);
 }
 
     .state-page::before {
         content: "";
         position: absolute;
         inset: 0;
-        background-image: linear-gradient( rgba(15, 23, 42, 0.045) 1px, transparent 1px ), linear-gradient( 90deg, rgba(15, 23, 42, 0.045) 1px, transparent 1px );
+        background-image: linear-gradient(rgba(15, 23, 42, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(15, 23, 42, 0.04) 1px, transparent 1px);
         background-size: 42px 42px;
-        mask-image: linear-gradient( to bottom, transparent, black 18%, black 82%, transparent );
+        mask-image: linear-gradient(to bottom, transparent, black 18%, black 82%, transparent);
         pointer-events: none;
     }
 
 .state-card {
     position: relative;
     z-index: 1;
-    width: min(100%, 520px);
-    background: var(--card-bg);
+    width: min(100%, 600px);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96)), var(--card-bg);
     border: 1px solid var(--border-muted);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-dropdown);
-    padding: 36px;
+    padding: 44px;
     text-align: center;
 }
 
 .state-icon {
-    width: 72px;
-    height: 72px;
-    margin: 0 auto 18px;
+    width: 84px;
+    height: 84px;
+    margin: 0 auto 20px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -215,40 +219,47 @@ textarea {
 }
 
     .state-icon i {
-        font-size: 34px;
+        font-size: 38px;
     }
 
     .state-icon.danger {
         background: var(--danger-soft);
         color: var(--danger-soft-text);
+        border: 1px solid var(--danger-soft-border);
     }
 
     .state-icon.warning {
         background: var(--warning-soft);
         color: var(--warning-soft-text);
+        border: 1px solid rgba(245, 158, 11, 0.28);
     }
 
     .state-icon.info {
         background: var(--info-soft);
         color: var(--info-soft-text);
+        border: 1px solid var(--info-soft-border);
     }
 
     .state-icon.success {
         background: var(--success-soft);
         color: var(--success-soft-text);
+        border: 1px solid var(--success-soft-border);
     }
 
 .state-card h1 {
-    margin-bottom: 10px;
-    font-size: 30px;
+    margin-bottom: 12px;
+    font-size: 34px;
     font-weight: 800;
     color: var(--text-primary);
+    letter-spacing: 0;
 }
 
 .state-card p {
-    margin: 0 auto 24px;
+    margin: 0 auto 28px;
+    max-width: 460px;
     color: var(--text-secondary);
-    line-height: 1.6;
+    font-size: var(--font-md);
+    line-height: 1.65;
 }
 
 .state-actions {
@@ -258,27 +269,6 @@ textarea {
     flex-wrap: wrap;
 }
 
-.is-hidden {
-    display: none !important;
-}
-
-.progress-thin {
-    height: 6px;
-}
-
-.progress-compact {
-    height: 8px;
-    max-width: 350px;
-}
-
-.progress-medium {
-    height: 12px;
-}
-
-.progress-large {
-    height: 18px;
-}
-
 @media (max-width: 576px) {
     .state-page {
         min-height: calc(100vh - 64px);
@@ -286,12 +276,26 @@ textarea {
     }
 
     .state-card {
-        padding: 28px 20px;
+        padding: 30px 20px;
+        border-radius: var(--radius-md);
     }
+
+    .state-icon {
+        width: 72px;
+        height: 72px;
+    }
+
+        .state-icon i {
+            font-size: 32px;
+        }
 
         .state-card h1 {
             font-size: 24px;
         }
+
+    .state-actions .btn-app {
+        width: 100%;
+    }
 }
 
 

@@ -2,19 +2,35 @@
 
 @{
     ViewData["Title"] = $"Expense Voucher {Model.VoucherNumber}";
+
+    string StatusBadge(string? status) => status switch
+    {
+        "Draft" => "badge-warning",
+        "Submitted" => "badge-info",
+        "Approved" => "badge-secondary",
+        "Posted" => "badge-success",
+        "Rejected" => "badge-danger",
+        "Reversed" => "badge-danger",
+        _ => "badge-secondary"
+    };
+
+    string supplyTypeText = Model.IsInterState ? "Interstate" : "Intrastate";
+    string supplyTypeClass = Model.IsInterState ? "badge-info" : "badge-secondary";
+
+    string vendorName =
+        Model.Vendor?.VendorName
+        ?? (string.IsNullOrWhiteSpace(Model.VendorName) ? "-" : Model.VendorName);
 }
 
 <div class="module-header">
-
     <div>
-        <h1 class="module-title">EXPENSE VOUCHER DETAILS</h1>
+        <h1 class="module-title">@Model.VoucherNumber</h1>
         <p class="module-subtitle">
-            Voucher information for @Model.VoucherNumber
+            Expense voucher, GST breakup, vendor bill and approval trail
         </p>
     </div>
 
     <div class="module-header-actions">
-
         @if (Model.Status == "Draft")
         {
             <a asp-action="Edit"
@@ -24,9 +40,7 @@
                 Edit
             </a>
 
-            <form method="post"
-                  asp-action="Submit"
-                  class="d-inline">
+            <form method="post" asp-action="Submit" class="d-inline">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" value="@Model.ExpenseVoucherId" />
 
@@ -46,38 +60,47 @@
             </a>
         }
         else if (Model.Status == FinancialConstants.ExpenseVoucherStatus.Submitted &&
-                 (User.IsInRole("Admin") || User.IsInRole("Finance")))
+        (User.IsInRole("Admin") || User.IsInRole("Finance")))
         {
             <form method="post" asp-action="Approve" class="d-inline">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" value="@Model.ExpenseVoucherId" />
-                <button type="submit" class="btn-app btn-success-app" onclick="return confirm('Approve this voucher?')">
+
+                <button type="submit"
+                        class="btn-app btn-success-app"
+                        onclick="return confirm('Approve this voucher?')">
                     <i class="bi bi-check-circle"></i>
                     Approve
                 </button>
             </form>
         }
         else if (Model.Status == FinancialConstants.ExpenseVoucherStatus.Approved &&
-                 (User.IsInRole("Admin") || User.IsInRole("Finance")))
+        (User.IsInRole("Admin") || User.IsInRole("Finance")))
         {
             <form method="post" asp-action="Post" class="d-inline">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" value="@Model.ExpenseVoucherId" />
-                <button type="submit" class="btn-app btn-success-app" onclick="return confirm('Post this voucher?')">
+
+                <button type="submit"
+                        class="btn-app btn-success-app"
+                        onclick="return confirm('Post this voucher?')">
                     <i class="bi bi-journal-check"></i>
                     Post
                 </button>
             </form>
         }
         else if (Model.Status == FinancialConstants.ExpenseVoucherStatus.Posted &&
-                 !Model.IsReversed &&
-                 (User.IsInRole("Admin") || User.IsInRole("Finance")))
+        !Model.IsReversed &&
+        (User.IsInRole("Admin") || User.IsInRole("Finance")))
         {
             <form method="post" asp-action="Reverse" class="d-inline">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" value="@Model.ExpenseVoucherId" />
                 <input type="hidden" name="reversalReason" value="Reversed from voucher details" />
-                <button type="submit" class="btn-app btn-danger-app" onclick="return confirm('Reverse this posted voucher?')">
+
+                <button type="submit"
+                        class="btn-app btn-danger-app"
+                        onclick="return confirm('Reverse this posted voucher?')">
                     <i class="bi bi-arrow-counterclockwise"></i>
                     Reverse
                 </button>
@@ -89,492 +112,475 @@
             <i class="bi bi-arrow-left"></i>
             Back
         </a>
-
-    </div>
-
-</div>
-
-<div class="app-card table-card">
-
-    <div class="card-header">
-        <div>
-            <h2 class="card-title">Documents</h2>
-            <p class="card-subtitle">
-                Upload and manage bills, GST documents and supporting files.
-            </p>
-        </div>
-    </div>
-
-    <div class="card-body">
-
-        <form asp-action="UploadDocument"
-              method="post"
-              enctype="multipart/form-data">
-
-            @Html.AntiForgeryToken()
-
-            <input type="hidden"
-                   name="voucherId"
-                   value="@Model.ExpenseVoucherId" />
-
-            <div class="form-grid-4">
-
-                <div class="form-group">
-                    <label class="form-label">Document Type</label>
-
-                    <select name="documentType"
-                            class="app-select"
-                            required>
-                        <option value="">Select Type</option>
-                        <option value="VendorInvoice">Vendor Invoice</option>
-                        <option value="GSTInvoice">GST Invoice</option>
-                        <option value="PaymentProof">Payment Proof</option>
-                        <option value="ApprovalNote">Approval Note</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">File</label>
-
-                    <input type="file"
-                           name="file"
-                           class="app-input"
-                           required />
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Remarks</label>
-
-                    <input type="text"
-                           name="remarks"
-                           class="app-input"
-                           maxlength="500"
-                           placeholder="Optional remarks" />
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">&nbsp;</label>
-
-                    <button type="submit"
-                            class="btn-app btn-primary-app">
-                        <i class="bi bi-upload"></i>
-                        Upload
-                    </button>
-                </div>
-
-            </div>
-
-        </form>
-
-        <div class="table-responsive">
-
-            <table class="app-table">
-
-                <thead>
-                    <tr>
-                        <th>Type</th>
-                        <th>File Name</th>
-                        <th>Uploaded By</th>
-                        <th>Uploaded On</th>
-                        <th>Remarks</th>
-                        <th class="text-center">Actions</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @if (Model.Documents.Any())
-                    {
-                        foreach (var document in Model.Documents.OrderByDescending(x => x.UploadedOn))
-                        {
-                            <tr>
-                                <td>@document.DocumentType</td>
-                                <td>@document.OriginalFileName</td>
-                                <td>@document.UploadedByUserId</td>
-                                <td>@document.UploadedOn.ToString("dd-MMM-yyyy")</td>
-                                <td>@(string.IsNullOrWhiteSpace(document.Remarks) ? "-" : document.Remarks)</td>
-                                <td>
-                                    <div class="table-actions">
-                                        <a asp-action="DownloadDocument"
-                                           asp-route-id="@document.ExpenseVoucherDocumentId"
-                                           class="btn-app btn-icon btn-primary-app"
-                                           title="Download">
-                                            <i class="bi bi-download"></i>
-                                        </a>
-
-                                        @if (Model.Status == FinancialConstants.ExpenseVoucherStatus.Draft)
-                                        {
-                                            <form asp-action="DeleteDocument"
-                                                  method="post">
-
-                                                @Html.AntiForgeryToken()
-
-                                                <input type="hidden"
-                                                       name="id"
-                                                       value="@document.ExpenseVoucherDocumentId" />
-
-                                                <button type="submit"
-                                                        class="btn-app btn-icon btn-danger-app"
-                                                        onclick="return confirm('Delete this document?')"
-                                                        title="Delete">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-
-                                            </form>
-                                        }
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                    }
-                    else
-                    {
-                        <tr>
-                            <td colspan="6"
-                                class="empty-state">
-                                No documents uploaded.
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-
-            </table>
-
-        </div>
-
-    </div>
-
-</div>
-
-<div class="app-card">
-
-    <div class="card-header">
-        <div>
-            <h2 class="card-title">Voucher Information</h2>
-            <p class="card-subtitle">
-                Basic voucher, category and status details.
-            </p>
-        </div>
-    </div>
-
-    <div class="card-body">
-
-        <div class="form-grid-3">
-
-            <div class="form-group">
-                <label class="form-label">Voucher Number</label>
-                <strong>@Model.VoucherNumber</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Voucher Date</label>
-                <strong>@Model.VoucherDate.ToString("dd MMM yyyy")</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Financial Year</label>
-                <strong>@Model.FinancialYear</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Category</label>
-                <strong>@(Model.Category?.CategoryName ?? "-")</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Status</label>
-                @if (Model.Status == "Draft")
-                {
-                    <span class="badge-warning">Draft</span>
-                }
-                else if (Model.Status == "Submitted")
-                {
-                    <span class="badge-info">Submitted</span>
-                }
-                else if (Model.Status == "Approved")
-                {
-                    <span class="badge-secondary">Approved</span>
-                }
-                else if (Model.Status == "Posted")
-                {
-                    <span class="badge-success">Posted</span>
-                }
-                else if (Model.Status == "Rejected")
-                {
-                    <span class="badge-danger">Rejected</span>
-                }
-                else if (Model.Status == "Reversed")
-                {
-                    <span class="badge-danger">Reversed</span>
-                }
-            </div>
-
-        </div>
-
-            <div class="form-group">
-                <label class="form-label">Payment Status</label>
-                <strong>@Model.PaymentStatus</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Paid Amount</label>
-                <strong>₹ @Model.PaidAmount.ToString("N2")</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Balance Amount</label>
-                <strong>₹ @Model.BalanceAmount.ToString("N2")</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Description</label>
-                <strong>@(string.IsNullOrWhiteSpace(Model.Description) ? "-" : Model.Description)</strong>
-            </div>
-
     </div>
 </div>
 
-<div class="app-card">
+<div class="detail-page">
 
-    <div class="card-header">
-        <div>
-            <h2 class="card-title">Amount Details</h2>
-            <p class="card-subtitle">
-                GST breakup and total voucher amount.
-            </p>
+    <div class="detail-summary-grid">
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Voucher Date</div>
+            <div class="detail-summary-value">
+                @Model.VoucherDate.ToString("dd-MMM-yyyy")
+            </div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Status</div>
+            <div class="detail-summary-value">
+                <span class="@StatusBadge(Model.Status)">@Model.Status</span>
+            </div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Total Amount</div>
+            <div class="detail-summary-value">
+                ₹ @Model.TotalAmount.ToString("N2")
+            </div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Balance</div>
+            <div class="detail-summary-value">
+                ₹ @Model.BalanceAmount.ToString("N2")
+            </div>
         </div>
     </div>
 
-    <div class="card-body">
-
-        <div class="form-grid-4">
-
-            <div class="form-group">
-                <label class="form-label">Amount Before GST</label>
-                <strong>₹ @Model.Amount.ToString("N2")</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">GST Rate</label>
-                <strong>@Model.GSTRate.ToString("N2")%</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">
-                    Supply Type
-                </label>
-
-                @if (Model.IsInterState)
-                {
-                    <span class="badge-info">
-                        Interstate
-                    </span>
-                }
-                else
-                {
-                    <span class="badge-secondary">
-                        Intrastate
-                    </span>
-                }
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">CGST</label>
-                <strong>₹ @Model.CGSTAmount.ToString("N2")</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">SGST</label>
-                <strong>₹ @Model.SGSTAmount.ToString("N2")</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">IGST</label>
-                <strong>₹ @Model.IGSTAmount.ToString("N2")</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Total GST</label>
-                <strong>₹ @Model.TotalGSTAmount.ToString("N2")</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Total Amount</label>
-                <strong>₹ @Model.TotalAmount.ToString("N2")</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">ITC Eligible</label>
-                @if (Model.ITCEligible)
-                {
-                    <span class="badge-success">Yes</span>
-                }
-                else
-                {
-                    <span class="badge-secondary">No</span>
-                }
-            </div>
-
-        </div>
-
-    </div>
-</div>
-
-<div class="app-card">
-
-    <div class="card-header">
-        <div>
-            <h2 class="card-title">Vendor Information</h2>
-            <p class="card-subtitle">
-                Vendor bill, GSTIN and remarks.
-            </p>
-        </div>
-    </div>
-
-    <div class="card-body">
-
-        <div class="form-grid-3">
-
-            <div class="form-group">
-                <label class="form-label">Vendor Name</label>
-                <strong>@(Model.Vendor?.VendorName ?? (string.IsNullOrWhiteSpace(Model.VendorName) ? "-" : Model.VendorName))</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Vendor GSTIN</label>
-                <strong>@(string.IsNullOrWhiteSpace(Model.VendorGSTIN) ? "-" : Model.VendorGSTIN)</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Vendor Invoice Number</label>
-                <strong>@(string.IsNullOrWhiteSpace(Model.InvoiceNumber) ? "-" : Model.InvoiceNumber)</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Vendor Invoice Date</label>
-                <strong>@(Model.VendorInvoiceDate?.ToString("dd MMM yyyy") ?? "-")</strong>
-            </div>
-
-        </div>
-
-        <div class="form-group">
-            <label class="form-label">Remarks</label>
-            <strong>@(string.IsNullOrWhiteSpace(Model.Remarks) ? "-" : Model.Remarks)</strong>
-        </div>
-
-    </div>
-
-</div>
-
-<div class="app-card">
-
-    <div class="card-header">
-        <div>
-            <h2 class="card-title">Audit Information</h2>
-            <p class="card-subtitle">
-                Created, updated and approval timestamps.
-            </p>
-        </div>
-    </div>
-
-    <div class="card-body">
-
-        <div class="form-grid-3">
-
-            <div class="form-group">
-                <label class="form-label">Created On</label>
-                <strong>@Model.CreatedOn.ToString("dd MMM yyyy HH:mm")</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Updated On</label>
-                <strong>@(Model.UpdatedOn?.ToString("dd MMM yyyy HH:mm") ?? "-")</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Approved On</label>
-                <strong>@(Model.ApprovedOn?.ToString("dd MMM yyyy HH:mm") ?? "-")</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Rejected On</label>
-                <strong>
-                    @(Model.RejectedOn?.ToString("dd MMM yyyy HH:mm") ?? "-")
-                </strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Rejection Reason</label>
-                <strong>
-                    @(string.IsNullOrWhiteSpace(Model.RejectionReason)
-                                        ? "-"
-                                        : Model.RejectionReason)
-                </strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Reversed On</label>
-                <strong>@(Model.ReversedOn?.ToString("dd MMM yyyy HH:mm") ?? "-")</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Reversal Reason</label>
-                <strong>@(string.IsNullOrWhiteSpace(Model.ReversalReason) ? "-" : Model.ReversalReason)</strong>
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-    
-@if (Model.Status == FinancialConstants.ExpenseVoucherStatus.Submitted &&
-    (User.IsInRole("Admin") || User.IsInRole("Finance")))
-{
-    <div class="app-card">
-
+    <div class="app-card table-card">
         <div class="card-header">
             <div>
-                <h2 class="card-title">Reject Voucher</h2>
+                <h5 class="card-title">Documents</h5>
                 <p class="card-subtitle">
-                    Provide a reason before rejecting this voucher.
+                    Upload and manage bills, GST documents and supporting files.
                 </p>
             </div>
         </div>
 
         <div class="card-body">
-
-            <form asp-controller="ExpenseVoucher"
-                  asp-action="Reject"
-                  method="post">
-
+            <form asp-action="UploadDocument"
+                  method="post"
+                  enctype="multipart/form-data">
                 @Html.AntiForgeryToken()
 
                 <input type="hidden"
-                       name="id"
+                       name="voucherId"
                        value="@Model.ExpenseVoucherId" />
 
-                <div class="form-group">
-                    <label class="form-label">
-                        Rejection Reason
-                    </label>
+                <div class="form-grid-4">
+                    <div class="form-group">
+                        <label class="form-label">Document Type</label>
+                        <select name="documentType" class="app-select" required>
+                            <option value="">Select Type</option>
+                            <option value="VendorInvoice">Vendor Invoice</option>
+                            <option value="GSTInvoice">GST Invoice</option>
+                            <option value="PaymentProof">Payment Proof</option>
+                            <option value="ApprovalNote">Approval Note</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
 
-                    <textarea name="rejectionReason"
-                          class="app-textarea"
-                          maxlength="500"
-                          required></textarea>
+                    <div class="form-group">
+                        <label class="form-label">File</label>
+                        <input type="file" name="file" class="app-input" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Remarks</label>
+                        <input type="text"
+                               name="remarks"
+                               class="app-input"
+                               maxlength="500"
+                               placeholder="Optional remarks" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="submit" class="btn-app btn-primary-app">
+                            <i class="bi bi-upload"></i>
+                            Upload
+                        </button>
+                    </div>
                 </div>
-
-                <button type="submit"
-                        class="btn-app btn-danger-app">
-                    <i class="bi bi-x-circle"></i>
-                    Reject Voucher
-                </button>
-
             </form>
 
+            <div class="table-responsive mt-4">
+                <table class="app-table">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>File Name</th>
+                            <th>Uploaded By</th>
+                            <th>Uploaded On</th>
+                            <th>Remarks</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @if (Model.Documents.Any())
+                        {
+                            foreach (var document in Model.Documents.OrderByDescending(x => x.UploadedOn))
+                            {
+                                <tr>
+                                    <td>@document.DocumentType</td>
+                                    <td>@document.OriginalFileName</td>
+                                    <td>@document.UploadedByUserId</td>
+                                    <td>@document.UploadedOn.ToString("dd-MMM-yyyy")</td>
+                                    <td>@(string.IsNullOrWhiteSpace(document.Remarks) ? "-" : document.Remarks)</td>
+                                    <td>
+                                        <div class="table-actions">
+                                            <a asp-action="DownloadDocument"
+                                               asp-route-id="@document.ExpenseVoucherDocumentId"
+                                               class="btn-app btn-icon btn-primary-app"
+                                               title="Download">
+                                                <i class="bi bi-download"></i>
+                                            </a>
+
+                                            @if (Model.Status == FinancialConstants.ExpenseVoucherStatus.Draft)
+                                            {
+                                                <form asp-action="DeleteDocument" method="post">
+                                                    @Html.AntiForgeryToken()
+
+                                                    <input type="hidden"
+                                                           name="id"
+                                                           value="@document.ExpenseVoucherDocumentId" />
+
+                                                    <button type="submit"
+                                                            class="btn-app btn-icon btn-danger-app"
+                                                            onclick="return confirm('Delete this document?')"
+                                                            title="Delete">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="empty-state">
+                                    No documents uploaded.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-grid-2">
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Voucher Information</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Voucher Number</span>
+                        <strong class="detail-info-value">@Model.VoucherNumber</strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Voucher Date</span>
+                        <strong class="detail-info-value">
+                            @Model.VoucherDate.ToString("dd-MMM-yyyy")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Financial Year</span>
+                        <strong class="detail-info-value">@Model.FinancialYear</strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Category</span>
+                        <strong class="detail-info-value">
+                            @(Model.Category?.CategoryName ?? "-")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Status</span>
+                        <strong class="detail-info-value">
+                            <span class="@StatusBadge(Model.Status)">@Model.Status</span>
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Payment Status</span>
+                        <strong class="detail-info-value">@Model.PaymentStatus</strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Description</span>
+                        <strong class="detail-info-value">
+                            @(string.IsNullOrWhiteSpace(Model.Description) ? "-" : Model.Description)
+                        </strong>
+                    </div>
+                </div>
+            </div>
         </div>
 
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Vendor Information</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Vendor Name</span>
+                        <strong class="detail-info-value">@vendorName</strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Vendor GSTIN</span>
+                        <strong class="detail-info-value">
+                            @(string.IsNullOrWhiteSpace(Model.VendorGSTIN) ? "-" : Model.VendorGSTIN)
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Vendor Invoice Number</span>
+                        <strong class="detail-info-value">
+                            @(string.IsNullOrWhiteSpace(Model.InvoiceNumber) ? "-" : Model.InvoiceNumber)
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Vendor Invoice Date</span>
+                        <strong class="detail-info-value">
+                            @(Model.VendorInvoiceDate?.ToString("dd-MMM-yyyy") ?? "-")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Remarks</span>
+                        <strong class="detail-info-value">
+                            @(string.IsNullOrWhiteSpace(Model.Remarks) ? "-" : Model.Remarks)
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-}
-    
+
+    <div class="detail-grid-2">
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Amount Details</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Amount Before GST</span>
+                        <strong class="detail-info-value">
+                            ₹ @Model.Amount.ToString("N2")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">GST Rate</span>
+                        <strong class="detail-info-value">
+                            @Model.GSTRate.ToString("N2")%
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Supply Type</span>
+                        <strong class="detail-info-value">
+                            <span class="@supplyTypeClass">@supplyTypeText</span>
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">CGST</span>
+                        <strong class="detail-info-value">
+                            ₹ @Model.CGSTAmount.ToString("N2")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">SGST</span>
+                        <strong class="detail-info-value">
+                            ₹ @Model.SGSTAmount.ToString("N2")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">IGST</span>
+                        <strong class="detail-info-value">
+                            ₹ @Model.IGSTAmount.ToString("N2")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Total GST</span>
+                        <strong class="detail-info-value">
+                            ₹ @Model.TotalGSTAmount.ToString("N2")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Total Amount</span>
+                        <strong class="detail-info-value">
+                            ₹ @Model.TotalAmount.ToString("N2")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">ITC Eligible</span>
+                        <strong class="detail-info-value">
+                            @if (Model.ITCEligible)
+                            {
+                                <span class="badge-success">Yes</span>
+                            }
+                            else
+                            {
+                                <span class="badge-secondary">No</span>
+                            }
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Payment Amounts</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Paid Amount</span>
+                        <strong class="detail-info-value">
+                            ₹ @Model.PaidAmount.ToString("N2")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Balance Amount</span>
+                        <strong class="detail-info-value">
+                            ₹ @Model.BalanceAmount.ToString("N2")
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-card">
+        <div class="card-header">
+            <h5 class="card-title">Audit Information</h5>
+        </div>
+
+        <div class="card-body">
+            <div class="detail-grid-3">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Created On</span>
+                        <strong class="detail-info-value">
+                            @Model.CreatedOn.ToString("dd-MMM-yyyy HH:mm")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Updated On</span>
+                        <strong class="detail-info-value">
+                            @(Model.UpdatedOn?.ToString("dd-MMM-yyyy HH:mm") ?? "-")
+                        </strong>
+                    </div>
+                </div>
+
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Approved On</span>
+                        <strong class="detail-info-value">
+                            @(Model.ApprovedOn?.ToString("dd-MMM-yyyy HH:mm") ?? "-")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Rejected On</span>
+                        <strong class="detail-info-value">
+                            @(Model.RejectedOn?.ToString("dd-MMM-yyyy HH:mm") ?? "-")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Rejection Reason</span>
+                        <strong class="detail-info-value">
+                            @(string.IsNullOrWhiteSpace(Model.RejectionReason) ? "-" : Model.RejectionReason)
+                        </strong>
+                    </div>
+                </div>
+
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Reversed On</span>
+                        <strong class="detail-info-value">
+                            @(Model.ReversedOn?.ToString("dd-MMM-yyyy HH:mm") ?? "-")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Reversal Reason</span>
+                        <strong class="detail-info-value">
+                            @(string.IsNullOrWhiteSpace(Model.ReversalReason) ? "-" : Model.ReversalReason)
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.Status == FinancialConstants.ExpenseVoucherStatus.Submitted &&
+        (User.IsInRole("Admin") || User.IsInRole("Finance")))
+    {
+        <div class="app-card">
+            <div class="card-header">
+                <div>
+                    <h5 class="card-title">Reject Voucher</h5>
+                    <p class="card-subtitle">
+                        Provide a reason before rejecting this voucher.
+                    </p>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <form asp-controller="ExpenseVoucher"
+                      asp-action="Reject"
+                      method="post">
+                    @Html.AntiForgeryToken()
+
+                    <input type="hidden"
+                           name="id"
+                           value="@Model.ExpenseVoucherId" />
+
+                    <div class="form-group">
+                        <label class="form-label">Rejection Reason</label>
+
+                        <textarea name="rejectionReason"
+                              class="app-textarea"
+                              maxlength="500"
+                              required></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-app btn-danger-app">
+                        <i class="bi bi-x-circle"></i>
+                        Reject Voucher
+                    </button>
+                </form>
+            </div>
+        </div>
+    }
+
+</div>

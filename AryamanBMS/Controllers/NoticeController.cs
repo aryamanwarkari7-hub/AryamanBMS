@@ -4,6 +4,7 @@ using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using System.Text;
 
 namespace AryamanBMS.Controllers
 {
@@ -25,7 +26,15 @@ namespace AryamanBMS.Controllers
 
         #region Index
 
-        public async Task<IActionResult> Index(string? department, string? status)
+        public async Task<IActionResult> Index(
+            string? department,
+            string? status,
+            string? search,
+            DateTime? fromDate,
+            DateTime? toDate,
+            string sortBy = "NoticeDate",
+            string sortOrder = "desc",
+            int page = 1)
         {
             var notices = await _noticeRepository.GetAllAsync();
 
@@ -43,10 +52,148 @@ namespace AryamanBMS.Controllers
                     .ToList();
             }
 
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                string keyword = search.Trim().ToLower();
+
+                notices = notices
+                    .Where(x =>
+                        (!string.IsNullOrWhiteSpace(x.NoticeNumber) &&
+                            x.NoticeNumber.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(x.Subject) &&
+                            x.Subject.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(x.Description) &&
+                            x.Description.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(x.Department) &&
+                            x.Department.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(x.Remarks) &&
+                            x.Remarks.ToLower().Contains(keyword)))
+                    .ToList();
+            }
+
+            if (fromDate.HasValue)
+            {
+                notices = notices
+                    .Where(x => x.NoticeDate.Date >= fromDate.Value.Date)
+                    .ToList();
+            }
+
+            if (toDate.HasValue)
+            {
+                notices = notices
+                    .Where(x => x.NoticeDate.Date <= toDate.Value.Date)
+                    .ToList();
+            }
+
+            bool desc =
+                string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
+
+            notices = sortBy switch
+            {
+                "NoticeNo" => desc
+                    ? notices.OrderByDescending(x => x.NoticeNumber).ToList()
+                    : notices.OrderBy(x => x.NoticeNumber).ToList(),
+
+                "Department" => desc
+                    ? notices.OrderByDescending(x => x.Department).ToList()
+                    : notices.OrderBy(x => x.Department).ToList(),
+
+                "Subject" => desc
+                    ? notices.OrderByDescending(x => x.Subject).ToList()
+                    : notices.OrderBy(x => x.Subject).ToList(),
+
+                "DueDate" => desc
+                    ? notices.OrderByDescending(x => x.DueDate).ToList()
+                    : notices.OrderBy(x => x.DueDate).ToList(),
+
+                "Status" => desc
+                    ? notices.OrderByDescending(x => x.Status).ToList()
+                    : notices.OrderBy(x => x.Status).ToList(),
+
+                "Active" => desc
+                    ? notices.OrderByDescending(x => x.IsActive).ToList()
+                    : notices.OrderBy(x => x.IsActive).ToList(),
+
+                _ => desc
+                    ? notices.OrderByDescending(x => x.NoticeDate).ToList()
+                    : notices.OrderBy(x => x.NoticeDate).ToList()
+            };
+
+            const int pageSize = 20;
+            int totalRecords = notices.Count;
+
+            notices = notices
+                .Skip((Math.Max(page, 1) - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
             ViewBag.Department = department;
             ViewBag.Status = status;
+            ViewBag.Search = search;
+            ViewBag.FromDate = fromDate;
+            ViewBag.ToDate = toDate;
+            ViewBag.SortBy = sortBy;
+            ViewBag.SortOrder = sortOrder;
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages =
+                (int)Math.Ceiling(totalRecords / (double)pageSize);
 
             return View(notices);
+        }
+
+        public async Task<IActionResult> ExportCsv(
+            string? department,
+            string? status,
+            string? search,
+            DateTime? fromDate,
+            DateTime? toDate)
+        {
+            var notices = await _noticeRepository.GetAllAsync();
+
+            if (!string.IsNullOrWhiteSpace(department))
+                notices = notices.Where(x => x.Department == department).ToList();
+
+            if (!string.IsNullOrWhiteSpace(status))
+                notices = notices.Where(x => x.Status == status).ToList();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                string keyword = search.Trim().ToLower();
+                notices = notices.Where(x =>
+                    (!string.IsNullOrWhiteSpace(x.NoticeNumber) && x.NoticeNumber.ToLower().Contains(keyword)) ||
+                    (!string.IsNullOrWhiteSpace(x.Subject) && x.Subject.ToLower().Contains(keyword)) ||
+                    (!string.IsNullOrWhiteSpace(x.Description) && x.Description.ToLower().Contains(keyword)) ||
+                    (!string.IsNullOrWhiteSpace(x.Department) && x.Department.ToLower().Contains(keyword)) ||
+                    (!string.IsNullOrWhiteSpace(x.Remarks) && x.Remarks.ToLower().Contains(keyword)))
+                    .ToList();
+            }
+
+            if (fromDate.HasValue)
+                notices = notices.Where(x => x.NoticeDate.Date >= fromDate.Value.Date).ToList();
+
+            if (toDate.HasValue)
+                notices = notices.Where(x => x.NoticeDate.Date <= toDate.Value.Date).ToList();
+
+            var csv = new StringBuilder();
+            csv.AppendLine("Notice No,Department,Subject,Notice Date,Received Date,Due Date,Status,Active");
+
+            foreach (var item in notices.OrderByDescending(x => x.NoticeDate))
+            {
+                csv.AppendLine(string.Join(",",
+                    Csv(item.NoticeNumber),
+                    Csv(item.Department),
+                    Csv(item.Subject),
+                    Csv(item.NoticeDate.ToString("dd-MMM-yyyy")),
+                    Csv(item.ReceivedDate.ToString("dd-MMM-yyyy")),
+                    Csv(item.DueDate?.ToString("dd-MMM-yyyy")),
+                    Csv(item.Status),
+                    Csv(item.IsActive ? "Active" : "Archived")));
+            }
+
+            return File(
+                Encoding.UTF8.GetBytes(csv.ToString()),
+                "text/csv",
+                $"statutory-notices-{DateTime.Now:yyyyMMddHHmmss}.csv");
         }
 
         #endregion
@@ -389,6 +536,12 @@ namespace AryamanBMS.Controllers
         {
             return User.FindFirstValue(ClaimTypes.NameIdentifier)
                 ?? string.Empty;
+        }
+
+        private static string Csv(string? value)
+        {
+            value ??= string.Empty;
+            return $"\"{value.Replace("\"", "\"\"")}\"";
         }
 
     }

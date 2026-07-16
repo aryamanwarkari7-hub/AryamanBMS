@@ -17,16 +17,14 @@
 }
 
 <div class="module-header">
-
     <div>
-        <h1 class="module-title">PAYMENT RECEIPT DETAILS</h1>
+        <h1 class="module-title">@Model.ReceiptNo</h1>
         <p class="module-subtitle">
-            Receipt information for @Model.ReceiptNo
+            Payment receipt, invoice reference and transaction details
         </p>
     </div>
 
     <div class="module-header-actions">
-
         @if (!Model.IsCancelled)
         {
             <a asp-action="Edit"
@@ -35,13 +33,6 @@
                 <i class="bi bi-pencil-square"></i>
                 Edit Receipt
             </a>
-
-            @* <a asp-action="Delete"
-               asp-route-id="@Model.PaymentReceiptId"
-               class="btn-app btn-danger-app">
-                <i class="bi bi-x-circle"></i>
-                Cancel Receipt
-            </a> *@
         }
 
         <a asp-action="Index"
@@ -49,189 +40,210 @@
             <i class="bi bi-arrow-left"></i>
             Back
         </a>
-
     </div>
-
 </div>
 
-<div class="app-card">
+<div class="detail-page">
 
-    <div class="card-header">
-        <div>
-            <h2 class="card-title">Receipt Information</h2>
-            <p class="card-subtitle">
-                Basic receipt and invoice reference details.
-            </p>
+    <div class="detail-summary-grid">
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Receipt Date</div>
+            <div class="detail-summary-value">
+                @Model.ReceiptDate.ToString("dd-MMM-yyyy")
+            </div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Client</div>
+            <div class="detail-summary-value">
+                @(Model.Client?.ClientName ?? "-")
+            </div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Amount Received</div>
+            <div class="detail-summary-value">
+                ₹ @Model.AmountReceived.ToString("N2")
+            </div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Status</div>
+            <div class="detail-summary-value">
+                <span class="@statusClass">@statusText</span>
+            </div>
         </div>
     </div>
 
-    <div class="card-body">
-
-        <div class="form-grid-3">
-
-            <div class="form-group">
-                <label class="form-label">Receipt No</label>
-                <strong>@Model.ReceiptNo</strong>
+    <div class="detail-grid-2">
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Receipt Information</h5>
             </div>
 
-            <div class="form-group">
-                <label class="form-label">Receipt Date</label>
-                <strong>@Model.ReceiptDate.ToString("dd-MMM-yyyy")</strong>
-            </div>
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Receipt No</span>
+                        <strong class="detail-info-value">@Model.ReceiptNo</strong>
+                    </div>
 
-            <div class="form-group">
-                <label class="form-label">Status</label>
-                <strong>
-                    <span class="@statusClass">@statusText</span>
-                </strong>
-            </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Receipt Date</span>
+                        <strong class="detail-info-value">
+                            @Model.ReceiptDate.ToString("dd-MMM-yyyy")
+                        </strong>
+                    </div>
 
-            <div class="form-group">
-                <label class="form-label">Client</label>
-                <strong>@(Model.Client?.ClientName ?? "-")</strong>
-            </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Client</span>
+                        <strong class="detail-info-value">
+                            @(Model.Client?.ClientName ?? "-")
+                        </strong>
+                    </div>
 
-            <div class="form-group">
-                <label class="form-label">Invoice</label>
-                <strong>@(Model.Invoice?.InvoiceNo ?? "-")</strong>
-            </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Invoice</span>
+                        <strong class="detail-info-value">
+                            @(Model.Invoice?.InvoiceNo ?? "-")
+                        </strong>
+                    </div>
 
-        </div>
-
-    </div>
-
-</div>
-
-<div class="app-card">
-
-    <div class="card-header">
-        <div>
-            <h2 class="card-title">Payment Details</h2>
-            <p class="card-subtitle">
-                Amount received and transaction reference.
-            </p>
-        </div>
-    </div>
-
-    <div class="card-body">
-
-        <div class="form-grid-3">
-
-            <div class="form-group">
-                <label class="form-label">Amount Received</label>
-                <strong>₹ @Model.AmountReceived.ToString("N2")</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Payment Mode</label>
-                <strong>@(Model.PaymentMode ?? "-")</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Bank Name</label>
-                <strong>@(string.IsNullOrWhiteSpace(Model.BankName) ? "-" : Model.BankName)</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Transaction No</label>
-                <strong>@(string.IsNullOrWhiteSpace(Model.TransactionNo) ? "-" : Model.TransactionNo)</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Reference No</label>
-                <strong>@(string.IsNullOrWhiteSpace(Model.ReferenceNo) ? "-" : Model.ReferenceNo)</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Received By</label>
-                <strong>@(string.IsNullOrWhiteSpace(Model.ReceivedBy) ? "-" : Model.ReceivedBy)</strong>
-            </div>
-
-            @if (Model.IsCancelled)
-            {
-                <div class="form-group">
-                    <label class="form-label">
-                        Cancellation Reason
-                    </label>
-                    <div>
-                        @(Model.CancellationReason ?? "-")
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Status</span>
+                        <strong class="detail-info-value">
+                            <span class="@statusClass">@statusText</span>
+                        </strong>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <div class="form-group">
-                    <label class="form-label">
-                        Cancelled On
-                    </label>
-                    <div>
-                        @(Model.CancelledOn?
-                                            .ToString("dd MMM yyyy HH:mm") ?? "-")
-                </div>
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Payment Details</h5>
             </div>
 
-                <div class="form-group">
-                    <label class="form-label">
-                        Cancelled By User ID
-                    </label>
-                    <div>
-                        @(Model.CancelledByUserId ?? "-")
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Amount Received</span>
+                        <strong class="detail-info-value">
+                            ₹ @Model.AmountReceived.ToString("N2")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Payment Mode</span>
+                        <strong class="detail-info-value">
+                            @(Model.PaymentMode ?? "-")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Bank Name</span>
+                        <strong class="detail-info-value">
+                            @(string.IsNullOrWhiteSpace(Model.BankName) ? "-" : Model.BankName)
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Transaction No</span>
+                        <strong class="detail-info-value">
+                            @(string.IsNullOrWhiteSpace(Model.TransactionNo) ? "-" : Model.TransactionNo)
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Reference No</span>
+                        <strong class="detail-info-value">
+                            @(string.IsNullOrWhiteSpace(Model.ReferenceNo) ? "-" : Model.ReferenceNo)
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Received By</span>
+                        <strong class="detail-info-value">
+                            @(string.IsNullOrWhiteSpace(Model.ReceivedBy) ? "-" : Model.ReceivedBy)
+                        </strong>
                     </div>
                 </div>
-                        }
-
-        </div>
-
-    </div>
-
-</div>
-
-<div class="app-card">
-
-    <div class="card-header">
-        <div>
-            <h2 class="card-title">Remarks</h2>
-            <p class="card-subtitle">
-                Additional notes recorded for this receipt.
-            </p>
+            </div>
         </div>
     </div>
 
-    <div class="card-body">
-        <p>
-            @(string.IsNullOrWhiteSpace(Model.Remarks)
-                        ? "No remarks recorded."
-                        : Model.Remarks)
-        </p>
-    </div>
-
-</div>
-
-<div class="app-card">
-
-    <div class="card-header">
-        <div>
-            <h2 class="card-title">Audit Information</h2>
-            <p class="card-subtitle">
-                Created and updated timestamps.
-            </p>
-        </div>
-    </div>
-
-    <div class="card-body">
-
-        <div class="form-grid-2">
-
-            <div class="form-group">
-                <label class="form-label">Created On</label>
-                <strong>@Model.CreatedOn.ToString("dd-MMM-yyyy hh:mm tt")</strong>
+    @if (Model.IsCancelled)
+    {
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Cancellation Information</h5>
             </div>
 
-            <div class="form-group">
-                <label class="form-label">Last Updated</label>
-                <strong>@(Model.UpdatedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")</strong>
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Cancellation Reason</span>
+                        <strong class="detail-info-value">
+                            @(Model.CancellationReason ?? "-")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Cancelled On</span>
+                        <strong class="detail-info-value">
+                            @(Model.CancelledOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Cancelled By User ID</span>
+                        <strong class="detail-info-value">
+                            @(Model.CancelledByUserId ?? "-")
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="detail-grid-2">
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Remarks</h5>
             </div>
 
+            <div class="card-body">
+                <div class="detail-note-box">
+                    @(string.IsNullOrWhiteSpace(Model.Remarks)
+                                        ? "No remarks recorded."
+                                        : Model.Remarks)
+                </div>
+            </div>
         </div>
 
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Audit Information</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Created On</span>
+                        <strong class="detail-info-value">
+                            @Model.CreatedOn.ToString("dd-MMM-yyyy hh:mm tt")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Last Updated</span>
+                        <strong class="detail-info-value">
+                            @(Model.UpdatedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
 </div>

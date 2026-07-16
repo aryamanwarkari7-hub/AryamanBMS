@@ -26,27 +26,61 @@ namespace AryamanBMS.Controllers
             _userManager = userManager;
         }
 
-        public async Task<IActionResult> Index(string? search)
+        public async Task<IActionResult> Index(
+    string? search,
+    string sortBy = "VendorName",
+    string sortOrder = "asc")
         {
             var vendors = await _context.Vendors
                 .AsNoTracking()
                 .Where(x => x.IsActive)
-                .OrderBy(x => x.VendorName)
                 .ToListAsync();
 
             if (!string.IsNullOrWhiteSpace(search))
             {
                 string keyword = search.Trim().ToLower();
+
                 vendors = vendors
                     .Where(x =>
                         x.VendorCode.ToLower().Contains(keyword) ||
                         x.VendorName.ToLower().Contains(keyword) ||
-                        (!string.IsNullOrWhiteSpace(x.GSTIN) && x.GSTIN.ToLower().Contains(keyword)) ||
-                        (!string.IsNullOrWhiteSpace(x.PAN) && x.PAN.ToLower().Contains(keyword)))
+                        (!string.IsNullOrWhiteSpace(x.GSTIN) &&
+                            x.GSTIN.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(x.PAN) &&
+                            x.PAN.ToLower().Contains(keyword)))
                     .ToList();
             }
 
+            bool desc =
+                string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
+
+            vendors = sortBy switch
+            {
+                "VendorCode" => desc
+                    ? vendors.OrderByDescending(x => x.VendorCode).ToList()
+                    : vendors.OrderBy(x => x.VendorCode).ToList(),
+
+                "GSTIN" => desc
+                    ? vendors.OrderByDescending(x => x.GSTIN).ToList()
+                    : vendors.OrderBy(x => x.GSTIN).ToList(),
+
+                "PAN" => desc
+                    ? vendors.OrderByDescending(x => x.PAN).ToList()
+                    : vendors.OrderBy(x => x.PAN).ToList(),
+
+                "Status" => desc
+                    ? vendors.OrderByDescending(x => x.IsActive).ToList()
+                    : vendors.OrderBy(x => x.IsActive).ToList(),
+
+                _ => desc
+                    ? vendors.OrderByDescending(x => x.VendorName).ToList()
+                    : vendors.OrderBy(x => x.VendorName).ToList()
+            };
+
             ViewBag.Search = search;
+            ViewBag.SortBy = sortBy;
+            ViewBag.SortOrder = sortOrder;
+
             return View(vendors);
         }
 

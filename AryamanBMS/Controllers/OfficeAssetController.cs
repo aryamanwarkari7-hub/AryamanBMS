@@ -53,7 +53,10 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> Index(
             string? financialYear,
             string? category,
-            string? status)
+            string? status,
+            string? search,
+            string sortBy = "PurchaseDate",
+            string sortOrder = "desc")
         {
             var assets = await _repository.GetAllAsync();
 
@@ -78,9 +81,72 @@ namespace AryamanBMS.Controllers
                     .ToList();
             }
 
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                string keyword = search.Trim().ToLower();
+
+                assets = assets
+                    .Where(x =>
+                        (!string.IsNullOrWhiteSpace(x.AssetName) &&
+                            x.AssetName.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(x.AssetCode) &&
+                            x.AssetCode.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(x.AssetCategory) &&
+                            x.AssetCategory.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(x.LocationName) &&
+                            x.LocationName.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(x.AssignedTo) &&
+                            x.AssignedTo.ToLower().Contains(keyword)) ||
+                        (x.AssignedEmployee != null &&
+                            !string.IsNullOrWhiteSpace(x.AssignedEmployee.FullName) &&
+                            x.AssignedEmployee.FullName.ToLower().Contains(keyword)))
+                    .ToList();
+            }
+
+            bool desc =
+                string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
+
+            assets = sortBy switch
+            {
+                "AssetName" => desc
+                    ? assets.OrderByDescending(x => x.AssetName).ToList()
+                    : assets.OrderBy(x => x.AssetName).ToList(),
+
+                "AssetCode" => desc
+                    ? assets.OrderByDescending(x => x.AssetCode).ToList()
+                    : assets.OrderBy(x => x.AssetCode).ToList(),
+
+                "Category" => desc
+                    ? assets.OrderByDescending(x => x.AssetCategory).ToList()
+                    : assets.OrderBy(x => x.AssetCategory).ToList(),
+
+                "Value" => desc
+                    ? assets.OrderByDescending(x => x.PurchaseValue).ToList()
+                    : assets.OrderBy(x => x.PurchaseValue).ToList(),
+
+                "AssignedTo" => desc
+                    ? assets.OrderByDescending(x => x.AssignedEmployee?.FullName ?? x.AssignedTo).ToList()
+                    : assets.OrderBy(x => x.AssignedEmployee?.FullName ?? x.AssignedTo).ToList(),
+
+                "FinancialYear" => desc
+                    ? assets.OrderByDescending(x => x.FinancialYear).ToList()
+                    : assets.OrderBy(x => x.FinancialYear).ToList(),
+
+                "Status" => desc
+                    ? assets.OrderByDescending(x => x.Status).ToList()
+                    : assets.OrderBy(x => x.Status).ToList(),
+
+                _ => desc
+                    ? assets.OrderByDescending(x => x.PurchaseDate).ToList()
+                    : assets.OrderBy(x => x.PurchaseDate).ToList()
+            };
+
             ViewBag.FilterFinancialYear = financialYear;
             ViewBag.FilterCategory = category;
             ViewBag.FilterStatus = status;
+            ViewBag.Search = search;
+            ViewBag.SortBy = sortBy;
+            ViewBag.SortOrder = sortOrder;
 
             return View(assets);
         }
@@ -421,7 +487,7 @@ namespace AryamanBMS.Controllers
         [Authorize(Roles = "Admin,Finance")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Delete(int id)
+        public IActionResult Delete(int id)
         {
             TempData["Error"] = "Archive reason is required.";
             return RedirectToAction(nameof(Details), new { id });

@@ -26,6 +26,60 @@
 
 </div>
 
+<div class="app-card">
+    <div class="card-body">
+
+        <form method="get" class="w-100">
+            <div class="filter-form-row">
+
+                <div class="form-group">
+                    <label class="form-label">Search</label>
+                    <input type="text"
+                           name="search"
+                           value="@ViewBag.Search"
+                           class="app-input"
+                           placeholder="Employee code or name"
+                           autocomplete="off" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Sort By</label>
+                    <select name="sortBy" class="app-select">
+                        <option value="EmployeeCode" selected="@(ViewBag.SortBy == "EmployeeCode")">Employee Code</option>
+                        <option value="EmployeeName" selected="@(ViewBag.SortBy == "EmployeeName")">Employee Name</option>
+                        <option value="EffectiveFrom" selected="@(ViewBag.SortBy == "EffectiveFrom")">Effective From</option>
+                        <option value="ActualSalary" selected="@(ViewBag.SortBy == "ActualSalary")">Actual Salary</option>
+                        <option value="Status" selected="@(ViewBag.SortBy == "Status")">Status</option>
+                        <option value="UpdatedOn" selected="@(ViewBag.SortBy == "UpdatedOn")">Updated On</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Order</label>
+                    <select name="sortOrder" class="app-select">
+                        <option value="asc" selected="@(ViewBag.SortOrder == "asc")">Ascending</option>
+                        <option value="desc" selected="@(ViewBag.SortOrder == "desc")">Descending</option>
+                    </select>
+                </div>
+
+                <div class="filter-form-actions">
+                    <button type="submit" class="btn-app btn-primary-app">
+                        <i class="bi bi-search"></i>
+                        Search
+                    </button>
+
+                    <a asp-action="Index" class="btn-app btn-secondary-app">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        Reset
+                    </a>
+                </div>
+
+            </div>
+        </form>
+
+    </div>
+</div>
+
 <div class="app-card table-card">
 
     <div class="card-header">

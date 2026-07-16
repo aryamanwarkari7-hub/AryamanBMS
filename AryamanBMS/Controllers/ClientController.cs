@@ -24,9 +24,66 @@ namespace AryamanBMS.Controllers
 
         #region Index
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(
+    string? searchText,
+    string sortBy = "ClientName",
+    string sortOrder = "asc")
         {
             var clients = await _repository.GetAllAsync();
+
+            if (!string.IsNullOrWhiteSpace(searchText))
+            {
+                string search = searchText.Trim();
+
+                clients = clients
+                    .Where(x =>
+                        (!string.IsNullOrWhiteSpace(x.ClientCode) &&
+                            x.ClientCode.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                        (!string.IsNullOrWhiteSpace(x.ClientName) &&
+                            x.ClientName.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                        (!string.IsNullOrWhiteSpace(x.ContactPerson) &&
+                            x.ContactPerson.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                        (!string.IsNullOrWhiteSpace(x.Phone) &&
+                            x.Phone.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                        (!string.IsNullOrWhiteSpace(x.Email) &&
+                            x.Email.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                        (!string.IsNullOrWhiteSpace(x.GSTNumber) &&
+                            x.GSTNumber.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                        (!string.IsNullOrWhiteSpace(x.ClientType) &&
+                            x.ClientType.Contains(search, StringComparison.OrdinalIgnoreCase)))
+                    .ToList();
+            }
+
+            bool desc =
+                string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
+
+            clients = sortBy switch
+            {
+                "ClientCode" => desc
+                    ? clients.OrderByDescending(x => x.ClientCode).ToList()
+                    : clients.OrderBy(x => x.ClientCode).ToList(),
+
+                "ContactPerson" => desc
+                    ? clients.OrderByDescending(x => x.ContactPerson).ToList()
+                    : clients.OrderBy(x => x.ContactPerson).ToList(),
+
+                "ClientType" => desc
+                    ? clients.OrderByDescending(x => x.ClientType).ToList()
+                    : clients.OrderBy(x => x.ClientType).ToList(),
+
+                "Status" => desc
+                    ? clients.OrderByDescending(x => x.IsActive).ToList()
+                    : clients.OrderBy(x => x.IsActive).ToList(),
+
+                _ => desc
+                    ? clients.OrderByDescending(x => x.ClientName).ToList()
+                    : clients.OrderBy(x => x.ClientName).ToList()
+            };
+
+            ViewBag.SearchText = searchText;
+            ViewBag.SortBy = sortBy;
+            ViewBag.SortOrder = sortOrder;
+
             return View(clients);
         }
 

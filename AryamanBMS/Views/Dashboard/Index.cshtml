@@ -31,15 +31,23 @@
         </p>
     </div>
 
-    <div class="module-header-actions">
-        <span class="status-badge status-info">
-            @Model.Today.ToString("dd MMM yyyy")
+    <div class="module-header-meta">
+        <span class="module-meta-pill info"
+              title="Current system date">
+            <i class="bi bi-calendar3"></i>
+            @DateTime.Today.ToString("dd MMM yyyy")
         </span>
-        <span class="status-badge status-warning">
-            @Model.PendingApprovals Pending
+
+        <span class="module-meta-pill warning"
+              title="Pending leave, comp-off and expense approval items">
+            <i class="bi bi-hourglass-split"></i>
+            @Model.PendingApprovals Pending Actions
         </span>
-        <span class="status-badge status-danger">
-            @Model.OverdueItems Overdue
+
+        <span class="module-meta-pill danger"
+              title="Overdue project tasks and overdue receivables">
+            <i class="bi bi-exclamation-triangle"></i>
+            @Model.OverdueItems Overdue Items
         </span>
     </div>
 </div>
@@ -128,7 +136,7 @@
                 </div>
             </div>
 
-            <div class="dashboard-list dashboard-compact-list">
+            @* <div class="dashboard-list dashboard-compact-list">
                 <div class="dashboard-list-title">Recent Employees</div>
 
                 @if (!Model.RecentEmployees.Any())
@@ -153,7 +161,7 @@
                         </a>
                     }
                 }
-            </div>
+            </div> *@
         </div>
     </section>
 

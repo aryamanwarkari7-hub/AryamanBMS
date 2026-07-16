@@ -2,6 +2,9 @@
 
 @{
     ViewData["Title"] = "Tasks";
+
+    string sortBy = ViewBag.SortBy as string ?? "CreatedOn";
+    string sortOrder = ViewBag.SortOrder as string ?? "desc";
 }
 
 <div class="module-header">
@@ -123,6 +126,29 @@
 
             </div>
 
+            <div class="filter-row mt-3">
+                <div class="filter-field">
+                    <select name="sortBy" class="app-select">
+                        <option value="CreatedOn" selected="@(sortBy == "CreatedOn")">Sort by Created</option>
+                        <option value="TaskCode" selected="@(sortBy == "TaskCode")">Sort by Task Code</option>
+                        <option value="TaskTitle" selected="@(sortBy == "TaskTitle")">Sort by Title</option>
+                        <option value="Project" selected="@(sortBy == "Project")">Sort by Project</option>
+                        <option value="AssignedTo" selected="@(sortBy == "AssignedTo")">Sort by Assigned To</option>
+                        <option value="Priority" selected="@(sortBy == "Priority")">Sort by Priority</option>
+                        <option value="Status" selected="@(sortBy == "Status")">Sort by Status</option>
+                        <option value="Progress" selected="@(sortBy == "Progress")">Sort by Progress</option>
+                        <option value="DueDate" selected="@(sortBy == "DueDate")">Sort by Due Date</option>
+                    </select>
+                </div>
+
+                <div class="filter-field">
+                    <select name="sortOrder" class="app-select">
+                        <option value="asc" selected="@(sortOrder == "asc")">Ascending</option>
+                        <option value="desc" selected="@(sortOrder == "desc")">Descending</option>
+                    </select>
+                </div>
+            </div>
+
             <div class="mt-3">
                 <button type="submit"
                         class="btn-app btn-primary-app">
@@ -232,7 +258,7 @@
                 {
                     <tr>
                         <td colspan="9"
-                            class="text-center text-muted">
+                            class="empty-state">
                             No project tasks found.
                         </td>
                     </tr>
@@ -255,6 +281,8 @@
                asp-route-searchText="@ViewBag.SearchText"
                asp-route-status="@ViewBag.Status"
                asp-route-priority="@ViewBag.Priority"
+               asp-route-sortBy="@sortBy"
+               asp-route-sortOrder="@sortOrder"
                class="page-link-app @(i == ViewBag.CurrentPage ? "active" : "")">
                 @i
             </a>

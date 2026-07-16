@@ -3,9 +3,13 @@
 @{
     ViewData["Title"] = "Payment Receipts";
 
-    string currentSearch = Context.Request.Query["search"].ToString();
-    string currentClientId = Context.Request.Query["clientId"].ToString();
-    string currentStatus = Context.Request.Query["status"].ToString();
+    string currentSearch = ViewBag.Search as string ?? "";
+    string currentClientId = ViewBag.ClientId?.ToString() ?? "";
+    string currentStatus = ViewBag.Status as string ?? "";
+    DateTime? fromDate = ViewBag.FromDate as DateTime?;
+    DateTime? toDate = ViewBag.ToDate as DateTime?;
+    string sortBy = ViewBag.SortBy as string ?? "ReceiptDate";
+    string sortOrder = ViewBag.SortOrder as string ?? "desc";
 }
 
 <div class="module-header">
@@ -23,6 +27,17 @@
            class="btn-app btn-primary-app">
             <i class="bi bi-plus-circle"></i>
             New Receipt
+        </a>
+
+        <a asp-action="ExportCsv"
+           asp-route-search="@currentSearch"
+           asp-route-clientId="@currentClientId"
+           asp-route-status="@currentStatus"
+           asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
+           asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-download"></i>
+            Export
         </a>
 
     </div>
@@ -73,21 +88,22 @@
 
     <div class="card-header">
 
-        <form method="get">
+        <form method="get" class="w-100">
+            <input type="hidden"
+                   name="status"
+                   value="@currentStatus" />
 
-            <div class="form-grid-4">
-
-                <div class="form-group">
+            <div class="filter-row">
+                <div class="filter-field filter-field-wide">
                     <input type="text"
                            name="search"
                            value="@currentSearch"
                            class="app-input"
-                           placeholder="Receipt / Client / Invoice" />
+                           placeholder="Receipt / Client / Invoice / Mode / Reference" />
                 </div>
 
-                <div class="form-group">
-                    <select name="clientId"
-                            class="app-select">
+                <div class="filter-field">
+                    <select name="clientId" class="app-select">
                         <option value="">All Clients</option>
 
                         @foreach (var client in Model.Clients)
@@ -100,23 +116,52 @@
                     </select>
                 </div>
 
-                <div class="form-group">
-                    <button type="submit"
-                            class="btn-app btn-primary-app w-100">
+                <div class="filter-field">
+                    <select name="sortBy" class="app-select">
+                        <option value="ReceiptDate" selected="@(sortBy == "ReceiptDate")">Sort by Date</option>
+                        <option value="ReceiptNo" selected="@(sortBy == "ReceiptNo")">Sort by Receipt No</option>
+                        <option value="Client" selected="@(sortBy == "Client")">Sort by Client</option>
+                        <option value="Invoice" selected="@(sortBy == "Invoice")">Sort by Invoice</option>
+                        <option value="Mode" selected="@(sortBy == "Mode")">Sort by Mode</option>
+                        <option value="Amount" selected="@(sortBy == "Amount")">Sort by Amount</option>
+                        <option value="Status" selected="@(sortBy == "Status")">Sort by Status</option>
+                    </select>
+                </div>
+
+                <div class="filter-field">
+                    <select name="sortOrder" class="app-select">
+                        <option value="asc" selected="@(sortOrder == "asc")">Ascending</option>
+                        <option value="desc" selected="@(sortOrder == "desc")">Descending</option>
+                    </select>
+                </div>
+
+                <div class="filter-field">
+                    <input type="date"
+                           name="fromDate"
+                           value="@fromDate?.ToString("yyyy-MM-dd")"
+                           class="app-input" />
+                </div>
+
+                <div class="filter-field">
+                    <input type="date"
+                           name="toDate"
+                           value="@toDate?.ToString("yyyy-MM-dd")"
+                           class="app-input" />
+                </div>
+
+                <div class="filter-actions">
+                    <button type="submit" class="btn-app btn-primary-app">
                         <i class="bi bi-search"></i>
                         Search
                     </button>
-                </div>
 
-                <div class="form-group">
                     <a asp-action="Index"
-                       class="btn-app btn-secondary-app w-100">
+                       class="btn-app btn-secondary-app">
+                        <i class="bi bi-arrow-clockwise"></i>
                         Reset
                     </a>
                 </div>
-
             </div>
-
         </form>
 
     </div>
@@ -128,6 +173,10 @@
             <a asp-action="Index"
                asp-route-search="@currentSearch"
                asp-route-clientId="@currentClientId"
+               asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
+               asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
+               asp-route-sortBy="@sortBy"
+               asp-route-sortOrder="@sortOrder"
                class="btn-app @(string.IsNullOrWhiteSpace(currentStatus) ? "btn-primary-app" : "btn-secondary-app")">
                 All
             </a>
@@ -136,6 +185,10 @@
                asp-route-search="@currentSearch"
                asp-route-clientId="@currentClientId"
                asp-route-status="Active"
+               asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
+               asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
+               asp-route-sortBy="@sortBy"
+               asp-route-sortOrder="@sortOrder"
                class="btn-app @(currentStatus == "Active" ? "btn-primary-app" : "btn-secondary-app")">
                 Active
             </a>
@@ -144,6 +197,10 @@
                asp-route-search="@currentSearch"
                asp-route-clientId="@currentClientId"
                asp-route-status="Cancelled"
+               asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
+               asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
+               asp-route-sortBy="@sortBy"
+               asp-route-sortOrder="@sortOrder"
                class="btn-app @(currentStatus == "Cancelled" ? "btn-primary-app" : "btn-secondary-app")">
                 Cancelled
             </a>
@@ -244,8 +301,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="8"
-                                class="text-center text-muted">
+                            <td colspan="8" class="empty-state">
                                 No payment receipts found.
                             </td>
                         </tr>
@@ -277,6 +333,27 @@
             </table>
 
         </div>
+
+        @if ((ViewBag.TotalPages ?? 1) > 1)
+        {
+            <div class="pagination-container">
+                @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                {
+                    <a asp-action="Index"
+                       asp-route-page="@i"
+                       asp-route-search="@currentSearch"
+                       asp-route-clientId="@currentClientId"
+                       asp-route-status="@currentStatus"
+                       asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
+                       asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
+                       asp-route-sortBy="@sortBy"
+                       asp-route-sortOrder="@sortOrder"
+                       class="page-link-app @(i == ViewBag.CurrentPage ? "active" : "")">
+                        @i
+                    </a>
+                }
+            </div>
+        }
 
     </div>
 

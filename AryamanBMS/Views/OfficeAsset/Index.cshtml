@@ -8,6 +8,9 @@
     string financialYear = ViewBag.FilterFinancialYear as string ?? "";
     string category = ViewBag.FilterCategory as string ?? "";
     string status = ViewBag.FilterStatus as string ?? "";
+    string search = ViewBag.Search as string ?? "";
+    string sortBy = ViewBag.SortBy as string ?? "PurchaseDate";
+    string sortOrder = ViewBag.SortOrder as string ?? "desc";
 
     string StatusLabel(string value) => value switch
     {
@@ -54,17 +57,15 @@
         <form asp-action="Index" method="get">
             <input type="hidden" name="status" value="@status" />
 
-            <div class="form-grid-3">
-                <div class="form-group">
-                    <label class="form-label">Financial Year</label>
+            <div class="filter-row">
+                <div class="filter-field">
                     <input name="financialYear"
                            value="@financialYear"
                            class="app-input"
                            placeholder="2026-27" />
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Category</label>
+                <div class="filter-field">
                     <select name="category" class="app-select">
                         <option value="">All Categories</option>
                         <option value="Laptop" selected="@(category == "Laptop")">Laptop</option>
@@ -77,12 +78,43 @@
                     </select>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">&nbsp;</label>
-                    <button type="submit" class="btn-app btn-primary-app w-100">
+                <div class="filter-field filter-field-wide">
+                    <input name="search"
+                           value="@search"
+                           class="app-input"
+                           placeholder="Asset name, code, category, location or assignee" />
+                </div>
+
+                <div class="filter-field">
+                    <select name="sortBy" class="app-select">
+                        <option value="PurchaseDate" selected="@(sortBy == "PurchaseDate")">Sort by Purchase Date</option>
+                        <option value="AssetName" selected="@(sortBy == "AssetName")">Sort by Asset Name</option>
+                        <option value="AssetCode" selected="@(sortBy == "AssetCode")">Sort by Asset Code</option>
+                        <option value="Category" selected="@(sortBy == "Category")">Sort by Category</option>
+                        <option value="Value" selected="@(sortBy == "Value")">Sort by Value</option>
+                        <option value="AssignedTo" selected="@(sortBy == "AssignedTo")">Sort by Assigned To</option>
+                        <option value="FinancialYear" selected="@(sortBy == "FinancialYear")">Sort by FY</option>
+                        <option value="Status" selected="@(sortBy == "Status")">Sort by Status</option>
+                    </select>
+                </div>
+
+                <div class="filter-field">
+                    <select name="sortOrder" class="app-select">
+                        <option value="asc" selected="@(sortOrder == "asc")">Ascending</option>
+                        <option value="desc" selected="@(sortOrder == "desc")">Descending</option>
+                    </select>
+                </div>
+
+                <div class="filter-actions">
+                    <button type="submit" class="btn-app btn-primary-app">
                         <i class="bi bi-search"></i>
                         Load
                     </button>
+
+                    <a asp-action="Index" class="btn-app btn-secondary-app">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        Reset
+                    </a>
                 </div>
             </div>
         </form>
@@ -103,6 +135,9 @@
             <a asp-action="Index"
                asp-route-financialYear="@financialYear"
                asp-route-category="@category"
+               asp-route-search="@search"
+               asp-route-sortBy="@sortBy"
+               asp-route-sortOrder="@sortOrder"
                class="btn-app @(string.IsNullOrWhiteSpace(status) ? "btn-primary-app" : "btn-secondary-app")">
                 All
             </a>
@@ -110,6 +145,9 @@
             <a asp-action="Index"
                asp-route-financialYear="@financialYear"
                asp-route-category="@category"
+               asp-route-search="@search"
+               asp-route-sortBy="@sortBy"
+               asp-route-sortOrder="@sortOrder"
                asp-route-status="InUse"
                class="btn-app @(status == "InUse" ? "btn-primary-app" : "btn-secondary-app")">
                 In Use
@@ -118,6 +156,9 @@
             <a asp-action="Index"
                asp-route-financialYear="@financialYear"
                asp-route-category="@category"
+               asp-route-search="@search"
+               asp-route-sortBy="@sortBy"
+               asp-route-sortOrder="@sortOrder"
                asp-route-status="Idle"
                class="btn-app @(status == "Idle" ? "btn-primary-app" : "btn-secondary-app")">
                 Idle
@@ -126,6 +167,9 @@
             <a asp-action="Index"
                asp-route-financialYear="@financialYear"
                asp-route-category="@category"
+               asp-route-search="@search"
+               asp-route-sortBy="@sortBy"
+               asp-route-sortOrder="@sortOrder"
                asp-route-status="UnderRepair"
                class="btn-app @(status == "UnderRepair" ? "btn-primary-app" : "btn-secondary-app")">
                 Under Repair
@@ -134,6 +178,9 @@
             <a asp-action="Index"
                asp-route-financialYear="@financialYear"
                asp-route-category="@category"
+               asp-route-search="@search"
+               asp-route-sortBy="@sortBy"
+               asp-route-sortOrder="@sortOrder"
                asp-route-status="Disposed"
                class="btn-app @(status == "Disposed" ? "btn-primary-app" : "btn-secondary-app")">
                 Disposed

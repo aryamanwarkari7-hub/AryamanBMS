@@ -36,7 +36,13 @@ namespace AryamanBMS.Controllers
 
         #region Index
 
-        public async Task<IActionResult> Index(string? type, string? status, int? clientId)
+        public async Task<IActionResult> Index(
+           string? type,
+           string? status,
+           int? clientId,
+           string? search,
+           string sortBy = "OrderDate",
+           string sortOrder = "desc")
         {
             var orders = await _orderRepo.GetAllAsync();
 
@@ -51,9 +57,71 @@ namespace AryamanBMS.Controllers
             if (clientId.HasValue)
                 orders = orders.Where(o => o.ClientId == clientId.Value).ToList();
 
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                string keyword = search.Trim().ToLower();
+
+                orders = orders
+                    .Where(o =>
+                        (!string.IsNullOrWhiteSpace(o.OrderNumber) &&
+                            o.OrderNumber.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(o.OrderTitle) &&
+                            o.OrderTitle.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(o.VendorReference) &&
+                            o.VendorReference.ToLower().Contains(keyword)) ||
+                        (o.Client != null &&
+                            !string.IsNullOrWhiteSpace(o.Client.ClientName) &&
+                            o.Client.ClientName.ToLower().Contains(keyword)) ||
+                        (o.Proposal != null &&
+                            !string.IsNullOrWhiteSpace(o.Proposal.ProposalNumber) &&
+                            o.Proposal.ProposalNumber.ToLower().Contains(keyword)))
+                    .ToList();
+            }
+
+            bool desc =
+    string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
+
+            orders = sortBy switch
+            {
+                "OrderNumber" => desc
+                    ? orders.OrderByDescending(o => o.OrderNumber).ToList()
+                    : orders.OrderBy(o => o.OrderNumber).ToList(),
+
+                "Type" => desc
+                    ? orders.OrderByDescending(o => o.OrderType).ToList()
+                    : orders.OrderBy(o => o.OrderType).ToList(),
+
+                "Client" => desc
+                    ? orders.OrderByDescending(o => o.Client?.ClientName).ToList()
+                    : orders.OrderBy(o => o.Client?.ClientName).ToList(),
+
+                "Title" => desc
+                    ? orders.OrderByDescending(o => o.OrderTitle).ToList()
+                    : orders.OrderBy(o => o.OrderTitle).ToList(),
+
+                "DueDate" => desc
+                    ? orders.OrderByDescending(o => o.DeliveryDueDate).ToList()
+                    : orders.OrderBy(o => o.DeliveryDueDate).ToList(),
+
+                "Amount" => desc
+                    ? orders.OrderByDescending(o => o.OrderAmount).ToList()
+                    : orders.OrderBy(o => o.OrderAmount).ToList(),
+
+                "Status" => desc
+                    ? orders.OrderByDescending(o => o.Status).ToList()
+                    : orders.OrderBy(o => o.Status).ToList(),
+
+                _ => desc
+                    ? orders.OrderByDescending(o => o.OrderDate).ToList()
+                    : orders.OrderBy(o => o.OrderDate).ToList()
+            };
+
             ViewBag.FilterType     = type;
             ViewBag.FilterStatus   = status;
             ViewBag.FilterClientId = clientId;
+            ViewBag.Search = search;
+            ViewBag.SortBy = sortBy;
+            ViewBag.SortOrder = sortOrder;
 
             return View(orders);
         }

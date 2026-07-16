@@ -302,13 +302,61 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UploadProfilePhoto(IFormFile? profilePhoto)
+        public async Task<IActionResult> UploadProfilePhoto(IFormFile? profilePhoto, string? croppedProfilePhoto)
         {
             var user = await _userManager.GetUserAsync(User);
 
             if (user == null)
             {
                 return RedirectToAction(nameof(Login));
+            }
+
+            if (!string.IsNullOrWhiteSpace(croppedProfilePhoto))
+            {
+                var commaIndex = croppedProfilePhoto.IndexOf(',');
+
+                if (commaIndex >= 0)
+                {
+                    croppedProfilePhoto = croppedProfilePhoto[(commaIndex + 1)..];
+                }
+
+                var bytes = Convert.FromBase64String(croppedProfilePhoto);
+
+                const long croppedMaxBytes = 2 * 1024 * 1024;
+
+                if (bytes.Length > croppedMaxBytes)
+                {
+                    TempData["Error"] = "Profile photo must be 2 MB or smaller.";
+                    return RedirectToAction(nameof(Profile));
+                }
+
+                string croppedFolderPath = Path.Combine(
+                    _webHostEnvironment.WebRootPath,
+                    "uploads",
+                    "profile-photos");
+
+                Directory.CreateDirectory(croppedFolderPath);
+
+                string croppedFileName = $"{user.Id}.jpg";
+                string croppedFullPath = Path.Combine(
+                    croppedFolderPath,
+                    croppedFileName);
+
+                await System.IO.File.WriteAllBytesAsync(croppedFullPath, bytes);
+
+                user.ProfilePhotoPath =
+                    $"/uploads/profile-photos/{croppedFileName}";
+
+                var croppedResult = await _userManager.UpdateAsync(user);
+
+                if (!croppedResult.Succeeded)
+                {
+                    TempData["Error"] = "Profile photo could not be updated.";
+                    return RedirectToAction(nameof(Profile));
+                }
+
+                TempData["Success"] = "Profile photo updated successfully.";
+                return RedirectToAction(nameof(Profile));
             }
 
             if (profilePhoto == null || profilePhoto.Length == 0)

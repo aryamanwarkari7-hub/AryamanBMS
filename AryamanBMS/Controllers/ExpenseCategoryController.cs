@@ -15,7 +15,10 @@ namespace AryamanBMS.Controllers
             _categoryRepository = categoryRepository;
         }
 
-        public async Task<IActionResult> Index(string? search)
+        public async Task<IActionResult> Index(
+          string? search,
+          string sortBy = "CategoryName",
+          string sortOrder = "asc")
         {
             var categories = await _categoryRepository.GetAllActiveAsync();
 
@@ -25,13 +28,48 @@ namespace AryamanBMS.Controllers
 
                 categories = categories
                     .Where(x =>
-                        (!string.IsNullOrWhiteSpace(x.CategoryCode) && x.CategoryCode.ToLower().Contains(keyword)) ||
-                        (!string.IsNullOrWhiteSpace(x.CategoryName) && x.CategoryName.ToLower().Contains(keyword)) ||
-                        (!string.IsNullOrWhiteSpace(x.Description) && x.Description.ToLower().Contains(keyword)))
+                        (!string.IsNullOrWhiteSpace(x.CategoryCode) &&
+                            x.CategoryCode.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(x.CategoryName) &&
+                            x.CategoryName.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(x.Description) &&
+                            x.Description.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(x.GLAccountCode) &&
+                            x.GLAccountCode.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(x.ExpenseType) &&
+                            x.ExpenseType.ToLower().Contains(keyword)))
                     .ToList();
             }
 
+            bool desc =
+                string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
+
+            categories = sortBy switch
+            {
+                "CategoryCode" => desc
+                    ? categories.OrderByDescending(x => x.CategoryCode).ToList()
+                    : categories.OrderBy(x => x.CategoryCode).ToList(),
+
+                "GSTRate" => desc
+                    ? categories.OrderByDescending(x => x.DefaultGSTRate).ToList()
+                    : categories.OrderBy(x => x.DefaultGSTRate).ToList(),
+
+                "ITC" => desc
+                    ? categories.OrderByDescending(x => x.ITCEligible).ToList()
+                    : categories.OrderBy(x => x.ITCEligible).ToList(),
+
+                "ExpenseType" => desc
+                    ? categories.OrderByDescending(x => x.ExpenseType).ToList()
+                    : categories.OrderBy(x => x.ExpenseType).ToList(),
+
+                _ => desc
+                    ? categories.OrderByDescending(x => x.CategoryName).ToList()
+                    : categories.OrderBy(x => x.CategoryName).ToList()
+            };
+
             ViewBag.Search = search;
+            ViewBag.SortBy = sortBy;
+            ViewBag.SortOrder = sortOrder;
 
             return View(categories);
         }

@@ -16,6 +16,61 @@
     </a>
 </div>
 
+<div class="app-card">
+    <div class="card-body">
+
+        <form method="get" class="w-100">
+            <div class="filter-form-row">
+
+                <div class="form-group">
+                    <label class="form-label">Search</label>
+                    <input type="text"
+                           name="search"
+                           value="@ViewBag.Search"
+                           class="app-input"
+                           placeholder="Receipt no, client, project, mode or reference"
+                           autocomplete="off" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Sort By</label>
+                    <select name="sortBy" class="app-select">
+                        <option value="ReceiptDate" selected="@(ViewBag.SortBy == "ReceiptDate")">Receipt Date</option>
+                        <option value="ReceiptNo" selected="@(ViewBag.SortBy == "ReceiptNo")">Receipt No</option>
+                        <option value="Client" selected="@(ViewBag.SortBy == "Client")">Client</option>
+                        <option value="Project" selected="@(ViewBag.SortBy == "Project")">Project</option>
+                        <option value="Amount" selected="@(ViewBag.SortBy == "Amount")">Amount</option>
+                        <option value="AvailableBalance" selected="@(ViewBag.SortBy == "AvailableBalance")">Available Balance</option>
+                        <option value="PaymentMode" selected="@(ViewBag.SortBy == "PaymentMode")">Payment Mode</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Order</label>
+                    <select name="sortOrder" class="app-select">
+                        <option value="desc" selected="@(ViewBag.SortOrder == "desc")">Descending</option>
+                        <option value="asc" selected="@(ViewBag.SortOrder == "asc")">Ascending</option>
+                    </select>
+                </div>
+
+                <div class="filter-form-actions">
+                    <button type="submit" class="btn-app btn-primary-app">
+                        <i class="bi bi-search"></i>
+                        Search
+                    </button>
+
+                    <a asp-action="Index" class="btn-app btn-secondary-app">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        Reset
+                    </a>
+                </div>
+
+            </div>
+        </form>
+
+    </div>
+</div>
+
 <div class="app-card table-card">
     <div class="card-body">
         <div class="table-responsive">
@@ -35,31 +90,42 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var item in Model)
+                    @if (!Model.Any())
                     {
                         <tr>
-                            <td>@item.AdvanceReceiptNo</td>
-                            <td>@item.Client?.ClientName</td>
-                            <td>@item.Project?.ProjectName</td>
-                            <td>@item.ReceiptDate.ToString("dd-MMM-yyyy")</td>
-                            <td>@item.Amount.ToString("N2")</td>
-                            <td>@item.AdjustedAmount.ToString("N2")</td>
-                            <td>@item.AvailableBalance.ToString("N2")</td>
-                            <td>@item.PaymentMode</td>
-                            <td>@item.PaymentReference</td>
-                            <td class="text-center">
-                                @if (!item.IsCancelled &&
-                                     item.AvailableBalance > 0)
-                                {
-                                    <a asp-action="Apply"
-                                       asp-route-id="@item.AdvanceReceiptId"
-                                       class="btn-app btn-icon btn-primary-app"
-                                       title="Apply to Invoice">
-                                        <i class="bi bi-arrow-left-right"></i>
-                                    </a>
-                                }
+                            <td colspan="10" class="empty-state">
+                                No advance receipts found.
                             </td>
                         </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.AdvanceReceiptNo</td>
+                                <td>@item.Client?.ClientName</td>
+                                <td>@item.Project?.ProjectName</td>
+                                <td>@item.ReceiptDate.ToString("dd-MMM-yyyy")</td>
+                                <td>@item.Amount.ToString("N2")</td>
+                                <td>@item.AdjustedAmount.ToString("N2")</td>
+                                <td>@item.AvailableBalance.ToString("N2")</td>
+                                <td>@item.PaymentMode</td>
+                                <td>@item.PaymentReference</td>
+                                <td class="text-center">
+                                    @if (!item.IsCancelled &&
+                                                                item.AvailableBalance > 0)
+                                    {
+                                        <a asp-action="Apply"
+                                           asp-route-id="@item.AdvanceReceiptId"
+                                           class="btn-app btn-icon btn-primary-app"
+                                           title="Apply to Invoice">
+                                            <i class="bi bi-arrow-left-right"></i>
+                                        </a>
+                                    }
+                                </td>
+                            </tr>
+                        }
                     }
                 </tbody>
             </table>

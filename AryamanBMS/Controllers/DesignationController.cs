@@ -22,8 +22,10 @@ namespace AryamanBMS.Controllers
         }
 
         public async Task<IActionResult> Index(
-    string? searchText,
-    int page = 1)
+            string? searchText,
+            string sortBy = "DesignationName",
+            string sortOrder = "asc",
+            int page = 1)
         {
             const int pageSize = 5;
 
@@ -41,8 +43,36 @@ namespace AryamanBMS.Controllers
                     d.DisplayCode.Contains(searchText));
             }
 
-            designations = designations
-                .OrderBy(d => d.Id);
+            bool desc =
+                string.Equals(
+                    sortOrder,
+                    "desc",
+                    StringComparison.OrdinalIgnoreCase);
+
+            designations = sortBy switch
+            {
+                "DisplayCode" => desc
+                    ? designations.OrderByDescending(d => d.DisplayCode)
+                    : designations.OrderBy(d => d.DisplayCode),
+
+                "Department" => desc
+                    ? designations.OrderByDescending(d =>
+                        d.Department != null
+                            ? d.Department.DepartmentName
+                            : string.Empty)
+                    : designations.OrderBy(d =>
+                        d.Department != null
+                            ? d.Department.DepartmentName
+                            : string.Empty),
+
+                "Status" => desc
+                    ? designations.OrderByDescending(d => d.IsActive)
+                    : designations.OrderBy(d => d.IsActive),
+
+                _ => desc
+                    ? designations.OrderByDescending(d => d.DesignationName)
+                    : designations.OrderBy(d => d.DesignationName)
+            };
 
             var routeValues = new Dictionary<string, string>();
 
@@ -50,6 +80,9 @@ namespace AryamanBMS.Controllers
             {
                 routeValues["searchText"] = searchText;
             }
+
+            routeValues["sortBy"] = sortBy;
+            routeValues["sortOrder"] = sortOrder;
 
             var model = await designations.ToPagedListAsync(
                 page,
@@ -60,6 +93,8 @@ namespace AryamanBMS.Controllers
             model.Pagination.ActionName = nameof(Index);
 
             ViewBag.SearchText = searchText;
+            ViewBag.SortBy = sortBy;
+            ViewBag.SortOrder = sortOrder;
 
             return View(model);
         }

@@ -26,27 +26,47 @@
 
         <form method="get" class="w-100">
 
-            <div class="form-grid-3">
+            <div class="filter-form-row">
 
                 <div class="form-group">
+                    <label class="form-label">Search</label>
                     <input type="text"
                            name="search"
                            value="@search"
                            class="app-input"
-                           placeholder="Code / Category / Description" />
+                           placeholder="Code / category / GL / type"
+                           autocomplete="off" />
                 </div>
 
                 <div class="form-group">
+                    <label class="form-label">Sort By</label>
+                    <select name="sortBy" class="app-select">
+                        <option value="CategoryName" selected="@(ViewBag.SortBy == "CategoryName")">Category Name</option>
+                        <option value="CategoryCode" selected="@(ViewBag.SortBy == "CategoryCode")">Category Code</option>
+                        <option value="GSTRate" selected="@(ViewBag.SortBy == "GSTRate")">GST Rate</option>
+                        <option value="ITC" selected="@(ViewBag.SortBy == "ITC")">ITC</option>
+                        <option value="ExpenseType" selected="@(ViewBag.SortBy == "ExpenseType")">Expense Type</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Order</label>
+                    <select name="sortOrder" class="app-select">
+                        <option value="asc" selected="@(ViewBag.SortOrder == "asc")">Ascending</option>
+                        <option value="desc" selected="@(ViewBag.SortOrder == "desc")">Descending</option>
+                    </select>
+                </div>
+
+                <div class="filter-form-actions">
                     <button type="submit"
-                            class="btn-app btn-primary-app w-100">
+                            class="btn-app btn-primary-app">
                         <i class="bi bi-search"></i>
                         Search
                     </button>
-                </div>
 
-                <div class="form-group">
                     <a asp-action="Index"
-                       class="btn-app btn-secondary-app w-100">
+                       class="btn-app btn-secondary-app">
+                        <i class="bi bi-arrow-clockwise"></i>
                         Reset
                     </a>
                 </div>

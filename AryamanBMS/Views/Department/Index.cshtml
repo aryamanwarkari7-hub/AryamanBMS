@@ -44,12 +44,22 @@
 
             <div class="filter-form-row">
 
-                <input type="text"
-                       name="searchText"
-                       value="@ViewBag.SearchText"
-                       class="app-input flex-grow-1"
-                       placeholder="Search department name or code"
-                       autocomplete="off" />
+                <div class="form-group">
+                    <label class="form-label">Sort By</label>
+                    <select name="sortBy" class="app-select">
+                        <option value="DepartmentName" selected="@(ViewBag.SortBy == "DepartmentName")">Department Name</option>
+                        
+                        <option value="Status" selected="@(ViewBag.SortBy == "Status")">Status</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Order</label>
+                    <select name="sortOrder" class="app-select">
+                        <option value="asc" selected="@(ViewBag.SortOrder == "asc")">Ascending</option>
+                        <option value="desc" selected="@(ViewBag.SortOrder == "desc")">Descending</option>
+                    </select>
+                </div>
 
                 <div class="filter-form-actions">
                     <button type="submit"

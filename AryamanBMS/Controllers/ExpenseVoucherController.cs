@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace AryamanBMS.Controllers
@@ -45,7 +46,15 @@ namespace AryamanBMS.Controllers
             _logger = logger;
         }
 
-        public async Task<IActionResult> Index(string? status, int? categoryId, string? search)
+        public async Task<IActionResult> Index(
+    string? status,
+    int? categoryId,
+    string? search,
+    DateTime? fromDate,
+    DateTime? toDate,
+    string sortBy = "VoucherDate",
+    string sortOrder = "desc",
+    int page = 1)
         {
             var vouchers = await _voucherRepository.GetAllAsync();
 
@@ -78,21 +87,160 @@ namespace AryamanBMS.Controllers
 
                 vouchers = vouchers
                     .Where(x =>
-                        (!string.IsNullOrWhiteSpace(x.VoucherNumber) && x.VoucherNumber.ToLower().Contains(keyword)) ||
-                        (!string.IsNullOrWhiteSpace(x.VendorName) && x.VendorName.ToLower().Contains(keyword)) ||
-                        (x.Vendor != null && x.Vendor.VendorName.ToLower().Contains(keyword)) ||
-                        (!string.IsNullOrWhiteSpace(x.InvoiceNumber) && x.InvoiceNumber.ToLower().Contains(keyword)) ||
-                        (!string.IsNullOrWhiteSpace(x.Description) && x.Description.ToLower().Contains(keyword)))
+                        (!string.IsNullOrWhiteSpace(x.VoucherNumber) &&
+                            x.VoucherNumber.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(x.VendorName) &&
+                            x.VendorName.ToLower().Contains(keyword)) ||
+                        (x.Vendor != null &&
+                            !string.IsNullOrWhiteSpace(x.Vendor.VendorName) &&
+                            x.Vendor.VendorName.ToLower().Contains(keyword)) ||
+                        (x.Category != null &&
+                            !string.IsNullOrWhiteSpace(x.Category.CategoryName) &&
+                            x.Category.CategoryName.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(x.InvoiceNumber) &&
+                            x.InvoiceNumber.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(x.Description) &&
+                            x.Description.ToLower().Contains(keyword)))
                     .ToList();
             }
+
+            if (fromDate.HasValue)
+            {
+                vouchers = vouchers
+                    .Where(x => x.VoucherDate.Date >= fromDate.Value.Date)
+                    .ToList();
+            }
+
+            if (toDate.HasValue)
+            {
+                vouchers = vouchers
+                    .Where(x => x.VoucherDate.Date <= toDate.Value.Date)
+                    .ToList();
+            }
+
+            bool desc =
+                string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
+
+            vouchers = sortBy switch
+            {
+                "VoucherNo" => desc
+                    ? vouchers.OrderByDescending(x => x.VoucherNumber).ToList()
+                    : vouchers.OrderBy(x => x.VoucherNumber).ToList(),
+
+                "Category" => desc
+                    ? vouchers.OrderByDescending(x => x.Category?.CategoryName).ToList()
+                    : vouchers.OrderBy(x => x.Category?.CategoryName).ToList(),
+
+                "Vendor" => desc
+                    ? vouchers.OrderByDescending(x => x.Vendor?.VendorName ?? x.VendorName).ToList()
+                    : vouchers.OrderBy(x => x.Vendor?.VendorName ?? x.VendorName).ToList(),
+
+                "Amount" => desc
+                    ? vouchers.OrderByDescending(x => x.Amount).ToList()
+                    : vouchers.OrderBy(x => x.Amount).ToList(),
+
+                "TotalAmount" => desc
+                    ? vouchers.OrderByDescending(x => x.TotalAmount).ToList()
+                    : vouchers.OrderBy(x => x.TotalAmount).ToList(),
+
+                "Status" => desc
+                    ? vouchers.OrderByDescending(x => x.Status).ToList()
+                    : vouchers.OrderBy(x => x.Status).ToList(),
+
+                "PaymentStatus" => desc
+                    ? vouchers.OrderByDescending(x => x.PaymentStatus).ToList()
+                    : vouchers.OrderBy(x => x.PaymentStatus).ToList(),
+
+                _ => desc
+                    ? vouchers.OrderByDescending(x => x.VoucherDate).ToList()
+                    : vouchers.OrderBy(x => x.VoucherDate).ToList()
+            };
+
+            const int pageSize = 20;
+            int totalRecords = vouchers.Count();
+
+            vouchers = vouchers
+                .Skip((Math.Max(page, 1) - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
 
             ViewBag.Status = status;
             ViewBag.CategoryId = categoryId;
             ViewBag.Search = search;
+            ViewBag.FromDate = fromDate;
+            ViewBag.ToDate = toDate;
+            ViewBag.SortBy = sortBy;
+            ViewBag.SortOrder = sortOrder;
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages =
+                (int)Math.Ceiling(totalRecords / (double)pageSize);
 
             await LoadLookups();
 
             return View(vouchers);
+        }
+
+        public async Task<IActionResult> ExportCsv(
+            string? status,
+            int? categoryId,
+            string? search,
+            DateTime? fromDate,
+            DateTime? toDate)
+        {
+            var vouchers = await _voucherRepository.GetAllAsync();
+
+            if (!IsFinanceUser())
+            {
+                string userId = GetCurrentUserId();
+                vouchers = vouchers.Where(x => x.CreatedByUserId == userId).ToList();
+            }
+
+            if (!string.IsNullOrWhiteSpace(status))
+                vouchers = vouchers.Where(x => x.Status == status).ToList();
+
+            if (categoryId.HasValue && categoryId.Value > 0)
+                vouchers = vouchers.Where(x => x.ExpenseCategoryId == categoryId.Value).ToList();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                string keyword = search.Trim().ToLower();
+                vouchers = vouchers.Where(x =>
+                    (!string.IsNullOrWhiteSpace(x.VoucherNumber) && x.VoucherNumber.ToLower().Contains(keyword)) ||
+                    (!string.IsNullOrWhiteSpace(x.VendorName) && x.VendorName.ToLower().Contains(keyword)) ||
+                    (x.Vendor != null && !string.IsNullOrWhiteSpace(x.Vendor.VendorName) && x.Vendor.VendorName.ToLower().Contains(keyword)) ||
+                    (x.Category != null && !string.IsNullOrWhiteSpace(x.Category.CategoryName) && x.Category.CategoryName.ToLower().Contains(keyword)) ||
+                    (!string.IsNullOrWhiteSpace(x.InvoiceNumber) && x.InvoiceNumber.ToLower().Contains(keyword)) ||
+                    (!string.IsNullOrWhiteSpace(x.Description) && x.Description.ToLower().Contains(keyword)))
+                    .ToList();
+            }
+
+            if (fromDate.HasValue)
+                vouchers = vouchers.Where(x => x.VoucherDate.Date >= fromDate.Value.Date).ToList();
+
+            if (toDate.HasValue)
+                vouchers = vouchers.Where(x => x.VoucherDate.Date <= toDate.Value.Date).ToList();
+
+            var csv = new StringBuilder();
+            csv.AppendLine("Voucher No,Date,Category,Vendor,Invoice,Amount,Total Amount,Status,Payment Status");
+
+            foreach (var item in vouchers.OrderByDescending(x => x.VoucherDate))
+            {
+                csv.AppendLine(string.Join(",",
+                    Csv(item.VoucherNumber),
+                    Csv(item.VoucherDate.ToString("dd-MMM-yyyy")),
+                    Csv(item.Category?.CategoryName),
+                    Csv(item.Vendor?.VendorName ?? item.VendorName),
+                    Csv(item.InvoiceNumber),
+                    item.Amount.ToString("0.00"),
+                    item.TotalAmount.ToString("0.00"),
+                    Csv(item.Status),
+                    Csv(item.PaymentStatus)));
+            }
+
+            return File(
+                Encoding.UTF8.GetBytes(csv.ToString()),
+                "text/csv",
+                $"expense-vouchers-{DateTime.Now:yyyyMMddHHmmss}.csv");
         }
 
         public IActionResult Pending()
@@ -853,6 +1001,12 @@ namespace AryamanBMS.Controllers
             return _userManager.GetUserId(User)
                 ?? throw new UnauthorizedAccessException(
                     "Current user could not be identified.");
+        }
+
+        private static string Csv(string? value)
+        {
+            value ??= string.Empty;
+            return $"\"{value.Replace("\"", "\"\"")}\"";
         }
 
         private static readonly decimal[] AllowedGstRates =

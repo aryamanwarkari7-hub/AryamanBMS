@@ -2,155 +2,210 @@
 
 @{
     ViewData["Title"] = "Leave Application Details";
+
+    string statusClass = Model.Status switch
+    {
+        "Pending" => "badge-warning",
+        "Approved" => "badge-success",
+        "Rejected" => "badge-danger",
+        "Cancelled" => "badge-secondary",
+        _ => "badge-secondary"
+    };
+
+    string employeeText =
+        $"{Model.Employee?.FullName ?? "-"} ({Model.Employee?.EmployeeCode ?? "-"})";
 }
 
 <div class="module-header">
-
     <div>
-        <h1 class="module-title">Leave Application Details</h1>
-        <p class="module-subtitle">View leave request information</p>
+        <h1 class="module-title">@Model.ApplicationNumber</h1>
+        <p class="module-subtitle">
+            Leave application details and approval status
+        </p>
     </div>
 
-</div>
-
-<div class="app-card">
-
-    <div class="card-header">
-        <h5 class="card-title">Application Information</h5>
-    </div>
-
-    <div class="card-body">
-
-        <div class="table-responsive">
-
-            <table class="app-table">
-
-                <tbody>
-
-                    <tr>
-                        <th width="250">Application No</th>
-                        <td>@Model.ApplicationNumber</td>
-                    </tr>
-
-                    <tr>
-                        <th>Employee</th>
-                        <td>
-                            @Model.Employee?.FullName
-                            (@Model.Employee?.EmployeeCode)
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <th>Leave Type</th>
-                        <td>
-                            @Model.LeaveType?.LeaveName
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <th>From Date</th>
-                        <td>@Model.FromDate.ToString("dd-MMM-yyyy")</td>
-                    </tr>
-
-                    <tr>
-                        <th>To Date</th>
-                        <td>@Model.ToDate.ToString("dd-MMM-yyyy")</td>
-                    </tr>
-
-                    <tr>
-                        <th>Number Of Days</th>
-                        <td>@Model.NumberOfDays</td>
-                    </tr>
-
-                    <tr>
-                        <th>Reason</th>
-                        <td>@Model.Reason</td>
-                    </tr>
-
-                    <tr>
-                        <th>Status</th>
-                        <td>
-                            @if (Model.Status == "Pending")
-                            {
-                                <span class="badge-warning">Pending</span>
-                            }
-                            else if (Model.Status == "Approved")
-                            {
-                                <span class="badge-success">Approved</span>
-                            }
-                            else if (Model.Status == "Rejected")
-                            {
-                                <span class="badge-danger">Rejected</span>
-                            }
-                            else if (Model.Status == "Cancelled")
-                            {
-                                <span class="badge-secondary">Cancelled</span>
-                            }
-                            else
-                            {
-                                <span>@Model.Status</span>
-                            }
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <th>Applied On</th>
-                        <td>@Model.AppliedOn.ToString("dd-MMM-yyyy hh:mm tt")</td>
-                    </tr>
-
-                    <tr>
-                        <th>Approved By</th>
-                        <td>@(Model.ApprovedBy ?? "-")</td>
-                    </tr>
-
-                    <tr>
-                        <th>Approved On</th>
-                        <td>
-                            @(Model.ApprovedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <th>Approval Remarks</th>
-                        <td>@(Model.ApprovalRemarks ?? "-")</td>
-                    </tr>
-
-                </tbody>
-
-            </table>
-
-        </div>
-
-        <div class="mt-4">
-
-            @if ((User.IsInRole("Admin") || User.IsInRole("HR"))
+    <div class="module-header-actions">
+        @if ((User.IsInRole("Admin") || User.IsInRole("HR"))
                 && Model.Status == "Pending")
-            {
-                <a asp-action="Approve"
-                   asp-route-id="@Model.Id"
-                   class="btn-app btn-success-app"
-                   onclick="return confirm('Approve this leave application?');">
-                    <i class="bi bi-check-lg"></i>
-                    Approve
-                </a>
-
-                <a asp-action="Reject"
-                   asp-route-id="@Model.Id"
-                   class="btn-app btn-danger-app"
-                   onclick="return confirm('Reject this leave application?');">
-                    <i class="bi bi-x-lg"></i>
-                    Reject
-                </a>
-            }
-
-            <a asp-action="Index"
-               class="btn-app btn-secondary-app">
-                <i class="bi bi-arrow-left"></i>
-                Back
+        {
+            <a asp-action="Approve"
+               asp-route-id="@Model.Id"
+               class="btn-app btn-success-app"
+               onclick="return confirm('Approve this leave application?');">
+                <i class="bi bi-check-lg"></i>
+                Approve
             </a>
 
+            <a asp-action="Reject"
+               asp-route-id="@Model.Id"
+               class="btn-app btn-danger-app"
+               onclick="return confirm('Reject this leave application?');">
+                <i class="bi bi-x-lg"></i>
+                Reject
+            </a>
+        }
+
+        <a asp-action="Index"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
+</div>
+
+<div class="detail-page">
+
+    <div class="detail-summary-grid">
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Application No</div>
+            <div class="detail-summary-value">@Model.ApplicationNumber</div>
         </div>
 
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Employee</div>
+            <div class="detail-summary-value">@employeeText</div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Leave Type</div>
+            <div class="detail-summary-value">
+                @(Model.LeaveType?.LeaveName ?? "-")
+            </div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Status</div>
+            <div class="detail-summary-value">
+                <span class="@statusClass">@Model.Status</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-grid-2">
+
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Leave Period</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">From Date</span>
+                        <strong class="detail-info-value">
+                            @Model.FromDate.ToString("dd-MMM-yyyy")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">To Date</span>
+                        <strong class="detail-info-value">
+                            @Model.ToDate.ToString("dd-MMM-yyyy")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Number Of Days</span>
+                        <strong class="detail-info-value">
+                            @Model.NumberOfDays
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Leave Type</span>
+                        <strong class="detail-info-value">
+                            @(Model.LeaveType?.LeaveName ?? "-")
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Application Information</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Employee</span>
+                        <strong class="detail-info-value">@employeeText</strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Applied On</span>
+                        <strong class="detail-info-value">
+                            @Model.AppliedOn.ToString("dd-MMM-yyyy hh:mm tt")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Status</span>
+                        <strong class="detail-info-value">
+                            <span class="@statusClass">@Model.Status</span>
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="app-card">
+        <div class="card-header">
+            <h5 class="card-title">Reason</h5>
+        </div>
+
+        <div class="card-body">
+            <div class="detail-note-box">
+                @(Model.Reason ?? "-")
+            </div>
+        </div>
+    </div>
+
+    <div class="app-card">
+        <div class="card-header">
+            <h5 class="card-title">Approval Information</h5>
+        </div>
+
+        <div class="card-body">
+            <div class="detail-grid-3">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Approved By</span>
+                        <strong class="detail-info-value">
+                            @(Model.ApprovedBy ?? "-")
+                        </strong>
+                    </div>
+                </div>
+
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Approved On</span>
+                        <strong class="detail-info-value">
+                            @(Model.ApprovedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")
+                        </strong>
+                    </div>
+                </div>
+
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Approval Status</span>
+                        <strong class="detail-info-value">
+                            <span class="@statusClass">@Model.Status</span>
+                        </strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <div class="detail-note-box">
+                    <strong>Remarks:</strong>
+                    @(Model.ApprovalRemarks ?? "-")
+                </div>
+            </div>
+        </div>
     </div>
 
 </div>

@@ -2,216 +2,274 @@
 
 @{
     ViewData["Title"] = "Salary Details";
+
+    string employeeText =
+        $"{Model.Employee?.FullName ?? "-"} ({Model.Employee?.EmployeeCode ?? "-"})";
+
+    string periodText =
+        new DateTime(Model.Year, Model.Month, 1).ToString("MMMM yyyy");
+
+    bool isPaid = Model.PaymentStatus == "Paid";
 }
 
 <div class="module-header">
-
     <div>
-
-        <h1 class="module-title">
-            Salary Details
-        </h1>
-
+        <h1 class="module-title">Salary Details</h1>
         <p class="module-subtitle">
-            Excel-imported payroll breakdown
+            Payroll breakdown for @employeeText
         </p>
-
     </div>
 
-    <a asp-action="Index"
-       class="btn-app btn-secondary-app">
+    <div class="module-header-actions">
+        <a asp-action="Payslip"
+           asp-route-id="@Model.Id"
+           class="btn-app btn-primary-app">
+            <i class="bi bi-receipt"></i>
+            Payslip
+        </a>
 
-        Back
-
-    </a>
-
+        <a asp-action="Index"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
 </div>
 
-<div class="app-card">
+<div class="detail-page">
 
-    <div class="card-header">
+    <div class="detail-summary-grid detail-summary-compact">
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Employee</div>
+            <div class="detail-summary-value">@employeeText</div>
+        </div>
 
-        <h5 class="card-title">
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Period</div>
+            <div class="detail-summary-value">@periodText</div>
+        </div>
 
-            @Model.Employee?.FullName
-            (@Model.Employee?.EmployeeCode)
-
-        </h5>
-
-    </div>
-
-    <div class="card-body">
-
-        <div class="form-grid-2">
-
-            <div>
-                <strong>Month</strong><br />
-                @Model.Month/@Model.Year
-            </div>
-
-            <div>
-                <strong>Status</strong><br />
-
-                @if (Model.PaymentStatus == "Paid")
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Payment Status</div>
+            <div class="detail-summary-value">
+                @if (isPaid)
                 {
-                    <span class="badge-success">
-                        Paid
-                    </span>
+                    <span class="badge-success">Paid</span>
                 }
                 else
                 {
-                    <span class="badge-warning">
-                        Pending
-                    </span>
+                    <span class="badge-warning">Pending</span>
                 }
             </div>
-
-            <div>
-                <strong>Pay Days</strong><br />
-                @Model.PayDays.ToString("N2")
-            </div>
-
-            <div>
-                <strong>Source File</strong><br />
-                @(Model.SourceFileName ?? "-")
-            </div>
-
         </div>
 
-        <hr />
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Net Salary</div>
+            <div class="detail-summary-value">
+                ₹ @Model.NetSalary.ToString("N2")
+            </div>
+        </div>
+    </div>
 
-        <h6>Earnings</h6>
+    <div class="detail-grid-2">
 
-        <table class="table">
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Payroll Information</h5>
+            </div>
 
-            <tr>
-                <td>Actual Salary</td>
-                <td>₹ @Model.ActualSalary.ToString("N2")</td>
-            </tr>
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Month</span>
+                        <strong class="detail-info-value">@periodText</strong>
+                    </div>
 
-            <tr>
-                <td>Gross Salary</td>
-                <td>₹ @Model.GrossSalary.ToString("N2")</td>
-            </tr>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Pay Days</span>
+                        <strong class="detail-info-value">
+                            @Model.PayDays.ToString("N2")
+                        </strong>
+                    </div>
 
-            <tr>
-                <td>Basic Salary</td>
-                <td>₹ @Model.BasicSalary.ToString("N2")</td>
-            </tr>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Actual Salary</span>
+                        <strong class="detail-info-value">
+                            ₹ @Model.ActualSalary.ToString("N2")
+                        </strong>
+                    </div>
 
-            <tr>
-                <td>HRA</td>
-                <td>₹ @Model.HRA.ToString("N2")</td>
-            </tr>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Source File</span>
+                        <strong class="detail-info-value">
+                            @(Model.SourceFileName ?? "-")
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-            <tr>
-                <td>Conveyance</td>
-                <td>₹ @Model.Conveyance.ToString("N2")</td>
-            </tr>
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Payment Information</h5>
+            </div>
 
-            <tr>
-                <td>Medical Allowance</td>
-                <td>₹ @Model.MedicalAllowance.ToString("N2")</td>
-            </tr>
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Payment Status</span>
+                        <strong class="detail-info-value">
+                            @if (isPaid)
+                            {
+                                <span class="badge-success">Paid</span>
+                            }
+                            else
+                            {
+                                <span class="badge-warning">Pending</span>
+                            }
+                        </strong>
+                    </div>
 
-            <tr>
-                <td>Education Allowance</td>
-                <td>₹ @Model.EducationAllowance.ToString("N2")</td>
-            </tr>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Paid On</span>
+                        <strong class="detail-info-value">
+                            @(Model.PaidOn?.ToString("dd-MMM-yyyy HH:mm") ?? "-")
+                        </strong>
+                    </div>
 
-            <tr>
-                <td>Special Allowance</td>
-                <td>₹ @Model.SpecialAllowance.ToString("N2")</td>
-            </tr>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Remark</span>
+                        <strong class="detail-info-value">
+                            @(Model.Remark ?? "-")
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-            <tr>
-                <th>Total Earnings</th>
-                <th>₹ @Model.TotalEarnings.ToString("N2")</th>
-            </tr>
+    </div>
 
-            <tr>
-                <td>Gross - Conveyance</td>
-                <td>₹ @Model.GrossMinusConveyance.ToString("N2")</td>
-            </tr>
+    <div class="detail-grid-3">
 
-        </table>
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Earnings</h5>
+            </div>
 
-        <hr />
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Gross Salary</span>
+                        <strong class="detail-info-value">₹ @Model.GrossSalary.ToString("N2")</strong>
+                    </div>
 
-        <h6>Deductions</h6>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Basic Salary</span>
+                        <strong class="detail-info-value">₹ @Model.BasicSalary.ToString("N2")</strong>
+                    </div>
 
-        <table class="table">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">HRA</span>
+                        <strong class="detail-info-value">₹ @Model.HRA.ToString("N2")</strong>
+                    </div>
 
-            <tr>
-                <td>PF Employee</td>
-                <td>₹ @Model.PfDeduction.ToString("N2")</td>
-            </tr>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Conveyance</span>
+                        <strong class="detail-info-value">₹ @Model.Conveyance.ToString("N2")</strong>
+                    </div>
 
-            <tr>
-                <td>ESIC Employee</td>
-                <td>₹ @Model.EsicDeduction.ToString("N2")</td>
-            </tr>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Medical Allowance</span>
+                        <strong class="detail-info-value">₹ @Model.MedicalAllowance.ToString("N2")</strong>
+                    </div>
 
-            <tr>
-                <td>Professional Tax</td>
-                <td>₹ @Model.ProfessionalTax.ToString("N2")</td>
-            </tr>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Education Allowance</span>
+                        <strong class="detail-info-value">₹ @Model.EducationAllowance.ToString("N2")</strong>
+                    </div>
 
-            <tr>
-                <td>Advance</td>
-                <td>₹ @Model.Advance.ToString("N2")</td>
-            </tr>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Special Allowance</span>
+                        <strong class="detail-info-value">₹ @Model.SpecialAllowance.ToString("N2")</strong>
+                    </div>
 
-            <tr>
-                <th>Total Deductions</th>
-                <th>₹ @Model.TotalDeductions.ToString("N2")</th>
-            </tr>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Gross - Conveyance</span>
+                        <strong class="detail-info-value">₹ @Model.GrossMinusConveyance.ToString("N2")</strong>
+                    </div>
 
-            <tr>
-                <th>Net Salary</th>
-                <th>₹ @Model.NetSalary.ToString("N2")</th>
-            </tr>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Total Earnings</span>
+                        <strong class="detail-info-value">₹ @Model.TotalEarnings.ToString("N2")</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-        </table>
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Deductions</h5>
+            </div>
 
-        <hr />
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">PF Employee</span>
+                        <strong class="detail-info-value">₹ @Model.PfDeduction.ToString("N2")</strong>
+                    </div>
 
-        <h6>Employer Contribution</h6>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">ESIC Employee</span>
+                        <strong class="detail-info-value">₹ @Model.EsicDeduction.ToString("N2")</strong>
+                    </div>
 
-        <table class="table">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Professional Tax</span>
+                        <strong class="detail-info-value">₹ @Model.ProfessionalTax.ToString("N2")</strong>
+                    </div>
 
-            <tr>
-                <td>Employer PF</td>
-                <td>₹ @Model.EmployerPf.ToString("N2")</td>
-            </tr>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Advance</span>
+                        <strong class="detail-info-value">₹ @Model.Advance.ToString("N2")</strong>
+                    </div>
 
-            <tr>
-                <td>Employer ESIC</td>
-                <td>₹ @Model.EmployerEsic.ToString("N2")</td>
-            </tr>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Total Deductions</span>
+                        <strong class="detail-info-value">₹ @Model.TotalDeductions.ToString("N2")</strong>
+                    </div>
 
-            <tr>
-                <th>CTC</th>
-                <th>₹ @Model.CTC.ToString("N2")</th>
-            </tr>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Net Salary</span>
+                        <strong class="detail-info-value">₹ @Model.NetSalary.ToString("N2")</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-        </table>
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Employer Contribution</h5>
+            </div>
 
-        @if (!string.IsNullOrWhiteSpace(Model.Remark))
-        {
-            <hr />
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Employer PF</span>
+                        <strong class="detail-info-value">₹ @Model.EmployerPf.ToString("N2")</strong>
+                    </div>
 
-            <strong>Remark:</strong>
-            @Model.Remark
-        }
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Employer ESIC</span>
+                        <strong class="detail-info-value">₹ @Model.EmployerEsic.ToString("N2")</strong>
+                    </div>
 
-        @if (Model.PaidOn != null)
-        {
-            <hr />
-
-            <strong>Paid On:</strong>
-            @Model.PaidOn.Value.ToString("dd-MMM-yyyy HH:mm")
-        }
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">CTC</span>
+                        <strong class="detail-info-value">₹ @Model.CTC.ToString("N2")</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
 
     </div>
 

@@ -16,6 +16,60 @@
     </a>
 </div>
 
+<div class="app-card">
+    <div class="card-body">
+
+        <form method="get" class="w-100">
+            <div class="filter-form-row">
+
+                <div class="form-group">
+                    <label class="form-label">Search</label>
+                    <input type="text"
+                           name="search"
+                           value="@ViewBag.Search"
+                           class="app-input"
+                           placeholder="Credit note, invoice, client, reason or GST period"
+                           autocomplete="off" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Sort By</label>
+                    <select name="sortBy" class="app-select">
+                        <option value="CreatedOn" selected="@(ViewBag.SortBy == "CreatedOn")">Created On</option>
+                        <option value="CreditNoteNo" selected="@(ViewBag.SortBy == "CreditNoteNo")">Credit Note No</option>
+                        <option value="Invoice" selected="@(ViewBag.SortBy == "Invoice")">Invoice</option>
+                        <option value="Client" selected="@(ViewBag.SortBy == "Client")">Client</option>
+                        <option value="TotalCredit" selected="@(ViewBag.SortBy == "TotalCredit")">Total Credit</option>
+                        <option value="ApprovedOn" selected="@(ViewBag.SortBy == "ApprovedOn")">Approved On</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Order</label>
+                    <select name="sortOrder" class="app-select">
+                        <option value="desc" selected="@(ViewBag.SortOrder == "desc")">Descending</option>
+                        <option value="asc" selected="@(ViewBag.SortOrder == "asc")">Ascending</option>
+                    </select>
+                </div>
+
+                <div class="filter-form-actions">
+                    <button type="submit" class="btn-app btn-primary-app">
+                        <i class="bi bi-search"></i>
+                        Search
+                    </button>
+
+                    <a asp-action="Index" class="btn-app btn-secondary-app">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        Reset
+                    </a>
+                </div>
+
+            </div>
+        </form>
+
+    </div>
+</div>
+
 <div class="app-card table-card">
     <div class="card-header">
         <h5 class="card-title">Credit Notes</h5>
@@ -40,27 +94,40 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var item in Model)
+                    @if (!Model.Any())
                     {
                         <tr>
-                            <td>@item.CreditNoteNo</td>
-                            <td>
-                                <a asp-controller="Invoice"
-                                   asp-action="Details"
-                                   asp-route-id="@item.OriginalInvoiceId">
-                                    @item.OriginalInvoice?.InvoiceNo
-                                </a>
+                            <td colspan="11" class="empty-state">
+                                No credit notes found.
                             </td>
-                            <td>@item.OriginalInvoice?.Client?.ClientName</td>
-                            <td>@item.Reason</td>
-                            <td>@item.TaxableValueReduction.ToString("N2")</td>
-                            <td>@item.CGSTAdjustment.ToString("N2")</td>
-                            <td>@item.SGSTAdjustment.ToString("N2")</td>
-                            <td>@item.IGSTAdjustment.ToString("N2")</td>
-                            <td>@item.TotalCredit.ToString("N2")</td>
-                            <td>@(item.GSTPeriod ?? "-")</td>
-                            <td>@(item.ApprovedOn?.ToString("dd-MMM-yyyy") ?? "-")</td>
                         </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.CreditNoteNo</td>
+
+                                <td>
+                                    <a asp-controller="Invoice"
+                                       asp-action="Details"
+                                       asp-route-id="@item.OriginalInvoiceId">
+                                        @item.OriginalInvoice?.InvoiceNo
+                                    </a>
+                                </td>
+
+                                <td>@item.OriginalInvoice?.Client?.ClientName</td>
+                                <td>@item.Reason</td>
+                                <td>@item.TaxableValueReduction.ToString("N2")</td>
+                                <td>@item.CGSTAdjustment.ToString("N2")</td>
+                                <td>@item.SGSTAdjustment.ToString("N2")</td>
+                                <td>@item.IGSTAdjustment.ToString("N2")</td>
+                                <td>@item.TotalCredit.ToString("N2")</td>
+                                <td>@(item.GSTPeriod ?? "-")</td>
+                                <td>@(item.ApprovedOn?.ToString("dd-MMM-yyyy") ?? "-")</td>
+                            </tr>
+                        }
                     }
                 </tbody>
             </table>

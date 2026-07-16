@@ -16,7 +16,11 @@ namespace AryamanBMS.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Index(int? purchaseWorkOrderId)
+        public async Task<IActionResult> Index(
+    int? purchaseWorkOrderId,
+    string? search,
+    string sortBy = "Order",
+    string sortOrder = "asc")
         {
             var milestones =
                 await _context.BillingMilestones
@@ -27,13 +31,87 @@ namespace AryamanBMS.Controllers
                     .Where(x =>
                         !purchaseWorkOrderId.HasValue ||
                         x.PurchaseWorkOrderId == purchaseWorkOrderId.Value)
-                    .OrderByDescending(x => x.IsActive)
-                    .ThenBy(x => x.PurchaseWorkOrder!.OrderNumber)
-                    .ThenBy(x => x.SortOrder)
-                    .ThenBy(x => x.MilestoneName)
                     .ToListAsync();
 
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                string keyword = search.Trim().ToLower();
+
+                milestones = milestones
+                    .Where(x =>
+                        (!string.IsNullOrWhiteSpace(x.MilestoneName) &&
+                            x.MilestoneName.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(x.MilestoneDescription) &&
+                            x.MilestoneDescription.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(x.CompletionStatus) &&
+                            x.CompletionStatus.ToLower().Contains(keyword)) ||
+                        (x.PurchaseWorkOrder != null &&
+                            !string.IsNullOrWhiteSpace(x.PurchaseWorkOrder.OrderNumber) &&
+                            x.PurchaseWorkOrder.OrderNumber.ToLower().Contains(keyword)) ||
+                        (x.PurchaseWorkOrder?.Client != null &&
+                            !string.IsNullOrWhiteSpace(x.PurchaseWorkOrder.Client.ClientName) &&
+                            x.PurchaseWorkOrder.Client.ClientName.ToLower().Contains(keyword)) ||
+                        (x.Project != null &&
+                            !string.IsNullOrWhiteSpace(x.Project.ProjectName) &&
+                            x.Project.ProjectName.ToLower().Contains(keyword)))
+                    .ToList();
+            }
+
+            bool desc =
+                string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
+
+            milestones = sortBy switch
+            {
+                "Milestone" => desc
+                    ? milestones.OrderByDescending(x => x.MilestoneName).ToList()
+                    : milestones.OrderBy(x => x.MilestoneName).ToList(),
+
+                "Client" => desc
+                    ? milestones.OrderByDescending(x => x.PurchaseWorkOrder?.Client?.ClientName).ToList()
+                    : milestones.OrderBy(x => x.PurchaseWorkOrder?.Client?.ClientName).ToList(),
+
+                "Project" => desc
+                    ? milestones.OrderByDescending(x => x.Project?.ProjectName).ToList()
+                    : milestones.OrderBy(x => x.Project?.ProjectName).ToList(),
+
+                "Value" => desc
+                    ? milestones.OrderByDescending(x => x.MilestoneValue).ToList()
+                    : milestones.OrderBy(x => x.MilestoneValue).ToList(),
+
+                "Billed" => desc
+                    ? milestones.OrderByDescending(x => x.BilledValue).ToList()
+                    : milestones.OrderBy(x => x.BilledValue).ToList(),
+
+                "Remaining" => desc
+                    ? milestones.OrderByDescending(x => x.RemainingBillableValue).ToList()
+                    : milestones.OrderBy(x => x.RemainingBillableValue).ToList(),
+
+                "Status" => desc
+                    ? milestones.OrderByDescending(x => x.CompletionStatus).ToList()
+                    : milestones.OrderBy(x => x.CompletionStatus).ToList(),
+
+                "Active" => desc
+                    ? milestones.OrderByDescending(x => x.IsActive).ToList()
+                    : milestones.OrderBy(x => x.IsActive).ToList(),
+
+                _ => desc
+                    ? milestones
+                        .OrderByDescending(x => x.PurchaseWorkOrder?.OrderNumber)
+                        .ThenByDescending(x => x.SortOrder)
+                        .ThenByDescending(x => x.MilestoneName)
+                        .ToList()
+                    : milestones
+                        .OrderByDescending(x => x.IsActive)
+                        .ThenBy(x => x.PurchaseWorkOrder?.OrderNumber)
+                        .ThenBy(x => x.SortOrder)
+                        .ThenBy(x => x.MilestoneName)
+                        .ToList()
+            };
+
             ViewBag.PurchaseWorkOrderId = purchaseWorkOrderId;
+            ViewBag.Search = search;
+            ViewBag.SortBy = sortBy;
+            ViewBag.SortOrder = sortOrder;
 
             return View(milestones);
         }

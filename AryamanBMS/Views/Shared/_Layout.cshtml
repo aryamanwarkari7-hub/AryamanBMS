@@ -29,6 +29,7 @@
     <link rel="stylesheet" href="~/css/gantt.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/timeline.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/index.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/profile.css" asp-append-version="true" />
 
     <link rel="stylesheet" href="~/css/components/cards.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/components/buttons.css" asp-append-version="true" />
@@ -40,7 +41,10 @@
     <link rel="stylesheet" href="~/css/components/avatar.css" asp-append-version="true"/>
     <link rel="stylesheet" href="~/css/modules/payslip-print.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/modules/invoice-print.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/modules/detail-pages.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/print.css" asp-append-version="true" />
+
+    <link rel="stylesheet" href="~/lib/cropper/cropper.min.css" asp-append-version="true" />
 
 
     <link rel="stylesheet" href="~/AryamanBMS.styles.css" asp-append-version="true" />
@@ -103,17 +107,29 @@
     @if (User.Identity?.IsAuthenticated == true)
     {
         var layoutUser = await UserManager.GetUserAsync(User);
+        var enableToast =
+            (layoutUser?.EnableNotificationToast ?? true)
+                .ToString()
+                .ToLowerInvariant();
+        var enableSound =
+            (layoutUser?.EnableNotificationSound ?? false)
+                .ToString()
+                .ToLowerInvariant();
 
         <script>
+            window.aryamanAppBasePath = "@Url.Content("~/")";
             window.aryamanNotificationPreferences = {
-                toast: @((layoutUser?.EnableNotificationToast ?? true).ToString().ToLowerInvariant()),
-                sound: @((layoutUser?.EnableNotificationSound ?? false).ToString().ToLowerInvariant())
+                toast: @Html.Raw(enableToast),
+                sound: @Html.Raw(enableSound)
             };
         </script>
         <script src="~/lib/signalr/signalr.min.js" asp-append-version="true"></script>
         <script src="~/js/notification-realtime.js" asp-append-version="true"></script>
     }
     <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @* /* Profile cropper */ *@
+    <script src="~/lib/cropper/cropper.min.js" asp-append-version="true"></script>
     
     @await RenderSectionAsync("Scripts", required: false)
     @if (User.Identity?.IsAuthenticated == true)

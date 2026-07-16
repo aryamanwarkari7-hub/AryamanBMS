@@ -20,112 +20,196 @@
     </div>
 </div>
 
-<div>
+<div class="app-card">
+    <div class="card-body">
+
+        <form asp-action="Index"
+              method="get"
+              class="filter-form-row">
+
+            <div class="form-group">
+                <label class="form-label">Search</label>
+                <input type="text"
+                       name="searchText"
+                       value="@ViewBag.SearchText"
+                       class="app-input"
+                       placeholder="Client name, code, GST, contact, phone or email"
+                       autocomplete="off" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Sort By</label>
+                <select name="sortBy"
+                        class="app-select">
+
+                    <option value="ClientName"
+                            selected="@(ViewBag.SortBy == "ClientName")">
+                        Client Name
+                    </option>
+
+                    <option value="ClientCode"
+                            selected="@(ViewBag.SortBy == "ClientCode")">
+                        Client Code
+                    </option>
+
+                    <option value="ContactPerson"
+                            selected="@(ViewBag.SortBy == "ContactPerson")">
+                        Contact Person
+                    </option>
+
+                    <option value="ClientType"
+                            selected="@(ViewBag.SortBy == "ClientType")">
+                        Client Type
+                    </option>
+
+                    <option value="Status"
+                            selected="@(ViewBag.SortBy == "Status")">
+                        Status
+                    </option>
+
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Order</label>
+                <select name="sortOrder"
+                        class="app-select">
+
+                    <option value="asc"
+                            selected="@(ViewBag.SortOrder == "asc")">
+                        Ascending
+                    </option>
+
+                    <option value="desc"
+                            selected="@(ViewBag.SortOrder == "desc")">
+                        Descending
+                    </option>
+
+                </select>
+            </div>
+
+            <div class="filter-form-actions">
+                <button type="submit"
+                        class="btn-app btn-primary-app">
+                    <i class="bi bi-search"></i>
+                    Search
+                </button>
+
+                <a asp-action="Index"
+                   class="btn-app btn-secondary-app">
+                    <i class="bi bi-arrow-clockwise"></i>
+                    Reset
+                </a>
+            </div>
+
+        </form>
+
+    </div>
+</div>
 
 
-    <div class="app-card">
 
-        <div class="card-body">
+<div class="app-card">
 
-            <div class="table-responsive">
+    <div class="card-body">
 
-                <table class="app-table" id="clientTable">
+        <div class="table-responsive">
 
-                    <thead >
-                        <tr>
-                            <th>Code</th>
-                            <th>Client Name</th>
-                            <th>Contact Person</th>
-                            <th>Phone</th>
-                            <th>Email</th>
-                            <th>Type</th>
-                            <th class="text-center">Status</th>
-                            <th class="text-center">Actions</th>
-                        </tr>
-                    </thead>
+            <table class="app-table" id="clientTable">
 
-                    <tbody>
-                        @if (Model.Any())
-                        {
-                            @foreach (var item in Model)
-                            {
-                                <tr>
-                                    <td>
-                                        <span class="badge-secondary">@item.ClientCode</span>
-                                    </td>
-                                    <td>
-                                        <strong>@(item.ClientName ?? "")</strong>
-                                        @if (!string.IsNullOrWhiteSpace(item.GSTNumber))
-                                        {
-                                            <br />
-                                            <small class="card-subtitle">GST: @item.GSTNumber</small>
-                                        }
-                                    </td>
-                                    <td>@(item.ContactPerson ?? "-")</td>
-                                    <td>@(item.Phone ?? "-")</td>
-                                    <td>@(item.Email ?? "-")</td>
-                                    <td>
-                                        @if (!string.IsNullOrWhiteSpace(item.ClientType))
-                                        {
-                                            <span class="badge-info">@item.ClientType</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="card-subtitle">-</span>
-                                        }
-                                    </td>
-                                    <td class="text-center">
-                                        @if (item.IsActive)
-                                        {
-                                            <span class="badge-success">Active</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge-danger">Inactive</span>
-                                        }
-                                    </td>
-                                    <td class="text-center">
+                <thead >
+                    <tr>
+                        <th>Code</th>
+                        <th>Client Name</th>
+                        <th>Contact Person</th>
+                        <th>Phone</th>
+                        <th>Email</th>
+                        <th>Type</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
 
-                                        <a asp-action="Details" asp-route-id="@item.ClientId"
-                                           class="btn-app btn-icon btn-primary-app" title="Details">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-
-                                        <a asp-action="Edit" asp-route-id="@item.ClientId"
-                                           class="btn-app btn-secondary-app btn-icon"
-                                           title="Edit">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-
-                                        <a asp-action="Delete"
-                                           asp-route-id="@item.ClientId"
-                                           class="btn-app btn-icon @(item.IsActive ? "btn-danger-app" : "btn-success-app")"
-                                           title="@(item.IsActive ? "Deactivate" : "Activate")">
-                                            <i class="bi bi-power"></i>
-                                        </a>
-
-                                    </td>
-                                </tr>
-                            }
-                        }
-                        else
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        @foreach (var item in Model)
                         {
                             <tr>
-                                <td colspan="8" class="text-center text-muted py-4">
-                                    <i class="bi bi-building fs-2 mb-2 d-block"></i>
-                                    No clients found. Add your first client.
+                                <td>
+                                    <span class="badge-secondary">@item.ClientCode</span>
+                                </td>
+                                <td>
+                                    <strong>@(item.ClientName ?? "")</strong>
+                                    @if (!string.IsNullOrWhiteSpace(item.GSTNumber))
+                                    {
+                                        <br />
+                                        <small class="card-subtitle">GST: @item.GSTNumber</small>
+                                    }
+                                </td>
+                                <td>@(item.ContactPerson ?? "-")</td>
+                                <td>@(item.Phone ?? "-")</td>
+                                <td>@(item.Email ?? "-")</td>
+                                <td>
+                                    @if (!string.IsNullOrWhiteSpace(item.ClientType))
+                                    {
+                                        <span class="badge-info">@item.ClientType</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="card-subtitle">-</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-danger">Inactive</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+
+                                    <a asp-action="Details" asp-route-id="@item.ClientId"
+                                       class="btn-app btn-icon btn-primary-app" title="Details">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+
+                                    <a asp-action="Edit" asp-route-id="@item.ClientId"
+                                       class="btn-app btn-secondary-app btn-icon"
+                                       title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+
+                                    <a asp-action="Delete"
+                                       asp-route-id="@item.ClientId"
+                                       class="btn-app btn-icon @(item.IsActive ? "btn-danger-app" : "btn-success-app")"
+                                       title="@(item.IsActive ? "Deactivate" : "Activate")">
+                                        <i class="bi bi-power"></i>
+                                    </a>
+
                                 </td>
                             </tr>
                         }
-                    </tbody>
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="empty-state">
+                                No clients found.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
 
-                </table>
-
-            </div>
+            </table>
 
         </div>
 
     </div>
 
 </div>
+
 

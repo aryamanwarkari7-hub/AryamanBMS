@@ -5,6 +5,12 @@
 
     string filterFY = ViewBag.FilterFinancialYear as string ?? "";
     string filterCategory = ViewBag.FilterCategory as string ?? "";
+    string search = ViewBag.Search as string ?? "";
+    string statusFilter = ViewBag.Status as string ?? "";
+    DateTime? fromDate = ViewBag.FromDate as DateTime?;
+    DateTime? toDate = ViewBag.ToDate as DateTime?;
+    string sortBy = ViewBag.SortBy as string ?? "UploadedOn";
+    string sortOrder = ViewBag.SortOrder as string ?? "desc";
 
     string CategoryLabel(string cat) => cat switch
     {
@@ -38,6 +44,18 @@
             <i class="bi bi-plus-circle"></i>
             Upload Document
         </a>
+
+        <a asp-action="ExportCsv"
+           asp-route-financialYear="@filterFY"
+           asp-route-category="@filterCategory"
+           asp-route-search="@search"
+           asp-route-status="@statusFilter"
+           asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
+           asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-download"></i>
+            Export
+        </a>
     </div>
 </div>
 
@@ -53,33 +71,73 @@
 
     <div class="card-body">
         <form asp-action="Index" method="get">
-            <div class="form-grid-3">
-                <div class="form-group">
-                    <label class="form-label">Financial Year</label>
+            <input type="hidden" name="category" value="@filterCategory" />
+
+            <div class="filter-row">
+                <div class="filter-field">
                     <input name="financialYear"
                            value="@filterFY"
                            class="app-input"
                            placeholder="Ex: 2026-27" />
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Category</label>
-                    <select name="category" class="app-select">
-                        <option value="">All Categories</option>
-                        <option value="BankStatement" selected="@(filterCategory == "BankStatement")">Bank Statement</option>
-                        <option value="AuditReport" selected="@(filterCategory == "AuditReport")">Audit Report</option>
-                        <option value="CADocument" selected="@(filterCategory == "CADocument")">CA Document</option>
-                        <option value="CSDocument" selected="@(filterCategory == "CSDocument")">CS Document</option>
-                        <option value="Other" selected="@(filterCategory == "Other")">Other</option>
+                <div class="filter-field filter-field-wide">
+                    <input name="search"
+                           value="@search"
+                           class="app-input"
+                           placeholder="File name, FY, category or remarks" />
+                </div>
+
+                <div class="filter-field">
+                    <select name="status" class="app-select">
+                        <option value="">All Statuses</option>
+                        <option value="Active" selected="@(statusFilter == "Active")">Active</option>
+                        <option value="Archived" selected="@(statusFilter == "Archived")">Archived</option>
+                        <option value="Finalized" selected="@(statusFilter == "Finalized")">Finalized</option>
                     </select>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">&nbsp;</label>
+                <div class="filter-field">
+                    <select name="sortBy" class="app-select">
+                        <option value="UploadedOn" selected="@(sortBy == "UploadedOn")">Sort by Uploaded</option>
+                        <option value="Category" selected="@(sortBy == "Category")">Sort by Category</option>
+                        <option value="FinancialYear" selected="@(sortBy == "FinancialYear")">Sort by FY</option>
+                        <option value="FileName" selected="@(sortBy == "FileName")">Sort by File Name</option>
+                        <option value="Status" selected="@(sortBy == "Status")">Sort by Status</option>
+                    </select>
+                </div>
+
+                <div class="filter-field">
+                    <select name="sortOrder" class="app-select">
+                        <option value="asc" selected="@(sortOrder == "asc")">Ascending</option>
+                        <option value="desc" selected="@(sortOrder == "desc")">Descending</option>
+                    </select>
+                </div>
+
+                <div class="filter-field">
+                    <input type="date"
+                           name="fromDate"
+                           value="@fromDate?.ToString("yyyy-MM-dd")"
+                           class="app-input" />
+                </div>
+
+                <div class="filter-field">
+                    <input type="date"
+                           name="toDate"
+                           value="@toDate?.ToString("yyyy-MM-dd")"
+                           class="app-input" />
+                </div>
+
+                <div class="filter-actions">
                     <button type="submit" class="btn-app btn-primary-app">
                         <i class="bi bi-search"></i>
                         Load
                     </button>
+
+                    <a asp-action="Index" class="btn-app btn-secondary-app">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        Reset
+                    </a>
                 </div>
             </div>
         </form>
@@ -101,12 +159,24 @@
 
             <a asp-action="Index"
                asp-route-financialYear="@filterFY"
+               asp-route-search="@search"
+               asp-route-status="@statusFilter"
+               asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
+               asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
+               asp-route-sortBy="@sortBy"
+               asp-route-sortOrder="@sortOrder"
                class="btn-app @(string.IsNullOrEmpty(filterCategory) ? "btn-primary-app" : "btn-secondary-app")">
                 All
             </a>
 
             <a asp-action="Index"
                asp-route-financialYear="@filterFY"
+               asp-route-search="@search"
+               asp-route-status="@statusFilter"
+               asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
+               asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
+               asp-route-sortBy="@sortBy"
+               asp-route-sortOrder="@sortOrder"
                asp-route-category="BankStatement"
                class="btn-app @(filterCategory == "BankStatement" ? "btn-primary-app" : "btn-secondary-app")">
                 Bank Statements
@@ -114,6 +184,12 @@
 
             <a asp-action="Index"
                asp-route-financialYear="@filterFY"
+               asp-route-search="@search"
+               asp-route-status="@statusFilter"
+               asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
+               asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
+               asp-route-sortBy="@sortBy"
+               asp-route-sortOrder="@sortOrder"
                asp-route-category="AuditReport"
                class="btn-app @(filterCategory == "AuditReport" ? "btn-primary-app" : "btn-secondary-app")">
                 Audit Reports
@@ -121,6 +197,12 @@
 
             <a asp-action="Index"
                asp-route-financialYear="@filterFY"
+               asp-route-search="@search"
+               asp-route-status="@statusFilter"
+               asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
+               asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
+               asp-route-sortBy="@sortBy"
+               asp-route-sortOrder="@sortOrder"
                asp-route-category="CADocument"
                class="btn-app @(filterCategory == "CADocument" ? "btn-primary-app" : "btn-secondary-app")">
                 CA Documents
@@ -128,6 +210,12 @@
 
             <a asp-action="Index"
                asp-route-financialYear="@filterFY"
+               asp-route-search="@search"
+               asp-route-status="@statusFilter"
+               asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
+               asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
+               asp-route-sortBy="@sortBy"
+               asp-route-sortOrder="@sortOrder"
                asp-route-category="CSDocument"
                class="btn-app @(filterCategory == "CSDocument" ? "btn-primary-app" : "btn-secondary-app")">
                 CS Documents
@@ -135,6 +223,12 @@
 
             <a asp-action="Index"
                asp-route-financialYear="@filterFY"
+               asp-route-search="@search"
+               asp-route-status="@statusFilter"
+               asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
+               asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
+               asp-route-sortBy="@sortBy"
+               asp-route-sortOrder="@sortOrder"
                asp-route-category="Other"
                class="btn-app @(filterCategory == "Other" ? "btn-primary-app" : "btn-secondary-app")">
                 Other
@@ -256,6 +350,28 @@
                 </tbody>
             </table>
         </div>
+
+        @if ((ViewBag.TotalPages ?? 1) > 1)
+        {
+            <div class="pagination-container">
+                @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                {
+                    <a asp-action="Index"
+                       asp-route-page="@i"
+                       asp-route-financialYear="@filterFY"
+                       asp-route-category="@filterCategory"
+                       asp-route-search="@search"
+                       asp-route-status="@statusFilter"
+                       asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
+                       asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
+                       asp-route-sortBy="@sortBy"
+                       asp-route-sortOrder="@sortOrder"
+                       class="page-link-app @(i == ViewBag.CurrentPage ? "active" : "")">
+                        @i
+                    </a>
+                }
+            </div>
+        }
     </div>
 </div>
 

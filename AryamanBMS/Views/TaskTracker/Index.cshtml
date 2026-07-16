@@ -15,6 +15,10 @@
         .Select(group => group.First().Project!)
         .OrderBy(p => p.ProjectName)
         .ToList();
+
+    string search = ViewBag.Search as string ?? "";
+    string sortBy = ViewBag.SortBy as string ?? "ProgressDate";
+    string sortOrder = ViewBag.SortOrder as string ?? "desc";
 }
 
 <div class="module-header">
@@ -120,6 +124,33 @@
 
                 </div>
 
+            </div>
+
+            <div class="filter-row mt-3">
+                <div class="filter-field filter-field-wide">
+                    <input name="search"
+                           value="@search"
+                           class="app-input"
+                           placeholder="Project, task or update notes" />
+                </div>
+
+                <div class="filter-field">
+                    <select name="sortBy" class="app-select">
+                        <option value="ProgressDate" selected="@(sortBy == "ProgressDate")">Sort by Update Date</option>
+                        <option value="Project" selected="@(sortBy == "Project")">Sort by Project</option>
+                        <option value="Task" selected="@(sortBy == "Task")">Sort by Task</option>
+                        <option value="Hours" selected="@(sortBy == "Hours")">Sort by Hours</option>
+                        <option value="Completion" selected="@(sortBy == "Completion")">Sort by Completion</option>
+                        <option value="Status" selected="@(sortBy == "Status")">Sort by Status</option>
+                    </select>
+                </div>
+
+                <div class="filter-field">
+                    <select name="sortOrder" class="app-select">
+                        <option value="asc" selected="@(sortOrder == "asc")">Ascending</option>
+                        <option value="desc" selected="@(sortOrder == "desc")">Descending</option>
+                    </select>
+                </div>
             </div>
 
             <div class="filter-form-actions mt-3">
@@ -290,7 +321,7 @@
                         <tr>
 
                             <td colspan="8"
-                                class="text-center text-muted">
+                                class="empty-state">
 
                                 No task updates found.
 

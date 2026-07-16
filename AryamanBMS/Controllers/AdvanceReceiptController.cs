@@ -18,16 +18,75 @@ namespace AryamanBMS.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(
+    string? search,
+    string sortBy = "ReceiptDate",
+    string sortOrder = "desc")
         {
-            var receipts =
-                await _context.AdvanceReceipts
+            var query =
+                _context.AdvanceReceipts
                     .AsNoTracking()
                     .Include(x => x.Client)
                     .Include(x => x.Project)
-                    .OrderByDescending(x => x.ReceiptDate)
-                    .ThenByDescending(x => x.AdvanceReceiptId)
-                    .ToListAsync();
+                    .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                string keyword = search.Trim().ToLower();
+
+                query = query.Where(x =>
+                    x.AdvanceReceiptNo.ToLower().Contains(keyword) ||
+                    x.PaymentMode.ToLower().Contains(keyword) ||
+                    (x.PaymentReference != null &&
+                        x.PaymentReference.ToLower().Contains(keyword)) ||
+                    (x.Client != null &&
+                        x.Client.ClientName.ToLower().Contains(keyword)) ||
+                    (x.Project != null &&
+                        x.Project.ProjectName.ToLower().Contains(keyword)));
+            }
+
+            bool desc =
+                string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
+
+            query = sortBy switch
+            {
+                "ReceiptNo" => desc
+                    ? query.OrderByDescending(x => x.AdvanceReceiptNo)
+                    : query.OrderBy(x => x.AdvanceReceiptNo),
+
+                "Client" => desc
+                    ? query.OrderByDescending(x => x.Client!.ClientName)
+                    : query.OrderBy(x => x.Client!.ClientName),
+
+                "Project" => desc
+                    ? query.OrderByDescending(x => x.Project!.ProjectName)
+                    : query.OrderBy(x => x.Project!.ProjectName),
+
+                "Amount" => desc
+                    ? query.OrderByDescending(x => x.Amount)
+                    : query.OrderBy(x => x.Amount),
+
+                "AvailableBalance" => desc
+                    ? query.OrderByDescending(x => x.AvailableBalance)
+                    : query.OrderBy(x => x.AvailableBalance),
+
+                "PaymentMode" => desc
+                    ? query.OrderByDescending(x => x.PaymentMode)
+                    : query.OrderBy(x => x.PaymentMode),
+
+                _ => desc
+                    ? query.OrderByDescending(x => x.ReceiptDate)
+                           .ThenByDescending(x => x.AdvanceReceiptId)
+                    : query.OrderBy(x => x.ReceiptDate)
+                           .ThenBy(x => x.AdvanceReceiptId)
+            };
+
+            var receipts =
+                await query.ToListAsync();
+
+            ViewBag.Search = search;
+            ViewBag.SortBy = sortBy;
+            ViewBag.SortOrder = sortOrder;
 
             return View(receipts);
         }

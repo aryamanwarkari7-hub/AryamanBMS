@@ -2,15 +2,36 @@
 
 @{
     ViewData["Title"] = "Task Details";
+
+    string projectText =
+        $"{Model.Project?.ProjectCode ?? "-"} - {Model.Project?.ProjectName ?? "-"}";
+
+    string employeeText = Model.AssignedEmployee != null
+        ? $"{Model.AssignedEmployee.EmployeeCode} - {Model.AssignedEmployee.FullName}"
+        : "-";
+
+    string statusClass = Model.Status switch
+    {
+        "Completed" => "badge-success",
+        "In Progress" => "badge-info",
+        "Overdue" => "badge-danger",
+        "On Hold" => "badge-warning",
+        _ => "badge-secondary"
+    };
+
+    string activeClass = Model.IsActive ? "badge-success" : "badge-danger";
+    string activeText = Model.IsActive ? "Active" : "Inactive";
 }
 
 <div class="module-header">
     <div>
-        <h1 class="module-title">Task Details</h1>
-        <p class="module-subtitle">View complete project task information</p>
+        <h1 class="module-title">@Model.TaskTitle</h1>
+        <p class="module-subtitle">
+            Task details, assignment, schedule and progress
+        </p>
     </div>
 
-    <div class="d-flex gap-2">
+    <div class="module-header-actions">
         <a asp-action="Edit"
            asp-route-id="@Model.Id"
            class="btn-app btn-primary-app">
@@ -34,10 +55,8 @@
             <a asp-controller="Employee"
                asp-action="MyTasks"
                class="btn-app btn-secondary-app">
-
                 <i class="bi bi-arrow-left"></i>
                 Back to My Tasks
-
             </a>
         }
         else
@@ -46,166 +65,161 @@
                asp-action="Index"
                asp-route-projectId="@Model.ProjectId"
                class="btn-app btn-secondary-app">
-
                 <i class="bi bi-arrow-left"></i>
                 Back to Project Tasks
-
             </a>
         }
     </div>
 </div>
 
-<div class="app-card">
-    <div class="card-header">
-        <h5 class="card-title">Basic Information</h5>
+<div class="detail-page">
+
+    <div class="detail-summary-grid">
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Task Code</div>
+            <div class="detail-summary-value">@Model.TaskCode</div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Status</div>
+            <div class="detail-summary-value">
+                <span class="@statusClass">@(Model.Status ?? "-")</span>
+            </div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Priority</div>
+            <div class="detail-summary-value">@(Model.Priority ?? "-")</div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Progress</div>
+            <div class="detail-summary-value">@Model.ProgressPercent%</div>
+        </div>
     </div>
 
-    <div class="card-body">
-        <table class="app-table">
-            <tbody>
-                <tr>
-                    <th>Task Code</th>
-                    <td>@Model.TaskCode</td>
-                </tr>
+    <div class="detail-grid-2">
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Basic Information</h5>
+            </div>
 
-                <tr>
-                    <th>Task Title</th>
-                    <td>@Model.TaskTitle</td>
-                </tr>
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Task Code</span>
+                        <strong class="detail-info-value">@Model.TaskCode</strong>
+                    </div>
 
-                <tr>
-                    <th>Project</th>
-                    <td>
-                        @Model.Project?.ProjectCode -
-                        @Model.Project?.ProjectName
-                    </td>
-                </tr>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Task Title</span>
+                        <strong class="detail-info-value">@Model.TaskTitle</strong>
+                    </div>
 
-                <tr>
-                    <th>Assigned Employee</th>
-                    <td>
-                        @if (Model.AssignedEmployee != null)
-                        {
-                            <span>
-                                @Model.AssignedEmployee.EmployeeCode -
-                                @Model.AssignedEmployee.FullName
-                            </span>
-                        }
-                        else
-                        {
-                            <span>-</span>
-                        }
-                    </td>
-                </tr>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Project</span>
+                        <strong class="detail-info-value">@projectText</strong>
+                    </div>
 
-                <tr>
-                    <th>Department</th>
-                    <td>
-                        @(Model.AssignedEmployee?.Department?.DepartmentName ?? "-")
-                    </td>
-                </tr>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Assigned Employee</span>
+                        <strong class="detail-info-value">@employeeText</strong>
+                    </div>
 
-                <tr>
-                    <th>Designation</th>
-                    <td>
-                        @(Model.AssignedEmployee?.Designation?.DesignationName ?? "-")
-                    </td>
-                </tr>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Department</span>
+                        <strong class="detail-info-value">
+                            @(Model.AssignedEmployee?.Department?.DepartmentName ?? "-")
+                        </strong>
+                    </div>
 
-                <tr>
-                    <th>Priority</th>
-                    <td>@Model.Priority</td>
-                </tr>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Designation</span>
+                        <strong class="detail-info-value">
+                            @(Model.AssignedEmployee?.Designation?.DesignationName ?? "-")
+                        </strong>
+                    </div>
 
-                <tr>
-                    <th>Status</th>
-                    <td>@Model.Status</td>
-                </tr>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Active</span>
+                        <strong class="detail-info-value">
+                            <span class="@activeClass">@activeText</span>
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                <tr>
-                    <th>Task Completion %</th>
-                    <td>@Model.ProgressPercent%</td>
-                </tr>
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Schedule and Hours</h5>
+            </div>
 
-                <tr>
-                    <th>Active</th>
-                    <td>
-                        @if (Model.IsActive)
-                        {
-                            <span class="status-badge status-active">Active</span>
-                        }
-                        else
-                        {
-                            <span class="status-badge status-inactive">Inactive</span>
-                        }
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</div>
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Start Date</span>
+                        <strong class="detail-info-value">
+                            @(Model.StartDate?.ToString("dd-MMM-yyyy") ?? "-")
+                        </strong>
+                    </div>
 
-<div class="app-card">
-    <div class="card-header">
-        <h5 class="card-title">Schedule and Hours</h5>
-    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Due Date</span>
+                        <strong class="detail-info-value">
+                            @(Model.DueDate?.ToString("dd-MMM-yyyy") ?? "-")
+                        </strong>
+                    </div>
 
-    <div class="card-body">
-        <table class="app-table">
-            <tbody>
-                <tr>
-                    <th>Start Date</th>
-                    <td>
-                        @(Model.StartDate?.ToString("dd-MM-yyyy") ?? "-")
-                    </td>
-                </tr>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Estimated Hours</span>
+                        <strong class="detail-info-value">
+                            @Model.EstimatedHours.ToString("0.##")
+                        </strong>
+                    </div>
 
-                <tr>
-                    <th>Due Date</th>
-                    <td>
-                        @(Model.DueDate?.ToString("dd-MM-yyyy") ?? "-")
-                    </td>
-                </tr>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Actual Hours Logged</span>
+                        <strong class="detail-info-value">
+                            @Model.ActualHours.ToString("0.##")
+                        </strong>
+                    </div>
 
-                <tr>
-                    <th>Estimated Hours</th>
-                    <td>@Model.EstimatedHours.ToString("0.##")</td>
-                </tr>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Created On</span>
+                        <strong class="detail-info-value">
+                            @Model.CreatedOn.ToString("dd-MMM-yyyy hh:mm tt")
+                        </strong>
+                    </div>
 
-                <tr>
-                    <th>Actual Hours Logged</th>
-                    <td>@Model.ActualHours.ToString("0.##")</td>
-                </tr>
-
-                <tr>
-                    <th>Created On</th>
-                    <td>@Model.CreatedOn.ToString("dd-MM-yyyy hh:mm tt")</td>
-                </tr>
-
-                <tr>
-                    <th>Updated On</th>
-                    <td>
-                        @(Model.UpdatedOn?.ToString("dd-MM-yyyy hh:mm tt") ?? "-")
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<div class="app-card">
-    <div class="card-header">
-        <h5 class="card-title">Description</h5>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Updated On</span>
+                        <strong class="detail-info-value">
+                            @(Model.UpdatedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="card-body">
-        @if (!string.IsNullOrWhiteSpace(Model.Description))
-        {
-            <p class="mb-0">@Model.Description</p>
-        }
-        else
-        {
-            <p class="text-muted mb-0">No description provided.</p>
-        }
+    <div class="app-card">
+        <div class="card-header">
+            <h5 class="card-title">Description</h5>
+        </div>
+
+        <div class="card-body">
+            <div class="detail-note-box">
+                @if (!string.IsNullOrWhiteSpace(Model.Description))
+                {
+                    @Model.Description
+                }
+                else
+                {
+                    <span>No description provided.</span>
+                }
+            </div>
+        </div>
     </div>
+
 </div>

@@ -2,8 +2,14 @@
 
 @{
     ViewData["Title"] = "Purchase Orders / Work Orders";
+
     var filterType = ViewBag.FilterType as string;
     var filterStatus = ViewBag.FilterStatus as string;
+    var filterClientId = ViewBag.FilterClientId;
+
+    var search = ViewBag.Search as string;
+    var sortBy = ViewBag.SortBy as string ?? "OrderDate";
+    var sortOrder = ViewBag.SortOrder as string ?? "desc";
 
     string StatusBadge(string status) => status switch
     {
@@ -33,150 +39,230 @@
 
     <div class="module-header-actions">
         <a asp-action="Create" class="btn-app btn-primary-app">
-            <i class="bi bi-plus-circle"></i> New PO / WO
+            <i class="bi bi-plus-circle"></i>
+            New PO / WO
         </a>
     </div>
 </div>
 
-<div>
+<div class="app-card">
+    <div class="card-body">
 
-  
+        <form method="get" class="w-100">
+            <input type="hidden" name="type" value="@filterType" />
+            <input type="hidden" name="status" value="@filterStatus" />
+            <input type="hidden" name="clientId" value="@filterClientId" />
 
-    <!-- Type filter tabs -->
-    
+            <div class="filter-form-row">
 
-    <div class="app-card table-card">
+                <div class="form-group">
+                    <label class="form-label">Search</label>
+                    <input type="text"
+                           name="search"
+                           value="@search"
+                           class="app-input"
+                           placeholder="Order no, client, title, proposal or reference"
+                           autocomplete="off" />
+                </div>
 
-        <div class="card-header">
-            <h5 class="card-title">PO / WO Register</h5>
-        </div>
+                <div class="form-group">
+                    <label class="form-label">Sort By</label>
+                    <select name="sortBy" class="app-select">
+                        <option value="OrderDate" selected="@(sortBy == "OrderDate")">Order Date</option>
+                        <option value="OrderNumber" selected="@(sortBy == "OrderNumber")">Order No</option>
+                        <option value="Type" selected="@(sortBy == "Type")">Type</option>
+                        <option value="Client" selected="@(sortBy == "Client")">Client</option>
+                        <option value="Title" selected="@(sortBy == "Title")">Title</option>
+                        <option value="DueDate" selected="@(sortBy == "DueDate")">Due Date</option>
+                        <option value="Amount" selected="@(sortBy == "Amount")">Amount</option>
+                        <option value="Status" selected="@(sortBy == "Status")">Status</option>
+                    </select>
+                </div>
 
-        <div class="card-body">
+                <div class="form-group">
+                    <label class="form-label">Order</label>
+                    <select name="sortOrder" class="app-select">
+                        <option value="desc" selected="@(sortOrder == "desc")">Descending</option>
+                        <option value="asc" selected="@(sortOrder == "asc")">Ascending</option>
+                    </select>
+                </div>
 
-            <div class="module-header-actions justify-content-start mb-3">
+                <div class="filter-form-actions">
+                    <button type="submit" class="btn-app btn-primary-app">
+                        <i class="bi bi-search"></i>
+                        Search
+                    </button>
 
-                <a class="btn-app @(string.IsNullOrEmpty(filterType) ? "btn-primary-app" : "btn-secondary-app")"
-                   asp-action="Index">
-                    All
-                </a>
-
-                <a class="btn-app @(filterType == "PO" ? "btn-primary-app" : "btn-secondary-app")"
-                   asp-action="Index"
-                   asp-route-type="PO">
-                    Purchase Orders
-                </a>
-
-                <a class="btn-app @(filterType == "WO" ? "btn-primary-app" : "btn-secondary-app")"
-                   asp-action="Index"
-                   asp-route-type="WO">
-                    Work Orders
-                </a>
+                    <a asp-action="Index"
+                       asp-route-type="@filterType"
+                       asp-route-status="@filterStatus"
+                       asp-route-clientId="@filterClientId"
+                       class="btn-app btn-secondary-app">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        Reset
+                    </a>
+                </div>
 
             </div>
+        </form>
 
-            <div class="table-responsive">
+    </div>
+</div>
 
-                <table class="app-table" id="orderTable">
+<div class="app-card table-card">
 
-                    <thead >
+    <div class="card-header">
+        <h5 class="card-title">PO / WO Register</h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="module-header-actions justify-content-start mb-3">
+
+            <a class="btn-app @(string.IsNullOrEmpty(filterType) ? "btn-primary-app" : "btn-secondary-app")"
+               asp-action="Index"
+               asp-route-search="@search"
+               asp-route-sortBy="@sortBy"
+               asp-route-sortOrder="@sortOrder">
+                All
+            </a>
+
+            <a class="btn-app @(filterType == "PO" ? "btn-primary-app" : "btn-secondary-app")"
+               asp-action="Index"
+               asp-route-type="PO"
+               asp-route-search="@search"
+               asp-route-sortBy="@sortBy"
+               asp-route-sortOrder="@sortOrder">
+                Purchase Orders
+            </a>
+
+            <a class="btn-app @(filterType == "WO" ? "btn-primary-app" : "btn-secondary-app")"
+               asp-action="Index"
+               asp-route-type="WO"
+               asp-route-search="@search"
+               asp-route-sortBy="@sortBy"
+               asp-route-sortOrder="@sortOrder">
+                Work Orders
+            </a>
+
+        </div>
+
+        <div class="table-responsive">
+
+            <table class="app-table" id="orderTable">
+
+                <thead>
+                    <tr>
+                        <th>Order No.</th>
+                        <th>Type</th>
+                        <th>Client</th>
+                        <th>Title</th>
+                        <th>Order Date</th>
+                        <th>Due Date</th>
+                        <th class="text-end">Amount</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (!Model.Any())
+                    {
                         <tr>
-                            <th>Order No.</th>
-                            <th>Type</th>
-                            <th>Client</th>
-                            <th>Title</th>
-                            <th>Order Date</th>
-                            <th>Due Date</th>
-                            <th class="text-end">Amount</th>
-                            <th class="text-center">Status</th>
-                            <th class="text-center">Actions</th>
+                            <td colspan="9" class="empty-state">
+                                No orders found.
+                            </td>
                         </tr>
-                    </thead>
-
-                    <tbody>
-                        @if (Model.Any())
+                    }
+                    else
+                    {
+                        @foreach (var item in Model)
                         {
-                            @foreach (var item in Model)
-                            {
-                                var overdue = item.DeliveryDueDate.HasValue
-                                              && item.DeliveryDueDate.Value < DateTime.Today
-                                              && item.Status != "Delivered"
-                                              && item.Status != "Closed"
-                                              && item.Status != "Cancelled";
-                                <tr class="@(overdue ? "table-warning" : "")">
+                            var overdue = item.DeliveryDueDate.HasValue
+                            && item.DeliveryDueDate.Value < DateTime.Today
+                            && item.Status != "Delivered"
+                            && item.Status != "Closed"
+                            && item.Status != "Cancelled";
 
-                                    <td>
-                                        <strong class="text-success">@item.OrderNumber</strong>
-                                    </td>
+                            <tr class="@(overdue ? "table-warning" : "")">
 
-                                    <td>
-                                        @if (item.OrderType == "PO")
+                                <td>
+                                    <strong class="text-success">@item.OrderNumber</strong>
+                                </td>
+
+                                <td>
+                                    @if (item.OrderType == "PO")
+                                    {
+                                        <span class="badge-info">PO</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-secondary">WO</span>
+                                    }
+                                </td>
+
+                                <td>@item.Client?.ClientName</td>
+
+                                <td>
+                                    @item.OrderTitle
+
+                                    @if (item.Proposal != null)
+                                    {
+                                        <br />
+                                        <small class="card-subtitle">
+                                            <i class="bi bi-file-earmark-text"></i>
+                                            @item.Proposal.ProposalNumber
+                                        </small>
+                                    }
+                                </td>
+
+                                <td>@item.OrderDate.ToString("dd-MMM-yyyy")</td>
+
+                                <td>
+                                    @if (item.DeliveryDueDate.HasValue)
+                                    {
+                                        if (overdue)
                                         {
-                                            <span class="badge-info">PO</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge-secondary">WO</span>
-                                        }
-                                    </td>
-
-                                    <td>@item.Client?.ClientName</td>
-
-                                    <td>
-                                        @item.OrderTitle
-                                        @if (item.Proposal != null)
-                                        {
-                                            <br />
-                                            <small class="card-subtitle">
-                                                <i class="bi bi-file-earmark-text-contract"></i>
-                                                @item.Proposal.ProposalNumber
-                                            </small>
-                                        }
-                                    </td>
-
-                                    <td>@item.OrderDate.ToString("dd-MMM-yyyy")</td>
-
-                                    <td>
-                                        @if (item.DeliveryDueDate.HasValue)
-                                        {
-                                            if (overdue)
-                                            {
-                                                <span class="text-danger fw-bold">
-                                                    @item.DeliveryDueDate.Value.ToString("dd-MMM-yyyy")
-                                                    <i class="bi bi-exclamation-triangle"></i>
-                                                </span>
-                                            }
-                                            else
-                                            {
+                                            <span class="text-danger fw-bold">
                                                 @item.DeliveryDueDate.Value.ToString("dd-MMM-yyyy")
-                                            }
+                                                <i class="bi bi-exclamation-triangle"></i>
+                                            </span>
                                         }
                                         else
                                         {
-                                            <span class="card-subtitle">-</span>
+                                            @item.DeliveryDueDate.Value.ToString("dd-MMM-yyyy")
                                         }
-                                    </td>
+                                    }
+                                    else
+                                    {
+                                        <span class="card-subtitle">-</span>
+                                    }
+                                </td>
 
-                                    <td class="text-end">
-                                        @if (item.OrderAmount.HasValue)
-                                        {
-                                            <strong>@item.Currency @item.OrderAmount.Value.ToString("N0")</strong>
-                                        }
-                                        else
-                                        {
-                                            <span class="card-subtitle">-</span>
-                                        }
-                                    </td>
+                                <td class="text-end">
+                                    @if (item.OrderAmount.HasValue)
+                                    {
+                                        <strong>@item.Currency @item.OrderAmount.Value.ToString("N0")</strong>
+                                    }
+                                    else
+                                    {
+                                        <span class="card-subtitle">-</span>
+                                    }
+                                </td>
 
-                                    <td class="text-center">
-                                        <span class="@StatusBadge(item.Status)">
-                                            @StatusLabel(item.Status)
-                                        </span>
-                                    </td>
+                                <td class="text-center">
+                                    <span class="@StatusBadge(item.Status)">
+                                        @StatusLabel(item.Status)
+                                    </span>
+                                </td>
 
-                                    <td class="text-center">
+                                <td class="text-center">
+                                    <div class="table-actions justify-content-center">
 
-                                        <a asp-action="Details" asp-route-id="@item.PurchaseOrderId"
-                                           class="btn-app btn-icon btn-primary-app" title="Details">
+                                        <a asp-action="Details"
+                                           asp-route-id="@item.PurchaseOrderId"
+                                           class="btn-app btn-icon btn-primary-app"
+                                           title="Details">
                                             <i class="bi bi-eye"></i>
                                         </a>
 
@@ -193,8 +279,10 @@
                                             </a>
                                         }
 
-                                        <a asp-action="Download" asp-route-id="@item.PurchaseOrderId"
-                                           class="btn-app btn-icon btn-success-app" title="Download">
+                                        <a asp-action="Download"
+                                           asp-route-id="@item.PurchaseOrderId"
+                                           class="btn-app btn-icon btn-success-app"
+                                           title="Download">
                                             <i class="bi bi-download"></i>
                                         </a>
 
@@ -209,25 +297,18 @@
                                             </a>
                                         }
 
-                                    </td>
-
-                                </tr>
-                            }
-                        }
-                        else
-                        {
-                            <tr>
-                                <td colspan="9" class="text-center text-muted py-4">
-                                    <i class="bi bi-file-earmark-text-invoice fs-2 mb-2 d-block"></i>
-                                    No orders found.
+                                    </div>
                                 </td>
+
                             </tr>
                         }
-                    </tbody>
+                    }
+                </tbody>
 
-                </table>
-            </div>
+            </table>
+
         </div>
+
     </div>
 
 </div>

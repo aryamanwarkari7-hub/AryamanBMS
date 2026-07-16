@@ -124,7 +124,21 @@
 
                     <span asp-validation-for="ActualSalary"
                           class="text-danger"></span>
+                </div>
 
+                <div class="form-group">
+                    <label class="form-label">Salary Breakup</label>
+
+                    <button type="button"
+                            id="calculateSalaryBreakup"
+                            class="btn-app btn-primary-app ">
+                        <i class="bi bi-calculator"></i>
+                        Calculate Breakup
+                    </button>
+
+                    <small class="form-text">
+                        Uses Basic 50% of Actual | HRA 40% of Basic | Balance as Special Allowance.
+                    </small>
                 </div>
 
                 <div class="form-group">
@@ -237,4 +251,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/salary-structure-breakup.js" asp-append-version="true"></script>
 }

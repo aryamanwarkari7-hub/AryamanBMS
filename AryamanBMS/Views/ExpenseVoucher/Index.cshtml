@@ -5,6 +5,10 @@
     string status = ViewBag.Status as string ?? "";
     int? categoryId = ViewBag.CategoryId as int?;
     string search = ViewBag.Search as string ?? "";
+    DateTime? fromDate = ViewBag.FromDate as DateTime?;
+    DateTime? toDate = ViewBag.ToDate as DateTime?;
+    string sortBy = ViewBag.SortBy as string ?? "VoucherDate";
+    string sortOrder = ViewBag.SortOrder as string ?? "desc";
 
     bool isFinanceUser =
         User.IsInRole("Admin") ||
@@ -36,6 +40,17 @@
                         ? "New Expense Claim"
                         : "New Voucher")
         </a>
+
+        <a asp-action="ExportCsv"
+           asp-route-status="@status"
+           asp-route-categoryId="@categoryId"
+           asp-route-search="@search"
+           asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
+           asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-download"></i>
+            Export
+        </a>
     </div>
 </div>
 
@@ -46,20 +61,21 @@
     <div class="card-header">
 
         <form method="get" class="w-100">
+            <input type="hidden"
+                   name="status"
+                   value="@status" />
 
-            <div class="form-grid-4">
-
-                <div class="form-group">
+            <div class="filter-row">
+                <div class="filter-field filter-field-wide">
                     <input type="text"
                            name="search"
                            value="@search"
                            class="app-input"
-                           placeholder="Voucher / Vendor / Invoice" />
+                           placeholder="Voucher / Vendor / Category / Invoice" />
                 </div>
 
-                <div class="form-group">
-                    <select name="categoryId"
-                            class="app-select">
+                <div class="filter-field">
+                    <select name="categoryId" class="app-select">
                         <option value="">All Categories</option>
 
                         @foreach (var category in ViewBag.Categories)
@@ -72,23 +88,53 @@
                     </select>
                 </div>
 
-                <div class="form-group">
-                    <button type="submit"
-                            class="btn-app btn-primary-app w-100">
+                <div class="filter-field">
+                    <select name="sortBy" class="app-select">
+                        <option value="VoucherDate" selected="@(sortBy == "VoucherDate")">Sort by Date</option>
+                        <option value="VoucherNo" selected="@(sortBy == "VoucherNo")">Sort by Voucher No</option>
+                        <option value="Category" selected="@(sortBy == "Category")">Sort by Category</option>
+                        <option value="Vendor" selected="@(sortBy == "Vendor")">Sort by Vendor</option>
+                        <option value="Amount" selected="@(sortBy == "Amount")">Sort by Amount</option>
+                        <option value="TotalAmount" selected="@(sortBy == "TotalAmount")">Sort by Total</option>
+                        <option value="Status" selected="@(sortBy == "Status")">Sort by Status</option>
+                        <option value="PaymentStatus" selected="@(sortBy == "PaymentStatus")">Sort by Payment Status</option>
+                    </select>
+                </div>
+
+                <div class="filter-field">
+                    <select name="sortOrder" class="app-select">
+                        <option value="asc" selected="@(sortOrder == "asc")">Ascending</option>
+                        <option value="desc" selected="@(sortOrder == "desc")">Descending</option>
+                    </select>
+                </div>
+
+                <div class="filter-field">
+                    <input type="date"
+                           name="fromDate"
+                           value="@fromDate?.ToString("yyyy-MM-dd")"
+                           class="app-input" />
+                </div>
+
+                <div class="filter-field">
+                    <input type="date"
+                           name="toDate"
+                           value="@toDate?.ToString("yyyy-MM-dd")"
+                           class="app-input" />
+                </div>
+
+                <div class="filter-actions">
+                    <button type="submit" class="btn-app btn-primary-app">
                         <i class="bi bi-search"></i>
                         Search
                     </button>
-                </div>
 
-                <div class="form-group">
                     <a asp-action="Index"
-                       class="btn-app btn-secondary-app w-100">
+                       class="btn-app btn-secondary-app">
+                        <i class="bi bi-arrow-clockwise"></i>
                         Reset
                     </a>
                 </div>
-
             </div>
-
         </form>
 
     </div>
@@ -100,6 +146,10 @@
             <a asp-action="Index"
                asp-route-search="@search"
                asp-route-categoryId="@categoryId"
+               asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
+               asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
+               asp-route-sortBy="@sortBy"
+               asp-route-sortOrder="@sortOrder"
                class="btn-app @(string.IsNullOrWhiteSpace(status) ? "btn-primary-app" : "btn-secondary-app")">
                 All
             </a>
@@ -108,6 +158,10 @@
                asp-route-search="@search"
                asp-route-categoryId="@categoryId"
                asp-route-status="Draft"
+               asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
+               asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
+               asp-route-sortBy="@sortBy"
+               asp-route-sortOrder="@sortOrder"
                class="btn-app @(status == "Draft" ? "btn-primary-app" : "btn-secondary-app")">
                 Draft
             </a>
@@ -116,6 +170,10 @@
                asp-route-search="@search"
                asp-route-categoryId="@categoryId"
                asp-route-status="Submitted"
+               asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
+               asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
+               asp-route-sortBy="@sortBy"
+               asp-route-sortOrder="@sortOrder"
                class="btn-app @(status == "Submitted" ? "btn-primary-app" : "btn-secondary-app")">
                 Submitted
             </a>
@@ -124,6 +182,10 @@
                asp-route-search="@search"
                asp-route-categoryId="@categoryId"
                asp-route-status="Approved"
+               asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
+               asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
+               asp-route-sortBy="@sortBy"
+               asp-route-sortOrder="@sortOrder"
                class="btn-app @(status == "Approved" ? "btn-primary-app" : "btn-secondary-app")">
                 Approved
             </a>
@@ -132,6 +194,10 @@
                asp-route-search="@search"
                asp-route-categoryId="@categoryId"
                asp-route-status="Posted"
+               asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
+               asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
+               asp-route-sortBy="@sortBy"
+               asp-route-sortOrder="@sortOrder"
                class="btn-app @(status == "Posted" ? "btn-primary-app" : "btn-secondary-app")">
                 Posted
             </a>
@@ -140,6 +206,10 @@
                asp-route-search="@search"
                asp-route-categoryId="@categoryId"
                asp-route-status="Rejected"
+               asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
+               asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
+               asp-route-sortBy="@sortBy"
+               asp-route-sortOrder="@sortOrder"
                class="btn-app @(status == "Rejected" ? "btn-primary-app" : "btn-secondary-app")">
                 Rejected
             </a>
@@ -301,5 +371,26 @@
                 No expense vouchers found.
             </div>
     }
+
+        @if ((ViewBag.TotalPages ?? 1) > 1)
+        {
+            <div class="pagination-container">
+                @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                {
+                    <a asp-action="Index"
+                       asp-route-page="@i"
+                       asp-route-status="@status"
+                       asp-route-categoryId="@categoryId"
+                       asp-route-search="@search"
+                       asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
+                       asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
+                       asp-route-sortBy="@sortBy"
+                       asp-route-sortOrder="@sortOrder"
+                       class="page-link-app @(i == ViewBag.CurrentPage ? "active" : "")">
+                        @i
+                    </a>
+                }
+            </div>
+        }
 </div>
 </div>

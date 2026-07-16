@@ -1,0 +1,167 @@
+/* ==========================================
+   DETAIL PAGES
+========================================== */
+
+.detail-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+    margin: 0 var(--space-xl) var(--space-xl);
+}
+
+.detail-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-md);
+}
+
+.detail-summary-item {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-left: 4px solid var(--primary-color);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.detail-summary-label {
+    color: var(--text-secondary);
+    font-size: var(--font-xs);
+    font-weight: var(--fw-semibold);
+    text-transform: uppercase;
+}
+
+.detail-summary-value {
+    margin-top: 6px;
+    color: var(--text-primary);
+    font-size: var(--font-xl);
+    font-weight: var(--fw-bold);
+    overflow-wrap: anywhere;
+}
+
+.detail-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-lg);
+}
+
+/* Previous employment cards should use available width neatly */
+.detail-page .app-card .detail-grid-2 {
+    width: 100%;
+}
+
+    .detail-page .app-card .detail-grid-2 > .app-card {
+        max-width: none;
+    }
+
+.detail-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-md);
+}
+
+.detail-grid-balanced {
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+}
+
+.detail-info-list {
+    display: grid;
+    gap: 0;
+    border: 1px solid var(--border-muted);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.detail-info-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border-muted);
+    background: var(--card-bg);
+}
+
+.detail-info-row:has(.detail-info-value) .detail-info-value {
+    max-width: 82%;
+}
+
+@media (max-width: 576px) {
+    .detail-info-row:has(.detail-info-value) .detail-info-value {
+        max-width: 100%;
+    }
+}
+
+.detail-info-row:last-child {
+    border-bottom: 0;
+}
+
+.detail-info-label {
+    color: var(--text-secondary);
+    font-size: var(--font-xs);
+    font-weight: var(--fw-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.detail-info-value {
+    color: var(--text-primary);
+    font-size: var(--font-sm);
+    font-weight: var(--fw-semibold);
+    text-align: right;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+.detail-action-bar {
+    display: flex;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+}
+
+.detail-note-box {
+    border: 1px solid var(--border-muted);
+    border-radius: var(--radius-md);
+    padding: var(--space-lg);
+    background: var(--page-bg);
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+
+
+@media (max-width: 992px) {
+    .detail-summary-grid,
+    .detail-grid-3 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .detail-grid-2 {
+        grid-template-columns: 1fr;
+    }
+
+    .detail-page {
+        margin: 0 var(--space-lg) var(--space-lg);
+    }
+}
+
+@media (max-width: 576px) {
+    .detail-summary-grid,
+    .detail-grid-3 {
+        grid-template-columns: 1fr;
+    }
+
+    .detail-page {
+        margin: 0 var(--space-md) var(--space-md);
+    }
+
+    .detail-info-row {
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .detail-info-value {
+        text-align: left;
+    }
+}
+

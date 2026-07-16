@@ -1,4 +1,8 @@
-﻿.navbar-user {
+﻿/* ==========================================
+   NAVBAR ACTIVITY AVATAR
+========================================== */
+
+.navbar-user {
     position: relative;
 }
 
@@ -12,6 +16,14 @@
         overflow: hidden;
     }
 
+    .activity-avatar:hover .user-avatar {
+        transform: translateY(-1px);
+    }
+
+/* ==========================================
+   ACTIVITY DOT
+========================================== */
+
 .activity-dot {
     position: absolute;
     right: -2px;
@@ -22,6 +34,7 @@
     border-radius: 50%;
     background: var(--text-secondary);
     z-index: 2;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.18);
 }
 
 .activity-available {
@@ -41,12 +54,17 @@
     background: var(--text-secondary);
 }
 
+/* ==========================================
+   ACTIVITY STATUS MENU
+========================================== */
+
 .activity-status-menu {
-    min-width: 230px;
+    min-width: 240px;
     padding: var(--space-sm);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-muted);
     border-radius: var(--radius-md);
-    box-shadow: var(--shadow-md);
+    background: var(--card-bg);
+    box-shadow: var(--shadow-dropdown);
 }
 
 .activity-menu-header {
@@ -54,13 +72,14 @@
     flex-direction: column;
     gap: 2px;
     padding: var(--space-sm) var(--space-md);
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-muted);
     margin-bottom: var(--space-sm);
 }
 
     .activity-menu-header strong {
         color: var(--text-primary);
         font-size: var(--font-sm);
+        font-weight: var(--fw-bold);
     }
 
     .activity-menu-header span {
@@ -78,9 +97,18 @@
     display: flex;
     align-items: center;
     gap: var(--space-sm);
+    min-height: 38px;
+    padding: 8px 10px;
     border-radius: var(--radius-sm);
     font-size: var(--font-sm);
+    font-weight: var(--fw-semibold);
+    transition: background-color var(--transition-fast), color var(--transition-fast);
 }
+
+    .activity-status-option:hover {
+        background: var(--primary-accent-tint);
+        color: var(--primary-color);
+    }
 
 .activity-menu-dot {
     width: 10px;
@@ -89,16 +117,9 @@
     flex-shrink: 0;
 }
 
-.sidebar-footer-avatar {
-    flex-shrink: 0;
-}
-
-.user-activity-status {
-    font-size: var(--font-xs);
-    color: var(--text-secondary);
-    margin-top: 2px;
-}
-
+/* ==========================================
+   SIDEBAR FOOTER AVATAR
+========================================== */
 
 .sidebar-footer-avatar {
     flex-shrink: 0;
@@ -110,10 +131,20 @@
         border-radius: 50%;
     }
 
-.sidebar-footer-avatar .activity-dot {
-    right: -3px;
-    bottom: -3px;
+    .sidebar-footer-avatar .activity-dot {
+        right: -3px;
+        bottom: -3px;
+    }
+
+.user-activity-status {
+    font-size: var(--font-xs);
+    color: var(--text-secondary);
+    margin-top: 2px;
 }
+
+/* ==========================================
+   NAVBAR LOGOUT ITEM
+========================================== */
 
 .navbar-logout-form {
     margin: 0;
@@ -129,5 +160,20 @@
 
     .navbar-logout-item:hover {
         color: var(--danger-color);
-        background: var(--danger-tint);
+        background: var(--danger-soft);
+    }
+
+/* ==========================================
+   PROFILE CROP
+========================================== */
+
+.profile-crop-wrap {
+    width: 100%;
+    max-height: 520px;
+    overflow: hidden;
+}
+
+    .profile-crop-wrap img {
+        display: block;
+        max-width: 100%;
     }

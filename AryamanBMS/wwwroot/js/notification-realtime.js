@@ -8,10 +8,42 @@
         sound: false
     };
 
+    const appBasePath = window.aryamanAppBasePath || "/";
+
     const connection = new signalR.HubConnectionBuilder()
-        .withUrl("/notificationHub")
+        .withUrl(appUrl("notificationHub"))
         .withAutomaticReconnect()
         .build();
+
+    function logStatus(message, data) {
+        if (window.console && window.console.debug) {
+            window.console.debug(`[Notifications] ${message}`, data || "");
+        }
+    }
+
+    function getValue(source, camelName, pascalName, fallback) {
+        if (!source) {
+            return fallback;
+        }
+
+        if (Object.prototype.hasOwnProperty.call(source, camelName)) {
+            return source[camelName];
+        }
+
+        if (Object.prototype.hasOwnProperty.call(source, pascalName)) {
+            return source[pascalName];
+        }
+
+        return fallback;
+    }
+
+    function appUrl(path) {
+        const base = appBasePath.endsWith("/")
+            ? appBasePath
+            : `${appBasePath}/`;
+
+        return `${base}${path.replace(/^\/+/, "")}`;
+    }
 
     function formatCount(count) {
         if (!count || count <= 0) {
@@ -42,11 +74,25 @@
             countBadge.remove();
         }
 
-        const headerSmall = document.querySelector(
+        let headerSmall = document.querySelector(
             ".notification-menu-header small");
 
+        if (!headerSmall && count > 0) {
+            const headerTitle = document.querySelector(
+                ".notification-menu-header .notification-header-row > div");
+
+            if (headerTitle) {
+                headerSmall = document.createElement("small");
+                headerTitle.appendChild(headerSmall);
+            }
+        }
+
         if (headerSmall) {
-            headerSmall.textContent = count > 0 ? `${count} unread` : "";
+            if (count > 0) {
+                headerSmall.textContent = `${count} unread`;
+            } else {
+                headerSmall.remove();
+            }
         }
     }
 
@@ -88,11 +134,18 @@
 
         const item = document.createElement("a");
         item.className = "notification-item notification-unread notification-live-new";
-        item.href = `/Notification/Open/${notification.id}`;
+        const notificationId = getValue(notification, "id", "Id", "");
+        const notificationType = getValue(
+            notification,
+            "notificationType",
+            "NotificationType",
+            "");
+
+        item.href = appUrl(`Notification/Open/${notificationId}`);
 
         item.innerHTML = `
             <div class="notification-icon">
-                <i class="bi ${notificationIcon(notification.notificationType)}"></i>
+                <i class="bi ${notificationIcon(notificationType)}"></i>
             </div>
             <div class="notification-content">
                 <div class="notification-title"></div>
@@ -103,13 +156,13 @@
         `;
 
         item.querySelector(".notification-title").textContent =
-            notification.title || "Notification";
+            getValue(notification, "title", "Title", "Notification");
 
         item.querySelector(".notification-message").textContent =
-            notification.message || "";
+            getValue(notification, "message", "Message", "");
 
         item.querySelector(".notification-time").textContent =
-            notification.createdOn || "Just now";
+            getValue(notification, "createdOn", "CreatedOn", "Just now");
 
         list.prepend(item);
 
@@ -134,16 +187,23 @@
 
     function showToast(notification) {
         if (!preferences.toast) {
+            logStatus("Toast skipped because toast preference is disabled.");
             return;
         }
 
         const host = ensureToastHost();
         const toast = document.createElement("div");
+        const notificationId = getValue(notification, "id", "Id", "");
+        const notificationType = getValue(
+            notification,
+            "notificationType",
+            "NotificationType",
+            "");
 
         toast.className = "notification-toast";
         toast.innerHTML = `
             <div class="notification-icon">
-                <i class="bi ${notificationIcon(notification.notificationType)}"></i>
+                <i class="bi ${notificationIcon(notificationType)}"></i>
             </div>
             <div class="notification-content">
                 <div class="notification-title"></div>
@@ -157,10 +217,10 @@
         `;
 
         toast.querySelector(".notification-title").textContent =
-            notification.title || "Notification";
+            getValue(notification, "title", "Title", "Notification");
 
         toast.querySelector(".notification-message").textContent =
-            notification.message || "";
+            getValue(notification, "message", "Message", "");
 
         toast.addEventListener("click", function (event) {
             if (event.target.closest(".notification-toast-close")) {
@@ -168,7 +228,7 @@
                 return;
             }
 
-            window.location.href = `/Notification/Open/${notification.id}`;
+            window.location.href = appUrl(`Notification/Open/${notificationId}`);
         });
 
         host.appendChild(toast);
@@ -221,19 +281,41 @@
 
             oscillator.start();
             oscillator.stop(audioContext.currentTime + 0.36);
+
+            oscillator.onended = function () {
+                audioContext.close();
+            };
         } catch {
             // Browser autoplay rules may block sound; notifications still work.
         }
     }
 
     connection.on("ReceiveNotification", function (notification) {
-        updateUnreadCount(notification.unreadCount || 0);
+        logStatus("Live notification received.", notification);
+
+        const unreadCount =
+            getValue(notification, "unreadCount", "UnreadCount", 0);
+
+        updateUnreadCount(unreadCount || 0);
         prependNotification(notification);
         showToast(notification);
         playNotificationSound();
     });
 
-    connection.start().catch(function () {
+    window.aryamanTestNotificationToast = function () {
+        showToast({
+            id: 0,
+            title: "Test notification",
+            message: "Toast popup is working on this browser.",
+            notificationType: "System",
+            createdOn: "Just now"
+        });
+    };
+
+    connection.start().then(function () {
+        logStatus("SignalR connected.");
+    }).catch(function (error) {
+        logStatus("SignalR connection failed.", error);
         // Real-time updates are enhancement-only. Normal notification pages still work.
     });
 })();

@@ -1,30 +1,67 @@
-﻿.alert-message-app {
+﻿/* ==========================================
+   BASE ALERT
+========================================== */
+
+.alert-message-app {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: var(--space-sm);
     padding: 14px 18px;
     margin-bottom: 20px;
     border-radius: var(--radius-md);
-    color: var(--text-light);
-    font-weight: var(--fw-medium);
-    transition: opacity 0.5s ease;
+    font-size: var(--font-sm);
+    font-weight: var(--fw-semibold);
+    line-height: 1.45;
+    border: 1px solid transparent;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+    transition: opacity 0.5s ease, transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
+    .alert-message-app i {
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    .alert-message-app:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.11);
+    }
+
+/* ==========================================
+   ALERT TYPES
+========================================== */
+
 .alert-success-app {
-    background: var(--success-color);
-    box-shadow: var(--shadow-status-success);
+    background: var(--success-soft);
+    color: var(--success-soft-text);
+    border-color: var(--success-soft-border);
 }
 
 .alert-warning-app {
-    background-color: var(--warning-color);
-    box-shadow: var(--shadow-status-warning);
+    background: var(--warning-soft);
+    color: var(--warning-soft-text);
+    border-color: rgba(245, 158, 11, 0.28);
 }
 
-.alert-error-app {
-    background: var(--danger-color);
-    box-shadow: var(--shadow-status-danger);
+.alert-error-app,
+.alert-danger-app {
+    background: var(--danger-soft);
+    color: var(--danger-soft-text);
+    border-color: var(--danger-soft-border);
 }
+
+.alert-info-app {
+    background: var(--info-soft);
+    color: var(--info-soft-text);
+    border-color: var(--info-soft-border);
+}
+
+/* ==========================================
+   HIDE ANIMATION
+========================================== */
 
 .alert-hide {
     opacity: 0;
+    transform: translateY(-4px);
 }

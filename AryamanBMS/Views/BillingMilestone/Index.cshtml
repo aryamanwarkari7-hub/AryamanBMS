@@ -10,6 +10,11 @@
         "On Hold" => "badge-warning",
         _ => "badge-secondary"
     };
+
+    string search = ViewBag.Search as string ?? "";
+    string sortBy = ViewBag.SortBy as string ?? "Order";
+    string sortOrder = ViewBag.SortOrder as string ?? "asc";
+    int? purchaseWorkOrderId = ViewBag.PurchaseWorkOrderId as int?;
 }
 
 <div class="module-header">
@@ -23,6 +28,63 @@
             <i class="bi bi-plus-circle"></i>
             New Milestone
         </a>
+    </div>
+</div>
+
+<div class="app-card filter-card">
+    <div class="card-body">
+        <form method="get" class="w-100">
+            @if (purchaseWorkOrderId.HasValue)
+            {
+                <input type="hidden"
+                       name="purchaseWorkOrderId"
+                       value="@purchaseWorkOrderId.Value" />
+            }
+
+            <div class="filter-row">
+                <div class="filter-field filter-field-wide">
+                    <input name="search"
+                           value="@search"
+                           class="app-input"
+                           placeholder="PO / WO, client, project, milestone or status" />
+                </div>
+
+                <div class="filter-field">
+                    <select name="sortBy" class="app-select">
+                        <option value="Order" selected="@(sortBy == "Order")">Sort by PO / WO</option>
+                        <option value="Milestone" selected="@(sortBy == "Milestone")">Sort by Milestone</option>
+                        <option value="Client" selected="@(sortBy == "Client")">Sort by Client</option>
+                        <option value="Project" selected="@(sortBy == "Project")">Sort by Project</option>
+                        <option value="Value" selected="@(sortBy == "Value")">Sort by Value</option>
+                        <option value="Billed" selected="@(sortBy == "Billed")">Sort by Billed</option>
+                        <option value="Remaining" selected="@(sortBy == "Remaining")">Sort by Remaining</option>
+                        <option value="Status" selected="@(sortBy == "Status")">Sort by Status</option>
+                        <option value="Active" selected="@(sortBy == "Active")">Sort by Active</option>
+                    </select>
+                </div>
+
+                <div class="filter-field">
+                    <select name="sortOrder" class="app-select">
+                        <option value="asc" selected="@(sortOrder == "asc")">Ascending</option>
+                        <option value="desc" selected="@(sortOrder == "desc")">Descending</option>
+                    </select>
+                </div>
+
+                <div class="filter-actions">
+                    <button type="submit" class="btn-app btn-primary-app">
+                        <i class="bi bi-search"></i>
+                        Search
+                    </button>
+
+                    <a asp-action="Index"
+                       asp-route-purchaseWorkOrderId="@purchaseWorkOrderId"
+                       class="btn-app btn-secondary-app">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        Reset
+                    </a>
+                </div>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -109,11 +171,9 @@
                     }
                     else
                     {
-                        <tr>
-                            <td colspan="10" class="text-center text-muted py-4">
-                                No billing milestones found.
-                            </td>
-                        </tr>
+                    <td colspan="10" class="empty-state">
+                        No billing milestones found.
+                    </td>
                     }
                 </tbody>
             </table>

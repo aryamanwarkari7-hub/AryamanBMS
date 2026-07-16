@@ -7,6 +7,11 @@
 
     string? selectedDepartment = ViewBag.Department as string;
     string? selectedStatus = ViewBag.Status as string;
+    string search = ViewBag.Search as string ?? "";
+    DateTime? fromDate = ViewBag.FromDate as DateTime?;
+    DateTime? toDate = ViewBag.ToDate as DateTime?;
+    string sortBy = ViewBag.SortBy as string ?? "NoticeDate";
+    string sortOrder = ViewBag.SortOrder as string ?? "desc";
 
     int openCount = notices.Count(x => x.Status == FinancialConstants.NoticeStatus.Open);
     int repliedCount = notices.Count(x => x.Status == FinancialConstants.NoticeStatus.Replied);
@@ -28,6 +33,17 @@
            class="btn-app btn-primary-app">
             <i class="bi bi-plus-circle"></i>
             Add Notice
+        </a>
+
+        <a asp-action="ExportCsv"
+           asp-route-department="@selectedDepartment"
+           asp-route-status="@selectedStatus"
+           asp-route-search="@search"
+           asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
+           asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-download"></i>
+            Export
         </a>
     </div>
 
@@ -87,11 +103,9 @@
         <form method="get"
               asp-action="Index">
 
-            <div class="form-grid-3">
+            <div class="filter-row">
 
-                <div class="form-group">
-                    <label class="form-label">Department</label>
-
+                <div class="filter-field">
                     <select name="department"
                             class="app-select">
                         <option value="">All Departments</option>
@@ -106,9 +120,7 @@
                     </select>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Status</label>
-
+                <div class="filter-field">
                     <select name="status"
                             class="app-select">
                         <option value="">All Status</option>
@@ -120,21 +132,58 @@
                     </select>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">&nbsp;</label>
+                <div class="filter-field filter-field-wide">
+                    <input name="search"
+                           value="@search"
+                           class="app-input"
+                           placeholder="Notice no, subject, department or remarks" />
+                </div>
 
-                    <div class="form-actions">
-                        <button type="submit"
-                                class="btn-app btn-primary-app">
-                            <i class="bi bi-funnel"></i>
-                            Filter
-                        </button>
+                <div class="filter-field">
+                    <select name="sortBy" class="app-select">
+                        <option value="NoticeDate" selected="@(sortBy == "NoticeDate")">Sort by Notice Date</option>
+                        <option value="NoticeNo" selected="@(sortBy == "NoticeNo")">Sort by Notice No</option>
+                        <option value="Department" selected="@(sortBy == "Department")">Sort by Department</option>
+                        <option value="Subject" selected="@(sortBy == "Subject")">Sort by Subject</option>
+                        <option value="DueDate" selected="@(sortBy == "DueDate")">Sort by Due Date</option>
+                        <option value="Status" selected="@(sortBy == "Status")">Sort by Status</option>
+                        <option value="Active" selected="@(sortBy == "Active")">Sort by Active</option>
+                    </select>
+                </div>
 
-                        <a asp-action="Index"
-                           class="btn-app btn-secondary-app">
-                            Reset
-                        </a>
-                    </div>
+                <div class="filter-field">
+                    <select name="sortOrder" class="app-select">
+                        <option value="asc" selected="@(sortOrder == "asc")">Ascending</option>
+                        <option value="desc" selected="@(sortOrder == "desc")">Descending</option>
+                    </select>
+                </div>
+
+                <div class="filter-field">
+                    <input type="date"
+                           name="fromDate"
+                           value="@fromDate?.ToString("yyyy-MM-dd")"
+                           class="app-input" />
+                </div>
+
+                <div class="filter-field">
+                    <input type="date"
+                           name="toDate"
+                           value="@toDate?.ToString("yyyy-MM-dd")"
+                           class="app-input" />
+                </div>
+
+                <div class="filter-actions">
+                    <button type="submit"
+                            class="btn-app btn-primary-app">
+                        <i class="bi bi-funnel"></i>
+                        Filter
+                    </button>
+
+                    <a asp-action="Index"
+                       class="btn-app btn-secondary-app">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        Reset
+                    </a>
                 </div>
 
             </div>
@@ -279,6 +328,27 @@
             </table>
 
         </div>
+
+        @if ((ViewBag.TotalPages ?? 1) > 1)
+        {
+            <div class="pagination-container">
+                @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                {
+                    <a asp-action="Index"
+                       asp-route-page="@i"
+                       asp-route-department="@selectedDepartment"
+                       asp-route-status="@selectedStatus"
+                       asp-route-search="@search"
+                       asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
+                       asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
+                       asp-route-sortBy="@sortBy"
+                       asp-route-sortOrder="@sortOrder"
+                       class="page-link-app @(i == ViewBag.CurrentPage ? "active" : "")">
+                        @i
+                    </a>
+                }
+            </div>
+        }
 
     </div>
 

@@ -45,10 +45,20 @@
     --border-muted: #DBE4EF;
     --border-dark: #334155;
     /* SIDEBAR */
-    --sidebar-text: #94A3B8;
-    --sidebar-text-active: #318CE7;
-    --sidebar-hover-bg: #1E293B;
-    --sidebar-active-bg: #1E293B;
+    /* SIDEBAR */
+    --sidebar-bg: #0F172A;
+    --sidebar-surface: rgba(255, 255, 255, 0.035);
+    --sidebar-surface-hover: rgba(59, 130, 246, 0.11);
+    --sidebar-surface-active: rgba(32, 114, 175, 0.18);
+    --sidebar-border: rgba(148, 163, 184, 0.16);
+    --sidebar-border-hover: rgba(96, 165, 250, 0.34);
+    --sidebar-text: #9CAFC8;
+    --sidebar-text-active: #EAF4FF;
+    --sidebar-icon: #8FB5DD;
+    --sidebar-icon-active: #60A5FA;
+    --sidebar-hover-bg: var(--sidebar-surface-hover);
+    --sidebar-active-bg: var(--sidebar-surface-active);
+    --sidebar-active-shadow: 0 10px 26px rgba(15, 23, 42, 0.22);
     /* BUTTONS */
     --logout-btn: #8B0000;
     /* ==========================================
@@ -75,7 +85,7 @@
     --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
     --shadow-md: 0 4px 6px rgba(0,0,0,0.08);
     --shadow-lg: 0 10px 20px rgba(0,0,0,0.12);
-    --shadow-focus: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    --shadow-focus: 0 0 0 3px rgba(32, 114, 175, 0.18);
     --shadow-dropdown: 0 14px 34px rgba(15, 23, 42, 0.12);
     --shadow-status-success: 0 4px 12px rgba(22, 163, 74, 0.25);
     --shadow-status-warning: 0 4px 12px rgba(217, 119, 6, 0.25);

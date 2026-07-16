@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Text;
 
 namespace AryamanBMS.Controllers
 {
@@ -29,9 +30,14 @@ namespace AryamanBMS.Controllers
 
         #region Index
         public async Task<IActionResult> Index(
-                  string? search,
-                  int? clientId,
-                  string? status)
+    string? search,
+    int? clientId,
+    string? status,
+    DateTime? fromDate,
+    DateTime? toDate,
+    string sortBy = "ReceiptDate",
+    string sortOrder = "desc",
+    int page = 1)
         {
             var payments = await _paymentRepository.GetAllAsync();
 
@@ -41,9 +47,20 @@ namespace AryamanBMS.Controllers
 
                 payments = payments
                     .Where(x =>
-                        (x.ReceiptNo != null && x.ReceiptNo.ToLower().Contains(keyword)) ||
-                        (x.Client != null && x.Client.ClientName.ToLower().Contains(keyword)) ||
-                        (x.Invoice != null && x.Invoice.InvoiceNo.ToLower().Contains(keyword)))
+                        (!string.IsNullOrWhiteSpace(x.ReceiptNo) &&
+                            x.ReceiptNo.ToLower().Contains(keyword)) ||
+                        (x.Client != null &&
+                            !string.IsNullOrWhiteSpace(x.Client.ClientName) &&
+                            x.Client.ClientName.ToLower().Contains(keyword)) ||
+                        (x.Invoice != null &&
+                            !string.IsNullOrWhiteSpace(x.Invoice.InvoiceNo) &&
+                            x.Invoice.InvoiceNo.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(x.PaymentMode) &&
+                            x.PaymentMode.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(x.TransactionNo) &&
+                            x.TransactionNo.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(x.ReferenceNo) &&
+                            x.ReferenceNo.ToLower().Contains(keyword)))
                     .ToList();
             }
 
@@ -64,6 +81,62 @@ namespace AryamanBMS.Controllers
                 };
             }
 
+            if (fromDate.HasValue)
+            {
+                payments = payments
+                    .Where(x => x.ReceiptDate.Date >= fromDate.Value.Date)
+                    .ToList();
+            }
+
+            if (toDate.HasValue)
+            {
+                payments = payments
+                    .Where(x => x.ReceiptDate.Date <= toDate.Value.Date)
+                    .ToList();
+            }
+
+            bool desc =
+                string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
+
+            payments = sortBy switch
+            {
+                "ReceiptNo" => desc
+                    ? payments.OrderByDescending(x => x.ReceiptNo).ToList()
+                    : payments.OrderBy(x => x.ReceiptNo).ToList(),
+
+                "Client" => desc
+                    ? payments.OrderByDescending(x => x.Client?.ClientName).ToList()
+                    : payments.OrderBy(x => x.Client?.ClientName).ToList(),
+
+                "Invoice" => desc
+                    ? payments.OrderByDescending(x => x.Invoice?.InvoiceNo).ToList()
+                    : payments.OrderBy(x => x.Invoice?.InvoiceNo).ToList(),
+
+                "Mode" => desc
+                    ? payments.OrderByDescending(x => x.PaymentMode).ToList()
+                    : payments.OrderBy(x => x.PaymentMode).ToList(),
+
+                "Amount" => desc
+                    ? payments.OrderByDescending(x => x.AmountReceived).ToList()
+                    : payments.OrderBy(x => x.AmountReceived).ToList(),
+
+                "Status" => desc
+                    ? payments.OrderByDescending(x => x.IsCancelled).ToList()
+                    : payments.OrderBy(x => x.IsCancelled).ToList(),
+
+                _ => desc
+                    ? payments.OrderByDescending(x => x.ReceiptDate).ToList()
+                    : payments.OrderBy(x => x.ReceiptDate).ToList()
+            };
+
+            const int pageSize = 20;
+            int totalRecords = payments.Count;
+
+            payments = payments
+                .Skip((Math.Max(page, 1) - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
             var allPayments = await _paymentRepository.GetAllAsync();
             var activePayments = allPayments.Where(x => !x.IsCancelled).ToList();
 
@@ -81,7 +154,84 @@ namespace AryamanBMS.Controllers
                 }
             };
 
+            ViewBag.Search = search;
+            ViewBag.ClientId = clientId;
+            ViewBag.Status = status;
+            ViewBag.FromDate = fromDate;
+            ViewBag.ToDate = toDate;
+            ViewBag.SortBy = sortBy;
+            ViewBag.SortOrder = sortOrder;
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages =
+                (int)Math.Ceiling(totalRecords / (double)pageSize);
+
             return View(model);
+        }
+
+        public async Task<IActionResult> ExportCsv(
+            string? search,
+            int? clientId,
+            string? status,
+            DateTime? fromDate,
+            DateTime? toDate)
+        {
+            var payments = await _paymentRepository.GetAllAsync();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                string keyword = search.Trim().ToLower();
+
+                payments = payments.Where(x =>
+                    (!string.IsNullOrWhiteSpace(x.ReceiptNo) && x.ReceiptNo.ToLower().Contains(keyword)) ||
+                    (x.Client != null && !string.IsNullOrWhiteSpace(x.Client.ClientName) && x.Client.ClientName.ToLower().Contains(keyword)) ||
+                    (x.Invoice != null && !string.IsNullOrWhiteSpace(x.Invoice.InvoiceNo) && x.Invoice.InvoiceNo.ToLower().Contains(keyword)) ||
+                    (!string.IsNullOrWhiteSpace(x.PaymentMode) && x.PaymentMode.ToLower().Contains(keyword)) ||
+                    (!string.IsNullOrWhiteSpace(x.TransactionNo) && x.TransactionNo.ToLower().Contains(keyword)) ||
+                    (!string.IsNullOrWhiteSpace(x.ReferenceNo) && x.ReferenceNo.ToLower().Contains(keyword)))
+                    .ToList();
+            }
+
+            if (clientId.HasValue && clientId.Value > 0)
+            {
+                payments = payments.Where(x => x.ClientId == clientId.Value).ToList();
+            }
+
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                payments = status switch
+                {
+                    "Active" => payments.Where(x => !x.IsCancelled).ToList(),
+                    "Cancelled" => payments.Where(x => x.IsCancelled).ToList(),
+                    _ => payments
+                };
+            }
+
+            if (fromDate.HasValue)
+                payments = payments.Where(x => x.ReceiptDate.Date >= fromDate.Value.Date).ToList();
+
+            if (toDate.HasValue)
+                payments = payments.Where(x => x.ReceiptDate.Date <= toDate.Value.Date).ToList();
+
+            var csv = new StringBuilder();
+            csv.AppendLine("Receipt No,Date,Client,Invoice,Mode,Reference,Amount,Status");
+
+            foreach (var item in payments.OrderByDescending(x => x.ReceiptDate))
+            {
+                csv.AppendLine(string.Join(",",
+                    Csv(item.ReceiptNo),
+                    Csv(item.ReceiptDate.ToString("dd-MMM-yyyy")),
+                    Csv(item.Client?.ClientName),
+                    Csv(item.Invoice?.InvoiceNo),
+                    Csv(item.PaymentMode),
+                    Csv(item.ReferenceNo ?? item.TransactionNo),
+                    item.AmountReceived.ToString("0.00"),
+                    Csv(item.IsCancelled ? "Cancelled" : "Active")));
+            }
+
+            return File(
+                Encoding.UTF8.GetBytes(csv.ToString()),
+                "text/csv",
+                $"payment-receipts-{DateTime.Now:yyyyMMddHHmmss}.csv");
         }
 
         #endregion
@@ -505,6 +655,12 @@ namespace AryamanBMS.Controllers
                  x.InvoiceId == invoiceId &&
                  !x.IsDeleted &&
                  x.InvoiceStatus == "Issued");
+        }
+
+        private static string Csv(string? value)
+        {
+            value ??= string.Empty;
+            return $"\"{value.Replace("\"", "\"\"")}\"";
         }
 
         private static readonly string[] AllowedPaymentModes =

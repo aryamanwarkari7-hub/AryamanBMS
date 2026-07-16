@@ -30,7 +30,10 @@ namespace AryamanBMS.Controllers
         [HttpGet]
         public async Task<IActionResult> Index(
             int? projectId,
-            int? projectTaskId)
+            int? projectTaskId,
+            string? search,
+            string sortBy = "ProgressDate",
+            string sortOrder = "desc")
         {
             var progressRecords = _progressRepository.ProjectTaskProgresses
                 .Where(p => p.IsActive);
@@ -75,15 +78,60 @@ namespace AryamanBMS.Controllers
                     p.ProjectTaskId == projectTaskId.Value);
             }
 
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                string keyword = search.Trim();
+
+                progressRecords = progressRecords.Where(p =>
+                    p.ProgressNotes.Contains(keyword) ||
+                    p.ProjectTask!.TaskCode.Contains(keyword) ||
+                    p.ProjectTask.TaskTitle.Contains(keyword) ||
+                    p.ProjectTask.Project!.ProjectCode.Contains(keyword) ||
+                    p.ProjectTask.Project.ProjectName.Contains(keyword));
+            }
+
+            bool desc =
+                string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
+
+            progressRecords = sortBy switch
+            {
+                "Project" => desc
+                    ? progressRecords.OrderByDescending(p => p.ProjectTask!.Project!.ProjectCode)
+                    : progressRecords.OrderBy(p => p.ProjectTask!.Project!.ProjectCode),
+
+                "Task" => desc
+                    ? progressRecords.OrderByDescending(p => p.ProjectTask!.TaskCode)
+                    : progressRecords.OrderBy(p => p.ProjectTask!.TaskCode),
+
+                "Hours" => desc
+                    ? progressRecords.OrderByDescending(p => p.HoursWorked)
+                    : progressRecords.OrderBy(p => p.HoursWorked),
+
+                "Completion" => desc
+                    ? progressRecords.OrderByDescending(p => p.CompletionPercentage)
+                    : progressRecords.OrderBy(p => p.CompletionPercentage),
+
+                "Status" => desc
+                    ? progressRecords.OrderByDescending(p => p.IsActive)
+                    : progressRecords.OrderBy(p => p.IsActive),
+
+                _ => desc
+                    ? progressRecords.OrderByDescending(p => p.ProgressDate)
+                        .ThenByDescending(p => p.Id)
+                    : progressRecords.OrderBy(p => p.ProgressDate)
+                        .ThenBy(p => p.Id)
+            };
+
             var data = await progressRecords
-                .OrderByDescending(p => p.ProgressDate)
-                .ThenByDescending(p => p.Id)
                 .ToListAsync();
 
             await LoadTasksAsync();
 
             ViewBag.ProjectId = projectId;
             ViewBag.ProjectTaskId = projectTaskId;
+            ViewBag.Search = search;
+            ViewBag.SortBy = sortBy;
+            ViewBag.SortOrder = sortOrder;
 
             return View(data);
         }
