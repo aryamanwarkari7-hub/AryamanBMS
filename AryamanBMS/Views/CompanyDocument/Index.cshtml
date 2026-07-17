@@ -44,15 +44,18 @@
                        name="status"
                        value="@statusFilter" />
 
-                <div class="filter-row">
-                    <div class="filter-field filter-field-wide">
+                <div class="filter-form-row">
+
+                    <div class="form-group filter-search-wide">
+                        <label class="form-label">Search</label>
                         <input name="search"
                                value="@search"
                                class="app-input"
                                placeholder="Document, category, number or issuer" />
                     </div>
 
-                    <div class="filter-field">
+                    <div class="form-group">
+                        <label class="form-label">Category</label>
                         <select name="categoryId" class="app-select">
                             <option value="">All Categories</option>
                             @foreach (var category in ViewBag.Categories)
@@ -65,26 +68,28 @@
                         </select>
                     </div>
 
-                    <div class="filter-field">
+                    <div class="form-group">
+                        <label class="form-label">Sort By</label>
                         <select name="sortBy" class="app-select">
-                            <option value="CreatedOn" selected="@(sortBy == "CreatedOn")">Sort by Uploaded</option>
-                            <option value="Document" selected="@(sortBy == "Document")">Sort by Document</option>
-                            <option value="Category" selected="@(sortBy == "Category")">Sort by Category</option>
-                            <option value="DocumentNo" selected="@(sortBy == "DocumentNo")">Sort by Document No</option>
-                            <option value="IssueDate" selected="@(sortBy == "IssueDate")">Sort by Issue Date</option>
-                            <option value="ExpiryDate" selected="@(sortBy == "ExpiryDate")">Sort by Expiry Date</option>
-                            <option value="Active" selected="@(sortBy == "Active")">Sort by Active</option>
+                            <option value="CreatedOn" selected="@(sortBy == "CreatedOn")">Uploaded</option>
+                            <option value="Document" selected="@(sortBy == "Document")">Document</option>
+                            <option value="Category" selected="@(sortBy == "Category")">Category</option>
+                            <option value="DocumentNo" selected="@(sortBy == "DocumentNo")">Document No</option>
+                            <option value="IssueDate" selected="@(sortBy == "IssueDate")">Issue Date</option>
+                            <option value="ExpiryDate" selected="@(sortBy == "ExpiryDate")">Expiry Date</option>
+                            <option value="Active" selected="@(sortBy == "Active")">Active</option>
                         </select>
                     </div>
 
-                    <div class="filter-field">
+                    <div class="form-group">
+                        <label class="form-label">Order</label>
                         <select name="sortOrder" class="app-select">
                             <option value="asc" selected="@(sortOrder == "asc")">Ascending</option>
                             <option value="desc" selected="@(sortOrder == "desc")">Descending</option>
                         </select>
                     </div>
 
-                    <div class="filter-actions">
+                    <div class="filter-form-actions">
                         <button type="submit" class="btn-app btn-primary-app">
                             <i class="bi bi-search"></i>
                             Search
@@ -95,6 +100,7 @@
                             Reset
                         </a>
                     </div>
+
                 </div>
             </form>
 

@@ -291,8 +291,27 @@
 -- ADD ActivityStatusMessage VARCHAR(150) NULL,
 -- ADD ActivityStatusUpdatedOn DATETIME NULL;
 
-ALTER TABLE aspnetusers
-ADD LastSeenOn DATETIME NULL,
-ADD IsActivityStatusManual BIT NOT NULL DEFAULT 0;
+-- ALTER TABLE aspnetusers
+-- ADD LastSeenOn DATETIME NULL,
+-- ADD IsActivityStatusManual BIT NOT NULL DEFAULT 0;
+
+-- ALTER TABLE aspnetusers
+-- ADD EnableRealtimeNotifications BIT NOT NULL DEFAULT 1,
+-- ADD EnableNotificationToast BIT NOT NULL DEFAULT 1,
+-- ADD EnableNotificationSound BIT NOT NULL DEFAULT 0;
+
+-- ALTER TABLE tablecompanyprofile
+-- ADD COLUMN CIN VARCHAR(21) NULL AFTER PAN;
+
+-- ALTER TABLE tableproject
+-- ADD COLUMN ClientId INT NULL AFTER ProjectType;
+
+-- ALTER TABLE tableproject
+-- ADD INDEX IX_tableproject_ClientId (ClientId);
+
+-- ALTER TABLE tableproject
+-- ADD CONSTRAINT FK_tableproject_tableclientmaster_ClientId
+-- FOREIGN KEY (ClientId)
+-- REFERENCES tableclientmaster(ClientId);
 
 

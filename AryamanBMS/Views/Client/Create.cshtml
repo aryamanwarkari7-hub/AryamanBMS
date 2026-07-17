@@ -154,9 +154,19 @@
                         State Code
                     </label>
 
-                    <input asp-for="Client.StateCode"
-                           class="app-input"
-                           maxlength="2" />
+                    <select asp-for="Client.StateCode"
+                            id="stateCodeDropdown"
+                            class="app-select">
+                        <option value="">Select State Code</option>
+
+                        @foreach (var state in ViewBag.States)
+                        {
+                            <option value="@state.StateCode"
+                                    data-state-name="@state.StateName">
+                                @state.StateCode - @state.StateName
+                            </option>
+                        }
+                    </select>
 
                     <span asp-validation-for="Client.StateCode"
                           class="validation-message"></span>
@@ -242,7 +252,19 @@
                         Place of Supply
                     </label>
 
-                    <input asp-for="Client.PlaceOfSupply" class="app-input" />
+                    <select asp-for="Client.PlaceOfSupply"
+                            id="placeOfSupplyDropdown"
+                            class="app-select">
+                        <option value="">Select Place of Supply</option>
+
+                        @foreach (var state in ViewBag.States)
+                        {
+                            <option value="@state.StateName"
+                                    data-state-code="@state.StateCode">
+                                @state.StateName
+                            </option>
+                        }
+                    </select>
 
                     <span asp-validation-for="Client.PlaceOfSupply"
                           class="validation-message"></span>
@@ -253,9 +275,19 @@
                         Place of Supply State Code
                     </label>
 
-                    <input asp-for="Client.PlaceOfSupplyStateCode"
-                           class="app-input"
-                           maxlength="2" />
+                    <select asp-for="Client.PlaceOfSupplyStateCode"
+                            id="placeOfSupplyStateCodeDropdown"
+                            class="app-select">
+                        <option value="">Select State Code</option>
+
+                        @foreach (var state in ViewBag.States)
+                        {
+                            <option value="@state.StateCode"
+                                    data-state-name="@state.StateName">
+                                @state.StateCode - @state.StateName
+                            </option>
+                        }
+                    </select>
 
                     <span asp-validation-for="Client.PlaceOfSupplyStateCode"
                           class="validation-message"></span>
@@ -348,4 +380,41 @@
 {
     <partial name="_ValidationScriptsPartial" />
     <script src="~/js/client-location.js" asp-append-version="true"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const stateDropdown = document.getElementById("stateDropdown");
+            const stateCodeDropdown = document.getElementById("stateCodeDropdown");
+            const placeOfSupplyDropdown = document.getElementById("placeOfSupplyDropdown");
+            const placeOfSupplyStateCodeDropdown = document.getElementById("placeOfSupplyStateCodeDropdown");
+
+            if (stateDropdown && stateCodeDropdown) {
+                stateDropdown.addEventListener("change", function () {
+                    const selectedOption = stateDropdown.options[stateDropdown.selectedIndex];
+                    const selectedStateName = selectedOption?.value || "";
+
+                    const matchingCodeOption = Array.from(stateCodeDropdown.options)
+                        .find(option => option.getAttribute("data-state-name") === selectedStateName);
+
+                    if (matchingCodeOption) {
+                        stateCodeDropdown.value = matchingCodeOption.value;
+                    }
+
+                    if (placeOfSupplyDropdown && !placeOfSupplyDropdown.value) {
+                        placeOfSupplyDropdown.value = selectedStateName;
+                        placeOfSupplyDropdown.dispatchEvent(new Event("change"));
+                    }
+                });
+            }
+
+            if (placeOfSupplyDropdown && placeOfSupplyStateCodeDropdown) {
+                placeOfSupplyDropdown.addEventListener("change", function () {
+                    const selectedOption = placeOfSupplyDropdown.options[placeOfSupplyDropdown.selectedIndex];
+                    const selectedStateCode = selectedOption?.getAttribute("data-state-code") || "";
+
+                    placeOfSupplyStateCodeDropdown.value = selectedStateCode;
+                });
+            }
+        });
+    </script>
 }

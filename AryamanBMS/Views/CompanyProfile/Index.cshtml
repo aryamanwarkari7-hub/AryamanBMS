@@ -87,6 +87,25 @@
                 </div>
 
                 <div class="form-group">
+                    <label asp-for="CIN" class="form-label">
+                        CIN
+                    </label>
+
+                    <input asp-for="CIN"
+                           class="app-input"
+                           maxlength="21"
+                           placeholder="U72900MH2020PTC123456"
+                           oninput="this.value = this.value.toUpperCase();" />
+
+                    <small class="form-text">
+                        21-character Corporate Identification Number.
+                    </small>
+
+                    <span asp-validation-for="CIN"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
                     <label asp-for="Phone" class="form-label">
                         Phone
                     </label>

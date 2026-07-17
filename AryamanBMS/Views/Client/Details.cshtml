@@ -4,257 +4,278 @@
     ViewData["Title"] = "Client Details";
 }
 
-<div class="module-header">
+<div class="detail-page">
 
-    <div>
-        <h1 class="module-title">Client Details</h1>
-        <p class="module-subtitle">
-            <span class="badge-secondary">@Model.ClientCode</span>
-        </p>
-    </div>
-
-    <div class="module-header-actions">
-
-        <a asp-action="Edit"
-           asp-route-id="@Model.ClientId"
-           class="btn-app btn-primary-app">
-            <i class="bi bi-pencil"></i>
-            Edit Client
-        </a>
-
-        @* <a asp-action="Delete"
-           asp-route-id="@Model.ClientId"
-           class="btn-app @(Model.IsActive ? "btn-danger-app" : "btn-success-app")">
-            <i class="bi bi-power"></i>
-            @(Model.IsActive ? "Deactivate" : "Activate")
-        </a> *@
-
-        <a asp-action="Index"
-           class="btn-app btn-secondary-app">
-            <i class="bi bi-arrow-left"></i>
-            Back
-        </a>
-
-    </div>
-
-</div>
-
-<div class="app-card">
-
-    <div class="card-header">
-        <h5 class="card-title">Basic Information</h5>
-    </div>
-
-    <div class="card-body">
-
-        <div class="form-grid-2">
-
-            <div class="form-group">
-                <label class="form-label">Client Name</label>
-                <div>@Model.ClientName</div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Client Type</label>
-                <div>
-                    @if (!string.IsNullOrWhiteSpace(Model.ClientType))
-                    {
-                        <span class="badge-info">@Model.ClientType</span>
-                    }
-                    else
-                    {
-                        <span>-</span>
-                    }
-                </div>
-            </div>
-
+    <div class="module-header">
+        <div>
+            <h1 class="module-title">@Model.ClientName</h1>
+            <p class="module-subtitle">
+                Client profile, contact, tax information and linked records
+            </p>
         </div>
 
-    </div>
-
-</div>
-
-<div class="app-card">
-
-    <div class="card-header">
-        <h5 class="card-title">Contact Information</h5>
-    </div>
-
-    <div class="card-body">
-
-        <div class="form-grid-2">
-
-            <div class="form-group">
-                <label class="form-label">Contact Person</label>
-                <div>@(Model.ContactPerson ?? "-")</div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Phone</label>
-                <div>@(Model.Phone ?? "-")</div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Email</label>
-                <div>
-                    @if (!string.IsNullOrWhiteSpace(Model.Email))
-                    {
-                        <a href="mailto:@Model.Email">@Model.Email</a>
-                    }
-                    else
-                    {
-                        <span>-</span>
-                    }
-                </div>
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-<div class="app-card">
-
-    <div class="card-header">
-        <h5 class="card-title">Tax Information</h5>
-    </div>
-
-    <div class="card-body">
-
-        <div class="form-grid-2">
-
-            <div class="form-group">
-                <label class="form-label">GST Number</label>
-                <div>@(Model.GSTNumber ?? "-")</div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">PAN Number</label>
-                <div>@(Model.PANNumber ?? "-")</div>
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-<div class="app-card">
-
-    <div class="card-header">
-        <h5 class="card-title">Address & Remarks</h5>
-    </div>
-
-    <div class="card-body">
-
-        <div class="form-grid-2">
-
-            <div class="form-group">
-                <label class="form-label">City</label>
-                <div>@(Model.City ?? "-")</div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">State</label>
-                <div>@(Model.State ?? "-")</div>
-            </div>
-
-        </div>
-
-        <div class="form-group mt-3">
-            <label class="form-label">Address</label>
-            <div>
-                @(string.IsNullOrWhiteSpace(Model.Address) ? "-" : Model.Address)
-            </div>
-        </div>
-
-        <div class="form-group mt-3">
-            <label class="form-label">Remarks</label>
-            <div>
-                @(string.IsNullOrWhiteSpace(Model.Remarks) ? "-" : Model.Remarks)
-            </div>
-        </div>
-
-    </div>
-
-</div>
-
-<div class="app-card">
-
-    <div class="card-header">
-        <h5 class="card-title">Status & Audit</h5>
-    </div>
-
-    <div class="card-body">
-
-        <div class="form-grid-2">
-
-            <div class="form-group">
-                <label class="form-label">Status</label>
-                <div>
-                    @if (Model.IsActive)
-                    {
-                        <span class="badge-success">Active</span>
-                    }
-                    else
-                    {
-                        <span class="badge-danger">Inactive</span>
-                    }
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Created On</label>
-                <div>@Model.CreatedOn.ToString("dd-MMM-yyyy hh:mm tt")</div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Last Updated</label>
-                <div>@(Model.UpdatedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")</div>
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-<div class="app-card">
-
-    <div class="card-header">
-        <h5 class="card-title">Linked Records</h5>
-    </div>
-
-    <div class="card-body">
-        <div class="table-actions">
-
-            <a asp-controller="Proposal"
-               asp-action="Index"
-               asp-route-clientId="@Model.ClientId"
-               class="btn-app btn-secondary-app">
-                <i class="bi bi-eye-fill"></i>
-                View Proposals
+        <div class="module-header-actions">
+            <a asp-action="Edit"
+               asp-route-id="@Model.ClientId"
+               class="btn-app btn-primary-app">
+                <i class="bi bi-pencil"></i>
+                Edit Client
             </a>
 
-            <a asp-controller="Proposal"
-               asp-action="Create"
+            <a asp-controller="ClientCommunication"
+               asp-action="Index"
                asp-route-clientId="@Model.ClientId"
                class="btn-app btn-primary-app">
-                <i class="bi bi-plus-circle"></i>
-                New Proposal
+                <i class="bi bi-chat-dots"></i>
+                Communication
             </a>
 
-            <a asp-controller="PurchaseOrder"
-               asp-action="Index"
-               asp-route-clientId="@Model.ClientId"
+            <a asp-action="Index"
                class="btn-app btn-secondary-app">
-                <i class="bi bi-file-earmark-text"></i>
-                View PO / WO
+                <i class="bi bi-arrow-left"></i>
+                Back
             </a>
-
         </div>
     </div>
 
+    <div class="detail-summary-grid">
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Client Code</div>
+            <div class="detail-summary-value">@Model.ClientCode</div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Client Type</div>
+            <div class="detail-summary-value">
+                @if (!string.IsNullOrWhiteSpace(Model.ClientType))
+                {
+                    <span class="badge-info">@Model.ClientType</span>
+                }
+                else
+                {
+                    <span>-</span>
+                }
+            </div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">State</div>
+            <div class="detail-summary-value">@(Model.State ?? "-")</div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Status</div>
+            <div class="detail-summary-value">
+                @if (Model.IsActive)
+                {
+                    <span class="badge-success">Active</span>
+                }
+                else
+                {
+                    <span class="badge-danger">Inactive</span>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-grid-2">
+
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Basic Information</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Client Name</span>
+                        <span class="detail-info-value">@Model.ClientName</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Client Code</span>
+                        <span class="detail-info-value">@Model.ClientCode</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Client Type</span>
+                        <span class="detail-info-value">
+                            @(string.IsNullOrWhiteSpace(Model.ClientType) ? "-" : Model.ClientType)
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Contact Information</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Contact Person</span>
+                        <span class="detail-info-value">@(Model.ContactPerson ?? "-")</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Phone</span>
+                        <span class="detail-info-value">@(Model.Phone ?? "-")</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Email</span>
+                        <span class="detail-info-value">
+                            @if (!string.IsNullOrWhiteSpace(Model.Email))
+                            {
+                                <a href="mailto:@Model.Email">@Model.Email</a>
+                            }
+                            else
+                            {
+                                <span>-</span>
+                            }
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="detail-grid-2">
+
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Tax Information</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">GST Number</span>
+                        <span class="detail-info-value">@(Model.GSTNumber ?? "-")</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">PAN Number</span>
+                        <span class="detail-info-value">@(Model.PANNumber ?? "-")</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Address Information</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">City</span>
+                        <span class="detail-info-value">@(Model.City ?? "-")</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">State</span>
+                        <span class="detail-info-value">@(Model.State ?? "-")</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Address</span>
+                        <span class="detail-info-value">
+                            @(string.IsNullOrWhiteSpace(Model.Address) ? "-" : Model.Address)
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="detail-grid-2">
+
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Status & Audit</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Status</span>
+                        <span class="detail-info-value">
+                            @if (Model.IsActive)
+                            {
+                                <span class="badge-success">Active</span>
+                            }
+                            else
+                            {
+                                <span class="badge-danger">Inactive</span>
+                            }
+                        </span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Created On</span>
+                        <span class="detail-info-value">@Model.CreatedOn.ToString("dd-MMM-yyyy hh:mm tt")</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Last Updated</span>
+                        <span class="detail-info-value">@(Model.UpdatedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Remarks</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-note-box">
+                    @(string.IsNullOrWhiteSpace(Model.Remarks) ? "No remarks provided." : Model.Remarks)
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="app-card">
+        <div class="card-header">
+            <h5 class="card-title">Linked Records</h5>
+        </div>
+
+        <div class="card-body">
+            <div class="detail-action-bar">
+                <a asp-controller="Proposal"
+                   asp-action="Index"
+                   asp-route-clientId="@Model.ClientId"
+                   class="btn-app btn-secondary-app">
+                    <i class="bi bi-eye-fill"></i>
+                    View Proposals
+                </a>
+
+                <a asp-controller="Proposal"
+                   asp-action="Create"
+                   asp-route-clientId="@Model.ClientId"
+                   class="btn-app btn-primary-app">
+                    <i class="bi bi-plus-circle"></i>
+                    New Proposal
+                </a>
+
+                <a asp-controller="PurchaseOrder"
+                   asp-action="Index"
+                   asp-route-clientId="@Model.ClientId"
+                   class="btn-app btn-secondary-app">
+                    <i class="bi bi-file-earmark-text"></i>
+                    View PO / WO
+                </a>
+            </div>
+        </div>
+    </div>
 
 </div>

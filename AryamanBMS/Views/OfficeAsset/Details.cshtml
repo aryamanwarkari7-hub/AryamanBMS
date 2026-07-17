@@ -7,14 +7,26 @@
 
     var history = ViewBag.AssignmentHistory as List<OfficeAssetAssignmentHistoryModel>
         ?? new List<OfficeAssetAssignmentHistoryModel>();
+
     var activeAssignment = ViewBag.ActiveAssignment as OfficeAssetAssignmentHistoryModel;
+
     var employeeOptions = ViewBag.EmployeeOptions as List<SelectListItem>
         ?? new List<SelectListItem>();
-    var documents = Model.Documents?.Where(x => x.IsActive).OrderByDescending(x => x.UploadedOn).ToList()
+
+    var documents = Model.Documents?
+        .Where(x => x.IsActive)
+        .OrderByDescending(x => x.UploadedOn)
+        .ToList()
         ?? new List<OfficeAssetDocumentModel>();
-    var maintenance = Model.MaintenanceHistory?.OrderByDescending(x => x.MaintenanceDate).ToList()
+
+    var maintenance = Model.MaintenanceHistory?
+        .OrderByDescending(x => x.MaintenanceDate)
+        .ToList()
         ?? new List<OfficeAssetMaintenanceModel>();
-    var verifications = Model.VerificationHistory?.OrderByDescending(x => x.VerificationDate).ToList()
+
+    var verifications = Model.VerificationHistory?
+        .OrderByDescending(x => x.VerificationDate)
+        .ToList()
         ?? new List<OfficeAssetVerificationModel>();
 
     string StatusLabel(string value) => value switch
@@ -42,503 +54,691 @@
     };
 }
 
-<div class="module-header">
-    <div>
-        <h1 class="module-title">OFFICE ASSET DETAILS</h1>
-        <p class="module-subtitle">View asset lifecycle, current assignment and audit trail.</p>
-    </div>
+<div class="detail-page">
 
-    <div class="module-header-actions">
-        <a asp-action="Edit"
-           asp-route-id="@Model.OfficeAssetId"
-           class="btn-app btn-icon btn-primary-app"
-           title="Edit">
-            <i class="bi bi-pencil"></i>
-        </a>
-
-        <a asp-action="Index" class="btn-app btn-secondary-app">
-            <i class="bi bi-arrow-left"></i>
-            Back
-        </a>
-    </div>
-</div>
-
-<div class="app-card">
-    <div class="card-header">
+    <div class="module-header">
         <div>
-            <h2 class="card-title">Asset Information</h2>
-            <p class="card-subtitle">Primary identity, lifecycle and current record status.</p>
-        </div>
-    </div>
-
-    <div class="card-body">
-        <div class="details-grid">
-            <div class="detail-item">
-                <span class="detail-label">Asset Name</span>
-                <span class="detail-value">@Model.AssetName</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Asset Category</span>
-                <span class="detail-value">@Model.AssetCategory</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Asset Code</span>
-                <span class="detail-value">@(string.IsNullOrWhiteSpace(Model.AssetCode) ? "-" : Model.AssetCode)</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Status</span>
-                <span class="detail-value"><span class="@StatusBadge(Model.Status)">@StatusLabel(Model.Status)</span></span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Record</span>
-                <span class="detail-value">
-                    @if (Model.IsActive)
-                    {
-                        <span class="badge-success">Active</span>
-                    }
-                    else
-                    {
-                        <span class="badge-secondary">Archived</span>
-                    }
-                </span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Current Assignment</span>
-                <span class="detail-value">@(string.IsNullOrWhiteSpace(Model.AssignedTo) ? "Not assigned" : Model.AssignedTo)</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Serial Number</span>
-                <span class="detail-value">@(Model.SerialNumber ?? "-")</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Brand / Model</span>
-                <span class="detail-value">@($"{Model.Brand ?? "-"} / {Model.ModelNumber ?? "-"}")</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Location</span>
-                <span class="detail-value">@(Model.LocationName ?? "-")</span>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="app-card">
-    <div class="card-header">
-        <div>
-            <h2 class="card-title">Purchase & Warranty</h2>
-            <p class="card-subtitle">Purchase value and warranty coverage details.</p>
-        </div>
-    </div>
-
-    <div class="card-body">
-        <div class="details-grid">
-            <div class="detail-item">
-                <span class="detail-label">Purchase Date</span>
-                <span class="detail-value">@Model.PurchaseDate.ToString("dd-MMM-yyyy")</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Purchase Value</span>
-                <span class="detail-value">INR @Model.PurchaseValue.ToString("N2")</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Vendor Name</span>
-                <span class="detail-value">@(string.IsNullOrWhiteSpace(Model.VendorName) ? "-" : Model.VendorName)</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Vendor Invoice</span>
-                <span class="detail-value">@(Model.VendorInvoiceNumber ?? "-")</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Invoice Date</span>
-                <span class="detail-value">@(Model.VendorInvoiceDate?.ToString("dd-MMM-yyyy") ?? "-")</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Financial Year</span>
-                <span class="detail-value">@Model.FinancialYear</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Warranty Start</span>
-                <span class="detail-value">@(Model.WarrantyStartDate?.ToString("dd-MMM-yyyy") ?? "-")</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Warranty End</span>
-                <span class="detail-value">@(Model.WarrantyEndDate?.ToString("dd-MMM-yyyy") ?? "-")</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Disposal Date</span>
-                <span class="detail-value">@(Model.DisposalDate?.ToString("dd-MMM-yyyy") ?? "-")</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Remarks</span>
-                <span class="detail-value">@(string.IsNullOrWhiteSpace(Model.Remarks) ? "-" : Model.Remarks)</span>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="app-card">
-    <div class="card-header">
-        <div>
-            <h2 class="card-title">GST, Capitalization & Depreciation</h2>
-            <p class="card-subtitle">Tax breakup, ITC and asset book value details.</p>
-        </div>
-    </div>
-    <div class="card-body">
-        <div class="details-grid">
-            <div class="detail-item"><span class="detail-label">Taxable Amount</span><span class="detail-value">INR @Model.TaxableAmount.ToString("N2")</span></div>
-            <div class="detail-item"><span class="detail-label">CGST</span><span class="detail-value">INR @Model.CGSTAmount.ToString("N2")</span></div>
-            <div class="detail-item"><span class="detail-label">SGST</span><span class="detail-value">INR @Model.SGSTAmount.ToString("N2")</span></div>
-            <div class="detail-item"><span class="detail-label">IGST</span><span class="detail-value">INR @Model.IGSTAmount.ToString("N2")</span></div>
-            <div class="detail-item"><span class="detail-label">ITC Status</span><span class="detail-value">@Model.ITCStatus</span></div>
-            <div class="detail-item"><span class="detail-label">Capitalized</span><span class="detail-value">@(Model.IsCapitalized ? "Yes" : "No")</span></div>
-            <div class="detail-item"><span class="detail-label">Capitalized Value</span><span class="detail-value">INR @Model.CapitalizedValue.ToString("N2")</span></div>
-            <div class="detail-item"><span class="detail-label">Written Down Value</span><span class="detail-value">INR @Model.WrittenDownValue.ToString("N2")</span></div>
+            <h1 class="module-title">@Model.AssetName</h1>
+            <p class="module-subtitle">Asset lifecycle, assignment, maintenance and documents</p>
         </div>
 
-        @if (!Model.IsCapitalized && Model.IsActive)
-        {
-            <form asp-action="Capitalize" asp-route-id="@Model.OfficeAssetId" method="post" class="mt-3">
-                @Html.AntiForgeryToken()
-                <button type="submit" class="btn-app btn-success-app">
-                    <i class="bi bi-check-circle"></i>
-                    Capitalize Asset
-                </button>
-            </form>
-        }
-    </div>
-</div>
-
-<div class="app-card form-card">
-    <div class="card-header">
-        <div>
-            <h2 class="card-title">Physical Verification</h2>
-            <p class="card-subtitle">Record location checks and verification results.</p>
-        </div>
-    </div>
-    <div class="card-body">
-        <form asp-action="Verify" asp-route-id="@Model.OfficeAssetId" method="post">
-            @Html.AntiForgeryToken()
-            <div class="form-grid-3">
-                <div class="form-group">
-                    <label class="form-label">Status</label>
-                    <select name="verificationStatus" class="app-select">
-                        <option value="Found">Found</option>
-                        <option value="Not Found">Not Found</option>
-                        <option value="Damaged">Damaged</option>
-                        <option value="Moved">Moved</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Verified Location</label>
-                    <input name="verifiedLocation" class="app-input" value="@Model.LocationName" />
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Remarks</label>
-                    <input name="remarks" class="app-input" />
-                </div>
-            </div>
-            <button type="submit" class="btn-app btn-primary-app mt-3">
-                <i class="bi bi-clipboard-check"></i>
-                Save Verification
-            </button>
-        </form>
-    </div>
-</div>
-
-<div class="app-card form-card">
-    <div class="card-header">
-        <div>
-            <h2 class="card-title">Assignment Control</h2>
-            <p class="card-subtitle">Keep assignment changes separate so history remains intact.</p>
-        </div>
-    </div>
-
-    <div class="card-body">
-        @if (activeAssignment == null)
-        {
-            <form asp-action="Assign" asp-route-id="@Model.OfficeAssetId" method="post">
-                @Html.AntiForgeryToken()
-
-                <div class="form-grid-3">
-                    <div class="form-group">
-                        <label class="form-label">Employee</label>
-                        <select name="employeeId" class="app-select" required>
-                            <option value="">Select Employee</option>
-                            @foreach (var employee in employeeOptions)
-                            {
-                                <option value="@employee.Value">@employee.Text</option>
-                            }
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Condition on Assignment</label>
-                        <input name="conditionOnAssignment" class="app-input" placeholder="Working, sealed, serviced" />
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Remarks</label>
-                        <input name="remarks" class="app-input" placeholder="Optional assignment note" />
-                    </div>
-                </div>
-
-                <div class="form-actions mt-3">
-                    <button type="submit" class="btn-app btn-primary-app" @(Model.IsActive && Model.Status != "Disposed" ? null : "disabled")>
-                        <i class="bi bi-person-plus"></i>
-                        Assign Asset
-                    </button>
-                </div>
-            </form>
-        }
-        else
-        {
-            <div class="details-grid mb-3">
-                <div class="detail-item">
-                    <span class="detail-label">Assigned Employee</span>
-                    <span class="detail-value">@activeAssignment.Employee.FullName</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Assigned On</span>
-                    <span class="detail-value">@activeAssignment.AssignedOn.ToString("dd-MMM-yyyy hh:mm tt")</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Condition</span>
-                    <span class="detail-value">@(string.IsNullOrWhiteSpace(activeAssignment.ConditionOnAssignment) ? "-" : activeAssignment.ConditionOnAssignment)</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Remarks</span>
-                    <span class="detail-value">@(string.IsNullOrWhiteSpace(activeAssignment.Remarks) ? "-" : activeAssignment.Remarks)</span>
-                </div>
-            </div>
-
-            <form asp-action="Return" asp-route-id="@Model.OfficeAssetId" method="post">
-                @Html.AntiForgeryToken()
-
-                <div class="form-grid-2">
-                    <div class="form-group">
-                        <label class="form-label">Condition on Return</label>
-                        <input name="conditionOnReturn" class="app-input" placeholder="Working, damaged, repair required" />
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Remarks</label>
-                        <input name="remarks" class="app-input" placeholder="Optional return note" />
-                    </div>
-                </div>
-
-                <div class="form-actions mt-3">
-                    <button type="submit" class="btn-app btn-warning-app">
-                        <i class="bi bi-arrow-return-left"></i>
-                        Return Asset
-                    </button>
-                </div>
-            </form>
-        }
-    </div>
-</div>
-
-<div class="app-card form-card">
-    <div class="card-header">
-        <div>
-            <h2 class="card-title">Maintenance</h2>
-            <p class="card-subtitle">Record repairs, AMC service and maintenance costs.</p>
-        </div>
-    </div>
-    <div class="card-body">
-        <form asp-action="AddMaintenance" asp-route-id="@Model.OfficeAssetId" method="post">
-            @Html.AntiForgeryToken()
-            <div class="form-grid-3">
-                <div class="form-group"><label class="form-label">Date</label><input type="date" name="maintenanceDate" class="app-input" value="@DateTime.Today.ToString("yyyy-MM-dd")" /></div>
-                <div class="form-group"><label class="form-label">Type</label><input name="maintenanceType" class="app-input" value="Repair" /></div>
-                <div class="form-group"><label class="form-label">Vendor</label><input name="serviceVendorName" class="app-input" /></div>
-                <div class="form-group"><label class="form-label">Cost</label><input type="number" name="cost" step="0.01" min="0" class="app-input" /></div>
-                <div class="form-group"><label class="form-label">Status</label><select name="status" class="app-select"><option value="Completed">Completed</option><option value="Open">Open</option></select></div>
-                <div class="form-group"><label class="form-label">Issue</label><input name="issueDescription" class="app-input" /></div>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Resolution</label>
-                <textarea name="resolution" class="app-input" rows="2"></textarea>
-            </div>
-            <button type="submit" class="btn-app btn-primary-app">
-                <i class="bi bi-tools"></i>
-                Add Maintenance
-            </button>
-        </form>
-    </div>
-</div>
-
-<div class="app-card table-card">
-    <div class="card-header"><div><h2 class="card-title">Maintenance History</h2><p class="card-subtitle">Repair and AMC service records.</p></div></div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="app-table">
-                <thead><tr><th>Date</th><th>Type</th><th>Vendor</th><th>Issue</th><th>Resolution</th><th class="text-end">Cost</th><th>Status</th></tr></thead>
-                <tbody>
-                @if (maintenance.Any())
-                {
-                    foreach (var item in maintenance)
-                    {
-                        <tr><td>@item.MaintenanceDate.ToString("dd-MMM-yyyy")</td><td>@item.MaintenanceType</td><td>@(item.ServiceVendorName ?? "-")</td><td>@(item.IssueDescription ?? "-")</td><td>@(item.Resolution ?? "-")</td><td class="text-end">INR @item.Cost.ToString("N2")</td><td>@item.Status</td></tr>
-                    }
-                }
-                else
-                {
-                    <tr><td colspan="7" class="empty-state">No maintenance records.</td></tr>
-                }
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<div class="app-card table-card">
-    <div class="card-header">
-        <div>
-            <h2 class="card-title">Assignment History</h2>
-            <p class="card-subtitle">Every assignment and return is preserved for audit.</p>
-        </div>
-    </div>
-
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="app-table">
-                <thead>
-                    <tr>
-                        <th>Employee</th>
-                        <th>Assigned On</th>
-                        <th>Returned On</th>
-                        <th>Assigned By</th>
-                        <th>Returned By</th>
-                        <th>Condition</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (history.Any())
-                    {
-                        foreach (var item in history)
-                        {
-                            <tr>
-                                <td>@item.Employee.FullName</td>
-                                <td>@item.AssignedOn.ToString("dd-MMM-yyyy hh:mm tt")</td>
-                                <td>@(item.ReturnedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")</td>
-                                <td>@item.AssignedByUserId</td>
-                                <td>@(string.IsNullOrWhiteSpace(item.ReturnedByUserId) ? "-" : item.ReturnedByUserId)</td>
-                                <td>
-                                    Assign: @(string.IsNullOrWhiteSpace(item.ConditionOnAssignment) ? "-" : item.ConditionOnAssignment)
-                                    <br />
-                                    Return: @(string.IsNullOrWhiteSpace(item.ConditionOnReturn) ? "-" : item.ConditionOnReturn)
-                                </td>
-                                <td>
-                                    @if (item.IsActive)
-                                    {
-                                        <span class="badge-success">Active</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge-secondary">Closed</span>
-                                    }
-                                </td>
-                            </tr>
-                        }
-                    }
-                    else
-                    {
-                        <tr>
-                            <td colspan="7" class="empty-state">No assignment history available.</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<div class="app-card table-card">
-    <div class="card-header"><div><h2 class="card-title">Verification History</h2><p class="card-subtitle">Physical verification records.</p></div></div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="app-table">
-                <thead><tr><th>Date</th><th>Status</th><th>Location</th><th>Verified By</th><th>Remarks</th></tr></thead>
-                <tbody>
-                @if (verifications.Any())
-                {
-                    foreach (var item in verifications)
-                    {
-                        <tr><td>@item.VerificationDate.ToString("dd-MMM-yyyy")</td><td>@item.VerificationStatus</td><td>@(item.VerifiedLocation ?? "-")</td><td>@item.VerifiedByUserId</td><td>@(item.Remarks ?? "-")</td></tr>
-                    }
-                }
-                else
-                {
-                    <tr><td colspan="5" class="empty-state">No verification records.</td></tr>
-                }
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<div class="app-card table-card">
-    <div class="card-header"><div><h2 class="card-title">Documents</h2><p class="card-subtitle">Invoices, warranty, AMC and disposal documents.</p></div></div>
-    <div class="card-body">
-        <form asp-action="UploadDocument" asp-route-id="@Model.OfficeAssetId" method="post" enctype="multipart/form-data">
-            @Html.AntiForgeryToken()
-            <div class="form-grid-4">
-                <div class="form-group"><label class="form-label">Type</label><select name="documentType" class="app-select"><option value="Invoice">Invoice</option><option value="Warranty">Warranty</option><option value="AMC">AMC</option><option value="Disposal">Disposal</option><option value="Other">Other</option></select></div>
-                <div class="form-group"><label class="form-label">File</label><input type="file" name="file" class="app-input" required /></div>
-                <div class="form-group"><label class="form-label">Remarks</label><input name="remarks" class="app-input" /></div>
-                <div class="form-group"><label class="form-label">&nbsp;</label><button type="submit" class="btn-app btn-primary-app"><i class="bi bi-upload"></i> Upload</button></div>
-            </div>
-        </form>
-        <div class="table-responsive">
-            <table class="app-table">
-                <thead><tr><th>Type</th><th>File</th><th>Uploaded On</th><th>Uploaded By</th><th>Remarks</th></tr></thead>
-                <tbody>
-                @if (documents.Any())
-                {
-                    foreach (var item in documents)
-                    {
-                        <tr><td>@item.DocumentType</td><td>@item.OriginalFileName</td><td>@item.UploadedOn.ToString("dd-MMM-yyyy")</td><td>@item.UploadedByUserId</td><td>@(item.Remarks ?? "-")</td></tr>
-                    }
-                }
-                else
-                {
-                    <tr><td colspan="5" class="empty-state">No documents uploaded.</td></tr>
-                }
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<div class="app-card">
-    <div class="card-body">
-        <div class="form-actions">
+        <div class="module-header-actions">
             <a asp-action="Edit"
                asp-route-id="@Model.OfficeAssetId"
                class="btn-app btn-primary-app">
                 <i class="bi bi-pencil"></i>
-                Edit
+                Edit Asset
             </a>
 
-            <form asp-action="Archive"
-                  asp-route-id="@Model.OfficeAssetId"
-                  method="post"
-                  class="d-inline">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="reason" value="Archived from asset details" />
-
-                <button type="submit"
-                        class="btn-app btn-danger-app"
-                        onclick="return confirm('Archive this asset?')">
-                    <i class="bi bi-archive"></i>
-                    Archive Asset
-                </button>
-            </form>
-
             <a asp-action="Index" class="btn-app btn-secondary-app">
-                Cancel
+                <i class="bi bi-arrow-left"></i>
+                Back
             </a>
         </div>
     </div>
+
+    <div class="detail-summary-grid">
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Asset Code</div>
+            <div class="detail-summary-value">@(Model.AssetCode ?? "-")</div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Category</div>
+            <div class="detail-summary-value">@Model.AssetCategory</div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Status</div>
+            <div class="detail-summary-value">
+                <span class="@StatusBadge(Model.Status)">
+                    @StatusLabel(Model.Status)
+                </span>
+            </div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Assigned To</div>
+            <div class="detail-summary-value">
+                @(string.IsNullOrWhiteSpace(Model.AssignedTo) ? "Not Assigned" : Model.AssignedTo)
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-grid-2">
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Asset Information</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Asset Name</span>
+                        <span class="detail-info-value">@Model.AssetName</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Serial Number</span>
+                        <span class="detail-info-value">@(Model.SerialNumber ?? "-")</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Brand / Model</span>
+                        <span class="detail-info-value">@($"{Model.Brand ?? "-"} / {Model.ModelNumber ?? "-"}")</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Location</span>
+                        <span class="detail-info-value">@(Model.LocationName ?? "-")</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Record Status</span>
+                        <span class="detail-info-value">
+                            @if (Model.IsActive)
+                            {
+                                <span class="badge-success">Active</span>
+                            }
+                            else
+                            {
+                                <span class="badge-secondary">Archived</span>
+                            }
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Purchase & Warranty</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Purchase Date</span>
+                        <span class="detail-info-value">@Model.PurchaseDate.ToString("dd-MMM-yyyy")</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Purchase Value</span>
+                        <span class="detail-info-value">INR @Model.PurchaseValue.ToString("N2")</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Vendor</span>
+                        <span class="detail-info-value">@(string.IsNullOrWhiteSpace(Model.VendorName) ? "-" : Model.VendorName)</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Vendor Invoice</span>
+                        <span class="detail-info-value">@(Model.VendorInvoiceNumber ?? "-")</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Invoice Date</span>
+                        <span class="detail-info-value">@(Model.VendorInvoiceDate?.ToString("dd-MMM-yyyy") ?? "-")</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Warranty End</span>
+                        <span class="detail-info-value">@(Model.WarrantyEndDate?.ToString("dd-MMM-yyyy") ?? "-")</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-grid-2">
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">GST & Capitalization</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Taxable Amount</span>
+                        <span class="detail-info-value">INR @Model.TaxableAmount.ToString("N2")</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">CGST</span>
+                        <span class="detail-info-value">INR @Model.CGSTAmount.ToString("N2")</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">SGST</span>
+                        <span class="detail-info-value">INR @Model.SGSTAmount.ToString("N2")</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">IGST</span>
+                        <span class="detail-info-value">INR @Model.IGSTAmount.ToString("N2")</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">ITC Status</span>
+                        <span class="detail-info-value">@Model.ITCStatus</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Capitalized</span>
+                        <span class="detail-info-value">@(Model.IsCapitalized ? "Yes" : "No")</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Capitalized Value</span>
+                        <span class="detail-info-value">INR @Model.CapitalizedValue.ToString("N2")</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Written Down Value</span>
+                        <span class="detail-info-value">INR @Model.WrittenDownValue.ToString("N2")</span>
+                    </div>
+                </div>
+
+                @if (!Model.IsCapitalized && Model.IsActive)
+                {
+                    <form asp-action="Capitalize"
+                          asp-route-id="@Model.OfficeAssetId"
+                          method="post"
+                          class="mt-3">
+                        @Html.AntiForgeryToken()
+
+                        <button type="submit" class="btn-app btn-success-app">
+                            <i class="bi bi-check-circle"></i>
+                            Capitalize Asset
+                        </button>
+                    </form>
+                }
+            </div>
+        </div>
+
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Current Assignment</h5>
+            </div>
+
+            <div class="card-body">
+                @if (activeAssignment == null)
+                {
+                    <form asp-action="Assign"
+                          asp-route-id="@Model.OfficeAssetId"
+                          method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="form-grid-2">
+                            <div class="form-group">
+                                <label class="form-label">Employee</label>
+                                <select name="employeeId" class="app-select" required>
+                                    <option value="">Select Employee</option>
+                                    @foreach (var employee in employeeOptions)
+                                    {
+                                        <option value="@employee.Value">@employee.Text</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Condition</label>
+                                <input name="conditionOnAssignment"
+                                       class="app-input"
+                                       placeholder="Working, sealed, serviced" />
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Remarks</label>
+                            <input name="remarks"
+                                   class="app-input"
+                                   placeholder="Optional assignment note" />
+                        </div>
+
+                        <button type="submit"
+                                class="btn-app btn-primary-app"
+                                @(Model.IsActive && Model.Status != "Disposed" ? null : "disabled")>
+                            <i class="bi bi-person-plus"></i>
+                            Assign Asset
+                        </button>
+                    </form>
+                }
+                else
+                {
+                    <div class="detail-info-list mb-3">
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Assigned Employee</span>
+                            <span class="detail-info-value">@activeAssignment.Employee.FullName</span>
+                        </div>
+
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Assigned On</span>
+                            <span class="detail-info-value">@activeAssignment.AssignedOn.ToString("dd-MMM-yyyy hh:mm tt")</span>
+                        </div>
+
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Condition</span>
+                            <span class="detail-info-value">@(string.IsNullOrWhiteSpace(activeAssignment.ConditionOnAssignment) ? "-" : activeAssignment.ConditionOnAssignment)</span>
+                        </div>
+                    </div>
+
+                    <form asp-action="Return"
+                          asp-route-id="@Model.OfficeAssetId"
+                          method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="form-grid-2">
+                            <div class="form-group">
+                                <label class="form-label">Condition on Return</label>
+                                <input name="conditionOnReturn"
+                                       class="app-input"
+                                       placeholder="Working, damaged, repair required" />
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Remarks</label>
+                                <input name="remarks"
+                                       class="app-input"
+                                       placeholder="Optional return note" />
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-app btn-warning-app">
+                            <i class="bi bi-arrow-return-left"></i>
+                            Return Asset
+                        </button>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="app-card form-card">
+        <div class="card-header">
+            <h5 class="card-title">Physical Verification</h5>
+        </div>
+
+        <div class="card-body">
+            <form asp-action="Verify"
+                  asp-route-id="@Model.OfficeAssetId"
+                  method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select name="verificationStatus" class="app-select">
+                            <option value="Found">Found</option>
+                            <option value="Not Found">Not Found</option>
+                            <option value="Damaged">Damaged</option>
+                            <option value="Moved">Moved</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Verified Location</label>
+                        <input name="verifiedLocation"
+                               class="app-input"
+                               value="@Model.LocationName" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Remarks</label>
+                        <input name="remarks" class="app-input" />
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-app btn-primary-app mt-3">
+                    <i class="bi bi-clipboard-check"></i>
+                    Save Verification
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="app-card form-card">
+        <div class="card-header">
+            <h5 class="card-title">Maintenance</h5>
+        </div>
+
+        <div class="card-body">
+            <form asp-action="AddMaintenance"
+                  asp-route-id="@Model.OfficeAssetId"
+                  method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label class="form-label">Date</label>
+                        <input type="date"
+                               name="maintenanceDate"
+                               class="app-input"
+                               value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Type</label>
+                        <input name="maintenanceType"
+                               class="app-input"
+                               value="Repair" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Vendor</label>
+                        <input name="serviceVendorName" class="app-input" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Cost</label>
+                        <input type="number"
+                               name="cost"
+                               step="0.01"
+                               min="0"
+                               class="app-input" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="app-select">
+                            <option value="Completed">Completed</option>
+                            <option value="Open">Open</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Issue</label>
+                        <input name="issueDescription" class="app-input" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Resolution</label>
+                    <textarea name="resolution"
+                              class="app-input"
+                              rows="2"></textarea>
+                </div>
+
+                <button type="submit" class="btn-app btn-primary-app">
+                    <i class="bi bi-tools"></i>
+                    Add Maintenance
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="app-card table-card">
+        <div class="card-header">
+            <h5 class="card-title">Maintenance History</h5>
+        </div>
+
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="app-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Vendor</th>
+                            <th>Issue</th>
+                            <th>Resolution</th>
+                            <th class="text-end">Cost</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @if (maintenance.Any())
+                        {
+                            foreach (var item in maintenance)
+                            {
+                                <tr>
+                                    <td>@item.MaintenanceDate.ToString("dd-MMM-yyyy")</td>
+                                    <td>@item.MaintenanceType</td>
+                                    <td>@(item.ServiceVendorName ?? "-")</td>
+                                    <td>@(item.IssueDescription ?? "-")</td>
+                                    <td>@(item.Resolution ?? "-")</td>
+                                    <td class="text-end">INR @item.Cost.ToString("N2")</td>
+                                    <td>@item.Status</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="7" class="empty-state">No maintenance records.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-card table-card">
+        <div class="card-header">
+            <h5 class="card-title">Assignment History</h5>
+        </div>
+
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="app-table">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Assigned On</th>
+                            <th>Returned On</th>
+                            <th>Assigned By</th>
+                            <th>Returned By</th>
+                            <th>Condition</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @if (history.Any())
+                        {
+                            foreach (var item in history)
+                            {
+                                <tr>
+                                    <td>@item.Employee.FullName</td>
+                                    <td>@item.AssignedOn.ToString("dd-MMM-yyyy hh:mm tt")</td>
+                                    <td>@(item.ReturnedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")</td>
+                                    <td>@item.AssignedByUserId</td>
+                                    <td>@(string.IsNullOrWhiteSpace(item.ReturnedByUserId) ? "-" : item.ReturnedByUserId)</td>
+                                    <td>
+                                        Assign: @(string.IsNullOrWhiteSpace(item.ConditionOnAssignment) ? "-" : item.ConditionOnAssignment)
+                                        <br />
+                                        Return: @(string.IsNullOrWhiteSpace(item.ConditionOnReturn) ? "-" : item.ConditionOnReturn)
+                                    </td>
+                                    <td>
+                                        @if (item.IsActive)
+                                        {
+                                            <span class="badge-success">Active</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge-secondary">Closed</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="7" class="empty-state">No assignment history available.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-card table-card">
+        <div class="card-header">
+            <h5 class="card-title">Verification History</h5>
+        </div>
+
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="app-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Location</th>
+                            <th>Verified By</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @if (verifications.Any())
+                        {
+                            foreach (var item in verifications)
+                            {
+                                <tr>
+                                    <td>@item.VerificationDate.ToString("dd-MMM-yyyy")</td>
+                                    <td>@item.VerificationStatus</td>
+                                    <td>@(item.VerifiedLocation ?? "-")</td>
+                                    <td>@item.VerifiedByUserId</td>
+                                    <td>@(item.Remarks ?? "-")</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" class="empty-state">No verification records.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-card table-card">
+        <div class="card-header">
+            <h5 class="card-title">Documents</h5>
+        </div>
+
+        <div class="card-body">
+            <form asp-action="UploadDocument"
+                  asp-route-id="@Model.OfficeAssetId"
+                  method="post"
+                  enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+
+                <div class="form-grid-4">
+                    <div class="form-group">
+                        <label class="form-label">Type</label>
+                        <select name="documentType" class="app-select">
+                            <option value="Invoice">Invoice</option>
+                            <option value="Warranty">Warranty</option>
+                            <option value="AMC">AMC</option>
+                            <option value="Disposal">Disposal</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">File</label>
+                        <input type="file"
+                               name="file"
+                               class="app-input"
+                               required />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Remarks</label>
+                        <input name="remarks" class="app-input" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="submit" class="btn-app btn-primary-app">
+                            <i class="bi bi-upload"></i>
+                            Upload
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="table-responsive mt-3">
+                <table class="app-table">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>File</th>
+                            <th>Uploaded On</th>
+                            <th>Uploaded By</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @if (documents.Any())
+                        {
+                            foreach (var item in documents)
+                            {
+                                <tr>
+                                    <td>@item.DocumentType</td>
+                                    <td>@item.OriginalFileName</td>
+                                    <td>@item.UploadedOn.ToString("dd-MMM-yyyy")</td>
+                                    <td>@item.UploadedByUserId</td>
+                                    <td>@(item.Remarks ?? "-")</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" class="empty-state">No documents uploaded.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-card">
+        <div class="card-body">
+            <div class="detail-action-bar">
+                <a asp-action="Edit"
+                   asp-route-id="@Model.OfficeAssetId"
+                   class="btn-app btn-primary-app">
+                    <i class="bi bi-pencil"></i>
+                    Edit
+                </a>
+
+                <form asp-action="Archive"
+                      asp-route-id="@Model.OfficeAssetId"
+                      method="post"
+                      class="m-0">
+                    @Html.AntiForgeryToken()
+
+                    <input type="hidden"
+                           name="reason"
+                           value="Archived from asset details" />
+
+                    <button type="submit"
+                            class="btn-app btn-danger-app"
+                            onclick="return confirm('Archive this asset?')">
+                        <i class="bi bi-archive"></i>
+                        Archive Asset
+                    </button>
+                </form>
+
+                <a asp-action="Index" class="btn-app btn-secondary-app">
+                    Cancel
+                </a>
+            </div>
+        </div>
+    </div>
+
 </div>

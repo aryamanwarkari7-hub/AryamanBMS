@@ -19,6 +19,10 @@ namespace AryamanBMS.Models
         [StringLength(50)]
         public string ProjectType { get; set; } = string.Empty;
 
+        public int? ClientId { get; set; }
+
+        public ClientModel? Client { get; set; }
+
         [StringLength(150)]
         public string? ClientName { get; set; }
 
@@ -56,5 +60,7 @@ namespace AryamanBMS.Models
         public DateTime? UpdatedOn { get; set; }
 
         public EmployeeModel? ProjectManager { get; set; }
+
+        
     }
 }

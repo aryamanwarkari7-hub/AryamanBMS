@@ -5,6 +5,7 @@ using AryamanBMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace AryamanBMS.Controllers
 {
@@ -18,6 +19,7 @@ namespace AryamanBMS.Controllers
         private readonly IProjectRiskRepository _projectRiskRepository;
         private readonly IProjectMeetingRepository _projectMeetingRepository;
         private readonly IProjectFlowRepository _projectFlowRepository;
+        private readonly IClientRepository _clientRepository;
 
         private readonly IProjectTimelineService _projectTimelineService;
         private readonly IProjectAccessService _projectAccessService;
@@ -30,7 +32,7 @@ namespace AryamanBMS.Controllers
            IProjectRiskRepository projectRiskRepository,
            IProjectMeetingRepository projectMeetingRepository,
            IProjectFlowRepository projectFlowRepository,
-
+           IClientRepository clientRepository,
            IProjectTimelineService projectTimelineService,
            IProjectAccessService projectAccessService)
         {
@@ -44,6 +46,7 @@ namespace AryamanBMS.Controllers
 
             _projectTimelineService = projectTimelineService;
             _projectAccessService = projectAccessService;
+            _clientRepository = clientRepository;
         }
 
         public async Task<IActionResult> Index(
@@ -67,10 +70,12 @@ namespace AryamanBMS.Controllers
                 string search = searchText.Trim();
 
                 projects = projects.Where(p =>
-                    p.ProjectCode.Contains(search) ||
-                    p.ProjectName.Contains(search) ||
-                    (p.ClientName != null &&
-                     p.ClientName.Contains(search)));
+    p.ProjectCode.Contains(search) ||
+    p.ProjectName.Contains(search) ||
+    (p.ClientName != null &&
+     p.ClientName.Contains(search)) ||
+    (p.Client != null &&
+     p.Client.ClientName.Contains(search)));
             }
 
             if (!string.IsNullOrWhiteSpace(status))
@@ -106,6 +111,8 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> Create()
         {
             await LoadEmployeesAsync();
+            await LoadClientsAsync();
+
             return View(new ProjectModel());
         }
 
@@ -139,6 +146,8 @@ namespace AryamanBMS.Controllers
             if (!ModelState.IsValid)
             {
                 await LoadEmployeesAsync();
+                await LoadClientsAsync();
+
                 return View(model);
             }
 
@@ -146,6 +155,29 @@ namespace AryamanBMS.Controllers
             model.ProjectName = model.ProjectName.Trim();
             model.CreatedOn = DateTime.Now;
             model.IsActive = true;
+
+            if (model.ClientId.HasValue)
+            {
+                var client = await _clientRepository.GetByIdAsync(model.ClientId.Value);
+
+                if (client == null)
+                {
+                    ModelState.AddModelError(
+                        nameof(model.ClientId),
+                        "Selected client is invalid.");
+
+                    await LoadEmployeesAsync();
+                    await LoadClientsAsync();
+
+                    return View(model);
+                }
+
+                model.ClientName = client.ClientName;
+            }
+            else
+            {
+                model.ClientName = null;
+            }
 
             await _projectRepository.AddAsync(model);
             await _projectRepository.SaveAsync();
@@ -917,6 +949,7 @@ namespace AryamanBMS.Controllers
                 return NotFound();
 
             await LoadEmployeesAsync();
+            await LoadClientsAsync();
 
             return View(project);
         }
@@ -977,6 +1010,8 @@ namespace AryamanBMS.Controllers
 
             existing.ProjectType = model.ProjectType;
             existing.ClientName = model.ClientName;
+            existing.ClientId = model.ClientId;
+            
             existing.BusinessObjective = model.BusinessObjective;
             existing.Scope = model.Scope;
             existing.StartDate = model.StartDate;
@@ -987,6 +1022,29 @@ namespace AryamanBMS.Controllers
             existing.ProjectManagerId = model.ProjectManagerId;
             existing.IsActive = model.IsActive;
             existing.UpdatedOn = DateTime.Now;
+
+            if (model.ClientId.HasValue)
+            {
+                var client = await _clientRepository.GetByIdAsync(model.ClientId.Value);
+
+                if (client == null)
+                {
+                    ModelState.AddModelError(
+                        nameof(model.ClientId),
+                        "Selected client is invalid.");
+
+                    await LoadEmployeesAsync();
+                    await LoadClientsAsync();
+
+                    return View(model);
+                }
+
+                model.ClientName = client.ClientName;
+            }
+            else
+            {
+                model.ClientName = null;
+            }
 
             await _projectRepository.UpdateAsync(existing);
             await _projectRepository.SaveAsync();
@@ -1255,6 +1313,16 @@ namespace AryamanBMS.Controllers
                     nameof(model.EndDate),
                     "End date cannot be before start date.");
             }
+        }
+
+        private async Task LoadClientsAsync()
+        {
+            var clients = await _clientRepository.GetAllAsync();
+
+            ViewBag.Clients = new SelectList(
+                clients.OrderBy(x => x.ClientName),
+                "ClientId",
+                "ClientName");
         }
     }
 }

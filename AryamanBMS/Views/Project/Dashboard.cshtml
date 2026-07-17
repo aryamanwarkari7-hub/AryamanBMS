@@ -58,46 +58,63 @@
             <button type="button"
                     class="btn-app btn-secondary-app dropdown-toggle"
                     data-bs-toggle="dropdown"
+                    data-bs-boundary="viewport"
                     aria-expanded="false">
                 <i class="bi bi-three-dots"></i>
                 More
             </button>
 
-            <div class="dropdown-menu dropdown-menu-end">
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                    <a asp-controller="TaskTracker"
+                       asp-action="Index"
+                       asp-route-projectId="@Model.Project.Id"
+                       class="dropdown-item">
+                        <i class="bi bi-activity"></i>
+                        Task Updates
+                    </a>
+                </li>
 
-                <a asp-controller="TaskTracker"
-                   asp-action="Index"
-                   asp-route-projectId="@Model.Project.Id"
-                   class="dropdown-item">
-                    <i class="bi bi-activity"></i>
-                    Task Updates
-                </a>
+                <li>
+                    <a asp-controller="MOM"
+                       asp-action="Index"
+                       asp-route-projectId="@Model.Project.Id"
+                       class="dropdown-item">
+                        <i class="bi bi-journal-text"></i>
+                        Meetings / MOM
+                    </a>
+                </li>
 
-                <a asp-controller="MOM"
-                   asp-action="Index"
-                   asp-route-projectId="@Model.Project.Id"
-                   class="dropdown-item">
-                    <i class="bi bi-journal-text"></i>
-                    Meetings / MOM
-                </a>
+                <li>
+                    <a asp-controller="Risk"
+                       asp-action="Index"
+                       asp-route-projectId="@Model.Project.Id"
+                       class="dropdown-item">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Risk Register
+                    </a>
+                </li>
 
-                <a asp-controller="Risk"
-                   asp-action="Index"
-                   asp-route-projectId="@Model.Project.Id"
-                   class="dropdown-item">
-                    <i class="bi bi-exclamation-triangle"></i>
-                    Risk Register
-                </a>
+                <li>
+                    <a asp-controller="ProjectTimeline"
+                       asp-action="Index"
+                       asp-route-projectId="@Model.Project.Id"
+                       class="dropdown-item">
+                        <i class="bi bi-clock-history"></i>
+                        Activity Timeline
+                    </a>
+                </li>
 
-                <a asp-controller="ProjectTimeline"
-                   asp-action="Index"
-                   asp-route-projectId="@Model.Project.Id"
-                   class="dropdown-item">
-                    <i class="bi bi-clock-history"></i>
-                    Activity Timeline
-                </a>
-
-            </div>
+                <li>
+                    <a asp-controller="ClientCommunication"
+                       asp-action="ProjectTimeline"
+                       asp-route-projectId="@Model.Project.Id"
+                       class="btn-app btn-secondary-app">
+                        <i class="bi bi-chat-dots"></i>
+                        Communication
+                    </a>
+                </li>
+            </ul>
         </div>
 
     </div>

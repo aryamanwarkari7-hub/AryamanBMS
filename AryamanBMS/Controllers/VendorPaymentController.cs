@@ -1,12 +1,13 @@
+using System.Text;
 using AryamanBMS.Data;
 using AryamanBMS.Models;
 using AryamanBMS.Services.Interfaces;
+using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using System.Text;
 
 namespace AryamanBMS.Controllers
 {
@@ -143,7 +144,7 @@ namespace AryamanBMS.Controllers
             return View(payments);
         }
 
-        public async Task<IActionResult> ExportCsv(
+        public async Task<IActionResult> ExportExcel(
             int? vendorId,
             string? search,
             DateTime? fromDate,
@@ -177,25 +178,46 @@ namespace AryamanBMS.Controllers
             if (toDate.HasValue)
                 payments = payments.Where(x => x.PaymentDate.Date <= toDate.Value.Date).ToList();
 
-            var csv = new StringBuilder();
-            csv.AppendLine("Payment No,Date,Vendor,Voucher,Mode,Reference,Amount");
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("Vendor Payments");
+
+            worksheet.Cell(1, 1).Value = "Payment No";
+            worksheet.Cell(1, 2).Value = "Date";
+            worksheet.Cell(1, 3).Value = "Vendor";
+            worksheet.Cell(1, 4).Value = "Voucher";
+            worksheet.Cell(1, 5).Value = "Mode";
+            worksheet.Cell(1, 6).Value = "Reference";
+            worksheet.Cell(1, 7).Value = "Amount";
+
+            int row = 2;
 
             foreach (var item in payments.OrderByDescending(x => x.PaymentDate))
             {
-                csv.AppendLine(string.Join(",",
-                    Csv(item.PaymentNo),
-                    Csv(item.PaymentDate.ToString("dd-MMM-yyyy")),
-                    Csv(item.Vendor?.VendorName),
-                    Csv(item.ExpenseVoucher?.VoucherNumber),
-                    Csv(item.PaymentMode),
-                    Csv(item.TransactionReference),
-                    item.AmountPaid.ToString("0.00")));
+                worksheet.Cell(row, 1).Value = item.PaymentNo;
+                worksheet.Cell(row, 2).Value = item.PaymentDate;
+                worksheet.Cell(row, 2).Style.DateFormat.Format = "dd-MMM-yyyy";
+                worksheet.Cell(row, 3).Value = item.Vendor?.VendorName;
+                worksheet.Cell(row, 4).Value = item.ExpenseVoucher?.VoucherNumber;
+                worksheet.Cell(row, 5).Value = item.PaymentMode;
+                worksheet.Cell(row, 6).Value = item.TransactionReference;
+                worksheet.Cell(row, 7).Value = item.AmountPaid;
+
+                row++;
             }
 
+            var headerRange = worksheet.Range("A1:G1");
+            headerRange.Style.Font.Bold = true;
+            headerRange.Style.Fill.BackgroundColor = XLColor.LightBlue;
+
+            worksheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+
             return File(
-                Encoding.UTF8.GetBytes(csv.ToString()),
-                "text/csv",
-                $"vendor-payments-{DateTime.Now:yyyyMMddHHmmss}.csv");
+                stream.ToArray(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"vendor-payments-{DateTime.Now:yyyyMMddHHmmss}.xlsx");
         }
 
         public async Task<IActionResult> Create(int? expenseVoucherId)
@@ -320,17 +342,28 @@ namespace AryamanBMS.Controllers
                 "VendorId",
                 "VendorName");
 
-            ViewBag.Vouchers = new SelectList(
-                await _context.ExpenseVouchers
-                    .AsNoTracking()
-                    .Where(x =>
-                        x.IsActive &&
-                        x.Status == FinancialConstants.ExpenseVoucherStatus.Posted &&
-                        x.PaymentStatus != FinancialConstants.PaymentStatus.Paid)
-                    .OrderByDescending(x => x.VoucherDate)
-                    .ToListAsync(),
-                "ExpenseVoucherId",
-                "VoucherNumber");
+            ViewBag.Vouchers = await _context.ExpenseVouchers
+                .AsNoTracking()
+                .Where(x =>
+                    x.IsActive &&
+                    x.Status == FinancialConstants.ExpenseVoucherStatus.Posted &&
+                    x.PaymentStatus != FinancialConstants.PaymentStatus.Paid)
+                .Select(x => new
+                {
+                    x.ExpenseVoucherId,
+                    x.VendorId,
+                    VoucherText =
+                        x.VoucherNumber + " | " +
+                        (x.Vendor != null ? x.Vendor.VendorName : x.VendorName) +
+                        " | Balance: ₹" +
+                        (
+                            x.BalanceAmount > 0
+                                ? x.BalanceAmount
+                                : x.TotalAmount - x.PaidAmount
+                        ).ToString("N2")
+                })
+                .OrderByDescending(x => x.ExpenseVoucherId)
+                .ToListAsync();
         }
 
         private async Task<string> GetNextPaymentNo()

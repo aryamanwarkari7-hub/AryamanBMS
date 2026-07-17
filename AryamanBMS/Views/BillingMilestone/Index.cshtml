@@ -41,36 +41,40 @@
                        value="@purchaseWorkOrderId.Value" />
             }
 
-            <div class="filter-row">
-                <div class="filter-field filter-field-wide">
+            <div class="filter-form-row">
+
+                <div class="form-group">
+                    <label class="form-label">Search</label>
                     <input name="search"
                            value="@search"
                            class="app-input"
                            placeholder="PO / WO, client, project, milestone or status" />
                 </div>
 
-                <div class="filter-field">
+                <div class="form-group">
+                    <label class="form-label">Sort By</label>
                     <select name="sortBy" class="app-select">
-                        <option value="Order" selected="@(sortBy == "Order")">Sort by PO / WO</option>
-                        <option value="Milestone" selected="@(sortBy == "Milestone")">Sort by Milestone</option>
-                        <option value="Client" selected="@(sortBy == "Client")">Sort by Client</option>
-                        <option value="Project" selected="@(sortBy == "Project")">Sort by Project</option>
-                        <option value="Value" selected="@(sortBy == "Value")">Sort by Value</option>
-                        <option value="Billed" selected="@(sortBy == "Billed")">Sort by Billed</option>
-                        <option value="Remaining" selected="@(sortBy == "Remaining")">Sort by Remaining</option>
-                        <option value="Status" selected="@(sortBy == "Status")">Sort by Status</option>
-                        <option value="Active" selected="@(sortBy == "Active")">Sort by Active</option>
+                        <option value="Order" selected="@(sortBy == "Order")">PO / WO</option>
+                        <option value="Milestone" selected="@(sortBy == "Milestone")">Milestone</option>
+                        <option value="Client" selected="@(sortBy == "Client")">Client</option>
+                        <option value="Project" selected="@(sortBy == "Project")">Project</option>
+                        <option value="Value" selected="@(sortBy == "Value")">Value</option>
+                        <option value="Billed" selected="@(sortBy == "Billed")">Billed</option>
+                        <option value="Remaining" selected="@(sortBy == "Remaining")">Remaining</option>
+                        <option value="Status" selected="@(sortBy == "Status")">Status</option>
+                        <option value="Active" selected="@(sortBy == "Active")">Active</option>
                     </select>
                 </div>
 
-                <div class="filter-field">
+                <div class="form-group">
+                    <label class="form-label">Order</label>
                     <select name="sortOrder" class="app-select">
                         <option value="asc" selected="@(sortOrder == "asc")">Ascending</option>
                         <option value="desc" selected="@(sortOrder == "desc")">Descending</option>
                     </select>
                 </div>
 
-                <div class="filter-actions">
+                <div class="filter-form-actions">
                     <button type="submit" class="btn-app btn-primary-app">
                         <i class="bi bi-search"></i>
                         Search
@@ -83,6 +87,7 @@
                         Reset
                     </a>
                 </div>
+
             </div>
         </form>
     </div>
@@ -171,9 +176,11 @@
                     }
                     else
                     {
-                    <td colspan="10" class="empty-state">
-                        No billing milestones found.
-                    </td>
+                        <tr>
+                            <td colspan="10" class="empty-state">
+                                No billing milestones found.
+                            </td>
+                        </tr>
                     }
                 </tbody>
             </table>

@@ -158,7 +158,7 @@
                                     </div>
                                 </td>
 
-                                <td>@(project.ClientName ?? "-")</td>
+                                <td>@(project.Client?.ClientName ?? project.ClientName ?? "-")</td>
 
                                 <td>
                                     @(project.ProjectManager?.FullName ?? "-")

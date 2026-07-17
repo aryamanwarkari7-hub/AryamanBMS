@@ -103,7 +103,9 @@
     currentController == "User" ||
     currentController == "Role" ||
     currentController == "Department" ||
-    currentController == "Designation";
+    currentController == "Designation"||
+    currentController == "LoginHistory" ||
+    currentController == "PasswordChangeLog";
 
     bool isAttendanceActive = currentController == "Attendance";
 
@@ -322,13 +324,19 @@
                             <a asp-controller="LoginHistory"
                                asp-action="Index"
                                class="submenu-item
-                               @(currentController == "LoginHistory"
-                                                          ? "active-menu"
-                                                          : "")">
+                               @(currentController == "LoginHistory"? "active-menu": "")">
                                
                                  <i class="bi bi-shield-lock"></i>
                                  <span>Login History</span>
 
+                            </a>
+
+                            <a asp-controller="PasswordChangeLog"
+                               asp-action="Index"
+                               class="submenu-item
+                                @(currentController == "PasswordChangeLog"?"active-menu" :"") ">
+                                <i class="bi bi-shield-lock"></i>
+                                Password Change Logs
                             </a>
                          }
 

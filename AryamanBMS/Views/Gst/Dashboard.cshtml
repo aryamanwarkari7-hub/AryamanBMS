@@ -17,22 +17,21 @@
     }
 
     string snapshotButtonText =
-    Model.SnapshotStatus == "Pending"
-        ? "Generate Snapshot"
-        : "Regenerate Snapshot";
+        Model.SnapshotStatus == "Pending"
+            ? "Generate Snapshot"
+            : "Regenerate Snapshot";
 
     bool canRegenerateSnapshot =
-    Model.SnapshotStatus != "Filed" &&
-    Model.SnapshotStatus != "Locked";
+        Model.SnapshotStatus != "Filed" &&
+        Model.SnapshotStatus != "Locked";
 
     bool isLocked =
-    Model.SnapshotStatus == "Locked";
+        Model.SnapshotStatus == "Locked";
 }
 
 <div class="module-header">
-
     <div>
-        <h1 class="module-title">GST DASHBOARD</h1>
+        <h1 class="module-title">GST Dashboard</h1>
         <p class="module-subtitle">
             @monthName @Model.Year (FY: @Model.FinancialYear)
         </p>
@@ -45,280 +44,232 @@
             Back
         </a>
     </div>
-
 </div>
 
-<div class="dashboard-grid">
+<div class="detail-page">
 
-    <div class="stats-card">
-        <div class="stats-label">Output GST</div>
-        <div class="stats-number">₹ @Model.OutputGST.ToString("N2")</div>
-    </div>
+    <div class="detail-summary-grid">
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Output GST</div>
+            <div class="detail-summary-value">₹ @Model.OutputGST.ToString("N2")</div>
+        </div>
 
-    <div class="stats-card">
-        <div class="stats-label">Input GST</div>
-        <div class="stats-number">₹ @Model.InputGST.ToString("N2")</div>
-    </div>
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Input GST</div>
+            <div class="detail-summary-value">₹ @Model.InputGST.ToString("N2")</div>
+        </div>
 
-    <div class="stats-card">
-        <div class="stats-label">Net GST Payable</div>
-        <div class="stats-number">₹ @Model.NetGSTPayable.ToString("N2")</div>
-    </div>
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Net GST Payable</div>
+            <div class="detail-summary-value">₹ @Model.NetGSTPayable.ToString("N2")</div>
+        </div>
 
-    <div class="stats-card">
-        <div class="stats-label">ITC Carry Forward</div>
-        <div class="stats-number">₹ @Model.InputCreditCarryForward.ToString("N2")</div>
-    </div>
-
-</div>
-
-<div class="app-card">
-
-    <div class="card-header">
-        <div>
-            <h2 class="card-title">GST Head-Wise Breakup</h2>
-            <p class="card-subtitle">
-                Output tax, input credit, utilization and cash payable by GST head.
-            </p>
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">ITC Carry Forward</div>
+            <div class="detail-summary-value">₹ @Model.InputCreditCarryForward.ToString("N2")</div>
         </div>
     </div>
 
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="app-table">
-                <thead>
-                    <tr>
-                        <th>GST Head</th>
-                        <th class="text-end">Output</th>
-                        <th class="text-end">Input</th>
-                        <th class="text-end">ITC Utilized</th>
-                        <th class="text-end">Cash Payable</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>IGST</td>
-                        <td class="text-end">₹ @Model.OutputIGSTBalance.ToString("N2")</td>
-                        <td class="text-end">₹ @Model.InputIGSTBalance.ToString("N2")</td>
-                        <td class="text-end">₹ @Model.ITCUtilizedForIGST.ToString("N2")</td>
-                        <td class="text-end">₹ @Model.CashPayableIGST.ToString("N2")</td>
-                    </tr>
-                    <tr>
-                        <td>CGST</td>
-                        <td class="text-end">₹ @Model.OutputCGSTBalance.ToString("N2")</td>
-                        <td class="text-end">₹ @Model.InputCGSTBalance.ToString("N2")</td>
-                        <td class="text-end">₹ @Model.ITCUtilizedForCGST.ToString("N2")</td>
-                        <td class="text-end">₹ @Model.CashPayableCGST.ToString("N2")</td>
-                    </tr>
-                    <tr>
-                        <td>SGST</td>
-                        <td class="text-end">₹ @Model.OutputSGSTBalance.ToString("N2")</td>
-                        <td class="text-end">₹ @Model.InputSGSTBalance.ToString("N2")</td>
-                        <td class="text-end">₹ @Model.ITCUtilizedForSGST.ToString("N2")</td>
-                        <td class="text-end">₹ @Model.CashPayableSGST.ToString("N2")</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Carry Forward</strong></td>
-                        <td class="text-end">-</td>
-                        <td class="text-end">₹ @Model.PreviousITCCarryForward.ToString("N2")</td>
-                        <td class="text-end">-</td>
-                        <td class="text-end">₹ @Model.InputCreditCarryForward.ToString("N2")</td>
-                    </tr>
-                </tbody>
-            </table>
+    <div class="app-card table-card">
+        <div class="card-header">
+            <div>
+                <h5 class="card-title">GST Head-Wise Breakup</h5>
+                <p class="card-subtitle">
+                    Output tax, input credit, utilization and cash payable by GST head.
+                </p>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="app-table">
+                    <thead>
+                        <tr>
+                            <th>GST Head</th>
+                            <th class="text-end">Output</th>
+                            <th class="text-end">Input</th>
+                            <th class="text-end">ITC Utilized</th>
+                            <th class="text-end">Cash Payable</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <tr>
+                            <td>IGST</td>
+                            <td class="text-end">₹ @Model.OutputIGSTBalance.ToString("N2")</td>
+                            <td class="text-end">₹ @Model.InputIGSTBalance.ToString("N2")</td>
+                            <td class="text-end">₹ @Model.ITCUtilizedForIGST.ToString("N2")</td>
+                            <td class="text-end">₹ @Model.CashPayableIGST.ToString("N2")</td>
+                        </tr>
+
+                        <tr>
+                            <td>CGST</td>
+                            <td class="text-end">₹ @Model.OutputCGSTBalance.ToString("N2")</td>
+                            <td class="text-end">₹ @Model.InputCGSTBalance.ToString("N2")</td>
+                            <td class="text-end">₹ @Model.ITCUtilizedForCGST.ToString("N2")</td>
+                            <td class="text-end">₹ @Model.CashPayableCGST.ToString("N2")</td>
+                        </tr>
+
+                        <tr>
+                            <td>SGST</td>
+                            <td class="text-end">₹ @Model.OutputSGSTBalance.ToString("N2")</td>
+                            <td class="text-end">₹ @Model.InputSGSTBalance.ToString("N2")</td>
+                            <td class="text-end">₹ @Model.ITCUtilizedForSGST.ToString("N2")</td>
+                            <td class="text-end">₹ @Model.CashPayableSGST.ToString("N2")</td>
+                        </tr>
+
+                        <tr>
+                            <td><strong>Carry Forward</strong></td>
+                            <td class="text-end">-</td>
+                            <td class="text-end">₹ @Model.PreviousITCCarryForward.ToString("N2")</td>
+                            <td class="text-end">-</td>
+                            <td class="text-end">₹ @Model.InputCreditCarryForward.ToString("N2")</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-</div>
+    <div class="detail-grid-2">
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">GST Calculation Summary</h5>
+            </div>
 
-<div class="app-card">
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Sales Taxable Amount</span>
+                        <strong class="detail-info-value">₹ @Model.SalesTaxable.ToString("N2")</strong>
+                    </div>
 
-    <div class="card-header">
-        <div>
-            <h2 class="card-title">GST Calculation Summary</h2>
-            <p class="card-subtitle">
-                Output GST, input GST and net payable calculation.
-            </p>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Output GST</span>
+                        <strong class="detail-info-value">₹ @Model.OutputGST.ToString("N2")</strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Input GST</span>
+                        <strong class="detail-info-value">₹ @Model.InputGST.ToString("N2")</strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Expense Vouchers</span>
+                        <strong class="detail-info-value">@Model.ExpenseVoucherCount</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Net GST Calculation</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Output GST</span>
+                        <strong class="detail-info-value">₹ @Model.OutputGST.ToString("N2")</strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Less: Input GST</span>
+                        <strong class="detail-info-value">₹ @Model.InputGST.ToString("N2")</strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Net GST Payable</span>
+                        <strong class="detail-info-value">₹ @Model.NetGSTPayable.ToString("N2")</strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">ITC Carry Forward</span>
+                        <strong class="detail-info-value">₹ @Model.InputCreditCarryForward.ToString("N2")</strong>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="card-body">
+    <div class="app-card">
+        <div class="card-header">
+            <div>
+                <h5 class="card-title">Compliance Status</h5>
+                <p class="card-subtitle">
+                    GST return and challan status for this period.
+                </p>
+            </div>
+        </div>
 
-        <div class="form-grid-2">
-
-            <div class="app-card">
-
-                <div class="card-header">
-                    <div>
-                        <h2 class="card-title">Sales Summary</h2>
-                        <p class="card-subtitle">
-                            GST collected on sales invoices.
-                        </p>
+        <div class="card-body">
+            <div class="detail-summary-grid">
+                <div class="detail-summary-item">
+                    <div class="detail-summary-label">GSTR-1</div>
+                    <div class="detail-summary-value">
+                        <span class="@GstrStatusClass(Model.Gstr1Status)">
+                            @Model.Gstr1Status
+                        </span>
                     </div>
                 </div>
 
-                <div class="card-body">
-
-                    <div class="form-grid-2">
-
-                        <div class="form-group">
-                            <label class="form-label">Taxable Amount</label>
-                            <strong>₹ @Model.SalesTaxable.ToString("N2")</strong>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Output GST</label>
-                            <strong>₹ @Model.OutputGST.ToString("N2")</strong>
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="app-card">
-
-                <div class="card-header">
-                    <div>
-                        <h2 class="card-title">Purchase Summary</h2>
-                        <p class="card-subtitle">
-                            Input tax credit from eligible expenses.
-                        </p>
+                <div class="detail-summary-item">
+                    <div class="detail-summary-label">GSTR-3B</div>
+                    <div class="detail-summary-value">
+                        <span class="@GstrStatusClass(Model.Gstr3BStatus)">
+                            @Model.Gstr3BStatus
+                        </span>
                     </div>
                 </div>
 
-                <div class="card-body">
-
-                    <div class="form-grid-2">
-
-                        <div class="form-group">
-                            <label class="form-label">Input GST</label>
-                            <strong>₹ @Model.InputGST.ToString("N2")</strong>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Expense Vouchers</label>
-                            <strong>@Model.ExpenseVoucherCount</strong>
-                        </div>
-
+                <div class="detail-summary-item">
+                    <div class="detail-summary-label">Challan</div>
+                    <div class="detail-summary-value">
+                        <span class="@GstrStatusClass(Model.ChallanStatus)">
+                            @Model.ChallanStatus
+                        </span>
                     </div>
-
                 </div>
-
             </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-<div class="app-card">
-
-    <div class="card-header">
-        <div>
-            <h2 class="card-title">Net GST Calculation</h2>
-            <p class="card-subtitle">
-                Final GST payable or refundable for selected period.
-            </p>
         </div>
     </div>
 
-    <div class="card-body">
-
-        <div class="form-grid-3">
-
-            <div class="form-group">
-                <label class="form-label">Output GST</label>
-                <strong>₹ @Model.OutputGST.ToString("N2")</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Less: Input GST</label>
-                <strong>₹ @Model.InputGST.ToString("N2")</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Net GST Payable</label>
-                <strong>₹ @Model.NetGSTPayable.ToString("N2")</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">ITC Carry Forward</label>
-                <strong>₹ @Model.InputCreditCarryForward.ToString("N2")</strong>
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-<div class="app-card">
-
-    <div class="card-header">
-        <div>
-            <h2 class="card-title">Compliance Status</h2>
-            <p class="card-subtitle">
-                GST return and challan status for this period.
-            </p>
-        </div>
-    </div>
-
-    @if (Model.SnapshotId > 0 &&
-        !isLocked)
+    @if (Model.SnapshotId > 0 && !isLocked)
     {
         <div class="app-card">
-
             <div class="card-header">
                 <div>
-                    <h2 class="card-title">Update GST Compliance</h2>
+                    <h5 class="card-title">Update GST Compliance</h5>
                     <p class="card-subtitle">
-                        Record return filing and challan payment details.
+                        Record return filing details for this GST period.
                     </p>
                 </div>
             </div>
 
             <div class="card-body">
-
-                <div class="form-grid-2">
-
+                <div class="detail-grid-2">
                     <div class="app-card">
-
                         <div class="card-header">
-                            <h3 class="card-title">GSTR-1</h3>
+                            <h5 class="card-title">GSTR-1</h5>
                         </div>
 
                         <div class="card-body">
-
                             <form asp-controller="Gst"
                                   asp-action="UpdateReturn"
                                   method="post">
-
                                 @Html.AntiForgeryToken()
 
-                                <input type="hidden"
-                                       name="snapshotId"
-                                       value="@Model.SnapshotId" />
-
-                                <input type="hidden"
-                                       name="returnType"
-                                       value="GSTR1" />
+                                <input type="hidden" name="snapshotId" value="@Model.SnapshotId" />
+                                <input type="hidden" name="returnType" value="GSTR1" />
 
                                 <div class="form-group">
                                     <label class="form-label">Status</label>
-
-                                    <select name="status"
-                                            class="app-select"
-                                            required>
-                                        <option value="Pending"
-                                                selected="@(Model.Gstr1Status == "Pending")">
+                                    <select name="status" class="app-select" required>
+                                        <option value="Pending" selected="@(Model.Gstr1Status == "Pending")">
                                             Pending
                                         </option>
-
-                                        <option value="Filed"
-                                                selected="@(Model.Gstr1Status == "Filed")">
+                                        <option value="Filed" selected="@(Model.Gstr1Status == "Filed")">
                                             Filed
                                         </option>
                                     </select>
@@ -326,7 +277,6 @@
 
                                 <div class="form-group">
                                     <label class="form-label">ARN Number</label>
-
                                     <input type="text"
                                            name="arnNumber"
                                            class="app-input"
@@ -336,7 +286,6 @@
 
                                 <div class="form-group">
                                     <label class="form-label">Filed Date</label>
-
                                     <input type="date"
                                            name="filedDate"
                                            class="app-input"
@@ -345,58 +294,39 @@
 
                                 <div class="form-group">
                                     <label class="form-label">Remarks</label>
-
                                     <textarea name="remarks"
                                           class="app-textarea"
                                           maxlength="500">@Model.Gstr1Remarks</textarea>
                                 </div>
 
-                                <button type="submit"
-                                        class="btn-app btn-primary-app">
+                                <button type="submit" class="btn-app btn-primary-app">
                                     Save GSTR-1
                                 </button>
-
                             </form>
-
                         </div>
-
                     </div>
 
                     <div class="app-card">
-
                         <div class="card-header">
-                            <h3 class="card-title">GSTR-3B</h3>
+                            <h5 class="card-title">GSTR-3B</h5>
                         </div>
 
                         <div class="card-body">
-
                             <form asp-controller="Gst"
                                   asp-action="UpdateReturn"
                                   method="post">
-
                                 @Html.AntiForgeryToken()
 
-                                <input type="hidden"
-                                       name="snapshotId"
-                                       value="@Model.SnapshotId" />
-
-                                <input type="hidden"
-                                       name="returnType"
-                                       value="GSTR3B" />
+                                <input type="hidden" name="snapshotId" value="@Model.SnapshotId" />
+                                <input type="hidden" name="returnType" value="GSTR3B" />
 
                                 <div class="form-group">
                                     <label class="form-label">Status</label>
-
-                                    <select name="status"
-                                            class="app-select"
-                                            required>
-                                        <option value="Pending"
-                                                selected="@(Model.Gstr3BStatus == "Pending")">
+                                    <select name="status" class="app-select" required>
+                                        <option value="Pending" selected="@(Model.Gstr3BStatus == "Pending")">
                                             Pending
                                         </option>
-
-                                        <option value="Filed"
-                                                selected="@(Model.Gstr3BStatus == "Filed")">
+                                        <option value="Filed" selected="@(Model.Gstr3BStatus == "Filed")">
                                             Filed
                                         </option>
                                     </select>
@@ -404,7 +334,6 @@
 
                                 <div class="form-group">
                                     <label class="form-label">ARN Number</label>
-
                                     <input type="text"
                                            name="arnNumber"
                                            class="app-input"
@@ -414,7 +343,6 @@
 
                                 <div class="form-group">
                                     <label class="form-label">Filed Date</label>
-
                                     <input type="date"
                                            name="filedDate"
                                            class="app-input"
@@ -423,34 +351,25 @@
 
                                 <div class="form-group">
                                     <label class="form-label">Remarks</label>
-
                                     <textarea name="remarks"
                                           class="app-textarea"
                                           maxlength="500">@Model.Gstr3BRemarks</textarea>
                                 </div>
 
-                                <button type="submit"
-                                        class="btn-app btn-primary-app">
+                                <button type="submit" class="btn-app btn-primary-app">
                                     Save GSTR-3B
                                 </button>
-
                             </form>
-
                         </div>
-
                     </div>
-
                 </div>
-
             </div>
-
         </div>
 
-        <div class="app-card">
-
+        <div class="app-card table-card">
             <div class="card-header">
                 <div>
-                    <h2 class="card-title">GST Challan</h2>
+                    <h5 class="card-title">GST Challan</h5>
                     <p class="card-subtitle">
                         Record payment details for this GST period.
                     </p>
@@ -458,22 +377,16 @@
             </div>
 
             <div class="card-body">
-
                 <form asp-controller="Gst"
                       asp-action="UpdateChallan"
                       method="post">
-
                     @Html.AntiForgeryToken()
 
-                    <input type="hidden"
-                           name="snapshotId"
-                           value="@Model.SnapshotId" />
+                    <input type="hidden" name="snapshotId" value="@Model.SnapshotId" />
 
-                    <div class="form-grid-3">
-
+                    <div class="form-grid-4">
                         <div class="form-group">
                             <label class="form-label">Challan Number</label>
-
                             <input type="text"
                                    name="challanNumber"
                                    class="app-input"
@@ -484,17 +397,11 @@
 
                         <div class="form-group">
                             <label class="form-label">Status</label>
-
-                            <select name="status"
-                                    class="app-select"
-                                    required>
-                                <option value="Pending"
-                                        selected="@(Model.ChallanStatus == "Pending")">
+                            <select name="status" class="app-select" required>
+                                <option value="Pending" selected="@(Model.ChallanStatus == "Pending")">
                                     Pending
                                 </option>
-
-                                <option value="Paid"
-                                        selected="@(Model.ChallanStatus == "Paid")">
+                                <option value="Paid" selected="@(Model.ChallanStatus == "Paid")">
                                     Paid
                                 </option>
                             </select>
@@ -502,7 +409,6 @@
 
                         <div class="form-group">
                             <label class="form-label">Amount Paid</label>
-
                             <input type="number"
                                    name="amountPaid"
                                    class="app-input"
@@ -513,7 +419,6 @@
 
                         <div class="form-group">
                             <label class="form-label">Payment Date</label>
-
                             <input type="date"
                                    name="paymentDate"
                                    class="app-input"
@@ -522,7 +427,6 @@
 
                         <div class="form-group">
                             <label class="form-label">Payment Mode</label>
-
                             <input type="text"
                                    name="paymentMode"
                                    class="app-input"
@@ -532,7 +436,6 @@
 
                         <div class="form-group">
                             <label class="form-label">Bank Name</label>
-
                             <input type="text"
                                    name="bankName"
                                    class="app-input"
@@ -542,7 +445,6 @@
 
                         <div class="form-group">
                             <label class="form-label">CPIN</label>
-
                             <input type="text"
                                    name="cpin"
                                    class="app-input"
@@ -552,35 +454,28 @@
 
                         <div class="form-group">
                             <label class="form-label">CIN</label>
-
                             <input type="text"
                                    name="cin"
                                    class="app-input"
                                    maxlength="100"
                                    value="@Model.CIN" />
                         </div>
-
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Remarks</label>
-
                         <textarea name="remarks"
                               class="app-textarea"
                               maxlength="500">@Model.ChallanRemarks</textarea>
                     </div>
 
-                    <button type="submit"
-                            class="btn-app btn-success-app">
+                    <button type="submit" class="btn-app btn-success-app">
                         Save Challan
                     </button>
-
                 </form>
 
-                <div class="table-responsive">
-
+                <div class="table-responsive mt-4">
                     <table class="app-table">
-
                         <thead>
                             <tr>
                                 <th>Challan No.</th>
@@ -620,471 +515,320 @@
                             else
                             {
                                 <tr>
-                                    <td colspan="8"
-                                        class="empty-state">
+                                    <td colspan="8" class="empty-state">
                                         No GST challans recorded for this period.
                                     </td>
                                 </tr>
                             }
                         </tbody>
-
                     </table>
-
                 </div>
-
             </div>
-
         </div>
     }
 
-    <div class="card-body">
-
-        <div class="form-grid-3">
-
-            <div class="form-group">
-                <label class="form-label">GSTR-1</label>
-                <span class="@GstrStatusClass(Model.Gstr1Status)">
-                    @Model.Gstr1Status
-                </span>
+    @if (Model.SnapshotStatus == "Filed" || Model.SnapshotStatus == "Locked")
+    {
+        <div class="app-card">
+            <div class="card-header">
+                <div>
+                    <h5 class="card-title">GST Filing Audit</h5>
+                    <p class="card-subtitle">
+                        Filing and lock information for this GST period.
+                    </p>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label class="form-label">GSTR-3B</label>
-                <span class="@GstrStatusClass(Model.Gstr3BStatus)">
-                    @Model.Gstr3BStatus
-                </span>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Challan</label>
-                <span class="@GstrStatusClass(Model.ChallanStatus)">
-                    @Model.ChallanStatus
-                </span>
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-@if (Model.SnapshotStatus == "Filed" || Model.SnapshotStatus == "Locked")
-{
-    <div class="app-card">
-
-        <div class="card-header">
-            <div>
-                <h2 class="card-title">GST Filing Audit</h2>
-                <p class="card-subtitle">
-                    Filing and lock information for this GST period.
-                </p>
-            </div>
-        </div>
-
-        <div class="card-body">
-
-            <div class="form-grid-2">
-
-                <div class="form-group">
-                    <label class="form-label">Filed By User ID</label>
-                    <strong>
-                        @(string.IsNullOrWhiteSpace(Model.FiledByUserId)
-                                            ? "-"
-                                            : Model.FiledByUserId)
-                                                              </strong>
-                                                          </div>
-
-                <div class="form-group">
-                    <label class="form-label">Filed On</label>
-                    <strong>
-                        @(Model.FiledOn?.ToString("dd MMM yyyy HH:mm")
-                                            ?? "-")
-                </strong>
-            </div>
-
-            </div>
-
-        </div>
-
-    </div>
-}
-
-
-@if (Model.SnapshotStatus == "Locked" &&
-     User.IsInRole("Admin"))
-{
-    <form asp-controller="Gst"
-          asp-action="ReopenSnapshot"
-          method="post"
-          class="w-100 mt-3">
-
-        @Html.AntiForgeryToken()
-
-        <input type="hidden"
-               name="month"
-               value="@Model.Month" />
-
-        <input type="hidden"
-               name="year"
-               value="@Model.Year" />
-
-        <div class="form-group">
-            <label class="form-label">
-                Reopen Reason
-            </label>
-
-            <textarea name="reason"
-                  class="app-textarea"
-                  maxlength="500"
-                  required></textarea>
-        </div>
-
-        <button type="submit"
-                class="btn-app btn-warning-app"
-                onclick="return confirm('Reopen this filed GST period?')">
-
-            <i class="bi bi-unlock"></i>
-            Reopen GST Period
-
-        </button>
-
-    </form>
-}
-
-<div class="app-card">
-
-    <div class="card-header">
-        <div>
-            <h2 class="card-title">Document Statistics</h2>
-            <p class="card-subtitle">
-                Source documents used for GST calculation.
-            </p>
-        </div>
-    </div>
-
-    <div class="card-body">
-
-        <div class="form-grid-2">
-
-            <div class="form-group">
-                <label class="form-label">Invoices Created</label>
-                <strong>@Model.InvoiceCount</strong>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Expense Vouchers</label>
-                <strong>@Model.ExpenseVoucherCount</strong>
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-@if (Model.SnapshotId > 0)
-{
-    <div class="app-card table-card">
-
-        <div class="card-header">
-            <div>
-                <h2 class="card-title">GST Documents</h2>
-                <p class="card-subtitle">
-                    Upload and manage GST working files, return copies and challans.
-                </p>
-            </div>
-        </div>
-
-        <div class="card-body">
-
-            @if (!isLocked)
-            {
-                <form asp-action="UploadDocument"
-                      method="post"
-                      enctype="multipart/form-data">
-
-                    @Html.AntiForgeryToken()
-
-
-                    <input type="hidden"
-                           name="snapshotId"
-                           value="@Model.SnapshotId" />
-
-                    <div class="form-grid-4">
-
-                        <div class="form-group">
-                            <label class="form-label">Document Type</label>
-
-                            <select name="documentType"
-                                    class="app-select"
-                                    required>
-                                <option value="">Select Type</option>
-                                <option value="Working">Working</option>
-                                <option value="GSTR1">GSTR-1</option>
-                                <option value="GSTR3B">GSTR-3B</option>
-                                <option value="Challan">Challan</option>
-                                <option value="Excel">Excel</option>
-                                <option value="Other">Other</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">File</label>
-
-                            <input type="file"
-                                   name="file"
-                                   class="app-input"
-                                   required />
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Remarks</label>
-
-                            <input type="text"
-                                   name="remarks"
-                                   class="app-input"
-                                   maxlength="500"
-                                   placeholder="Optional remarks" />
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">&nbsp;</label>
-
-                            <button type="submit"
-                                    class="btn-app btn-primary-app">
-                                <i class="bi bi-upload"></i>
-                                Upload
-                            </button>
-                        </div>
-
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Filed By User ID</span>
+                        <strong class="detail-info-value">
+                            @(string.IsNullOrWhiteSpace(Model.FiledByUserId) ? "-" : Model.FiledByUserId)
+                        </strong>
                     </div>
 
-                </form>
-            }
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Filed On</span>
+                        <strong class="detail-info-value">
+                            @(Model.FiledOn?.ToString("dd-MMM-yyyy HH:mm") ?? "-")
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 
-            <div class="table-responsive">
+    <div class="app-card">
+        <div class="card-header">
+            <div>
+                <h5 class="card-title">Document Statistics</h5>
+                <p class="card-subtitle">
+                    Source documents used for GST calculation.
+                </p>
+            </div>
+        </div>
 
-                <table class="app-table">
+        <div class="card-body">
+            <div class="detail-grid-2">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Invoices Created</span>
+                        <strong class="detail-info-value">@Model.InvoiceCount</strong>
+                    </div>
+                </div>
 
-                    <thead>
-                        <tr>
-                            <th>Type</th>
-                            <th>File Name</th>
-                            <th>Uploaded On</th>
-                            <th>Uploader</th>
-                            <th>Remarks</th>
-                            <th class="text-center">Actions</th>
-                        </tr>
-                    </thead>
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Expense Vouchers</span>
+                        <strong class="detail-info-value">@Model.ExpenseVoucherCount</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                    <tbody>
-                        @if (Model.Documents.Any())
-                        {
-                            foreach (var document in Model.Documents)
+    @if (Model.SnapshotId > 0)
+    {
+        <div class="app-card table-card">
+            <div class="card-header">
+                <div>
+                    <h5 class="card-title">GST Documents</h5>
+                    <p class="card-subtitle">
+                        Upload and manage GST working files, return copies and challans.
+                    </p>
+                </div>
+            </div>
+
+            <div class="card-body">
+                @if (!isLocked)
+                {
+                    <form asp-action="UploadDocument"
+                          method="post"
+                          enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
+
+                        <input type="hidden" name="snapshotId" value="@Model.SnapshotId" />
+
+                        <div class="form-grid-4">
+                            <div class="form-group">
+                                <label class="form-label">Document Type</label>
+                                <select name="documentType" class="app-select" required>
+                                    <option value="">Select Type</option>
+                                    <option value="Working">Working</option>
+                                    <option value="GSTR1">GSTR-1</option>
+                                    <option value="GSTR3B">GSTR-3B</option>
+                                    <option value="Challan">Challan</option>
+                                    <option value="Excel">Excel</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">File</label>
+                                <input type="file" name="file" class="app-input" required />
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Remarks</label>
+                                <input type="text"
+                                       name="remarks"
+                                       class="app-input"
+                                       maxlength="500"
+                                       placeholder="Optional remarks" />
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">&nbsp;</label>
+                                <button type="submit" class="btn-app btn-primary-app">
+                                    <i class="bi bi-upload"></i>
+                                    Upload
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                }
+
+                <div class="table-responsive mt-4">
+                    <table class="app-table">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>File Name</th>
+                                <th>Uploaded On</th>
+                                <th>Uploader</th>
+                                <th>Remarks</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @if (Model.Documents.Any())
+                            {
+                                foreach (var document in Model.Documents)
+                                {
+                                    <tr>
+                                        <td>@document.DocumentType</td>
+                                        <td>@document.FileName</td>
+                                        <td>@document.UploadedOn.ToString("dd-MMM-yyyy")</td>
+                                        <td>@(string.IsNullOrWhiteSpace(document.UploadedByUserId) ? "-" : document.UploadedByUserId)</td>
+                                        <td>@(string.IsNullOrWhiteSpace(document.Remarks) ? "-" : document.Remarks)</td>
+                                        <td>
+                                            <div class="table-actions">
+                                                <a asp-action="DownloadDocument"
+                                                   asp-route-id="@document.GstDocumentId"
+                                                   class="btn-app btn-icon btn-primary-app"
+                                                   title="Download">
+                                                    <i class="bi bi-download"></i>
+                                                </a>
+
+                                                @if (!isLocked)
+                                                {
+                                                    <form asp-action="DeleteDocument" method="post">
+                                                        @Html.AntiForgeryToken()
+
+                                                        <input type="hidden" name="id" value="@document.GstDocumentId" />
+                                                        <input type="hidden" name="snapshotId" value="@Model.SnapshotId" />
+
+                                                        <button type="submit"
+                                                                class="btn-app btn-icon btn-danger-app"
+                                                                onclick="return confirm('Delete this GST document?')"
+                                                                title="Delete">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                }
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
                             {
                                 <tr>
-                                    <td>@document.DocumentType</td>
-                                    <td>@document.FileName</td>
-                                    <td>@document.UploadedOn.ToString("dd-MMM-yyyy")</td>
-                                    <td>@(string.IsNullOrWhiteSpace(document.UploadedByUserId) ? "-" : document.UploadedByUserId)</td>
-                                    <td>@(string.IsNullOrWhiteSpace(document.Remarks) ? "-" : document.Remarks)</td>
-                                    <td>
-                                        <div class="table-actions">
-                                            <a asp-action="DownloadDocument"
-                                               asp-route-id="@document.GstDocumentId"
-                                               class="btn-app btn-icon btn-primary-app"
-                                               title="Download">
-                                                <i class="bi bi-download"></i>
-                                            </a>
-
-                                            @if (!isLocked)
-                                            {
-                                                <form asp-action="DeleteDocument"
-                                                      method="post">
-
-                                                    @Html.AntiForgeryToken()
-
-                                                    <input type="hidden"
-                                                           name="id"
-                                                           value="@document.GstDocumentId" />
-
-                                                    <input type="hidden"
-                                                           name="snapshotId"
-                                                           value="@Model.SnapshotId" />
-
-                                                    <button type="submit"
-                                                            class="btn-app btn-icon btn-danger-app"
-                                                            onclick="return confirm('Delete this GST document?')"
-                                                            title="Delete">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
-
-                                                </form>
-                                            }
-                                        </div>
+                                    <td colspan="6" class="empty-state">
+                                        No GST documents uploaded for this period.
                                     </td>
                                 </tr>
                             }
-                        }
-                        else
-                        {
-                            <tr>
-                                <td colspan="6"
-                                    class="empty-state">
-                                    No GST documents uploaded for this period.
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
 
-                </table>
+    <div class="app-card">
+        <div class="card-body">
+            <div class="detail-action-bar">
+
+                <a asp-action="Index"
+                   asp-route-month="@Model.Month"
+                   asp-route-year="@Model.Year"
+                   class="btn-app btn-secondary-app">
+                    <i class="bi bi-arrow-left"></i>
+                    Back to GST
+                </a>
+
+                @if (canRegenerateSnapshot)
+                {
+                    <form method="post"
+                          asp-action="Generate"
+                          class="d-inline">
+                        @Html.AntiForgeryToken()
+
+                        <input type="hidden" name="month" value="@Model.Month" />
+                        <input type="hidden" name="year" value="@Model.Year" />
+
+                        <button type="submit" class="btn-app btn-primary-app">
+                            <i class="bi bi-arrow-clockwise"></i>
+                            @snapshotButtonText
+                        </button>
+                    </form>
+                }
+
+                @if (Model.SnapshotStatus == "Calculated")
+                {
+                    <form method="post"
+                          asp-action="VerifySnapshot"
+                          class="d-inline">
+                        @Html.AntiForgeryToken()
+
+                        <input type="hidden" name="month" value="@Model.Month" />
+                        <input type="hidden" name="year" value="@Model.Year" />
+
+                        <button type="submit" class="btn-app btn-success-app">
+                            <i class="bi bi-check-circle"></i>
+                            Verify Snapshot
+                        </button>
+                    </form>
+                }
+
+                @if (!isLocked &&
+                                Model.Gstr1Status == "Filed" &&
+                                Model.Gstr3BStatus == "Filed" &&
+                                Model.ChallanStatus == "Paid")
+                {
+                    <form method="post"
+                          asp-action="LockSnapshot"
+                          class="d-inline">
+                        @Html.AntiForgeryToken()
+
+                        <input type="hidden" name="month" value="@Model.Month" />
+                        <input type="hidden" name="year" value="@Model.Year" />
+
+                        <button type="submit"
+                                class="btn-app btn-danger-app"
+                                onclick="return confirm('File and permanently lock this GST period?')">
+                            <i class="bi bi-lock"></i>
+                            Lock GST Period
+                        </button>
+                    </form>
+                }
+                else if (!isLocked)
+                {
+                    <span class="badge-warning align-self-center">
+                        Complete GSTR-1, GSTR-3B and Challan before locking
+                    </span>
+                }
 
             </div>
-
         </div>
-
     </div>
-}
 
-<div class="app-card">
+    @if (Model.SnapshotStatus == "Locked" && User.IsInRole("Admin"))
+    {
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Reopen GST Period</h5>
+            </div>
 
-    <div class="card-body form-actions">
+            <div class="card-body">
+                <form asp-controller="Gst"
+                      asp-action="ReopenSnapshot"
+                      method="post">
+                    @Html.AntiForgeryToken()
 
-        <a asp-action="Index"
-           asp-route-month="@Model.Month"
-           asp-route-year="@Model.Year"
-           class="btn-app btn-secondary-app">
-            <i class="bi bi-arrow-left"></i>
-            Back to GST
-        </a>
+                    <input type="hidden" name="month" value="@Model.Month" />
+                    <input type="hidden" name="year" value="@Model.Year" />
 
-        @if (canRegenerateSnapshot)
-        {
-            <form method="post"
-                  asp-action="Generate">
+                    <div class="form-group">
+                        <label class="form-label">Reopen Reason</label>
+                        <textarea name="reason"
+                              class="app-textarea"
+                              maxlength="500"
+                              required></textarea>
+                    </div>
 
-                @Html.AntiForgeryToken()
-
-                <input type="hidden"
-                       name="month"
-                       value="@Model.Month" />
-
-                <input type="hidden"
-                       name="year"
-                       value="@Model.Year" />
-
-                <button type="submit"
-                        class="btn-app btn-primary-app">
-                    <i class="bi bi-arrow-clockwise"></i>
-                    @snapshotButtonText
-                </button>
-
-            </form>
-
-
-        }
-
-        @if (Model.SnapshotStatus == "Calculated")
-        {
-            <form method="post"
-                  asp-action="VerifySnapshot">
-
-                @Html.AntiForgeryToken()
-
-                <input type="hidden"
-                       name="month"
-                       value="@Model.Month" />
-
-                <input type="hidden"
-                       name="year"
-                       value="@Model.Year" />
-
-                <button type="submit"
-                        class="btn-app btn-success-app">
-                    <i class="bi bi-check-circle"></i>
-                    Verify Snapshot
-                </button>
-
-            </form>
-        }
-
-        @if (!isLocked &&
-                Model.Gstr1Status == "Filed" &&
-                Model.Gstr3BStatus == "Filed" &&
-                Model.ChallanStatus == "Paid")
-        {
-            <form method="post"
-                  asp-action="LockSnapshot">
-
-                @Html.AntiForgeryToken()
-
-                <input type="hidden"
-                       name="month"
-                       value="@Model.Month" />
-
-                <input type="hidden"
-                       name="year"
-                       value="@Model.Year" />
-
-                <button type="submit"
-                        class="btn-app btn-danger-app"
-                        onclick="return confirm('File and permanently lock this GST period?')">
-
-                    <i class="bi bi-lock"></i>
-                    Lock GST Period
-
-                </button>
-
-            </form>
-        }
-        else
-        {
-            <span class="badge-warning">
-                Complete GSTR-1, GSTR-3B and Challan before locking
-            </span>
-        }
-
-        @if (Model.SnapshotStatus == "Locked" &&
-                User.IsInRole("Admin"))
-        {
-            <form asp-controller="Gst"
-                  asp-action="ReopenSnapshot"
-                  method="post"
-                  class="w-100 mt-3">
-
-                @Html.AntiForgeryToken()
-
-                <input type="hidden"
-                       name="month"
-                       value="@Model.Month" />
-
-                <input type="hidden"
-                       name="year"
-                       value="@Model.Year" />
-
-                <div class="form-group">
-                    <label class="form-label">
-                        Reopen Reason
-                    </label>
-
-                    <textarea name="reason"
-                          class="app-textarea"
-                          maxlength="500"
-                          required></textarea>
-                </div>
-
-                <button type="submit"
-                        class="btn-app btn-warning-app"
-                        onclick="return confirm('Reopen this filed GST period?')">
-
-                    <i class="bi bi-unlock"></i>
-                    Reopen GST Period
-
-                </button>
-
-            </form>
-        }
-
-    </div>
+                    <button type="submit"
+                            class="btn-app btn-warning-app"
+                            onclick="return confirm('Reopen this filed GST period?')">
+                        <i class="bi bi-unlock"></i>
+                        Reopen GST Period
+                    </button>
+                </form>
+            </div>
+        </div>
+    }
 
 </div>

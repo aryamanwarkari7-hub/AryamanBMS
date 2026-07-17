@@ -1,12 +1,13 @@
-﻿using AryamanBMS.Models;
+﻿using System.Text;
+using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
 using AryamanBMS.ViewModels;
+using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using System.Text;
 
 namespace AryamanBMS.Controllers
 {
@@ -168,12 +169,12 @@ namespace AryamanBMS.Controllers
             return View(model);
         }
 
-        public async Task<IActionResult> ExportCsv(
-            string? search,
-            int? clientId,
-            string? status,
-            DateTime? fromDate,
-            DateTime? toDate)
+        public async Task<IActionResult> ExportExcel(
+    string? search,
+    int? clientId,
+    string? status,
+    DateTime? fromDate,
+    DateTime? toDate)
         {
             var payments = await _paymentRepository.GetAllAsync();
 
@@ -192,9 +193,7 @@ namespace AryamanBMS.Controllers
             }
 
             if (clientId.HasValue && clientId.Value > 0)
-            {
                 payments = payments.Where(x => x.ClientId == clientId.Value).ToList();
-            }
 
             if (!string.IsNullOrWhiteSpace(status))
             {
@@ -212,26 +211,48 @@ namespace AryamanBMS.Controllers
             if (toDate.HasValue)
                 payments = payments.Where(x => x.ReceiptDate.Date <= toDate.Value.Date).ToList();
 
-            var csv = new StringBuilder();
-            csv.AppendLine("Receipt No,Date,Client,Invoice,Mode,Reference,Amount,Status");
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("Payment Receipts");
+
+            worksheet.Cell(1, 1).Value = "Receipt No";
+            worksheet.Cell(1, 2).Value = "Date";
+            worksheet.Cell(1, 3).Value = "Client";
+            worksheet.Cell(1, 4).Value = "Invoice";
+            worksheet.Cell(1, 5).Value = "Mode";
+            worksheet.Cell(1, 6).Value = "Reference";
+            worksheet.Cell(1, 7).Value = "Amount";
+            worksheet.Cell(1, 8).Value = "Status";
+
+            int row = 2;
 
             foreach (var item in payments.OrderByDescending(x => x.ReceiptDate))
             {
-                csv.AppendLine(string.Join(",",
-                    Csv(item.ReceiptNo),
-                    Csv(item.ReceiptDate.ToString("dd-MMM-yyyy")),
-                    Csv(item.Client?.ClientName),
-                    Csv(item.Invoice?.InvoiceNo),
-                    Csv(item.PaymentMode),
-                    Csv(item.ReferenceNo ?? item.TransactionNo),
-                    item.AmountReceived.ToString("0.00"),
-                    Csv(item.IsCancelled ? "Cancelled" : "Active")));
+                worksheet.Cell(row, 1).Value = item.ReceiptNo;
+                worksheet.Cell(row, 2).Value = item.ReceiptDate;
+                worksheet.Cell(row, 2).Style.DateFormat.Format = "dd-MMM-yyyy";
+                worksheet.Cell(row, 3).Value = item.Client?.ClientName;
+                worksheet.Cell(row, 4).Value = item.Invoice?.InvoiceNo;
+                worksheet.Cell(row, 5).Value = item.PaymentMode;
+                worksheet.Cell(row, 6).Value = item.ReferenceNo ?? item.TransactionNo;
+                worksheet.Cell(row, 7).Value = item.AmountReceived;
+                worksheet.Cell(row, 8).Value = item.IsCancelled ? "Cancelled" : "Active";
+
+                row++;
             }
 
+            var headerRange = worksheet.Range("A1:H1");
+            headerRange.Style.Font.Bold = true;
+            headerRange.Style.Fill.BackgroundColor = XLColor.LightBlue;
+
+            worksheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+
             return File(
-                Encoding.UTF8.GetBytes(csv.ToString()),
-                "text/csv",
-                $"payment-receipts-{DateTime.Now:yyyyMMddHHmmss}.csv");
+                stream.ToArray(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"payment-receipts-{DateTime.Now:yyyyMMddHHmmss}.xlsx");
         }
 
         #endregion

@@ -24,285 +24,315 @@
         Model.Status != "Delivered" &&
         Model.Status != "Closed" &&
         Model.Status != "Cancelled";
+
+    string amountDisplay = Model.OrderAmount.HasValue
+        ? $"{Model.Currency} {Model.OrderAmount.Value:N2}"
+        : "-";
 }
 
-<div class="module-header">
+<div class="detail-page">
 
-    <div>
-        <h1 class="module-title">PO / WO Details</h1>
-        <p class="module-subtitle">
-            <span class="badge-secondary">@Model.OrderNumber</span>
-            <span class="@(Model.OrderType == "PO" ? "badge-info" : "badge-secondary")">
-                @Model.OrderType
-            </span>
-            <span class="@statusBadge">@statusLabel</span>
-        </p>
-    </div>
-
-    <div class="module-header-actions">
-
-        <a asp-action="Download"
-           asp-route-id="@Model.PurchaseOrderId"
-           class="btn-app btn-success-app">
-            <i class="bi bi-download"></i>
-            Download
-        </a>
-
-        @if (Model.IsActive &&
-             Model.Status != "Delivered" &&
-             Model.Status != "Closed" &&
-             Model.Status != "Cancelled")
-        {
-            <a asp-action="Edit"
-               asp-route-id="@Model.PurchaseOrderId"
-               class="btn-app btn-primary-app">
-                <i class="bi bi-pencil"></i>
-                Edit PO / WO
-            </a>
-        }
-
-        <a asp-action="Index"
-           class="btn-app btn-secondary-app">
-            <i class="bi bi-arrow-left"></i>
-            Back
-        </a>
-
-    </div>
-
-</div>
-
-<div class="app-card">
-
-    <div class="card-header">
-        <h5 class="card-title">Order Information</h5>
-    </div>
-
-    <div class="card-body">
-
-        <div class="form-grid-2">
-
-            <div class="form-group">
-                <label class="form-label">Order Number</label>
-                <div>@Model.OrderNumber</div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Order Type</label>
-                <div>
-                    <span class="@(Model.OrderType == "PO" ? "badge-info" : "badge-secondary")">
-                        @Model.OrderType
-                    </span>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Client</label>
-                <div>
-                    @if (Model.Client != null)
-                    {
-                        <a asp-controller="Client"
-                           asp-action="Details"
-                           asp-route-id="@Model.ClientId">
-                            @Model.Client.ClientName
-                        </a>
-                    }
-                    else
-                    {
-                        <span>-</span>
-                    }
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Linked Proposal</label>
-                <div>
-                    @if (Model.Proposal != null)
-                    {
-                        <a asp-controller="Proposal"
-                           asp-action="Details"
-                           asp-route-id="@Model.ProposalId">
-                            @Model.Proposal.ProposalNumber
-                        </a>
-                    }
-                    else
-                    {
-                        <span>-</span>
-                    }
-                </div>
-            </div>
-
+    <div class="module-header">
+        <div>
+            <h1 class="module-title">@Model.OrderNumber</h1>
+            <p class="module-subtitle">
+                PO / WO details, commercial information and document record
+            </p>
         </div>
 
-        <div class="form-group mt-3">
-            <label class="form-label">Order Title</label>
-            <div>@Model.OrderTitle</div>
-        </div>
+        <div class="module-header-actions">
 
-    </div>
-
-</div>
-
-<div class="app-card">
-
-    <div class="card-header">
-        <h5 class="card-title">Commercial Information</h5>
-    </div>
-
-    <div class="card-body">
-
-        <div class="form-grid-2">
-
-            <div class="form-group">
-                <label class="form-label">Order Date</label>
-                <div>@Model.OrderDate.ToString("dd-MMM-yyyy")</div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Delivery Due Date</label>
-                <div>
-                    @if (Model.DeliveryDueDate.HasValue)
-                    {
-                        if (overdue)
-                        {
-                            <span class="validation-message">
-                                @Model.DeliveryDueDate.Value.ToString("dd-MMM-yyyy")
-                                <i class="bi bi-exclamation-triangle"></i>
-                            </span>
-                        }
-                        else
-                        {
-                            @Model.DeliveryDueDate.Value.ToString("dd-MMM-yyyy")
-                        }
-                    }
-                    else
-                    {
-                        <span>-</span>
-                    }
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Amount</label>
-                <div>
-                    @if (Model.OrderAmount.HasValue)
-                    {
-                        <strong>@Model.Currency @Model.OrderAmount.Value.ToString("N0")</strong>
-                    }
-                    else
-                    {
-                        <span>-</span>
-                    }
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Vendor / Client Reference</label>
-                <div>@(Model.VendorReference ?? "-")</div>
-            </div>
-
-        </div>
-
-        <div class="form-group mt-3">
-            <label class="form-label">Remarks</label>
-            <div>
-                @(string.IsNullOrWhiteSpace(Model.Remarks) ? "-" : Model.Remarks)
-            </div>
-        </div>
-
-    </div>
-
-</div>
-
-<div class="app-card">
-
-    <div class="card-header">
-        <h5 class="card-title">Document</h5>
-    </div>
-
-    <div class="card-body">
-
-        <div class="form-grid-2">
-
-            <div class="form-group">
-                <label class="form-label">File Name</label>
-                <div>@(string.IsNullOrWhiteSpace(Model.FileName) ? "-" : Model.FileName)</div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">File Size</label>
-                <div>
-                    @if (Model.FileSize > 0)
-                    {
-                        @(Math.Round(Model.FileSize / 1024.0, 2)) <span>KB</span>
-                    }
-                    else
-                    {
-                        <span>-</span>
-                    }
-                </div>
-            </div>
-
-        </div>
-
-        @if (!string.IsNullOrWhiteSpace(Model.FileName))
-        {
-            <div class="mt-3">
+            @if (!string.IsNullOrWhiteSpace(Model.FileName))
+            {
                 <a asp-action="Download"
                    asp-route-id="@Model.PurchaseOrderId"
                    class="btn-app btn-success-app">
                     <i class="bi bi-download"></i>
-                    Download Document
+                    Download
                 </a>
-            </div>
-        }
+            }
 
+            @if (Model.IsActive &&
+                 Model.Status != "Delivered" &&
+                 Model.Status != "Closed" &&
+                 Model.Status != "Cancelled")
+            {
+                <a asp-action="Edit"
+                   asp-route-id="@Model.PurchaseOrderId"
+                   class="btn-app btn-primary-app">
+                    <i class="bi bi-pencil"></i>
+                    Edit PO / WO
+                </a>
+            }
+
+            <a asp-action="Index"
+               class="btn-app btn-secondary-app">
+                <i class="bi bi-arrow-left"></i>
+                Back
+            </a>
+
+        </div>
     </div>
 
-</div>
-
-<div class="app-card">
-
-    <div class="card-header">
-        <h5 class="card-title">Status & Audit</h5>
-    </div>
-
-    <div class="card-body">
-
-        <div class="form-grid-2">
-
-            <div class="form-group">
-                <label class="form-label">Order Status</label>
-                <div>
-                    <span class="@statusBadge">@statusLabel</span>
-                </div>
+    <div class="detail-summary-grid">
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Order Type</div>
+            <div class="detail-summary-value">
+                <span class="@(Model.OrderType == "PO" ? "badge-info" : "badge-secondary")">
+                    @Model.OrderType
+                </span>
             </div>
+        </div>
 
-            <div class="form-group">
-                <label class="form-label">Record Status</label>
-                <div>
-                    @if (Model.IsActive)
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Status</div>
+            <div class="detail-summary-value">
+                <span class="@statusBadge">@statusLabel</span>
+            </div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Amount</div>
+            <div class="detail-summary-value">@amountDisplay</div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Due Date</div>
+            <div class="detail-summary-value">
+                @if (Model.DeliveryDueDate.HasValue)
+                {
+                    if (overdue)
                     {
-                        <span class="badge-success">Active</span>
+                        <span class="badge-danger">
+                            @Model.DeliveryDueDate.Value.ToString("dd-MMM-yyyy")
+                        </span>
                     }
                     else
                     {
-                        <span class="badge-danger">Inactive</span>
+                        @Model.DeliveryDueDate.Value.ToString("dd-MMM-yyyy")
                     }
+                }
+                else
+                {
+                    <span>-</span>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-grid-2">
+
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Order Information</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Order Number</span>
+                        <span class="detail-info-value">@Model.OrderNumber</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Order Type</span>
+                        <span class="detail-info-value">
+                            <span class="@(Model.OrderType == "PO" ? "badge-info" : "badge-secondary")">
+                                @Model.OrderType
+                            </span>
+                        </span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Order Title</span>
+                        <span class="detail-info-value">@Model.OrderTitle</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Client</span>
+                        <span class="detail-info-value">
+                            @if (Model.Client != null)
+                            {
+                                <a asp-controller="Client"
+                                   asp-action="Details"
+                                   asp-route-id="@Model.ClientId">
+                                    @Model.Client.ClientName
+                                </a>
+                            }
+                            else
+                            {
+                                <span>-</span>
+                            }
+                        </span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Linked Proposal</span>
+                        <span class="detail-info-value">
+                            @if (Model.Proposal != null)
+                            {
+                                <a asp-controller="Proposal"
+                                   asp-action="Details"
+                                   asp-route-id="@Model.ProposalId">
+                                    @Model.Proposal.ProposalNumber
+                                </a>
+                            }
+                            else
+                            {
+                                <span>-</span>
+                            }
+                        </span>
+                    </div>
                 </div>
             </div>
-
-            <div class="form-group">
-                <label class="form-label">Created On</label>
-                <div>@Model.CreatedOn.ToString("dd-MMM-yyyy hh:mm tt")</div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Last Updated</label>
-                <div>@(Model.UpdatedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")</div>
-            </div>
-
         </div>
 
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Commercial Information</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Order Date</span>
+                        <span class="detail-info-value">@Model.OrderDate.ToString("dd-MMM-yyyy")</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Delivery Due Date</span>
+                        <span class="detail-info-value">
+                            @if (Model.DeliveryDueDate.HasValue)
+                            {
+                                if (overdue)
+                                {
+                                    <span class="badge-danger">
+                                        @Model.DeliveryDueDate.Value.ToString("dd-MMM-yyyy")
+                                    </span>
+                                }
+                                else
+                                {
+                                    @Model.DeliveryDueDate.Value.ToString("dd-MMM-yyyy")
+                                }
+                            }
+                            else
+                            {
+                                <span>-</span>
+                            }
+                        </span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Amount</span>
+                        <span class="detail-info-value">@amountDisplay</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Vendor / Client Reference</span>
+                        <span class="detail-info-value">@(Model.VendorReference ?? "-")</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="detail-grid-2">
+
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Document</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">File Name</span>
+                        <span class="detail-info-value">@(string.IsNullOrWhiteSpace(Model.FileName) ? "-" : Model.FileName)</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">File Size</span>
+                        <span class="detail-info-value">
+                            @if (Model.FileSize > 0)
+                            {
+                                @(Math.Round(Model.FileSize / 1024.0, 2)) <span>KB</span>
+                            }
+                            else
+                            {
+                                <span>-</span>
+                            }
+                        </span>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(Model.FileName))
+                {
+                    <div class="detail-action-bar mt-3">
+                        <a asp-action="Download"
+                           asp-route-id="@Model.PurchaseOrderId"
+                           class="btn-app btn-success-app">
+                            <i class="bi bi-download"></i>
+                            Download Document
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Status & Audit</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Order Status</span>
+                        <span class="detail-info-value">
+                            <span class="@statusBadge">@statusLabel</span>
+                        </span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Record Status</span>
+                        <span class="detail-info-value">
+                            @if (Model.IsActive)
+                            {
+                                <span class="badge-success">Active</span>
+                            }
+                            else
+                            {
+                                <span class="badge-danger">Inactive</span>
+                            }
+                        </span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Created On</span>
+                        <span class="detail-info-value">@Model.CreatedOn.ToString("dd-MMM-yyyy hh:mm tt")</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Last Updated</span>
+                        <span class="detail-info-value">@(Model.UpdatedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="app-card">
+        <div class="card-header">
+            <h5 class="card-title">Remarks</h5>
+        </div>
+
+        <div class="card-body">
+            <div class="detail-note-box">
+                @(string.IsNullOrWhiteSpace(Model.Remarks) ? "No remarks provided." : Model.Remarks)
+            </div>
+        </div>
     </div>
 
 </div>

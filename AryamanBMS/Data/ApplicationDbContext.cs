@@ -77,6 +77,8 @@ namespace AryamanBMS.Data
         public DbSet<CompanyDocumentModel> CompanyDocuments { get; set; }
 
         public DbSet<ClientModel> Clients { get; set; }
+
+        public DbSet<ClientCommunicationModel> ClientCommunications { get; set; }
         public DbSet<ProposalModel> Proposals { get; set; }
         public DbSet<ProposalTemplateModel>ProposalTemplates
         { get; set; }
@@ -142,6 +144,7 @@ namespace AryamanBMS.Data
 
         //Login History
         public DbSet<LoginHistoryModel> TableLoginHistory { get; set; }
+        public DbSet<PasswordChangeLogModel> PasswordChangeLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -610,6 +613,39 @@ namespace AryamanBMS.Data
             modelBuilder.Entity<ClientModel>()
                 .HasIndex(x => x.ClientCode)
                 .IsUnique();
+
+            modelBuilder.Entity<ClientCommunicationModel>()
+    .ToTable("tableclientcommunications");
+
+            modelBuilder.Entity<ClientCommunicationModel>()
+                .HasOne(x => x.Client)
+                .WithMany()
+                .HasForeignKey(x => x.ClientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ClientCommunicationModel>()
+                .HasOne(x => x.AssignedToEmployee)
+                .WithMany()
+                .HasForeignKey(x => x.AssignedToEmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ClientCommunicationModel>()
+                .HasOne(x => x.Proposal)
+                .WithMany()
+                .HasForeignKey(x => x.ProposalId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ClientCommunicationModel>()
+                .HasOne(x => x.Project)
+                .WithMany()
+                .HasForeignKey(x => x.ProjectId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ClientCommunicationModel>()
+                .HasOne(x => x.Invoice)
+                .WithMany()
+                .HasForeignKey(x => x.InvoiceId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<CompanyProfileModel>().ToTable("tablecompanyprofile");
             modelBuilder.Entity<CompanyProfileModel>()
@@ -1170,6 +1206,9 @@ namespace AryamanBMS.Data
                 entity.HasIndex(x => x.OccurredOn);
                 entity.HasIndex(x => x.EventType);
             });
+
+            modelBuilder.Entity<PasswordChangeLogModel>()
+               .ToTable("tablepasswordchangelogs");
 
         }
     }

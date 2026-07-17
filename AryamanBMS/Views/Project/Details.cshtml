@@ -104,8 +104,8 @@
                     </div>
 
                     <div class="detail-info-row">
-                        <span class="detail-info-label">Client Name</span>
-                        <strong class="detail-info-value">@(Model.ClientName ?? "-")</strong>
+                        <span class="detail-info-label">Client</span>
+                        <strong class="detail-info-value">@(Model.Client?.ClientName ?? Model.ClientName ?? "-")</strong>
                     </div>
 
                     <div class="detail-info-row">

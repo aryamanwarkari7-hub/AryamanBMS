@@ -3,6 +3,10 @@
 @{
     ViewData["Title"] = "Proposals";
     var filterStatus = ViewBag.FilterStatus as string;
+    int? filterClientId = ViewBag.FilterClientId as int?;
+    string search = ViewBag.Search as string ?? "";
+    string sortBy = ViewBag.SortBy as string ?? "ProposalDate";
+    string sortOrder = ViewBag.SortOrder as string ?? "desc";
 
     string BadgeClass(string status) => status switch {
         "Draft"       => "badge-secondary",
@@ -35,6 +39,77 @@
     </div>
 </div>
 
+<div class="app-card filter-card">
+    <div class="card-body">
+        <form method="get" class="w-100">
+            <input type="hidden"
+                   name="status"
+                   value="@filterStatus" />
+
+            <div class="filter-form-row">
+
+                <div class="form-group">
+                    <label class="form-label">Search</label>
+                    <input name="search"
+                           value="@search"
+                           class="app-input"
+                           placeholder="Proposal no, client, title, project or status" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Client</label>
+                    <select name="clientId" class="app-select">
+                        <option value="">All Clients</option>
+                        @foreach (var client in ViewBag.Clients)
+                        {
+                            <option value="@client.ClientId"
+                                    selected="@(filterClientId.HasValue && filterClientId.Value == client.ClientId)">
+                                @client.ClientName
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Sort By</label>
+                    <select name="sortBy" class="app-select">
+                        <option value="ProposalDate" selected="@(sortBy == "ProposalDate")">Proposal Date</option>
+                        <option value="ProposalNo" selected="@(sortBy == "ProposalNo")">Proposal No</option>
+                        <option value="Client" selected="@(sortBy == "Client")">Client</option>
+                        <option value="Title" selected="@(sortBy == "Title")">Title</option>
+                        <option value="ValidUntil" selected="@(sortBy == "ValidUntil")">Valid Until</option>
+                        <option value="Amount" selected="@(sortBy == "Amount")">Amount</option>
+                        <option value="Status" selected="@(sortBy == "Status")">Status</option>
+                        <option value="Converted" selected="@(sortBy == "Converted")">Converted</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Order</label>
+                    <select name="sortOrder" class="app-select">
+                        <option value="asc" selected="@(sortOrder == "asc")">Ascending</option>
+                        <option value="desc" selected="@(sortOrder == "desc")">Descending</option>
+                    </select>
+                </div>
+
+                <div class="filter-form-actions">
+                    <button type="submit" class="btn-app btn-primary-app">
+                        <i class="bi bi-search"></i>
+                        Search
+                    </button>
+
+                    <a asp-action="Index"
+                       class="btn-app btn-secondary-app">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        Reset
+                    </a>
+                </div>
+
+            </div>
+        </form>
+    </div>
+</div>
+
 <div class="app-card table-card">
 
     <div class="card-header">
@@ -46,7 +121,11 @@
         <div class="module-header-actions justify-content-start mb-3">
 
             <a class="btn-app @(string.IsNullOrEmpty(filterStatus) ? "btn-primary-app" : "btn-secondary-app")"
-               asp-action="Index">
+               asp-action="Index"
+               asp-route-clientId="@filterClientId"
+               asp-route-search="@search"
+               asp-route-sortBy="@sortBy"
+               asp-route-sortOrder="@sortOrder">
                 All
             </a>
 
@@ -54,7 +133,11 @@
             {
                 <a class="btn-app @(filterStatus == s ? "btn-primary-app" : "btn-secondary-app")"
                    asp-action="Index"
-                   asp-route-status="@s">
+                   asp-route-status="@s"
+                   asp-route-clientId="@filterClientId"
+                   asp-route-search="@search"
+                   asp-route-sortBy="@sortBy"
+                   asp-route-sortOrder="@sortOrder">
                     @BadgeLabel(s)
                 </a>
             }
@@ -224,8 +307,6 @@
                 </table>
 
             </div>
-
-        </div>
 
     </div>
 

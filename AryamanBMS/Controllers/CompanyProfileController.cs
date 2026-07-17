@@ -35,6 +35,7 @@ namespace AryamanBMS.Controllers
             model.CompanyName = model.CompanyName?.Trim() ?? string.Empty;
             model.GSTIN = model.GSTIN?.Trim().ToUpper();
             model.PAN = model.PAN?.Trim().ToUpper();
+            model.CIN = model.CIN?.Trim().ToUpper();
             model.Address = model.Address?.Trim();
             model.Email = model.Email?.Trim();
             model.Phone = model.Phone?.Trim();

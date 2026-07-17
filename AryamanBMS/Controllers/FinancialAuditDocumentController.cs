@@ -1,11 +1,12 @@
-using AryamanBMS.Models;
-using AryamanBMS.Repositories.Interfaces;
-using AryamanBMS.Services.Interfaces;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
+using AryamanBMS.Models;
+using AryamanBMS.Repositories.Interfaces;
+using AryamanBMS.Services.Interfaces;
+using ClosedXML.Excel;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace AryamanBMS.Controllers
 {
@@ -161,7 +162,7 @@ namespace AryamanBMS.Controllers
             return View(documents);
         }
 
-        public async Task<IActionResult> ExportCsv(
+        public async Task<IActionResult> ExportExcel(
             string? financialYear,
             string? category,
             string? search,
@@ -205,8 +206,17 @@ namespace AryamanBMS.Controllers
             if (toDate.HasValue)
                 documents = documents.Where(x => x.UploadedOn.Date <= toDate.Value.Date).ToList();
 
-            var csv = new StringBuilder();
-            csv.AppendLine("Category,Financial Year,File Name,Remarks,Uploaded On,Status");
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("Audit Documents");
+
+            worksheet.Cell(1, 1).Value = "Category";
+            worksheet.Cell(1, 2).Value = "Financial Year";
+            worksheet.Cell(1, 3).Value = "File Name";
+            worksheet.Cell(1, 4).Value = "Remarks";
+            worksheet.Cell(1, 5).Value = "Uploaded On";
+            worksheet.Cell(1, 6).Value = "Status";
+
+            int row = 2;
 
             foreach (var item in documents.OrderByDescending(x => x.UploadedOn))
             {
@@ -216,19 +226,30 @@ namespace AryamanBMS.Controllers
                         ? "Active"
                         : "Archived";
 
-                csv.AppendLine(string.Join(",",
-                    Csv(item.DocumentCategory),
-                    Csv(item.FinancialYear),
-                    Csv(item.FileName),
-                    Csv(item.Remarks),
-                    Csv(item.UploadedOn.ToString("dd-MMM-yyyy hh:mm tt")),
-                    Csv(documentStatus)));
+                worksheet.Cell(row, 1).Value = item.DocumentCategory;
+                worksheet.Cell(row, 2).Value = item.FinancialYear;
+                worksheet.Cell(row, 3).Value = item.FileName;
+                worksheet.Cell(row, 4).Value = item.Remarks;
+                worksheet.Cell(row, 5).Value = item.UploadedOn;
+                worksheet.Cell(row, 5).Style.DateFormat.Format = "dd-MMM-yyyy hh:mm AM/PM";
+                worksheet.Cell(row, 6).Value = documentStatus;
+
+                row++;
             }
 
+            var headerRange = worksheet.Range("A1:F1");
+            headerRange.Style.Font.Bold = true;
+            headerRange.Style.Fill.BackgroundColor = XLColor.LightBlue;
+
+            worksheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+
             return File(
-                Encoding.UTF8.GetBytes(csv.ToString()),
-                "text/csv",
-                $"financial-audit-documents-{DateTime.Now:yyyyMMddHHmmss}.csv");
+                stream.ToArray(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"financial-audit-documents-{DateTime.Now:yyyyMMddHHmmss}.xlsx");
         }
 
         [HttpGet]

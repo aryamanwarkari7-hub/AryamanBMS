@@ -37,17 +37,88 @@ namespace AryamanBMS.Controllers
 
         #region Index
 
-        public async Task<IActionResult> Index(string? status, int? clientId)
+        public async Task<IActionResult> Index(
+    string? status,
+    int? clientId,
+    string? search,
+    string sortBy = "ProposalDate",
+    string sortOrder = "desc")
         {
             var proposals = string.IsNullOrEmpty(status)
                 ? await _proposalRepo.GetAllAsync()
                 : await _proposalRepo.GetByStatusAsync(status);
 
-            if (clientId.HasValue)
-                proposals = proposals.Where(p => p.ClientId == clientId.Value).ToList();
+            if (clientId.HasValue && clientId.Value > 0)
+            {
+                proposals = proposals
+                    .Where(p => p.ClientId == clientId.Value)
+                    .ToList();
+            }
 
-            ViewBag.FilterStatus   = status;
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                string keyword = search.Trim().ToLower();
+
+                proposals = proposals
+                    .Where(p =>
+                        (!string.IsNullOrWhiteSpace(p.ProposalNumber) &&
+                            p.ProposalNumber.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(p.ProposalTitle) &&
+                            p.ProposalTitle.ToLower().Contains(keyword)) ||
+                        (p.Client != null &&
+                            !string.IsNullOrWhiteSpace(p.Client.ClientName) &&
+                            p.Client.ClientName.ToLower().Contains(keyword)) ||
+                        (p.Project != null &&
+                            !string.IsNullOrWhiteSpace(p.Project.ProjectName) &&
+                            p.Project.ProjectName.ToLower().Contains(keyword)) ||
+                        (!string.IsNullOrWhiteSpace(p.Status) &&
+                            p.Status.ToLower().Contains(keyword)))
+                    .ToList();
+            }
+
+            bool descending = sortOrder == "desc";
+
+            proposals = sortBy switch
+            {
+                "ProposalNo" => descending
+                    ? proposals.OrderByDescending(p => p.ProposalNumber).ToList()
+                    : proposals.OrderBy(p => p.ProposalNumber).ToList(),
+
+                "Client" => descending
+                    ? proposals.OrderByDescending(p => p.Client?.ClientName).ToList()
+                    : proposals.OrderBy(p => p.Client?.ClientName).ToList(),
+
+                "Title" => descending
+                    ? proposals.OrderByDescending(p => p.ProposalTitle).ToList()
+                    : proposals.OrderBy(p => p.ProposalTitle).ToList(),
+
+                "ValidUntil" => descending
+                    ? proposals.OrderByDescending(p => p.ValidUntil).ToList()
+                    : proposals.OrderBy(p => p.ValidUntil).ToList(),
+
+                "Amount" => descending
+                    ? proposals.OrderByDescending(p => p.ProposalAmount).ToList()
+                    : proposals.OrderBy(p => p.ProposalAmount).ToList(),
+
+                "Status" => descending
+                    ? proposals.OrderByDescending(p => p.Status).ToList()
+                    : proposals.OrderBy(p => p.Status).ToList(),
+
+                "Converted" => descending
+                    ? proposals.OrderByDescending(p => p.IsConverted).ToList()
+                    : proposals.OrderBy(p => p.IsConverted).ToList(),
+
+                _ => descending
+                    ? proposals.OrderByDescending(p => p.ProposalDate).ToList()
+                    : proposals.OrderBy(p => p.ProposalDate).ToList(),
+            };
+
+            ViewBag.FilterStatus = status;
             ViewBag.FilterClientId = clientId;
+            ViewBag.Search = search;
+            ViewBag.SortBy = sortBy;
+            ViewBag.SortOrder = sortOrder;
+            ViewBag.Clients = await _clientRepo.GetAllAsync();
 
             return View(proposals);
         }

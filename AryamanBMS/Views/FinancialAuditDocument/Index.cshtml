@@ -45,16 +45,16 @@
             Upload Document
         </a>
 
-        <a asp-action="ExportCsv"
+        <a asp-action="ExportExcel"
            asp-route-financialYear="@filterFY"
            asp-route-category="@filterCategory"
            asp-route-search="@search"
            asp-route-status="@statusFilter"
            asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
            asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
-           class="btn-app btn-secondary-app">
-            <i class="bi bi-download"></i>
-            Export
+           class="btn-app btn-success-app">
+            <i class="bi bi-file-earmark-excel"></i>
+            Export Excel
         </a>
     </div>
 </div>

@@ -39,8 +39,19 @@
                 </div>
                 <div class="form-group">
                     <label asp-for="ExpenseVoucherId" class="form-label">Expense Voucher</label>
-                    <select asp-for="ExpenseVoucherId" asp-items="ViewBag.Vouchers" class="app-select">
+                    <select asp-for="ExpenseVoucherId"
+                            class="app-select"
+                            id="expenseVoucherSelect">
                         <option value="">Select Voucher</option>
+
+                        @foreach (var voucher in ViewBag.Vouchers)
+                        {
+                            <option value="@voucher.ExpenseVoucherId"
+                                    data-vendor-id="@voucher.VendorId"
+                                    selected="@(Model.ExpenseVoucherId == voucher.ExpenseVoucherId)">
+                                @voucher.VoucherText
+                            </option>
+                        }
                     </select>
                     <span asp-validation-for="ExpenseVoucherId" class="validation-message"></span>
                 </div>
@@ -90,4 +101,37 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const vendorSelect = document.getElementById("VendorId");
+            const voucherSelect = document.getElementById("expenseVoucherSelect");
+
+            if (!vendorSelect || !voucherSelect) {
+                return;
+            }
+
+            function filterVouchersByVendor() {
+                const selectedVendorId = vendorSelect.value;
+
+                Array.from(voucherSelect.options).forEach(function (option) {
+                    if (!option.value) {
+                        option.hidden = false;
+                        return;
+                    }
+
+                    const voucherVendorId = option.getAttribute("data-vendor-id");
+                    option.hidden = selectedVendorId && voucherVendorId !== selectedVendorId;
+                });
+
+                const selectedOption = voucherSelect.options[voucherSelect.selectedIndex];
+
+                if (selectedOption && selectedOption.hidden) {
+                    voucherSelect.value = "";
+                }
+            }
+
+            vendorSelect.addEventListener("change", filterVouchersByVendor);
+            filterVouchersByVendor();
+        });
+    </script>
 }

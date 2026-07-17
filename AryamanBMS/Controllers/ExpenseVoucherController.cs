@@ -1,14 +1,15 @@
+using System.Text;
+using System.Text.RegularExpressions;
+using AryamanBMS.Data;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
-using AryamanBMS.Data;
+using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using System.Text;
-using System.Text.RegularExpressions;
 
 namespace AryamanBMS.Controllers
 {
@@ -180,7 +181,7 @@ namespace AryamanBMS.Controllers
             return View(vouchers);
         }
 
-        public async Task<IActionResult> ExportCsv(
+        public async Task<IActionResult> ExportExcel (
             string? status,
             int? categoryId,
             string? search,
@@ -220,27 +221,50 @@ namespace AryamanBMS.Controllers
             if (toDate.HasValue)
                 vouchers = vouchers.Where(x => x.VoucherDate.Date <= toDate.Value.Date).ToList();
 
-            var csv = new StringBuilder();
-            csv.AppendLine("Voucher No,Date,Category,Vendor,Invoice,Amount,Total Amount,Status,Payment Status");
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("Expense Vouchers");
+
+            worksheet.Cell(1, 1).Value = "Voucher No";
+            worksheet.Cell(1, 2).Value = "Date";
+            worksheet.Cell(1, 3).Value = "Category";
+            worksheet.Cell(1, 4).Value = "Vendor";
+            worksheet.Cell(1, 5).Value = "Invoice";
+            worksheet.Cell(1, 6).Value = "Amount";
+            worksheet.Cell(1, 7).Value = "Total Amount";
+            worksheet.Cell(1, 8).Value = "Status";
+            worksheet.Cell(1, 9).Value = "Payment Status";
+
+            int row = 2;
 
             foreach (var item in vouchers.OrderByDescending(x => x.VoucherDate))
             {
-                csv.AppendLine(string.Join(",",
-                    Csv(item.VoucherNumber),
-                    Csv(item.VoucherDate.ToString("dd-MMM-yyyy")),
-                    Csv(item.Category?.CategoryName),
-                    Csv(item.Vendor?.VendorName ?? item.VendorName),
-                    Csv(item.InvoiceNumber),
-                    item.Amount.ToString("0.00"),
-                    item.TotalAmount.ToString("0.00"),
-                    Csv(item.Status),
-                    Csv(item.PaymentStatus)));
+                worksheet.Cell(row, 1).Value = item.VoucherNumber;
+                worksheet.Cell(row, 2).Value = item.VoucherDate;
+                worksheet.Cell(row, 2).Style.DateFormat.Format = "dd-MMM-yyyy";
+                worksheet.Cell(row, 3).Value = item.Category?.CategoryName;
+                worksheet.Cell(row, 4).Value = item.Vendor?.VendorName ?? item.VendorName;
+                worksheet.Cell(row, 5).Value = item.InvoiceNumber;
+                worksheet.Cell(row, 6).Value = item.Amount;
+                worksheet.Cell(row, 7).Value = item.TotalAmount;
+                worksheet.Cell(row, 8).Value = item.Status;
+                worksheet.Cell(row, 9).Value = item.PaymentStatus;
+
+                row++;
             }
 
+            var headerRange = worksheet.Range("A1:I1");
+            headerRange.Style.Font.Bold = true;
+            headerRange.Style.Fill.BackgroundColor = XLColor.LightBlue;
+
+            worksheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+
             return File(
-                Encoding.UTF8.GetBytes(csv.ToString()),
-                "text/csv",
-                $"expense-vouchers-{DateTime.Now:yyyyMMddHHmmss}.csv");
+                stream.ToArray(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"expense-vouchers-{DateTime.Now:yyyyMMddHHmmss}.xlsx");
         }
 
         public IActionResult Pending()

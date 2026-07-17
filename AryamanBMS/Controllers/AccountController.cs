@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using AryamanBMS.Data;
 
 namespace AryamanBMS.Controllers
 {
@@ -20,6 +21,7 @@ namespace AryamanBMS.Controllers
         private readonly INotificationService _notificationService;
         private readonly ILogger<AccountController> _logger;
         private readonly ILoginHistoryService _loginHistoryService;
+        private readonly ApplicationDbContext _context;
 
         public AccountController(
             SignInManager<ApplicationUserModel> signInManager,
@@ -29,7 +31,8 @@ namespace AryamanBMS.Controllers
             IWebHostEnvironment webHostEnvironment,
             INotificationService notificationService,
             ILogger<AccountController> logger,
-            ILoginHistoryService loginHistoryService)
+            ILoginHistoryService loginHistoryService,
+            ApplicationDbContext context)
         {
             _signInManager = signInManager;
             _userManager = userManager;
@@ -39,6 +42,7 @@ namespace AryamanBMS.Controllers
             _notificationService = notificationService;
             _logger = logger;
             _loginHistoryService = loginHistoryService;
+            _context = context;
         }
 
         // ==========================================
@@ -453,6 +457,31 @@ namespace AryamanBMS.Controllers
 
             if (result.Succeeded)
             {
+                await LogPasswordChangeAsync(
+                    user,
+                    user,
+                    "SelfChange");
+
+                var roles = await _userManager.GetRolesAsync(user);
+
+                if (roles.Contains("Employee") &&
+                    !roles.Contains("Admin"))
+                {
+                    var admins = await _userManager.GetUsersInRoleAsync("Admin");
+
+                    foreach (var admin in admins.Where(x => x.IsActive))
+                    {
+                        await _notificationService.CreateAsync(
+                            admin.Id,
+                            "Employee password changed",
+                            $"{user.FullName ?? user.UserName} changed their account password.",
+                            "Security",
+                            "PasswordChangeLog",
+                            null,
+                            Url.Action("Index", "PasswordChangeLog"));
+                    }
+                }
+
                 TempData["Success"] =
                     "Password changed successfully.";
 
@@ -818,6 +847,27 @@ namespace AryamanBMS.Controllers
                     "Login history could not be recorded for {UserName}.",
                     attemptedUserName);
             }
+        }
+
+        private async Task LogPasswordChangeAsync(
+    ApplicationUserModel targetUser,
+    ApplicationUserModel? changedByUser,
+    string changeType)
+        {
+            _context.PasswordChangeLogs.Add(new PasswordChangeLogModel
+            {
+                UserId = targetUser.Id,
+                UserName = targetUser.UserName,
+                Email = targetUser.Email,
+                ChangedByUserId = changedByUser?.Id,
+                ChangedByUserName = changedByUser?.UserName,
+                ChangeType = changeType,
+                ChangedOn = DateTime.Now,
+                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                UserAgent = Request.Headers.UserAgent.ToString()
+            });
+
+            await _context.SaveChangesAsync();
         }
 
         #endregion

@@ -29,15 +29,15 @@
             New Receipt
         </a>
 
-        <a asp-action="ExportCsv"
+        <a asp-action="ExportExcel"
            asp-route-search="@currentSearch"
            asp-route-clientId="@currentClientId"
            asp-route-status="@currentStatus"
            asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
            asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
-           class="btn-app btn-secondary-app">
-            <i class="bi bi-download"></i>
-            Export
+           class="btn-app btn-success-app">
+            <i class="bi bi-file-earmark-excel"></i>
+            Export Excel
         </a>
 
     </div>
@@ -93,8 +93,10 @@
                    name="status"
                    value="@currentStatus" />
 
-            <div class="filter-row">
-                <div class="filter-field filter-field-wide">
+            <div class="filter-form-row">
+
+                <div class="form-group">
+                    <label class="form-label">Search</label>
                     <input type="text"
                            name="search"
                            value="@currentSearch"
@@ -102,7 +104,8 @@
                            placeholder="Receipt / Client / Invoice / Mode / Reference" />
                 </div>
 
-                <div class="filter-field">
+                <div class="form-group">
+                    <label class="form-label">Client</label>
                     <select name="clientId" class="app-select">
                         <option value="">All Clients</option>
 
@@ -116,40 +119,44 @@
                     </select>
                 </div>
 
-                <div class="filter-field">
+                <div class="form-group">
+                    <label class="form-label">Sort By</label>
                     <select name="sortBy" class="app-select">
-                        <option value="ReceiptDate" selected="@(sortBy == "ReceiptDate")">Sort by Date</option>
-                        <option value="ReceiptNo" selected="@(sortBy == "ReceiptNo")">Sort by Receipt No</option>
-                        <option value="Client" selected="@(sortBy == "Client")">Sort by Client</option>
-                        <option value="Invoice" selected="@(sortBy == "Invoice")">Sort by Invoice</option>
-                        <option value="Mode" selected="@(sortBy == "Mode")">Sort by Mode</option>
-                        <option value="Amount" selected="@(sortBy == "Amount")">Sort by Amount</option>
-                        <option value="Status" selected="@(sortBy == "Status")">Sort by Status</option>
+                        <option value="ReceiptDate" selected="@(sortBy == "ReceiptDate")">Receipt Date</option>
+                        <option value="ReceiptNo" selected="@(sortBy == "ReceiptNo")">Receipt No</option>
+                        <option value="Client" selected="@(sortBy == "Client")">Client</option>
+                        <option value="Invoice" selected="@(sortBy == "Invoice")">Invoice</option>
+                        <option value="Mode" selected="@(sortBy == "Mode")">Mode</option>
+                        <option value="Amount" selected="@(sortBy == "Amount")">Amount</option>
+                        <option value="Status" selected="@(sortBy == "Status")">Status</option>
                     </select>
                 </div>
 
-                <div class="filter-field">
+                <div class="form-group">
+                    <label class="form-label">Order</label>
                     <select name="sortOrder" class="app-select">
                         <option value="asc" selected="@(sortOrder == "asc")">Ascending</option>
                         <option value="desc" selected="@(sortOrder == "desc")">Descending</option>
                     </select>
                 </div>
 
-                <div class="filter-field">
+                <div class="form-group">
+                    <label class="form-label">From Date</label>
                     <input type="date"
                            name="fromDate"
                            value="@fromDate?.ToString("yyyy-MM-dd")"
                            class="app-input" />
                 </div>
 
-                <div class="filter-field">
+                <div class="form-group">
+                    <label class="form-label">To Date</label>
                     <input type="date"
                            name="toDate"
                            value="@toDate?.ToString("yyyy-MM-dd")"
                            class="app-input" />
                 </div>
 
-                <div class="filter-actions">
+                <div class="filter-form-actions">
                     <button type="submit" class="btn-app btn-primary-app">
                         <i class="bi bi-search"></i>
                         Search
@@ -161,9 +168,9 @@
                         Reset
                     </a>
                 </div>
+
             </div>
         </form>
-
     </div>
 
     <div class="card-body">

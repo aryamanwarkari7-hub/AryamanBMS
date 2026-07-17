@@ -872,41 +872,83 @@
 --         (UserId, IsRead, CreatedOn)
 -- );
 
-CREATE TABLE IF NOT EXISTS TableLoginHistory
-(
+-- CREATE TABLE IF NOT EXISTS TableLoginHistory
+-- (
+--     Id INT NOT NULL AUTO_INCREMENT,
+
+--     UserId VARCHAR(450) NULL,
+
+--     AttemptedUserName VARCHAR(256) NOT NULL,
+
+--     EventType VARCHAR(50) NOT NULL,
+
+--     IsSuccessful TINYINT(1) NOT NULL DEFAULT 0,
+
+--     FailureReason VARCHAR(250) NULL,
+
+--     IpAddress VARCHAR(45) NULL,
+
+--     UserAgent VARCHAR(500) NULL,
+
+--     OccurredOn DATETIME NOT NULL
+--         DEFAULT CURRENT_TIMESTAMP,
+
+--     PRIMARY KEY (Id),
+
+--     CONSTRAINT FK_TableLoginHistory_AspNetUsers_UserId
+--         FOREIGN KEY (UserId)
+--         REFERENCES AspNetUsers(Id)
+--         ON DELETE SET NULL,
+
+--     INDEX IX_TableLoginHistory_UserId (UserId),
+
+--     INDEX IX_TableLoginHistory_OccurredOn
+--         (OccurredOn),
+
+--     INDEX IX_TableLoginHistory_EventType
+--         (EventType)
+-- );
+
+
+-- CREATE TABLE tableclientcommunications (
+--     Id INT NOT NULL AUTO_INCREMENT,
+--     ClientId INT NOT NULL,
+--     CommunicationDate DATETIME NOT NULL,
+--     Direction VARCHAR(20) NOT NULL,
+--     CommunicationType VARCHAR(50) NOT NULL,
+--     Subject VARCHAR(200) NOT NULL,
+--     Summary VARCHAR(2000) NOT NULL,
+--     ActionRequired TINYINT(1) NOT NULL DEFAULT 0,
+--     ActionItem VARCHAR(500) NULL,
+--     FollowUpDate DATE NULL,
+--     AssignedToEmployeeId INT NULL,
+--     ProposalId INT NULL,
+--     ProjectId INT NULL,
+--     InvoiceId INT NULL,
+--     Status VARCHAR(30) NOT NULL DEFAULT 'Open',
+--     CreatedByUserId VARCHAR(450) NULL,
+--     CreatedOn DATETIME NOT NULL,
+--     UpdatedOn DATETIME NULL,
+--     PRIMARY KEY (Id),
+--     INDEX IX_ClientCommunications_ClientId (ClientId),
+--     INDEX IX_ClientCommunications_FollowUpDate (FollowUpDate),
+--     CONSTRAINT FK_ClientCommunications_Client
+--         FOREIGN KEY (ClientId) REFERENCES tableclientmaster(ClientId));
+
+CREATE TABLE tablepasswordchangelogs (
     Id INT NOT NULL AUTO_INCREMENT,
-
-    UserId VARCHAR(450) NULL,
-
-    AttemptedUserName VARCHAR(256) NOT NULL,
-
-    EventType VARCHAR(50) NOT NULL,
-
-    IsSuccessful TINYINT(1) NOT NULL DEFAULT 0,
-
-    FailureReason VARCHAR(250) NULL,
-
-    IpAddress VARCHAR(45) NULL,
-
+    UserId VARCHAR(450) NOT NULL,
+    UserName VARCHAR(150) NULL,
+    Email VARCHAR(150) NULL,
+    ChangedByUserId VARCHAR(450) NULL,
+    ChangedByUserName VARCHAR(150) NULL,
+    ChangeType VARCHAR(30) NOT NULL,
+    ChangedOn DATETIME NOT NULL,
+    IpAddress VARCHAR(100) NULL,
     UserAgent VARCHAR(500) NULL,
-
-    OccurredOn DATETIME NOT NULL
-        DEFAULT CURRENT_TIMESTAMP,
-
     PRIMARY KEY (Id),
-
-    CONSTRAINT FK_TableLoginHistory_AspNetUsers_UserId
-        FOREIGN KEY (UserId)
-        REFERENCES AspNetUsers(Id)
-        ON DELETE SET NULL,
-
-    INDEX IX_TableLoginHistory_UserId (UserId),
-
-    INDEX IX_TableLoginHistory_OccurredOn
-        (OccurredOn),
-
-    INDEX IX_TableLoginHistory_EventType
-        (EventType)
+    INDEX IX_PasswordChangeLogs_UserId (UserId),
+    INDEX IX_PasswordChangeLogs_ChangedOn (ChangedOn)
 );
 
 -- -- ============================================================

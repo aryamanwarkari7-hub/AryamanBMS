@@ -17,6 +17,12 @@ namespace AryamanBMS.Models
         [StringLength(20)]
         public string? PAN { get; set; }
 
+        [StringLength(21)]
+        [RegularExpression(
+          @"^[LlUu][0-9]{5}[A-Za-z]{2}[0-9]{4}[A-Za-z]{3}[0-9]{6}$",
+          ErrorMessage = "Enter a valid 21-character CIN.")]
+        public string? CIN { get; set; }
+
         [StringLength(500)]
         public string? Address { get; set; }
 

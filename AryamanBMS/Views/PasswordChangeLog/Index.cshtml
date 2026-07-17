@@ -1,0 +1,72 @@
+@model IEnumerable<AryamanBMS.Models.PasswordChangeLogModel>
+
+@{
+    ViewData["Title"] = "Password Change Logs";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Password Change Logs</h1>
+        <p class="module-subtitle">Track employee and admin password changes</p>
+    </div>
+</div>
+
+<div class="app-card table-card">
+    <div class="card-header">
+        <h5 class="card-title">Security Log</h5>
+    </div>
+
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="app-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Email</th>
+                        <th>Change Type</th>
+                        <th>Changed By</th>
+                        <th>Changed On</th>
+                        <th>IP Address</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="empty-state">
+                                No password change logs found.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@(item.UserName ?? "-")</td>
+                                <td>@(item.Email ?? "-")</td>
+                                <td>
+                                    @if (item.ChangeType == "SelfChange")
+                                    {
+                                        <span class="badge-info">Self Change</span>
+                                    }
+                                    else if (item.ChangeType == "AdminReset")
+                                    {
+                                        <span class="badge-warning">Admin Reset</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@item.ChangeType</span>
+                                    }
+                                </td>
+                                <td>@(item.ChangedByUserName ?? "-")</td>
+                                <td>@item.ChangedOn.ToString("dd-MMM-yyyy hh:mm tt")</td>
+                                <td>@(item.IpAddress ?? "-")</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

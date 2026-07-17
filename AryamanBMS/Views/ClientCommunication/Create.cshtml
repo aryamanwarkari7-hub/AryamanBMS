@@ -1,0 +1,217 @@
+﻿@model AryamanBMS.Models.ClientCommunicationModel
+
+@{
+    var client = ViewBag.Client as AryamanBMS.Models.ClientModel;
+    ViewData["Title"] = "Add Client Communication";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">ADD COMMUNICATION</h1>
+        <p class="module-subtitle">
+            Record client or company-side discussion for @client?.ClientName
+        </p>
+    </div>
+
+    <a asp-action="Index"
+       asp-route-clientId="@Model.ClientId"
+       class="btn-app btn-secondary-app">
+        <i class="bi bi-arrow-left"></i>
+        Back
+    </a>
+</div>
+
+<form asp-action="Create" method="post">
+    @Html.AntiForgeryToken()
+
+    <input asp-for="ClientId" type="hidden" />
+
+    <div asp-validation-summary="ModelOnly" class="app-alert-danger"></div>
+
+    <div class="app-card form-card">
+        <div class="card-header">
+            <h5 class="card-title">Communication Details</h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+                    <label asp-for="CommunicationDate" class="form-label">Date & Time</label>
+                    <input asp-for="CommunicationDate"
+                           type="datetime-local"
+                           class="app-input" />
+                    <span asp-validation-for="CommunicationDate" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Direction" class="form-label">Side</label>
+                    <select asp-for="Direction" class="app-select">
+                        <option value="Client">Client Side</option>
+                        <option value="Company">Company Side</option>
+                        <option value="Internal">Internal Note</option>
+                    </select>
+                    <span asp-validation-for="Direction" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="CommunicationType" class="form-label">Type</label>
+                    <select asp-for="CommunicationType" class="app-select">
+                        <option value="Call">Call</option>
+                        <option value="Email">Email</option>
+                        <option value="WhatsApp">WhatsApp</option>
+                        <option value="Meeting">Meeting</option>
+                        <option value="Site Visit">Site Visit</option>
+                        <option value="Proposal Discussion">Proposal Discussion</option>
+                        <option value="PO Discussion">PO Discussion</option>
+                        <option value="Payment Follow-up">Payment Follow-up</option>
+                        <option value="Issue">Issue</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <span asp-validation-for="CommunicationType" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Status" class="form-label">Status</label>
+                    <select asp-for="Status" class="app-select">
+                        <option value="Open">Open</option>
+                        <option value="Follow-up">Follow-up</option>
+                        <option value="Closed">Closed</option>
+                    </select>
+                    <span asp-validation-for="Status" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Subject" class="form-label">Subject</label>
+                    <input asp-for="Subject" class="app-input" />
+                    <span asp-validation-for="Subject" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="AssignedToEmployeeId" class="form-label">Assigned To</label>
+                    <select asp-for="AssignedToEmployeeId"
+                            asp-items="ViewBag.Employees"
+                            class="app-select">
+                        <option value="">Not assigned</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Summary" class="form-label">Discussion Summary</label>
+                <textarea asp-for="Summary"
+                          class="app-input"
+                          rows="5"></textarea>
+                <span asp-validation-for="Summary" class="validation-message"></span>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="app-card form-card">
+        <div class="card-header">
+            <h5 class="card-title">Follow-up & Links</h5>
+        </div>
+
+        <div class="card-body">
+
+            <label class="form-check-app mb-3">
+                <input asp-for="ActionRequired" />
+                <span>
+                    <strong>Action required</strong>
+                    <small>Create a follow-up item for this communication.</small>
+                </span>
+            </label>
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+                    <label asp-for="FollowUpDate" class="form-label">Follow-up Date</label>
+                    <input asp-for="FollowUpDate"
+                           type="date"
+                           class="app-input" />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ActionItem" class="form-label">Action Item</label>
+                    <input asp-for="ActionItem" class="app-input" />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ProposalId" class="form-label">Related Proposal</label>
+                    <select asp-for="ProposalId"
+                            class="app-select"
+                            id="ProposalId">
+                        <option value="">None</option>
+
+                        @foreach (var proposal in ViewBag.Proposals)
+                        {
+                            <option value="@proposal.ProposalId"
+                                    data-project-id="@proposal.ProjectId">
+                                @proposal.ProposalDisplay
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ProjectId" class="form-label">Related Project</label>
+                    <select asp-for="ProjectId"
+                            asp-items="ViewBag.Projects"
+                            class="app-select"
+                            id="ProjectId">
+                        <option value="">None</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="InvoiceId" class="form-label">Related Invoice</label>
+                    <select asp-for="InvoiceId"
+                            asp-items="ViewBag.Invoices"
+                            class="app-select">
+                        <option value="">None</option>
+                    </select>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <div class="app-card">
+        <div class="card-body form-actions">
+            <button type="submit" class="btn-app btn-primary-app">
+                <i class="bi bi-check-circle"></i>
+                Save Communication
+            </button>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const proposalSelect = document.getElementById("ProposalId");
+            const projectSelect = document.getElementById("ProjectId");
+
+            if (!proposalSelect || !projectSelect) {
+                return;
+            }
+
+            proposalSelect.addEventListener("change", function () {
+                const selectedOption = proposalSelect.options[proposalSelect.selectedIndex];
+                const projectId = selectedOption?.getAttribute("data-project-id");
+
+                if (projectId) {
+                    projectSelect.value = projectId;
+                } else {
+                    projectSelect.value = "";
+                }
+            });
+        });
+    </script>
+}

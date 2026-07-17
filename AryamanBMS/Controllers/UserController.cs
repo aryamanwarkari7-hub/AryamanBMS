@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using AryamanBMS.Data;
 
 namespace AryamanBMS.Controllers
 {
@@ -13,13 +14,16 @@ namespace AryamanBMS.Controllers
     {
         private readonly UserManager<ApplicationUserModel> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly ApplicationDbContext _context;
 
         public UserController(
-            UserManager<ApplicationUserModel> userManager,
-        RoleManager<IdentityRole> roleManager)
+    UserManager<ApplicationUserModel> userManager,
+    RoleManager<IdentityRole> roleManager,
+    ApplicationDbContext context)
         {
             _userManager = userManager;
             _roleManager = roleManager;
+            _context = context;
         }
 
         public async Task<IActionResult> Index(
@@ -357,6 +361,23 @@ namespace AryamanBMS.Controllers
 
             if (result.Succeeded)
             {
+                var adminUser = await _userManager.GetUserAsync(User);
+
+                _context.PasswordChangeLogs.Add(new PasswordChangeLogModel
+                {
+                    UserId = user.Id,
+                    UserName = user.UserName,
+                    Email = user.Email,
+                    ChangedByUserId = adminUser?.Id,
+                    ChangedByUserName = adminUser?.UserName,
+                    ChangeType = "AdminReset",
+                    ChangedOn = DateTime.Now,
+                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    UserAgent = Request.Headers.UserAgent.ToString()
+                });
+
+                await _context.SaveChangesAsync();
+
                 TempData["Success"] =
                     "Password reset successfully.";
 

@@ -41,15 +41,15 @@
                         : "New Voucher")
         </a>
 
-        <a asp-action="ExportCsv"
+        <a asp-action="ExportExcel"
            asp-route-status="@status"
            asp-route-categoryId="@categoryId"
            asp-route-search="@search"
            asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
            asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
-           class="btn-app btn-secondary-app">
-            <i class="bi bi-download"></i>
-            Export
+           class="btn-app btn-success-app">
+            <i class="bi bi-file-earmark-excel"></i>
+            Export Excel
         </a>
     </div>
 </div>
@@ -65,8 +65,10 @@
                    name="status"
                    value="@status" />
 
-            <div class="filter-row">
-                <div class="filter-field filter-field-wide">
+            <div class="filter-form-row">
+
+                <div class="form-group">
+                    <label class="form-label">Search</label>
                     <input type="text"
                            name="search"
                            value="@search"
@@ -74,7 +76,8 @@
                            placeholder="Voucher / Vendor / Category / Invoice" />
                 </div>
 
-                <div class="filter-field">
+                <div class="form-group">
+                    <label class="form-label">Category</label>
                     <select name="categoryId" class="app-select">
                         <option value="">All Categories</option>
 
@@ -88,41 +91,45 @@
                     </select>
                 </div>
 
-                <div class="filter-field">
+                <div class="form-group">
+                    <label class="form-label">Sort By</label>
                     <select name="sortBy" class="app-select">
-                        <option value="VoucherDate" selected="@(sortBy == "VoucherDate")">Sort by Date</option>
-                        <option value="VoucherNo" selected="@(sortBy == "VoucherNo")">Sort by Voucher No</option>
-                        <option value="Category" selected="@(sortBy == "Category")">Sort by Category</option>
-                        <option value="Vendor" selected="@(sortBy == "Vendor")">Sort by Vendor</option>
-                        <option value="Amount" selected="@(sortBy == "Amount")">Sort by Amount</option>
-                        <option value="TotalAmount" selected="@(sortBy == "TotalAmount")">Sort by Total</option>
-                        <option value="Status" selected="@(sortBy == "Status")">Sort by Status</option>
-                        <option value="PaymentStatus" selected="@(sortBy == "PaymentStatus")">Sort by Payment Status</option>
+                        <option value="VoucherDate" selected="@(sortBy == "VoucherDate")">Date</option>
+                        <option value="VoucherNo" selected="@(sortBy == "VoucherNo")">Voucher No</option>
+                        <option value="Category" selected="@(sortBy == "Category")">Category</option>
+                        <option value="Vendor" selected="@(sortBy == "Vendor")">Vendor</option>
+                        <option value="Amount" selected="@(sortBy == "Amount")">Amount</option>
+                        <option value="TotalAmount" selected="@(sortBy == "TotalAmount")">Total</option>
+                        <option value="Status" selected="@(sortBy == "Status")">Status</option>
+                        <option value="PaymentStatus" selected="@(sortBy == "PaymentStatus")">Payment Status</option>
                     </select>
                 </div>
 
-                <div class="filter-field">
+                <div class="form-group">
+                    <label class="form-label">Order</label>
                     <select name="sortOrder" class="app-select">
                         <option value="asc" selected="@(sortOrder == "asc")">Ascending</option>
                         <option value="desc" selected="@(sortOrder == "desc")">Descending</option>
                     </select>
                 </div>
 
-                <div class="filter-field">
+                <div class="form-group">
+                    <label class="form-label">From Date</label>
                     <input type="date"
                            name="fromDate"
                            value="@fromDate?.ToString("yyyy-MM-dd")"
                            class="app-input" />
                 </div>
 
-                <div class="filter-field">
+                <div class="form-group">
+                    <label class="form-label">To Date</label>
                     <input type="date"
                            name="toDate"
                            value="@toDate?.ToString("yyyy-MM-dd")"
                            class="app-input" />
                 </div>
 
-                <div class="filter-actions">
+                <div class="filter-form-actions">
                     <button type="submit" class="btn-app btn-primary-app">
                         <i class="bi bi-search"></i>
                         Search
@@ -134,6 +141,7 @@
                         Reset
                     </a>
                 </div>
+
             </div>
         </form>
 

@@ -3,6 +3,9 @@
 @{
     ViewData["Title"] = "Purchase Reports";
     string report = ViewBag.Report as string ?? "VendorPayable";
+    string search = ViewBag.Search as string ?? "";
+    string sortBy = ViewBag.SortBy as string ?? "Total";
+    string sortOrder = ViewBag.SortOrder as string ?? "desc";
 
     List<PurchaseReportRow> Rows(string key) => key switch
     {
@@ -25,6 +28,61 @@
     <div>
         <h1 class="module-title">PURCHASE REPORTS</h1>
         <p class="module-subtitle">Vendor payables, expenses, ITC and purchase analytics.</p>
+    </div>
+</div>
+
+<div class="app-card filter-card">
+    <div class="card-body">
+        <form method="get" class="w-100">
+            <input type="hidden"
+                   name="report"
+                   value="@report" />
+
+            <div class="filter-form-row">
+                <div class="form-group">
+                    <label class="form-label">Search</label>
+                    <input name="search"
+                           value="@search"
+                           class="app-input"
+                           placeholder="Search group name" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Sort By</label>
+                    <select name="sortBy" class="app-select">
+                        <option value="Total" selected="@(sortBy == "Total")">Total</option>
+                        <option value="Group" selected="@(sortBy == "Group")">Group</option>
+                        <option value="Count" selected="@(sortBy == "Count")">Count</option>
+                        <option value="Taxable" selected="@(sortBy == "Taxable")">Taxable</option>
+                        <option value="GST" selected="@(sortBy == "GST")">GST</option>
+                        <option value="Paid" selected="@(sortBy == "Paid")">Paid</option>
+                        <option value="Balance" selected="@(sortBy == "Balance")">Balance</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Order</label>
+                    <select name="sortOrder" class="app-select">
+                        <option value="asc" selected="@(sortOrder == "asc")">Ascending</option>
+                        <option value="desc" selected="@(sortOrder == "desc")">Descending</option>
+                    </select>
+                </div>
+
+                <div class="filter-form-actions">
+                    <button type="submit" class="btn-app btn-primary-app">
+                        <i class="bi bi-search"></i>
+                        Search
+                    </button>
+
+                    <a asp-action="Index"
+                       asp-route-report="@report"
+                       class="btn-app btn-secondary-app">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        Reset
+                    </a>
+                </div>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -51,6 +109,9 @@
             {
                 <a asp-action="Index"
                    asp-route-report="@item.Key"
+                   asp-route-search="@search"
+                   asp-route-sortBy="@sortBy"
+                   asp-route-sortOrder="@sortOrder"
                    class="btn-app @(report == item.Key ? "btn-primary-app" : "btn-secondary-app")">
                     @item.Value
                 </a>

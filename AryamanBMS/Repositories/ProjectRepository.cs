@@ -15,13 +15,15 @@ namespace AryamanBMS.Repositories
         }
 
         public IQueryable<ProjectModel> Projects =>
-            _context.Projects
-                .Include(p => p.ProjectManager)
-                .AsNoTracking();
+    _context.Projects
+        .Include(p => p.ProjectManager)
+        .Include(p => p.Client)
+        .AsNoTracking();
 
         public async Task<ProjectModel?> GetByIdAsync(int id)
         {
             return await _context.Projects
+                .Include(p => p.Client)
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
 
@@ -29,6 +31,7 @@ namespace AryamanBMS.Repositories
         {
             return await _context.Projects
                 .Include(p => p.ProjectManager)
+                .Include(p => p.Client)
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
 

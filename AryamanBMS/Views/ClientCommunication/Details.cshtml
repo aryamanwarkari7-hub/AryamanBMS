@@ -1,0 +1,145 @@
+﻿@model AryamanBMS.Models.ClientCommunicationModel
+
+@{
+    ViewData["Title"] = "Communication Details";
+    string? returnUrl = ViewBag.ReturnUrl as string;
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">@Model.Subject</h1>
+        <p class="module-subtitle">
+            @Model.CommunicationType • @Model.CommunicationDate.ToString("dd-MMM-yyyy hh:mm tt")
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="Edit"
+           asp-route-id="@Model.Id"
+           asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString"
+           class="btn-app btn-primary-app">
+            <i class="bi bi-pencil"></i>
+            Edit
+        </a>
+
+        @if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            <a href="@returnUrl" class="btn-app btn-secondary-app">
+                <i class="bi bi-arrow-left"></i>
+                Back
+            </a>
+        }
+        else
+        {
+            <a asp-action="Index"
+               asp-route-clientId="@Model.ClientId"
+               class="btn-app btn-secondary-app">
+                <i class="bi bi-arrow-left"></i>
+                Back
+            </a>
+        }
+    </div>
+</div>
+
+<div class="detail-page">
+
+    <div class="detail-summary-grid">
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Side</div>
+            <div class="detail-summary-value">@Model.Direction</div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Type</div>
+            <div class="detail-summary-value">@Model.CommunicationType</div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Status</div>
+            <div class="detail-summary-value">@Model.Status</div>
+        </div>
+
+        <div class="detail-summary-item">
+            <div class="detail-summary-label">Follow-up</div>
+            <div class="detail-summary-value">
+                @(Model.FollowUpDate?.ToString("dd-MMM-yyyy") ?? "-")
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-grid-2">
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Communication Information</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Client</span>
+                        <span class="detail-info-value">@(Model.Client?.ClientName ?? "-")</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Project</span>
+                        <span class="detail-info-value">
+                            @(Model.Project != null ? $"{Model.Project.ProjectCode} - {Model.Project.ProjectName}" : "-")
+                        </span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Proposal</span>
+                        <span class="detail-info-value">@(Model.Proposal?.ProposalNumber ?? "-")</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Invoice</span>
+                        <span class="detail-info-value">@(Model.Invoice?.InvoiceNo ?? "-")</span>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Assigned To</span>
+                        <span class="detail-info-value">
+                            @(Model.AssignedToEmployee?.FullName ?? "-")
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Action</h5>
+            </div>
+
+            <div class="card-body">
+                @if (Model.ActionRequired)
+                {
+                    <div class="detail-note-box">
+                        <strong>Action Required:</strong>
+                        @(Model.ActionItem ?? "-")
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        No follow-up action required.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="app-card">
+        <div class="card-header">
+            <h5 class="card-title">Discussion Summary</h5>
+        </div>
+
+        <div class="card-body">
+            <div class="detail-note-box">
+                @Model.Summary
+            </div>
+        </div>
+    </div>
+
+</div>

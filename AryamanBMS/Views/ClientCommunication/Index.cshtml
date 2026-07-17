@@ -1,0 +1,120 @@
+@model IEnumerable<AryamanBMS.Models.ClientCommunicationModel>
+
+@{
+    var client = ViewBag.Client as AryamanBMS.Models.ClientModel;
+    ViewData["Title"] = "Client Communication";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">CLIENT COMMUNICATION</h1>
+        <p class="module-subtitle">
+            Timeline for @client?.ClientName
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="Create"
+           asp-route-clientId="@client?.ClientId"
+           class="btn-app btn-primary-app">
+            <i class="bi bi-plus-circle"></i>
+            Add Communication
+        </a>
+
+        <a asp-controller="Client"
+           asp-action="Details"
+           asp-route-id="@client?.ClientId"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
+</div>
+
+<div class="app-card">
+    <div class="card-header">
+        <h5 class="card-title">Communication Timeline</h5>
+    </div>
+
+    <div class="card-body">
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                No communication history found.
+            </div>
+        }
+        else
+        {
+            <div class="client-timeline">
+
+                @foreach (var item in Model)
+                {
+                    var sideClass = item.Direction == "Client"
+                        ? "timeline-left"
+                        : item.Direction == "Company"
+                            ? "timeline-right"
+                            : "timeline-center";
+
+                    <div class="timeline-item @sideClass">
+
+                        <div class="timeline-card">
+                            <div class="timeline-meta">
+                                <span class="badge-primary">@item.CommunicationType</span>
+                                <span>@item.CommunicationDate.ToString("dd-MMM-yyyy hh:mm tt")</span>
+                            </div>
+
+                            <a asp-action="Details"
+                               asp-route-id="@item.Id"
+                               asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString"
+                               class="timeline-card-link">
+                                <h5>@item.Subject</h5>
+                                <p>@item.Summary</p>
+                            </a>
+
+                            <div class="timeline-footer">
+                                <span class="badge-secondary">@item.Direction</span>
+
+                                @if (item.ActionRequired)
+                                {
+                                    <span class="badge-warning">
+                                        Follow-up: @(item.FollowUpDate?.ToString("dd-MMM-yyyy") ?? "-")
+                                    </span>
+                                }
+
+                                @if (item.Status == "Closed")
+                                {
+                                    <span class="badge-success">Closed</span>
+                                }
+                                else
+                                {
+                                    <span class="badge-warning">@item.Status</span>
+                                }
+                            </div>
+
+                            <div class="timeline-actions">
+                                <a asp-action="Edit"
+                                   asp-route-id="@item.Id"
+                                   asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString"
+                                   class="btn-app btn-secondary-app btn-sm-app">
+                                    <i class="bi bi-pencil"></i>
+                                    Edit
+                                </a>
+                            </div>
+
+                            @if (!string.IsNullOrWhiteSpace(item.ActionItem))
+                            {
+                                <div class="detail-note-box mt-3">
+                                    <strong>Action:</strong> @item.ActionItem
+                                </div>
+                            }
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+        }
+
+    </div>
+</div>
