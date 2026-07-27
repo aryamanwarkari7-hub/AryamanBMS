@@ -28,14 +28,15 @@ namespace AryamanBMS.Controllers
 
         public async Task<IActionResult> Index(
     string? searchText,
-    string sortBy = "NameAsc",
+    string sortBy = "Newest",
     int page = 1)
         {
             const int pageSize = 10;
 
             var users = await _userManager.Users
-                .AsNoTracking()
-                .ToListAsync();
+    .AsNoTracking()
+    .OrderByDescending(u => u.CreatedOn)
+    .ToListAsync();
 
             var userList = new List<UserListViewModel>();
 
@@ -89,6 +90,8 @@ namespace AryamanBMS.Controllers
             // Sort
             userList = sortBy switch
             {
+                "Newest" => userList,
+
                 "NameDesc" => userList
                     .OrderByDescending(user => user.FullName)
                     .ThenBy(user => user.UserName)
@@ -131,9 +134,6 @@ namespace AryamanBMS.Controllers
                     .ToList(),
 
                 _ => userList
-                    .OrderBy(user => user.FullName)
-                    .ThenBy(user => user.UserName)
-                    .ToList()
             };
 
             int totalRecords = userList.Count;
@@ -221,7 +221,8 @@ namespace AryamanBMS.Controllers
                 UserName = model.UserName,
                 Email = model.Email,
                 IsActive = model.IsActive,
-                EmailConfirmed = true
+                EmailConfirmed = true,
+                CreatedOn = DateTime.Now
             };
 
             var result =

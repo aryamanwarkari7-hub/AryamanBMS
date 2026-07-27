@@ -23,5 +23,7 @@ namespace AryamanBMS.Models
         public bool EnableNotificationToast { get; set; } = true;
 
         public bool EnableNotificationSound { get; set; } = false;
+
+        public DateTime CreatedOn { get; set; }
     }
 }

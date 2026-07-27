@@ -6,35 +6,62 @@ using AryamanBMS.Repositories;
 using AryamanBMS.Repositories.Implementations;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services;
+using AryamanBMS.Services.Background;
 using AryamanBMS.Services.Interface;
 using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
+using Microsoft.Extensions.Configuration.EnvironmentVariables;
 using QuestPDF.Infrastructure;
-using AryamanBMS.Services.Background;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddControllersWithViews(options =>
-{
-    options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
-});
-
-builder.Services.AddSignalR();
+Console.WriteLine("1. Builder created");
 
 var connectionString =
     builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException(
         "Connection string 'DefaultConnection' is not configured.");
 
+Console.WriteLine("=== Environment Variables Provider Keys ===");
+
+if (builder.Configuration is IConfigurationRoot configRoot)
+{
+    foreach (var provider in configRoot.Providers)
+    {
+        Console.WriteLine(provider.GetType().FullName);
+
+        if (provider is EnvironmentVariablesConfigurationProvider envProvider)
+        {
+            var data = envProvider.GetChildKeys(Array.Empty<string>(), null)
+                                  .Distinct()
+                                  .OrderBy(x => x);
+
+            foreach (var key in data)
+            {
+                if (envProvider.TryGet(key, out var value))
+                {
+                    Console.WriteLine($"{key} = {value}");
+                }
+            }
+        }
+    }
+}
+
+Console.WriteLine("==========================================");
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
+{
+    Console.WriteLine("3. Configuring DbContext");
     options.UseMySql(
-        connectionString,
-        ServerVersion.AutoDetect(connectionString)
-    ));
+    connectionString,
+    new MySqlServerVersion(new Version(8, 0, 43))
+    );
+    Console.WriteLine("4. DbContext configured");
+});
+
+Console.WriteLine("5. After AddDbContext");
 
 builder.Services
     .AddIdentity<ApplicationUserModel, IdentityRole>(options =>
@@ -50,7 +77,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.LoginPath = "/Account/Login";
     options.AccessDeniedPath = "/Account/AccessDenied";
 });
-
+builder.Services.AddAuthorization();
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 
 builder.Services.AddScoped<IEmployeeAcademicRepository, EmployeeAcademicRepository>();
@@ -153,15 +180,20 @@ builder.Services.AddScoped<IInvoiceDocumentService,InvoiceDocumentService>();
 builder.Services.AddScoped<INotificationService,NotificationService>();
 
 // BACKGROUND SERVICE
-builder.Services.AddHostedService<TaskReminderBackgroundService>();
-builder.Services.AddHostedService<InvoiceReminderBackgroundService>();
+//builder.Services.AddHostedService<TaskReminderBackgroundService>();
+//builder.Services.AddHostedService<InvoiceReminderBackgroundService>();
 
 // LOGIN HISTORY SERVICE
 builder.Services.AddScoped<ILoginHistoryService,LoginHistoryService>();
 
 QuestPDF.Settings.License =LicenseType.Evaluation;
 
+builder.Services.AddControllersWithViews();
+builder.Services.AddSignalR();
+Console.WriteLine("6. SignalR registered");
+
 var app = builder.Build();
+Console.WriteLine("7. App built");
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -193,6 +225,8 @@ app.MapControllerRoute(
 app.MapHub<NotificationHub>("/notificationHub");
 
 
+Console.WriteLine("8. Before DbInitializer");
+
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -200,4 +234,8 @@ using (var scope = app.Services.CreateScope())
     await DbInitializer.SeedRolesAndAdminAsync(services);
 }
 
+Console.WriteLine("9. After DbInitializer");
+
+Console.WriteLine("10. Before app.Run()");
 app.Run();
+

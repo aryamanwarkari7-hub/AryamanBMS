@@ -462,24 +462,31 @@ namespace AryamanBMS.Controllers
                     user,
                     "SelfChange");
 
-                var roles = await _userManager.GetRolesAsync(user);
+                var admins = await _userManager.GetUsersInRoleAsync("Admin");
+                var hrUsers = await _userManager.GetUsersInRoleAsync("HR");
 
-                if (roles.Contains("Employee") &&
-                    !roles.Contains("Admin"))
+                var recipients = admins
+                    .Concat(hrUsers)
+                    .Where(x => x.IsActive)
+                    .GroupBy(x => x.Id)
+                    .Select(x => x.First());
+
+                foreach (var recipient in recipients)
                 {
-                    var admins = await _userManager.GetUsersInRoleAsync("Admin");
-
-                    foreach (var admin in admins.Where(x => x.IsActive))
+                    // Don't notify the user who changed their own password.
+                    if (recipient.Id == user.Id)
                     {
-                        await _notificationService.CreateAsync(
-                            admin.Id,
-                            "Employee password changed",
-                            $"{user.FullName ?? user.UserName} changed their account password.",
-                            "Security",
-                            "PasswordChangeLog",
-                            null,
-                            Url.Action("Index", "PasswordChangeLog"));
+                        continue;
                     }
+
+                    await _notificationService.CreateAsync(
+                        recipient.Id,
+                        "Password Changed",
+                        $"{user.FullName ?? user.UserName} changed their account password.",
+                        "Security",
+                        "PasswordChangeLog",
+                        null,
+                        Url.Action("Index", "PasswordChangeLog"));
                 }
 
                 TempData["Success"] =

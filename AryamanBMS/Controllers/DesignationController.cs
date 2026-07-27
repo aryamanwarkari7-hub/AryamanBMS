@@ -166,39 +166,43 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var designation =
-                await _designationRepository.GetByIdAsync(id);
+        //public async Task<IActionResult> Delete(int id)
+        //{
+        //    var designation =
+        //        await _designationRepository.GetByIdAsync(id);
 
-            if (designation == null)
-            {
-                return NotFound();
-            }
+        //    if (designation == null)
+        //    {
+        //        return NotFound();
+        //    }
 
-            return View(designation);
-        }
+        //    return View(designation);
+        //}
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var designation =
-                await _designationRepository.GetByIdAsync(id);
+        
 
-            if (designation == null)
-            {
-                return NotFound();
-            }
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> DeleteConfirmed(int id)
+        //{
+        //    var designation =
+        //        await _designationRepository.GetByIdAsync(id);
 
-            await _designationRepository.DeleteAsync(designation);
-            await _designationRepository.SaveAsync();
+        //    if (designation == null)
+        //    {
+        //        return NotFound();
+        //    }
 
-            TempData["Success"] =
-                "Designation deleted successfully.";
+        //    await _designationRepository.DeleteAsync(designation);
+        //    await _designationRepository.SaveAsync();
 
-            return RedirectToAction(nameof(Index));
-        }
+        //    TempData["Success"] =
+        //        "Designation deleted successfully.";
+
+        //    return RedirectToAction(nameof(Index));
+        //}
+
+
 
         private void LoadDepartments()
         {

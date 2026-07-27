@@ -16,22 +16,32 @@ namespace AryamanBMS.Middleware
         }
 
         public async Task InvokeAsync(
-            HttpContext context,
-            UserManager<ApplicationUserModel> userManager)
+    HttpContext context,
+    UserManager<ApplicationUserModel> userManager)
         {
+            Console.WriteLine("[Middleware] 1 - Enter");
+
             if (context.User.Identity?.IsAuthenticated == true &&
                 !IsStaticFileRequest(context) &&
                 !IsHeartbeatRequest(context))
             {
+                Console.WriteLine("[Middleware] 2 - Authenticated request");
+
                 var user = await userManager.GetUserAsync(context.User);
+
+                Console.WriteLine("[Middleware] 3 - GetUserAsync completed");
 
                 if (user != null)
                 {
+                    Console.WriteLine("[Middleware] 4 - User found");
+
                     var now = DateTime.Now;
 
                     bool shouldUpdate =
                         !user.LastSeenOn.HasValue ||
                         now - user.LastSeenOn.Value >= UpdateThrottle;
+
+                    Console.WriteLine($"[Middleware] 5 - ShouldUpdate = {shouldUpdate}");
 
                     if (shouldUpdate)
                     {
@@ -47,14 +57,39 @@ namespace AryamanBMS.Middleware
                             user.ActivityStatusUpdatedOn = now;
                         }
 
-                        await userManager.UpdateAsync(user);
+                        Console.WriteLine("[Middleware] 6 - Before UpdateAsync");
+
+                        var result = await userManager.UpdateAsync(user);
+
+                        Console.WriteLine(
+                            $"[Middleware] 7 - After UpdateAsync | Success = {result.Succeeded}");
+
+                        if (!result.Succeeded)
+                        {
+                            foreach (var error in result.Errors)
+                            {
+                                Console.WriteLine(
+                                    $"[Middleware] Identity Error: {error.Code} - {error.Description}");
+                            }
+                        }
                     }
                 }
+                else
+                {
+                    Console.WriteLine("[Middleware] User not found");
+                }
+            }
+            else
+            {
+                Console.WriteLine("[Middleware] Anonymous or ignored request");
             }
 
-            await _next(context);
-        }
+            Console.WriteLine("[Middleware] 8 - Before _next");
 
+            await _next(context);
+
+            Console.WriteLine("[Middleware] 9 - After _next");
+        }
         private static bool IsStaticFileRequest(HttpContext context)
         {
             var path = context.Request.Path.Value ?? string.Empty;
