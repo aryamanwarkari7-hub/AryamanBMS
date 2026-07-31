@@ -1,5 +1,6 @@
 ﻿using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
+using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -13,15 +14,18 @@ namespace AryamanBMS.Controllers
         private readonly UserManager<ApplicationUserModel> _userManager;
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IProjectTaskRepository _projectTaskRepository;
+        private readonly IProjectTimelineService _projectTimelineService;
 
         public EmployeeProjectController(
-            UserManager<ApplicationUserModel> userManager,
-            IEmployeeRepository employeeRepository,
-            IProjectTaskRepository projectTaskRepository)
+           UserManager<ApplicationUserModel> userManager,
+           IEmployeeRepository employeeRepository,
+           IProjectTaskRepository projectTaskRepository,
+           IProjectTimelineService projectTimelineService)
         {
             _userManager = userManager;
             _employeeRepository = employeeRepository;
             _projectTaskRepository = projectTaskRepository;
+            _projectTimelineService = projectTimelineService;
         }
 
         [HttpGet]
@@ -128,5 +132,136 @@ namespace AryamanBMS.Controllers
 
             return View(task);
         }
+
+        #region Update Progress
+        [HttpGet]
+        [Authorize(Roles = "Employee")]
+        public async Task<IActionResult> UpdateProgress(int id)
+        {
+            var task = await _projectTaskRepository.GetDetailsAsync(id);
+
+            if (task == null)
+                return NotFound();
+
+            var currentUserId =
+                User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            var employee = await _employeeRepository.Employees
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e => e.ApplicationUserId == currentUserId);
+
+            if (employee == null || task.AssignedEmployeeId != employee.Id)
+            {
+                return Forbid();
+            }
+
+            return View(task);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Employee")]
+        public async Task<IActionResult> UpdateProgress(ProjectTaskModel model)
+        {
+            var existing =
+                await _projectTaskRepository.GetByIdAsync(model.Id);
+
+            if (existing == null)
+                return NotFound();
+
+            var currentUserId =
+                User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            var employee = await _employeeRepository.Employees
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e => e.ApplicationUserId == currentUserId);
+
+            if (employee == null ||
+                existing.AssignedEmployeeId != employee.Id)
+            {
+                return Forbid();
+            }
+
+            string previousStatus = existing.Status;
+            int previousProgress = existing.ProgressPercent;
+
+            // Update editable fields
+            existing.Status = model.Status;
+            existing.ActualHours = model.ActualHours;
+            existing.WorkUpdate = model.WorkUpdate;
+
+            // Status-based business rules
+            switch (existing.Status)
+            {
+                case "Not Started":
+
+                    existing.ProgressPercent = 0;
+                    existing.ActualStartOn = null;
+                    existing.CompletedOn = null;
+                    break;
+
+                case "In Progress":
+
+                    existing.ProgressPercent = 50;
+
+                    existing.ActualStartOn ??= DateTime.Now;
+                    existing.CompletedOn = null;
+                    break;
+
+                case "On Hold":
+
+                    // Preserve current progress
+                    existing.ActualStartOn ??= DateTime.Now;
+                    existing.CompletedOn = null;
+                    break;
+
+                case "Completed":
+
+                    existing.ProgressPercent = 100;
+
+                    existing.ActualStartOn ??= DateTime.Now;
+                    existing.CompletedOn ??= DateTime.Now;
+                    break;
+            }
+
+            existing.UpdatedOn = DateTime.Now;
+            existing.UpdatedByEmployeeId = employee.Id;
+
+            await _projectTaskRepository.UpdateAsync(existing);
+            await _projectTaskRepository.SaveAsync();
+
+            if (previousStatus != existing.Status)
+            {
+                await _projectTimelineService.AddEventAsync(
+                    projectId: existing.ProjectId,
+                    eventType: "TaskStatusChanged",
+                    eventTitle: "Task status updated",
+                    eventDescription:
+                        $"Task {existing.TaskCode} status changed from {previousStatus} to {existing.Status}.",
+                    relatedEntityType: "Task",
+                    relatedEntityId: existing.Id,
+                    previousValue: previousStatus,
+                    newValue: existing.Status);
+            }
+
+            if (previousProgress != existing.ProgressPercent)
+            {
+                await _projectTimelineService.AddEventAsync(
+                    projectId: existing.ProjectId,
+                    eventType: "TaskProgressChanged",
+                    eventTitle: "Task progress updated",
+                    eventDescription:
+                        $"Progress changed from {previousProgress}% to {existing.ProgressPercent}%.",
+                    relatedEntityType: "Task",
+                    relatedEntityId: existing.Id,
+                    previousValue: $"{previousProgress}%",
+                    newValue: $"{existing.ProgressPercent}%");
+            }
+
+            TempData["Success"] = "Task progress updated successfully.";
+
+            return RedirectToAction(nameof(TaskDetails), new { id = existing.Id });
+        }
+        #endregion
     }
 }

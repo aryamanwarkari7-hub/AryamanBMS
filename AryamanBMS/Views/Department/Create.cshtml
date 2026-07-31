@@ -14,78 +14,102 @@
 
         <form asp-action="Create" method="post">
 
-            <div class="form-group mb-3">
+            <div class="form-grid-2">
 
-                <label class="form-label">
-                    Department Code
-                </label>
+                <div class="form-group">
 
-                <select asp-for="DisplayCode" class="app-select">
-                    <option value="">Select Code</option>
-                    <option value="HR">HR</option>
-                    <option value="IT">IT</option>
-                    <option value="ACC">ACC</option>
-                    <option value="PMO">PMO</option>
-                    <option value="ADM">ADM</option>
-                    <option value="SAL">SAL</option>
-                    <option value="MKT">MKT</option>
-                    <option value="OPS">OPS</option>
-                    <option value="QA">QA</option>
-                    <option value="SUP">SUP</option>
-                </select>
+                    <label class="form-label">
+                        Department
+                    </label>
+
+                    <select id="departmentSelection"
+                            class="app-select">
+
+                        <option value="">Select Department</option>
+
+                        <option value="Human Resources">Human Resources</option>
+                        <option value="Information Technology">Information Technology</option>
+                        <option value="Accounts & Finance">Accounts & Finance</option>
+                        <option value="Project Management">Project Management</option>
+                        <option value="Administration">Administration</option>
+                        <option value="Sales">Sales</option>
+                        <option value="Marketing">Marketing</option>
+                        <option value="Operations">Operations</option>
+                        <option value="Quality Assurance">Quality Assurance</option>
+                        <option value="Customer Support">Customer Support</option>
+
+                        <option value="__NEW__">
+                            + Add New Department
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <div class="form-group d-none"
+                     id="newDepartmentGroup">
+
+                    <label class="form-label">
+                        New Department Name
+                    </label>
+
+                    <input asp-for="DepartmentName"
+                           id="departmentName"
+                           class="app-input" />
+                    <span asp-validation-for="DepartmentName"
+                          class="text-danger"></span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Display Code
+                    </label>
+
+                    <input asp-for="DisplayCode"
+                           id="displayCode"
+                           class="app-input"
+                           readonly />
+                    <span asp-validation-for="DisplayCode"
+                          class="text-danger"></span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Status
+                    </label>
+
+                    <select asp-for="IsActive"
+                            class="app-select">
+
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+
+                    </select>
+
+                </div>
 
             </div>
 
-            <div class="form-group">
-                <label class="form-label">
-                    Department Name
-                </label>
+            <div class="mt-4">
 
-                <select id="departmentName"
-                        asp-for="DepartmentName"
-                        class="app-select">
+                <button type="submit"
+                        class="btn-app btn-primary-app">
+                    Save
+                </button>
 
-                    <option value="">Select Department</option>
-
-                    <option value="Human Resources">Human Resources</option>
-                    <option value="Information Technology">Information Technology</option>
-                    <option value="Accounts & Finance">Accounts & Finance</option>
-                    <option value="Project Management">Project Management</option>
-                    <option value="Administration">Administration</option>
-                    <option value="Sales">Sales</option>
-                    <option value="Marketing">Marketing</option>
-                    <option value="Operations">Operations</option>
-                    <option value="Quality Assurance">Quality Assurance</option>
-                    <option value="Customer Support">Customer Support</option>
-
-                </select>
-            </div>
-
-            <div class="form-group mb-3">
-
-                <label class="form-label">
-                    Active
-                </label>
-
-                <select asp-for="IsActive"
-                        class="app-select">
-                    <option value="true">Active</option>
-                    <option value="false">Inactive</option>
-                </select>
+                <a asp-action="Index"
+                   class="btn-app btn-secondary-app">
+                    Cancel
+                </a>
 
             </div>
-
-            <button type="submit"
-                    class="btn-app btn-primary-app">
-                Save
-            </button>
-
-            <a asp-action="Index"
-               class="btn-app btn-secondary-app">
-                Cancel
-            </a>
 
         </form>
+
 
     </div>
 

@@ -109,23 +109,64 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(
-            DesignationModel designation)
+        public async Task<IActionResult> Create(DesignationModel designation)
         {
-            if (ModelState.IsValid)
+
+            Console.WriteLine($"DesignationName = '{designation.DesignationName}'");
+            Console.WriteLine($"DisplayCode = '{designation.DisplayCode}'");
+            Console.WriteLine($"DepartmentId = '{designation.DepartmentId}'");
+            Console.WriteLine($"ModelState Valid = {ModelState.IsValid}");
+            bool designationExists = _designationRepository.Designations.Any(d =>
+    d.DesignationName.Trim().ToLower() ==
+    (designation.DesignationName ?? "").Trim().ToLower());
+
+            bool displayCodeExists = _designationRepository.Designations.Any(d =>
+                d.DisplayCode.Trim().ToLower() ==
+                (designation.DisplayCode ?? "").Trim().ToLower());
+
+            var all = _designationRepository.Designations.ToList();
+
+            Console.WriteLine("===== Existing Designations =====");
+
+            foreach (var d in all)
             {
-                await _designationRepository.AddAsync(designation);
-                await _designationRepository.SaveAsync();
-
-                TempData["Success"] =
-                    "Designation created successfully.";
-
-                return RedirectToAction(nameof(Index));
+                Console.WriteLine($"Name='{d.DesignationName}', Code='{d.DisplayCode}'");
             }
 
-            LoadDepartments();
+            if (designationExists)
+            {
+                ModelState.AddModelError(
+                    nameof(designation.DesignationName),
+                    "Designation already exists.");
 
-            return View(designation);
+                LoadDepartments();
+                return View(designation);
+            }
+
+            if (displayCodeExists)
+            {
+                ModelState.AddModelError(
+                    nameof(designation.DisplayCode),
+                    "Display Code already exists.");
+
+                LoadDepartments();
+                return View(designation);
+            }
+
+            if (!ModelState.IsValid)
+            {
+                LoadDepartments();
+
+                return View(designation);
+            }
+
+            await _designationRepository.AddAsync(designation);
+            await _designationRepository.SaveAsync();
+
+            TempData["Success"] =
+                "Designation created successfully.";
+
+            return RedirectToAction(nameof(Index));
         }
 
         [HttpGet]

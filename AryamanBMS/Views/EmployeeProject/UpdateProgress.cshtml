@@ -1,0 +1,196 @@
+﻿@model AryamanBMS.Models.ProjectTaskModel
+
+@{
+    ViewData["Title"] = "Update Task Progress";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Update Task Progress</h1>
+        <p class="module-subtitle">
+            Update your assigned task progress
+        </p>
+    </div>
+
+    <a asp-action="Details"
+       asp-route-id="@Model.Id"
+       class="btn-app btn-secondary-app">
+        Back
+    </a>
+</div>
+
+<div class="alert alert-info mb-4">
+
+    <strong>Task Progress</strong>
+
+    <hr />
+
+    Progress is updated automatically based on the selected task status.
+
+</div>
+
+<form asp-action="UpdateProgress"
+      method="post">
+
+    @Html.AntiForgeryToken()
+
+    <input asp-for="Id" type="hidden" />
+
+    <div asp-validation-summary="ModelOnly"
+         class="validation-message">
+    </div>
+
+    <div class="app-card">
+
+        <div class="card-header">
+            <h5 class="card-title">
+                Task Information
+            </h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+                    <label>Task Code</label>
+
+                    <input value="@Model.TaskCode"
+                           class="app-input"
+                           readonly />
+                </div>
+
+                <div class="form-group">
+                    <label>Task Title</label>
+
+                    <input value="@Model.TaskTitle"
+                           class="app-input"
+                           readonly />
+                </div>
+
+                <div class="form-group">
+                    <label>Project</label>
+
+                    <input value="@($"{Model.Project?.ProjectCode} - {Model.Project?.ProjectName}")"
+                           class="app-input"
+                           readonly />
+                </div>
+
+                <div class="form-group">
+                    <label>Assigned Employee</label>
+
+                    <input value="@Model.AssignedEmployee?.FullName"
+                           class="app-input"
+                           readonly />
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="app-card">
+
+        <div class="card-header">
+            <h5 class="card-title">
+                Progress Update
+            </h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="form-grid-3">
+
+                <div class="form-group">
+
+                    <label asp-for="Status"></label>
+
+                    <select asp-for="Status"
+                            class="app-select">
+
+                        <option value="Not Started">Not Started</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="On Hold">On Hold</option>
+                        <option value="Completed">Completed</option>
+
+                    </select>
+
+                    <span asp-validation-for="Status"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                
+
+                <div class="form-group">
+                    <label asp-for="ActualHours">
+                        Actual Hours
+                    </label>
+
+                    <input asp-for="ActualHours"
+                           type="number"
+                           min="0"
+                           step="0.25"
+                           class="app-input" />
+
+                    <span asp-validation-for="ActualHours"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group mt-3">
+                    <label asp-for="WorkUpdate">Work Update</label>
+
+                    <textarea asp-for="WorkUpdate"
+                              class="app-textarea"
+                              rows="4"
+                              placeholder="Describe the work completed today...">
+    </textarea>
+
+                    <span asp-validation-for="WorkUpdate"
+                          class="validation-message">
+                    </span>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="app-card">
+
+        <div class="card-body">
+
+            <button type="submit"
+                    class="btn-app btn-primary-app">
+
+                <i class="bi bi-check-lg"></i>
+
+                Update Progress
+
+            </button>
+
+            <a asp-action="Details"
+               asp-route-id="@Model.Id"
+               class="btn-app btn-secondary-app">
+
+                Cancel
+
+            </a>
+
+        </div>
+
+    </div>
+
+</form>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+
+    
+}

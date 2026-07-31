@@ -85,21 +85,43 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(
-            DepartmentModel department)
+        public async Task<IActionResult> Create(DepartmentModel department)
         {
-            if (ModelState.IsValid)
+            bool departmentExists = _departmentRepository.Departments.Any(d =>
+    d.DepartmentName.ToLower() == department.DepartmentName.ToLower());
+
+            bool displayCodeExists = _departmentRepository.Departments.Any(d =>
+                d.DisplayCode.ToLower() == department.DisplayCode.ToLower());
+
+            if (departmentExists)
             {
-                await _departmentRepository.AddAsync(department);
-                await _departmentRepository.SaveAsync();
+                ModelState.AddModelError(
+                    nameof(department.DepartmentName),
+                    "Department already exists.");
 
-                TempData["Success"] =
-                    "Department created successfully.";
-
-                return RedirectToAction(nameof(Index));
+                return View(department);
             }
 
-            return View(department);
+            if (displayCodeExists)
+            {
+                ModelState.AddModelError(
+                    nameof(department.DisplayCode),
+                    "Display Code already exists.");
+
+                return View(department);
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(department);
+            }
+
+            await _departmentRepository.AddAsync(department);
+            await _departmentRepository.SaveAsync();
+
+            TempData["Success"] = "Department created successfully.";
+
+            return RedirectToAction(nameof(Index));
         }
 
         [HttpGet]
@@ -186,47 +208,7 @@ namespace AryamanBMS.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        [HttpGet]
-        public IActionResult GetDepartments()
-        {
-            var departments = _departmentRepository.Departments
-                .OrderBy(d => d.DepartmentName)
-                .Select(d => new
-                {
-                    d.Id,
-                    d.DepartmentName
-                })
-                .ToList();
-
-            return Json(departments);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> QuickCreate(
-    [FromBody] DepartmentModel department)
-        {
-            if (string.IsNullOrWhiteSpace(department.DepartmentName))
-            {
-                return BadRequest("Department name is required.");
-            }
-
-            bool exists = _departmentRepository.Departments.Any(d =>
-                d.DepartmentName == department.DepartmentName);
-
-            if (exists)
-            {
-                return BadRequest("Department already exists.");
-            }
-
-            await _departmentRepository.AddAsync(department);
-            await _departmentRepository.SaveAsync();
-
-            return Json(new
-            {
-                department.Id,
-                department.DepartmentName
-            });
-        }
+        
 
 
     }

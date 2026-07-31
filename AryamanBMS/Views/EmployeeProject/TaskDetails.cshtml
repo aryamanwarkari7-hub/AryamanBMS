@@ -16,6 +16,26 @@
             <i class="bi bi-arrow-left"></i>
             Back to Tasks
         </a>
+        @if (User.IsInRole("Admin") ||
+                User.IsInRole("HR") ||
+                User.IsInRole("ProjectManager"))
+        {
+            <a asp-action="Edit"
+               asp-route-id="@Model.Id"
+               class="btn-app btn-primary-app">
+                <i class="bi bi-pencil"></i>
+                Edit Task
+            </a>
+        }
+        else if (User.IsInRole("Employee"))
+        {
+            <a asp-action="UpdateProgress"
+               asp-route-id="@Model.Id"
+               class="btn-app btn-primary-app">
+                <i class="bi bi-graph-up"></i>
+                Update Progress
+            </a>
+        }
     </div>
 </div>
 
@@ -104,6 +124,16 @@
                 </div>
 
                 <div class="profile-info-row">
+                    <span><i class="bi bi-play-circle"></i> Actual Started</span>
+                    <strong>@(Model.ActualStartOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")</strong>
+                </div>
+
+                <div class="profile-info-row">
+                    <span><i class="bi bi-check-circle"></i> Completed On</span>
+                    <strong>@(Model.CompletedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")</strong>
+                </div>
+
+                <div class="profile-info-row">
                     <span><i class="bi bi-graph-up"></i> Progress</span>
                     <strong>@Model.ProgressPercent%</strong>
                 </div>
@@ -142,4 +172,29 @@
             <p class="mb-0">@Model.Description</p>
         }
     </div>
+</div>
+
+<div class="app-card dashboard-section-card">
+
+    <div class="card-header">
+        <h5 class="card-title">
+            Latest Work Update
+        </h5>
+    </div>
+
+    <div class="card-body">
+
+        @if (string.IsNullOrWhiteSpace(Model.WorkUpdate))
+        {
+            <div class="empty-state">
+                No work updates available.
+            </div>
+        }
+        else
+        {
+            <p class="mb-0">@Model.WorkUpdate</p>
+        }
+
+    </div>
+
 </div>

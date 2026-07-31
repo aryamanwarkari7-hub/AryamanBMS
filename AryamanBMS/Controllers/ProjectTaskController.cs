@@ -568,6 +568,8 @@ namespace AryamanBMS.Controllers
                 new { projectId = existing.ProjectId });
         }
 
+        
+
         [HttpGet]
         [Authorize(Roles = "Admin,HR,ProjectManager")]
         public async Task<IActionResult> Delete(int id)

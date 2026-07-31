@@ -186,6 +186,26 @@
                     </div>
 
                     <div class="detail-info-row">
+                        <span class="detail-info-label">
+                            Actual Started
+                        </span>
+
+                        <strong class="detail-info-value">
+                            @(Model.ActualStartOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">
+                            Completed On
+                        </span>
+
+                        <strong class="detail-info-value">
+                            @(Model.CompletedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
                         <span class="detail-info-label">Created On</span>
                         <strong class="detail-info-value">
                             @Model.CreatedOn.ToString("dd-MMM-yyyy hh:mm tt")
@@ -196,6 +216,16 @@
                         <span class="detail-info-label">Updated On</span>
                         <strong class="detail-info-value">
                             @(Model.UpdatedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">
+                            Last Updated By
+                        </span>
+
+                        <strong class="detail-info-value">
+                            @(Model.UpdatedByEmployee?.FullName ?? "-")
                         </strong>
                     </div>
                 </div>
@@ -220,6 +250,86 @@
                 }
             </div>
         </div>
+    </div>
+
+    <div class="app-card">
+
+        <div class="card-header">
+            <h5 class="card-title">
+                Latest Work Update
+            </h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="detail-note-box">
+
+                @if (string.IsNullOrWhiteSpace(Model.WorkUpdate))
+                {
+                    <span>No work updates available.</span>
+                }
+                else
+                {
+                    <pre class="mb-0">@Model.WorkUpdate</pre>
+                }
+
+            </div>
+
+        </div>
+
+    </div>
+    <div class="app-card">
+
+        <div class="card-header">
+            <h5 class="card-title">
+                Task Progress
+            </h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="progress"
+                 style="height:22px;">
+
+                <div class="progress-bar"
+                     role="progressbar"
+                     style="width:@Model.ProgressPercent%;">
+
+                    @Model.ProgressPercent%
+
+                </div>
+
+            </div>
+
+            <div class="app-card">
+
+                <div class="card-header">
+                    <h5 class="card-title">
+                        Task Progress
+                    </h5>
+                </div>
+
+                <div class="card-body">
+
+                    <div class="progress"
+                         style="height:22px;">
+
+                        <div class="progress-bar"
+                             role="progressbar"
+                             style="width:@Model.ProgressPercent%;">
+
+                            @Model.ProgressPercent%
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
     </div>
 
 </div>

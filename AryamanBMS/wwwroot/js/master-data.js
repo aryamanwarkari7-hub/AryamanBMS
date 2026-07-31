@@ -1,11 +1,16 @@
-﻿
+﻿// ==========================================
+// DEPARTMENT
+// ==========================================
 
-// DEPARTMENT & DESIGNATION 
 document.addEventListener("DOMContentLoaded", function () {
+
+    const departmentSelection = document.getElementById("departmentSelection");
     const departmentName = document.getElementById("departmentName");
+    const departmentGroup = document.getElementById("newDepartmentGroup");
     const departmentCode = document.getElementById("displayCode");
 
-    if (departmentName && departmentCode) {
+    if (departmentSelection) {
+
         const departmentCodes = {
             "Human Resources": "HR",
             "Information Technology": "IT",
@@ -19,182 +24,206 @@ document.addEventListener("DOMContentLoaded", function () {
             "Customer Support": "SUP"
         };
 
-        departmentName.addEventListener("change", function () {
-            departmentCode.value = departmentCodes[this.value] || "";
+        function generateDepartmentCode(value) {
+
+            value = value.trim();
+
+            if (departmentCodes[value]) {
+                return departmentCodes[value];
+            }
+
+            const words = value.split(/\s+/).filter(w => w.length);
+
+            if (words.length === 1) {
+                return words[0]
+                    .substring(0, 3)
+                    .toUpperCase();
+            }
+
+            return words
+                .map(w => w[0])
+                .join("")
+                .toUpperCase();
+        }
+
+        // Restore state after validation
+
+        if (departmentName.value.trim() !== "") {
+
+            if (departmentCodes[departmentName.value]) {
+
+                departmentSelection.value = departmentName.value;
+                departmentCode.value = generateDepartmentCode(departmentName.value);
+
+            }
+            else {
+
+                departmentSelection.value = "__NEW__";
+
+                departmentGroup.classList.remove("d-none");
+
+                departmentCode.value = generateDepartmentCode(departmentName.value);
+
+            }
+
+        }
+
+        departmentSelection.addEventListener("change", function () {
+
+            if (this.value === "__NEW__") {
+
+                departmentGroup.classList.remove("d-none");
+
+                departmentName.value = "";
+                departmentCode.value = "";
+
+                departmentName.focus();
+            }
+            else {
+
+                departmentGroup.classList.add("d-none");
+
+                departmentName.value = this.value;
+                departmentCode.value = generateDepartmentCode(this.value);
+            }
+
         });
+
+        departmentName.addEventListener("input", function () {
+
+            if (departmentSelection.value === "__NEW__") {
+                departmentCode.value = generateDepartmentCode(this.value);
+            }
+
+        });
+
+        const form = departmentSelection.closest("form");
+
+        form.addEventListener("submit", function () {
+
+            if (departmentSelection.value !== "__NEW__") {
+                departmentName.value = departmentSelection.value;
+            }
+
+        });
+
     }
 
-    const designationName = document.getElementById("designationName");
-    const designationCode = document.getElementById("designationCode");
-
-    if (designationName && designationCode) {
-        const designationCodes = {
-            "Software Developer": "SD",
-            "Senior Software Engineer": "SSE",
-            "Team Lead": "TL",
-            "Project Manager": "PM",
-            "Business Analyst": "BA",
-            "QA Engineer": "QA",
-            "HR Executive": "HRE",
-            "HR Manager": "HRM",
-            "Accountant": "ACC",
-            "Administrator": "ADM",
-            "System Administrator": "SA"
-        };
-
-        designationName.addEventListener("change", function () {
-            designationCode.value = designationCodes[this.value] || "";
-        });
-    }
 });
 
 // ==========================================
-// QUICK ADD DEPARTMENT
+// DESIGNATION
 // ==========================================
 
 document.addEventListener("DOMContentLoaded", function () {
 
-    const departmentName = document.getElementById("newDepartmentName");
-    const departmentCode = document.getElementById("newDepartmentCode");
+    const designationSelection = document.getElementById("designationSelection");
+    const designationName = document.getElementById("designationName");
+    const designationGroup = document.getElementById("newDesignationGroup");
+    const designationCode = document.getElementById("designationCode");
 
-    if (!departmentName || !departmentCode)
+    if (!designationSelection)
         return;
 
-    const departmentCodes = {
-        "Human Resources": "HR",
-        "Information Technology": "IT",
-        "Accounts & Finance": "ACC",
-        "Project Management": "PMO",
-        "Administration": "ADM",
-        "Sales": "SAL",
-        "Marketing": "MKT",
-        "Operations": "OPS",
-        "Quality Assurance": "QA",
-        "Customer Support": "SUP"
+    const designationCodes = {
+        "Software Developer": "SD",
+        "Senior Software Engineer": "SSE",
+        "Team Lead": "TL",
+        "Project Manager": "PM",
+        "Business Analyst": "BA",
+        "QA Engineer": "QA",
+        "HR Executive": "HRE",
+        "HR Manager": "HRM",
+        "Accountant": "ACC",
+        "Administrator": "ADM",
+        "System Administrator": "SA"
     };
 
-    departmentName.addEventListener("input", function () {
+    function generateDesignationCode(value) {
 
-        const value = this.value.trim();
+        value = value.trim();
 
-        if (departmentCodes[value]) {
-            departmentCode.value = departmentCodes[value];
-            return;
+        if (designationCodes[value]) {
+            return designationCodes[value];
         }
 
         const words = value.split(/\s+/).filter(w => w.length);
 
         if (words.length === 1) {
-            departmentCode.value = words[0]
+            return words[0]
                 .substring(0, 3)
                 .toUpperCase();
         }
+
+        return words
+            .map(w => w[0])
+            .join("")
+            .toUpperCase();
+    }
+
+    // Restore state after validation
+
+    if (designationName.value.trim() !== "") {
+
+        if (designationCodes[designationName.value]) {
+
+            designationSelection.value = designationName.value;
+            designationCode.value = generateDesignationCode(designationName.value);
+
+        }
         else {
-            departmentCode.value = words
-                .map(w => w[0])
-                .join("")
-                .toUpperCase();
+
+            designationSelection.value = "__NEW__";
+
+            designationGroup.classList.remove("d-none");
+
+            designationCode.value = generateDesignationCode(designationName.value);
+
         }
+
+    }
+
+    designationSelection.addEventListener("change", function () {
+
+        if (this.value === "__NEW__") {
+
+            designationGroup.classList.remove("d-none");
+
+            designationName.value = "";
+            designationCode.value = "";
+
+            designationName.focus();
+
+        }
+        else {
+
+            designationGroup.classList.add("d-none");
+
+            designationName.value = this.value;
+            designationCode.value = generateDesignationCode(this.value);
+
+        }
+
     });
 
-});
+    designationName.addEventListener("input", function () {
 
-// ==========================================
-// SAVE DEPARTMENT FROM MODAL
-// ==========================================
+        if (designationSelection.value === "__NEW__") {
 
-document.addEventListener("DOMContentLoaded", function () {
-
-    const saveButton = document.getElementById("saveDepartmentBtn");
-
-    if (!saveButton)
-        return;
-
-    saveButton.addEventListener("click", async function () {
-
-        const departmentName = document.getElementById("newDepartmentName").value.trim();
-        const displayCode = document.getElementById("newDepartmentCode").value.trim();
-        const isActive = document.getElementById("newDepartmentStatus").value === "true";
-
-        if (departmentName === "") {
-            alert("Please enter Department Name.");
-            return;
-        }
-
-        const response = await fetch("/Department/QuickCreate", {
-
-            method: "POST",
-
-            headers: {
-                "Content-Type": "application/json"
-            },
-
-            body: JSON.stringify({
-                DepartmentName: departmentName,
-                DisplayCode: displayCode,
-                IsActive: isActive
-            })
-
-        });
-
-        if (!response.ok) {
-
-            alert(await response.text());
-            return;
+            designationCode.value = generateDesignationCode(this.value);
 
         }
 
-        const department = await response.json();
+    });
 
-        await refreshDepartments(department.Id);
+    const form = designationSelection.closest("form");
 
-        document.getElementById("newDepartmentName").value = "";
-        document.getElementById("newDepartmentCode").value = "";
-        document.getElementById("newDepartmentStatus").value = "true";
+    form.addEventListener("submit", function () {
 
-        const modalElement = document.getElementById("departmentModal");
-
-        let modal = bootstrap.Modal.getInstance(modalElement);
-
-        if (!modal) {
-            modal = new bootstrap.Modal(modalElement);
+        if (designationSelection.value !== "__NEW__") {
+            designationName.value = designationSelection.value;
         }
-
-        modal.hide();
 
     });
 
 });
-
-async function refreshDepartments(selectedId) {
-
-    const response = await fetch("/Department/GetDepartments");
-
-    const departments = await response.json();
-
-    const dropdown = document.getElementById("departmentDropdown");
-
-    dropdown.innerHTML = "";
-
-    const first = document.createElement("option");
-
-    first.value = "";
-    first.text = "Select Department";
-
-    dropdown.appendChild(first);
-
-    departments.forEach(function (department) {
-
-        const option = document.createElement("option");
-
-        option.value = department.id;
-        option.text = department.departmentName;
-
-        if (department.id === selectedId)
-            option.selected = true;
-
-        dropdown.appendChild(option);
-
-    });
-
-}

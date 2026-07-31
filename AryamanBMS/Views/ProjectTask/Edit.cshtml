@@ -27,6 +27,9 @@
     <input type="hidden" asp-for="Status" />
     <input type="hidden" asp-for="ProgressPercent" />
     <input type="hidden" asp-for="ActualHours" />
+    <input type="hidden" asp-for="ActualStartOn" />
+    <input type="hidden" asp-for="CompletedOn" />
+    <input type="hidden" asp-for="UpdatedByEmployeeId" />
 
     <div asp-validation-summary="ModelOnly"
          class="validation-message">
@@ -85,6 +88,14 @@
                     <span asp-validation-for="AssignedEmployeeId"
                           class="validation-message">
                     </span>
+                </div>
+
+                <div class="form-group">
+                    <label>Last Updated By</label>
+
+                    <input class="app-input"
+                           value="@(Model.UpdatedByEmployee?.FullName ?? "-")"
+                           readonly />
                 </div>
 
                 <div class="form-group">
@@ -167,8 +178,40 @@
                     </span>
                 </div>
 
+                <div class="form-group">
+                    <label>Actual Hours Logged</label>
+
+                    <input class="app-input"
+                           value="@Model.ActualHours.ToString("0.##")"
+                           readonly />
+                </div>
+
+                <div class="form-group">
+                    <label>Progress</label>
+
+                    <input class="app-input"
+                           value="@($"{Model.ProgressPercent}%")"
+                           readonly />
+                </div>
+
+                <div class="form-group">
+                    <label>Actual Started</label>
+
+                    <input class="app-input"
+                           value="@(Model.ActualStartOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")"
+                           readonly />
+                </div>
+
+                <div class="form-group">
+                    <label>Completed On</label>
+
+                    <input class="app-input"
+                           value="@(Model.CompletedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")"
+                           readonly />
+                </div>
+
                <div class="form-group">
-                    <label asp-for="IsActive">Status</label>
+                    <label asp-for="IsActive">Task Availability</label>
 
                     <select asp-for="IsActive"
                             class="app-select">
@@ -190,6 +233,23 @@
                 <span asp-validation-for="Description"
                       class="validation-message">
                 </span>
+            </div>
+
+            <div class="form-group">
+                <label>Latest Work Update</label>
+
+                @if (string.IsNullOrWhiteSpace(Model.WorkUpdate))
+                {
+                    <div class="empty-state">
+                        No work updates available.
+                    </div>
+                }
+                else
+                {
+                    <textarea class="app-textarea"
+                          rows="5"
+                          readonly>@Model.WorkUpdate</textarea>
+                }
             </div>
         </div>
     </div>
