@@ -47,6 +47,20 @@ namespace AryamanBMS.Models
         [Range(0, double.MaxValue)]
         public decimal ActualHours { get; set; }
 
+        [StringLength(1000)]
+        public string? WorkUpdate { get; set; }
+
+        [DataType(DataType.DateTime)]
+        public DateTime? ActualStartOn { get; set; }
+
+        [DataType(DataType.DateTime)]
+        public DateTime? CompletedOn { get; set; }
+
+        public int? UpdatedByEmployeeId { get; set; }
+
+        [ForeignKey(nameof(UpdatedByEmployeeId))]
+        public EmployeeModel? UpdatedByEmployee { get; set; }
+
         public DateTime CreatedOn { get; set; } = DateTime.Now;
 
         public DateTime? UpdatedOn { get; set; }
