@@ -435,7 +435,7 @@ namespace AryamanBMS.Data
 
             modelBuilder.Entity<ProjectModel>()
                 .HasOne(p => p.ProjectManager)
-                .WithMany()
+                .WithMany(e => e.ManagedProjects)
                 .HasForeignKey(p => p.ProjectManagerId)
                 .OnDelete(DeleteBehavior.Restrict);
 

@@ -10,6 +10,8 @@ namespace AryamanBMS.Models
         [Range(1, int.MaxValue, ErrorMessage = "Please select a task.")]
         public int ProjectTaskId { get; set; }
 
+        public int? UpdatedByEmployeeId { get; set; }
+
         [Required(ErrorMessage = "Progress date is required.")]
         [DataType(DataType.Date)]
         public DateTime ProgressDate { get; set; } = DateTime.Today;
@@ -25,12 +27,18 @@ namespace AryamanBMS.Models
         [StringLength(1000)]
         public string ProgressNotes { get; set; } = string.Empty;
 
+        public string TaskStatus { get; set; } = "Not Started";
+
         public bool IsActive { get; set; } = true;
 
         public DateTime CreatedOn { get; set; } = DateTime.Now;
 
         public DateTime? UpdatedOn { get; set; }
 
+        [ForeignKey(nameof(ProjectTaskId))]
         public ProjectTaskModel? ProjectTask { get; set; }
+
+        [ForeignKey(nameof(UpdatedByEmployeeId))]
+        public EmployeeModel? UpdatedByEmployee { get; set; }
     }
 }

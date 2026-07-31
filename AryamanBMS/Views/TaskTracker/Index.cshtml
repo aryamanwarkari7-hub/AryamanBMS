@@ -24,10 +24,10 @@
 <div class="module-header">
 
     <div>
-        <h1 class="module-title">Task Updates</h1>
+        <h1 class="module-title">Task Tracker</h1>
 
         <p class="module-subtitle">
-            Record and monitor project task updates
+            View employee task update history and progress.
         </p>
     </div>
 
@@ -44,15 +44,6 @@
             </a>
         }
 
-        <a asp-action="Create"
-           asp-route-projectId="@ViewBag.ProjectId"
-           asp-route-projectTaskId="@ViewBag.ProjectTaskId"
-           class="btn-app btn-primary-app">
-
-            <i class="bi bi-plus-lg"></i>
-            Add Update
-
-        </a>
 
     </div>
 
@@ -69,6 +60,10 @@
 
         <form asp-action="Index"
               method="get">
+
+            <!-- ===========================
+                 PROJECT / TASK
+            ============================ -->
 
             <div class="form-grid-2">
 
@@ -126,34 +121,96 @@
 
             </div>
 
-            <div class="filter-row mt-3">
-                <div class="filter-field filter-field-wide">
-                    <input name="search"
-                           value="@search"
-                           class="app-input"
-                           placeholder="Project, task or update notes" />
-                </div>
+            <!-- ===========================
+                 SEARCH
+            ============================ -->
 
-                <div class="filter-field">
-                    <select name="sortBy" class="app-select">
-                        <option value="ProgressDate" selected="@(sortBy == "ProgressDate")">Sort by Update Date</option>
-                        <option value="Project" selected="@(sortBy == "Project")">Sort by Project</option>
-                        <option value="Task" selected="@(sortBy == "Task")">Sort by Task</option>
-                        <option value="Hours" selected="@(sortBy == "Hours")">Sort by Hours</option>
-                        <option value="Completion" selected="@(sortBy == "Completion")">Sort by Completion</option>
-                        <option value="Status" selected="@(sortBy == "Status")">Sort by Status</option>
-                    </select>
-                </div>
+            <div class="form-group mt-3">
 
-                <div class="filter-field">
-                    <select name="sortOrder" class="app-select">
-                        <option value="asc" selected="@(sortOrder == "asc")">Ascending</option>
-                        <option value="desc" selected="@(sortOrder == "desc")">Descending</option>
-                    </select>
-                </div>
+                <label>Search</label>
+
+                <input name="search"
+                       value="@search"
+                       class="app-input"
+                       placeholder="Search project, task or work update..." />
+
             </div>
 
-            <div class="filter-form-actions mt-3">
+            <!-- ===========================
+                 SORTING
+            ============================ -->
+
+            <div class="form-grid-2 mt-3">
+
+                <div class="form-group">
+
+                    <label>Sort By</label>
+
+                    <select name="sortBy"
+                            class="app-select">
+
+                        <option value="ProgressDate"
+                                selected="@(sortBy == "ProgressDate")">
+                            Update Date
+                        </option>
+
+                        <option value="Project"
+                                selected="@(sortBy == "Project")">
+                            Project
+                        </option>
+
+                        <option value="Task"
+                                selected="@(sortBy == "Task")">
+                            Task
+                        </option>
+
+                        <option value="Hours"
+                                selected="@(sortBy == "Hours")">
+                            Hours Worked
+                        </option>
+
+                        <option value="Completion"
+                                selected="@(sortBy == "Completion")">
+                            Progress
+                        </option>
+
+                        <option value="Status"
+                                selected="@(sortBy == "Status")">
+                            Task Status
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Sort Order</label>
+
+                    <select name="sortOrder"
+                            class="app-select">
+
+                        <option value="desc"
+                                selected="@(sortOrder == "desc")">
+                            Descending
+                        </option>
+
+                        <option value="asc"
+                                selected="@(sortOrder == "asc")">
+                            Ascending
+                        </option>
+
+                    </select>
+
+                </div>
+
+            </div>
+
+            <!-- ===========================
+                 ACTIONS
+            ============================ -->
+
+            <div class="filter-form-actions mt-4">
 
                 <button type="submit"
                         class="btn-app btn-primary-app">
@@ -181,7 +238,7 @@
 <div class="app-card table-card">
 
     <div class="card-header">
-        <h5 class="card-title">Task Updates</h5>
+        <h5 class="card-title">Task Update History</h5>
     </div>
 
     <div class="card-body">
@@ -195,11 +252,12 @@
                     <tr>
                         <th>Project</th>
                         <th>Task</th>
+                        <th>Employee</th>
                         <th>Update Date</th>
-                        <th>Hours Worked</th>
-                        <th>Task Completion %</th>
-                        <th>Update Notes</th>
-                        <th>Status</th>
+                        <th>Hours</th>
+                        <th>Progress</th>
+                        <th>Work Update</th>
+                        <th>Task Status</th>
                         <th>Actions</th>
                     </tr>
 
@@ -228,84 +286,84 @@
                                     </div>
 
                                 </td>
-
-                                <td>
-                                    @progress.ProgressDate.ToString("dd-MM-yyyy")
-                                </td>
-
-                                <td>
-                                    @progress.HoursWorked.ToString("0.00")
-                                </td>
-
                                 <td>
 
                                     <strong>
-                                        @progress.CompletionPercentage%
+                                        @(progress.UpdatedByEmployee?.EmployeeCode ?? "-")
                                     </strong>
 
-                                    <div class="progress progress-thin mt-1">
-
-                                        <div class="progress-bar"
-                                             role="progressbar"
-                                             style="width: @progress.CompletionPercentage%;"
-                                             aria-valuenow="@progress.CompletionPercentage"
-                                             aria-valuemin="0"
-                                             aria-valuemax="100">
-                                        </div>
-
+                                    <div class="text-muted">
+                                        @(progress.UpdatedByEmployee?.FullName ?? "")
                                     </div>
 
                                 </td>
 
                                 <td>
-                                    @progress.ProgressNotes
+                                    @progress.ProgressDate.ToString("dd-MMM-yyyy")
+                                </td>
+
+                                <td>
+                                    @progress.HoursWorked.ToString("0.##") hrs
                                 </td>
 
                                 <td>
 
-                                    @if (progress.IsActive)
-                                    {
-                                        <span class="status-badge status-active">
-                                            Active
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="status-badge status-inactive">
-                                            Inactive
-                                        </span>
-                                    }
+                                    <div class="d-flex align-items-center gap-2">
+
+                                        <div class="progress flex-grow-1 progress-thin">
+
+                                            <div class="progress-bar"
+                                                 style="width:@progress.CompletionPercentage%">
+                                            </div>
+
+                                        </div>
+
+                                        <strong>
+                                            @progress.CompletionPercentage%
+                                        </strong>
+
+                                    </div>
+
+                                    
+                                </td>
+
+                                <td>
+                                    <div class="text-truncate"
+                                         style="max-width:420px;"
+                                         title="@progress.ProgressNotes">
+
+                                        @progress.ProgressNotes
+
+                                    </div>
+                                </td>
+
+                                <td>
+
+                                    <span class="status-badge
+                                          @(progress.TaskStatus switch
+                                          {
+                                              "Completed" => "status-active",
+                                              "In Progress" => "status-info",
+                                              "On Hold" => "status-warning",
+                                              _ => "status-inactive"
+                                          })">
+
+                                           @progress.TaskStatus
+
+                                    </span>
 
                                 </td>
 
                                 <td>
 
-                                    <div class="action-buttons d-flex flex-row gap-1">
+                                    <div class="action-buttons">
 
                                         <a asp-action="Details"
                                            asp-route-id="@progress.Id"
-                                           class="btn-app btn-icon btn-primary-app btn-view"
-                                           title="Details">
+                                           class="btn-app btn-icon btn-primary-app"
+                                           title="View Details">
 
                                             <i class="bi bi-eye"></i>
-
-                                        </a>
-
-                                        <a asp-action="Edit"
-                                           asp-route-id="@progress.Id"
-                                           class="btn-app btn-icon btn-secondary-app btn-edit"
-                                           title="Edit">
-
-                                            <i class="bi bi-pencil"></i>
-
-                                        </a>
-
-                                        <a asp-action="Delete"
-                                           asp-route-id="@progress.Id"
-                                           class="btn-app btn-icon btn-danger-app btn-delete"
-                                           title="Remove">
-
-                                            <i class="bi bi-trash"></i>
 
                                         </a>
 
@@ -323,7 +381,7 @@
                             <td colspan="8"
                                 class="empty-state">
 
-                                No task updates found.
+                                No task history available.
 
                             </td>
 

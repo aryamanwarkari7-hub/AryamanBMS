@@ -17,22 +17,27 @@ namespace AryamanBMS.Repositories
         }
 
         public IQueryable<ProjectTaskProgressModel> ProjectTaskProgresses =>
-            _context.ProjectTaskProgresses
-                .Include(p => p.ProjectTask)
-                .ThenInclude(t => t!.Project);
+    _context.ProjectTaskProgresses
+        .Include(p => p.ProjectTask)
+            .ThenInclude(t => t!.Project)
+        .Include(p => p.UpdatedByEmployee);
 
         public async Task<ProjectTaskProgressModel?> GetByIdAsync(int id)
         {
             return await _context.ProjectTaskProgresses
-                .FirstOrDefaultAsync(p => p.Id == id);
+    .Include(p => p.ProjectTask)
+        .ThenInclude(t => t!.Project)
+    .Include(p => p.UpdatedByEmployee)
+    .FirstOrDefaultAsync(p => p.Id == id);
         }
 
         public async Task<ProjectTaskProgressModel?> GetDetailsAsync(int id)
         {
             return await _context.ProjectTaskProgresses
-                .Include(p => p.ProjectTask)
-                .ThenInclude(t => t!.Project)
-                .FirstOrDefaultAsync(p => p.Id == id);
+    .Include(p => p.ProjectTask)
+        .ThenInclude(t => t!.Project)
+    .Include(p => p.UpdatedByEmployee)
+    .FirstOrDefaultAsync(p => p.Id == id);
         }
 
         public async Task AddAsync(ProjectTaskProgressModel progress)

@@ -49,9 +49,11 @@ namespace AryamanBMS.Models
         [StringLength(30)]
         public string Status { get; set; } = "Planning";
 
-        [Range(1, int.MaxValue,
-            ErrorMessage = "Please select a project manager.")]
+        [Range(1, int.MaxValue, ErrorMessage = "Please select a project manager.")]
         public int ProjectManagerId { get; set; }
+
+        [ForeignKey(nameof(ProjectManagerId))]
+        public EmployeeModel? ProjectManager { get; set; }
 
         public bool IsActive { get; set; } = true;
 
@@ -59,7 +61,7 @@ namespace AryamanBMS.Models
 
         public DateTime? UpdatedOn { get; set; }
 
-        public EmployeeModel? ProjectManager { get; set; }
+        
 
         
     }

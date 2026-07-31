@@ -35,7 +35,7 @@ namespace AryamanBMS.Controllers
             string sortBy = "ProgressDate",
             string sortOrder = "desc")
         {
-            var progressRecords = _progressRepository.ProjectTaskProgresses
+            var taskUpdates = _progressRepository.ProjectTaskProgresses
                 .Where(p => p.IsActive);
 
             var accessibleProjects =
@@ -52,7 +52,7 @@ namespace AryamanBMS.Controllers
                     return Forbid();
                 }
 
-                progressRecords = progressRecords.Where(p =>
+                taskUpdates  = taskUpdates.Where(p =>
                     p.ProjectTask!.ProjectId == projectId.Value);
             }
             else
@@ -62,7 +62,7 @@ namespace AryamanBMS.Controllers
                         .Select(p => p.Id)
                         .ToListAsync();
 
-                progressRecords = progressRecords.Where(p =>
+                taskUpdates  = taskUpdates.Where(p =>
                     accessibleProjectIds.Contains(
                         p.ProjectTask!.ProjectId));
             }
@@ -74,7 +74,7 @@ namespace AryamanBMS.Controllers
                     return Forbid();
                 }
 
-                progressRecords = progressRecords.Where(p =>
+                taskUpdates  = taskUpdates.Where(p =>
                     p.ProjectTaskId == projectTaskId.Value);
             }
 
@@ -82,7 +82,7 @@ namespace AryamanBMS.Controllers
             {
                 string keyword = search.Trim();
 
-                progressRecords = progressRecords.Where(p =>
+                taskUpdates = taskUpdates.Where(p =>
                     p.ProgressNotes.Contains(keyword) ||
                     p.ProjectTask!.TaskCode.Contains(keyword) ||
                     p.ProjectTask.TaskTitle.Contains(keyword) ||
@@ -93,39 +93,38 @@ namespace AryamanBMS.Controllers
             bool desc =
                 string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
 
-            progressRecords = sortBy switch
+            taskUpdates = sortBy switch
             {
                 "Project" => desc
-                    ? progressRecords.OrderByDescending(p => p.ProjectTask!.Project!.ProjectCode)
-                    : progressRecords.OrderBy(p => p.ProjectTask!.Project!.ProjectCode),
+                    ? taskUpdates.OrderByDescending(p => p.ProjectTask!.Project!.ProjectCode)
+                    : taskUpdates.OrderBy(p => p.ProjectTask!.Project!.ProjectCode),
 
                 "Task" => desc
-                    ? progressRecords.OrderByDescending(p => p.ProjectTask!.TaskCode)
-                    : progressRecords.OrderBy(p => p.ProjectTask!.TaskCode),
+                    ? taskUpdates.OrderByDescending(p => p.ProjectTask!.TaskCode)
+                    : taskUpdates.OrderBy(p => p.ProjectTask!.TaskCode),
 
                 "Hours" => desc
-                    ? progressRecords.OrderByDescending(p => p.HoursWorked)
-                    : progressRecords.OrderBy(p => p.HoursWorked),
+                    ? taskUpdates.OrderByDescending(p => p.HoursWorked)
+                    : taskUpdates.OrderBy(p => p.HoursWorked),
 
                 "Completion" => desc
-                    ? progressRecords.OrderByDescending(p => p.CompletionPercentage)
-                    : progressRecords.OrderBy(p => p.CompletionPercentage),
+                    ? taskUpdates.OrderByDescending(p => p.CompletionPercentage)
+                    : taskUpdates.OrderBy(p => p.CompletionPercentage),
 
                 "Status" => desc
-                    ? progressRecords.OrderByDescending(p => p.IsActive)
-                    : progressRecords.OrderBy(p => p.IsActive),
+                    ? taskUpdates.OrderByDescending(p => p.IsActive)
+                    : taskUpdates.OrderBy(p => p.IsActive),
 
                 _ => desc
-                    ? progressRecords.OrderByDescending(p => p.ProgressDate)
+                    ? taskUpdates.OrderByDescending(p => p.ProgressDate)
                         .ThenByDescending(p => p.Id)
-                    : progressRecords.OrderBy(p => p.ProgressDate)
+                    : taskUpdates.OrderBy(p => p.ProgressDate)
                         .ThenBy(p => p.Id)
             };
 
-            var data = await progressRecords
-                .ToListAsync();
+            var data = await taskUpdates.ToListAsync();
 
-            await LoadTasksAsync();
+            await LoadProjectTasksAsync();
 
             ViewBag.ProjectId = projectId;
             ViewBag.ProjectTaskId = projectTaskId;
@@ -134,213 +133,25 @@ namespace AryamanBMS.Controllers
             ViewBag.SortOrder = sortOrder;
 
             return View(data);
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> Create( int? projectId,int? projectTaskId)
-        {
-            if (projectTaskId.HasValue)
-            {
-                if (!await CanAccessTaskAsync(projectTaskId.Value))
-                {
-                    return Forbid();
-                }
-
-                var task = await _projectTaskRepository.ProjectTasks
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(t => t.Id == projectTaskId.Value);
-
-                projectId = task?.ProjectId;
-            }
-
-            if (projectId.HasValue &&
-                !await _projectAccessService.CanAccessProjectAsync(User, projectId.Value))
-            {
-                return Forbid();
-            }
-
-            await LoadProjectsAsync();
-            await LoadTasksAsync(projectId);
-
-            ViewBag.ProjectId = projectId;
-
-            return View(new ProjectTaskProgressModel
-            {
-                ProjectTaskId = projectTaskId ?? 0,
-                ProgressDate = DateTime.Today,
-                IsActive = true
-            });
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(int? projectId, ProjectTaskProgressModel model)
-        {
-            if (model.ProjectTaskId > 0 &&
-                !await CanAccessTaskAsync(model.ProjectTaskId))
-            {
-                return Forbid();
-            }
-
-            await ValidateProgressAsync(model);
-
-            if (!ModelState.IsValid)
-            {
-                await LoadProjectsAsync();
-                await LoadTasksAsync(projectId);
-
-                ViewBag.ProjectId = projectId;
-
-                return View(model);
-            }
-
-            model.ProgressNotes = model.ProgressNotes.Trim();
-            model.CreatedOn = DateTime.Now;
-            model.IsActive = true;
-
-            await _progressRepository.AddAsync(model);
-            await _progressRepository.SaveAsync();
-
-            await SyncProjectTaskAsync(model.ProjectTaskId);
-
-            TempData["Success"] =
-                "Task update added and project task recalculated successfully.";
-
-            return RedirectToAction(
-                nameof(Index),
-                new { projectTaskId = model.ProjectTaskId });
-        }
+        }                      
 
         [HttpGet]
         public async Task<IActionResult> Details(int id)
         {
-            var progress =
+            var taskUpdate =
                 await _progressRepository.GetDetailsAsync(id);
 
-            if (progress == null)
+            if (taskUpdate == null)
                 return NotFound();
 
-            if (!await CanAccessTaskAsync(progress.ProjectTaskId))
+            if (!await CanAccessTaskAsync(taskUpdate.ProjectTaskId))
             {
                 return Forbid();
             }
 
-            return View(progress);
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> Edit(int id)
-        {
-            var progress =
-                await _progressRepository.GetByIdAsync(id);
-
-            if (progress == null)
-                return NotFound();
-
-            if (!await CanAccessTaskAsync(progress.ProjectTaskId))
-            {
-                return Forbid();
-            }
-
-            await LoadTasksAsync();
-
-            return View(progress);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(
-            ProjectTaskProgressModel model)
-        {
-            var existing = await _progressRepository.GetByIdAsync(model.Id);
-
-            if (existing == null)
-                return NotFound();
-
-            if (!await CanAccessTaskAsync(existing.ProjectTaskId))
-            {
-                return Forbid();
-            }
-
-            model.ProjectTaskId = existing.ProjectTaskId;
-
-            await ValidateProgressAsync(model);
-
-            if (!ModelState.IsValid)
-            {
-                await LoadTasksAsync();
-                return View(model);
-            }
-
-            existing.ProgressDate = model.ProgressDate;
-            existing.HoursWorked = model.HoursWorked;
-            existing.CompletionPercentage = model.CompletionPercentage;
-            existing.ProgressNotes = model.ProgressNotes.Trim();
-            existing.IsActive = model.IsActive;
-            existing.UpdatedOn = DateTime.Now;
-
-            await _progressRepository.UpdateAsync(existing);
-            await _progressRepository.SaveAsync();
-
-            await SyncProjectTaskAsync(existing.ProjectTaskId);
-
-            TempData["Success"] =
-                "Task update saved and project task recalculated successfully.";
-
-            return RedirectToAction(
-                nameof(Index),
-                new { projectTaskId = existing.ProjectTaskId });
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var progress =
-                await _progressRepository.GetDetailsAsync(id);
-
-            if (progress == null)
-                return NotFound();
-
-            if (!await CanAccessTaskAsync(progress.ProjectTaskId))
-            {
-                return Forbid();
-            }
-
-            return View(progress);
-        }
-
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var progress =
-                await _progressRepository.GetByIdAsync(id);
-
-            if (progress == null)
-                return NotFound();
-
-            if (!await CanAccessTaskAsync(progress.ProjectTaskId))
-            {
-                return Forbid();
-            }
-
-            int projectTaskId = progress.ProjectTaskId;
-
-            progress.IsActive = false;
-            progress.UpdatedOn = DateTime.Now;
-
-            await _progressRepository.UpdateAsync(progress);
-            await _progressRepository.SaveAsync();
-
-            await SyncProjectTaskAsync(projectTaskId);
-
-            TempData["Success"] =
-               "Task update removed and project task recalculated successfully.";
-
-            return RedirectToAction(
-                nameof(Index),
-                new { projectTaskId });
-        }
+            return View(taskUpdate);
+        }             
+        
 
         [HttpGet]
         public async Task<IActionResult> GetProjectTasks(int projectId)
@@ -365,7 +176,7 @@ namespace AryamanBMS.Controllers
             return Json(tasks);
         }
 
-        private async Task LoadTasksAsync(int? projectId = null)
+        private async Task LoadProjectTasksAsync(int? projectId = null)
         {
             var accessibleProjects =
                 await _projectAccessService.ApplyProjectFilterAsync(
@@ -392,71 +203,9 @@ namespace AryamanBMS.Controllers
                     .OrderBy(t => t.Project!.ProjectName)
                     .ThenBy(t => t.TaskCode)
                     .ToListAsync();
-        }
+        }       
 
-        private async Task ValidateProgressAsync(
-            ProjectTaskProgressModel model)
-        {
-            bool taskExists =
-                await _projectTaskRepository.ProjectTasks
-                    .AnyAsync(t => t.Id == model.ProjectTaskId);
-
-            if (!taskExists)
-            {
-                ModelState.AddModelError(
-                    nameof(model.ProjectTaskId),
-                    "Please select a valid project task.");
-            }
-
-            if (model.ProgressDate.Date > DateTime.Today)
-            {
-                ModelState.AddModelError(
-                    nameof(model.ProgressDate),
-                    "Progress date cannot be in the future.");
-            }
-        }
-
-        private async Task SyncProjectTaskAsync(int projectTaskId)
-        {
-            var task =
-                await _projectTaskRepository.GetByIdAsync(projectTaskId);
-
-            if (task == null)
-                return;
-
-            var activeProgressRecords =
-                _progressRepository.ProjectTaskProgresses
-                    .Where(p =>
-                        p.ProjectTaskId == projectTaskId &&
-                        p.IsActive);
-
-            task.ActualHours =
-                await activeProgressRecords
-                    .SumAsync(p => (decimal?)p.HoursWorked)
-                ?? 0;
-
-            var latestProgress =
-                await activeProgressRecords
-                    .OrderByDescending(p => p.ProgressDate)
-                    .ThenByDescending(p => p.Id)
-                    .FirstOrDefaultAsync();
-
-            task.ProgressPercent =
-                latestProgress?.CompletionPercentage ?? 0;
-
-            task.Status = task.ProgressPercent switch
-            {
-                >= 100 => "Completed",
-                > 0 => "In Progress",
-                _ => "Not Started"
-            };
-
-            task.UpdatedOn = DateTime.Now;
-
-            await _projectTaskRepository.UpdateAsync(task);
-            await _projectTaskRepository.SaveAsync();
-        }
-
+        
         private async Task<bool> CanAccessTaskAsync(int projectTaskId)
         {
             var task =
@@ -475,17 +224,8 @@ namespace AryamanBMS.Controllers
                 task.ProjectId);
         }
 
-        private async Task LoadProjectsAsync()
-        {
-            var accessibleProjects =
-                await _projectAccessService.ApplyProjectFilterAsync(
-                    User,
-                    _projectRepository.Projects.Where(p => p.IsActive));
 
-            ViewBag.Projects =
-                await accessibleProjects
-                    .OrderBy(p => p.ProjectName)
-                    .ToListAsync();
-        }
+
+        
     }
 }

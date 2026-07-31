@@ -15,17 +15,20 @@ namespace AryamanBMS.Controllers
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IProjectTaskRepository _projectTaskRepository;
         private readonly IProjectTimelineService _projectTimelineService;
+        private readonly IProjectTaskProgressRepository _progressRepository;
 
         public EmployeeProjectController(
            UserManager<ApplicationUserModel> userManager,
            IEmployeeRepository employeeRepository,
            IProjectTaskRepository projectTaskRepository,
-           IProjectTimelineService projectTimelineService)
+           IProjectTimelineService projectTimelineService,           
+        IProjectTaskProgressRepository progressRepository)
         {
             _userManager = userManager;
             _employeeRepository = employeeRepository;
             _projectTaskRepository = projectTaskRepository;
             _projectTimelineService = projectTimelineService;
+            _progressRepository = progressRepository;
         }
 
         [HttpGet]
@@ -54,6 +57,7 @@ namespace AryamanBMS.Controllers
             var query = _projectTaskRepository.ProjectTasks
                 .AsNoTracking()
                 .Include(x => x.Project)
+                .Include(p => p.UpdatedByEmployee)
                 .Include(x => x.AssignedEmployee)
                 .Where(x =>
                     x.IsActive &&
@@ -229,6 +233,32 @@ namespace AryamanBMS.Controllers
 
             await _projectTaskRepository.UpdateAsync(existing);
             await _projectTaskRepository.SaveAsync();
+
+            var taskUpdate = new ProjectTaskProgressModel
+            {
+                ProjectTaskId = existing.Id,
+
+                UpdatedByEmployeeId = employee.Id,
+
+                ProgressDate = DateTime.Now,
+
+                HoursWorked = existing.ActualHours,
+
+                CompletionPercentage = existing.ProgressPercent,
+
+                TaskStatus = existing.Status,
+
+                ProgressNotes = string.IsNullOrWhiteSpace(existing.WorkUpdate)
+                 ? "Task updated."
+                 : existing.WorkUpdate.Trim(),
+
+                CreatedOn = DateTime.Now,
+
+                IsActive = true
+            };
+
+            await _progressRepository.AddAsync(taskUpdate);
+            await _progressRepository.SaveAsync();
 
             if (previousStatus != existing.Status)
             {

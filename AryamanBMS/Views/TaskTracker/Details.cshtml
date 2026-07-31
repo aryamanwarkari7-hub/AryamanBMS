@@ -8,27 +8,18 @@
 
     string taskText =
         $"{Model.ProjectTask?.TaskCode ?? "-"} - {Model.ProjectTask?.TaskTitle ?? "-"}";
-
-    string activeClass = Model.IsActive ? "badge-success" : "badge-danger";
-    string activeText = Model.IsActive ? "Active" : "Inactive";
 }
 
 <div class="module-header">
     <div>
         <h1 class="module-title">Task Update Details</h1>
         <p class="module-subtitle">
-            Recorded task update, hours and progress notes
+            Review the complete audit record for this employee task update.
         </p>
     </div>
 
     <div class="module-header-actions">
-        <a asp-action="Edit"
-           asp-route-id="@Model.Id"
-           class="btn-app btn-primary-app">
-            <i class="bi bi-pencil"></i>
-            Edit
-        </a>
-
+        
         <a asp-action="Index"
            asp-route-projectTaskId="@Model.ProjectTaskId"
            class="btn-app btn-secondary-app">
@@ -49,23 +40,30 @@
         </div>
 
         <div class="detail-summary-item">
-            <div class="detail-summary-label">Hours Worked</div>
+            <div class="detail-summary-label">Employee</div>
             <div class="detail-summary-value">
-                @Model.HoursWorked.ToString("0.00")
+                @(Model.UpdatedByEmployee?.FullName ?? "-")
             </div>
         </div>
 
         <div class="detail-summary-item">
-            <div class="detail-summary-label">Completion</div>
+            <div class="detail-summary-label">Progress</div>
             <div class="detail-summary-value">
                 @Model.CompletionPercentage%
             </div>
         </div>
 
+        <div class="detail-info-row">
+            <span class="detail-info-label">Hours Worked</span>
+            <strong class="detail-info-value">
+                @Model.HoursWorked.ToString("0.00")
+            </strong>
+        </div>
+
         <div class="detail-summary-item">
-            <div class="detail-summary-label">Active Status</div>
+            <div class="detail-summary-label">Task Status</div>
             <div class="detail-summary-value">
-                <span class="@activeClass">@activeText</span>
+                @Model.TaskStatus
             </div>
         </div>
     </div>
@@ -73,7 +71,7 @@
     <div class="detail-grid-2">
         <div class="app-card">
             <div class="card-header">
-                <h5 class="card-title">Task Update Information</h5>
+                <h5 class="card-title">Project & Task Information</h5>
             </div>
 
             <div class="card-body">
@@ -89,38 +87,41 @@
                     </div>
 
                     <div class="detail-info-row">
-                        <span class="detail-info-label">Update Date</span>
+                        <span class="detail-info-label">Updated By</span>
                         <strong class="detail-info-value">
-                            @Model.ProgressDate.ToString("dd-MMM-yyyy")
+                            @(Model.UpdatedByEmployee?.FullName ?? "-")
                         </strong>
                     </div>
 
                     <div class="detail-info-row">
-                        <span class="detail-info-label">Hours Worked</span>
+                        <span class="detail-info-label">Employee Code</span>
                         <strong class="detail-info-value">
-                            @Model.HoursWorked.ToString("0.00")
+                            @(Model.UpdatedByEmployee?.EmployeeCode ?? "-")
                         </strong>
                     </div>
 
-                    <div class="detail-info-row">
-                        <span class="detail-info-label">Active Status</span>
-                        <strong class="detail-info-value">
-                            <span class="@activeClass">@activeText</span>
-                        </strong>
-                    </div>
+                    
                 </div>
             </div>
         </div>
 
         <div class="app-card">
             <div class="card-header">
-                <h5 class="card-title">Progress</h5>
+                <h5 class="card-title">Update Summary</h5>
             </div>
 
             <div class="card-body">
                 <div class="detail-info-list">
+
                     <div class="detail-info-row">
-                        <span class="detail-info-label">Task Completion</span>
+    <span class="detail-info-label">Task Status</span>
+    <strong class="detail-info-value">
+        @Model.TaskStatus
+    </strong>
+</div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Progress</span>
                         <strong class="detail-info-value">
                             @Model.CompletionPercentage%
                         </strong>
@@ -158,7 +159,7 @@
 
     <div class="app-card">
         <div class="card-header">
-            <h5 class="card-title">Update Notes</h5>
+            <h5 class="card-title">Work Update</h5>
         </div>
 
         <div class="card-body">
@@ -169,7 +170,7 @@
                 }
                 else
                 {
-                    <span>No update notes provided.</span>
+                    <span>No work update was provided.</span>
                 }
             </div>
         </div>

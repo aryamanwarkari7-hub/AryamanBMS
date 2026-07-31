@@ -158,5 +158,9 @@ namespace AryamanBMS.Models
             PreviousEmployments
         { get; set; }
         = new List<EmployeePreviousEmploymentModel>();
+
+
+        public ICollection<ProjectModel> ManagedProjects { get; set; }
+         = new List<ProjectModel>();
     }
 }
