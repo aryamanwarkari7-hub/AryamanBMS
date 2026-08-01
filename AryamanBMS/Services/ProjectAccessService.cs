@@ -59,29 +59,16 @@ namespace AryamanBMS.Services
 
             var employeeId = await GetCurrentEmployeeIdAsync(user);
 
-            throw new Exception($"EmployeeId = {employeeId}");
+            
 
             if (!employeeId.HasValue)
             {
                 return false;
             }
 
-            bool isManager =
-                await _projectRepository.Projects
-                    .AnyAsync(p =>
-                        p.Id == projectId &&
-                        p.ProjectManagerId == employeeId.Value);
-
-            if (isManager)
-            {
-                return true;
-            }
-
-            return await _projectMemberRepository.ProjectMembers
-                .AnyAsync(pm =>
-                    pm.ProjectId == projectId &&
-                    pm.EmployeeId == employeeId.Value &&
-                    pm.IsActive);
+            return await _projectRepository.Projects.AnyAsync(p =>
+            p.Id == projectId &&
+            p.ProjectManagerId == employeeId.Value);
         }
 
         public async Task<IQueryable<ProjectModel>> ApplyProjectFilterAsync(
@@ -103,13 +90,7 @@ namespace AryamanBMS.Services
                 return projects.Where(p => false);
             }
 
-            return projects.Where(p =>
-                p.ProjectManagerId == employeeId.Value ||
-                _projectMemberRepository.ProjectMembers
-                    .Any(pm =>
-                        pm.ProjectId == p.Id &&
-                        pm.EmployeeId == employeeId.Value &&
-                        pm.IsActive));
+            return projects.Where(p =>p.ProjectManagerId == employeeId.Value);
         }
     }
 }

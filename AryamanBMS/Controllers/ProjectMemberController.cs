@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,HR,ProjectManager")]
+   
     public class ProjectMemberController : Controller
     {
         private readonly IProjectRepository _projectRepository;
@@ -52,9 +52,17 @@ namespace AryamanBMS.Controllers
             if (project == null)
                 return NotFound();
 
-            if (!await _projectAccessService.CanAccessProjectAsync(
-                   User,
-                   projectId))
+            var employeeId =    await _projectAccessService.GetCurrentEmployeeIdAsync(User);
+
+            bool canManage =
+                User.IsInRole("Admin") ||
+                User.IsInRole("HR") ||
+                (employeeId.HasValue &&
+                 await _projectRepository.Projects.AnyAsync(p =>
+                     p.Id == projectId &&
+                     p.ProjectManagerId == employeeId.Value));
+
+            if (!canManage)
             {
                 return Forbid();
             }
@@ -78,9 +86,17 @@ namespace AryamanBMS.Controllers
             if (project == null)
                 return NotFound();
 
-            if (!await _projectAccessService.CanAccessProjectAsync(
-              User,
-              model.ProjectId))
+            var employeeId = await _projectAccessService.GetCurrentEmployeeIdAsync(User);
+
+            bool canManage =
+                User.IsInRole("Admin") ||
+                User.IsInRole("HR") ||
+                (employeeId.HasValue &&
+                 await _projectRepository.Projects.AnyAsync(p =>
+                     p.Id == model.ProjectId &&
+                     p.ProjectManagerId == employeeId.Value));
+
+            if (!canManage)
             {
                 return Forbid();
             }
@@ -155,9 +171,17 @@ namespace AryamanBMS.Controllers
             if (project == null)
                 return NotFound();
 
-            if (!await _projectAccessService.CanAccessProjectAsync(
-               User,
-               member.ProjectId))
+            var employeeId = await _projectAccessService.GetCurrentEmployeeIdAsync(User);
+
+            bool canManage =
+                User.IsInRole("Admin") ||
+                User.IsInRole("HR") ||
+                (employeeId.HasValue &&
+                 await _projectRepository.Projects.AnyAsync(p =>
+                     p.Id == member.ProjectId &&
+                     p.ProjectManagerId == employeeId.Value));
+
+            if (!canManage)
             {
                 return Forbid();
             }
@@ -326,7 +350,26 @@ namespace AryamanBMS.Controllers
             ViewBag.ProjectId = projectId;
             ViewBag.SearchText = searchText;
             ViewBag.CurrentPage = page;
-            ViewBag.TotalPages = totalPages;
+
+            bool canManageProject =
+              User.IsInRole("Admin") ||
+              User.IsInRole("HR");
+
+            if (!canManageProject && projectId.HasValue)
+            {
+                var employeeId =
+                    await _projectAccessService.GetCurrentEmployeeIdAsync(User);
+
+                if (employeeId.HasValue)
+                {
+                    canManageProject =
+                        await _projectRepository.Projects.AnyAsync(p =>
+                            p.Id == projectId.Value &&
+                            p.ProjectManagerId == employeeId.Value);
+                }
+            }
+
+            ViewBag.CanManageProject = canManageProject;
 
             return View(data);
         }

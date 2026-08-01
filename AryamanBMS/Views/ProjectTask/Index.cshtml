@@ -5,6 +5,8 @@
 
     string sortBy = ViewBag.SortBy as string ?? "CreatedOn";
     string sortOrder = ViewBag.SortOrder as string ?? "desc";
+
+    
 }
 
 <div class="module-header">
@@ -26,12 +28,15 @@
             </a>
         }
 
-        <a asp-action="Create"
-           asp-route-projectId="@ViewBag.ProjectId"
-           class="btn-app btn-primary-app">
-            <i class="bi bi-plus-lg"></i>
-            Add Task
-        </a>
+       @if (ViewBag.CanManageProject == true)
+        {
+            <a asp-action="Create"
+               asp-route-projectId="@ViewBag.ProjectId"
+               class="btn-app btn-primary-app">
+                <i class="bi bi-plus-lg"></i>
+                Add Task
+            </a>
+        }
 
     </div>
 </div>
@@ -44,23 +49,28 @@
         <form method="get" asp-action="Index">
             <div class="form-grid-4">
 
-                <div class="form-group">
-                    <label>Project</label>
+                @if (ViewBag.CanManageProject == true|| 
+                    User.IsInRole("Admin") || 
+                    User.IsInRole("HR"))
+                {
+                    <div class="form-group">
+                        <label>Project</label>
 
-                    <select name="projectId"
-                            class="app-select">
+                        <select name="projectId"
+                                class="app-select">
 
-                        <option value="">All Projects</option>
+                            <option value="">All Projects</option>
 
-                        @foreach (var project in ViewBag.Projects)
-                        {
-                            <option value="@project.Id"
-                                    selected="@(ViewBag.ProjectId == project.Id)">
-                                @project.ProjectCode - @project.ProjectName
-                            </option>
-                        }
-                    </select>
-                </div>
+                            @foreach (var project in ViewBag.Projects)
+                            {
+                                <option value="@project.Id"
+                                        selected="@(ViewBag.ProjectId == project.Id)">
+                                    @project.ProjectCode - @project.ProjectName
+                                </option>
+                            }
+                        </select>
+                    </div>
+                }
 
                 <div class="form-group">
                     <label>Search</label>
@@ -227,12 +237,15 @@
                                         <i class="bi bi-eye"></i>
                                     </a>
 
-                                    <a asp-action="Edit"
-                                       asp-route-id="@task.Id"
-                                       class="btn-app btn-secondary-app btn-icon"
-                                       title="Edit">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
+                                        @if (ViewBag.CanManageProject == true)
+                                        {
+                                            <a asp-action="Edit"
+                                               asp-route-id="@task.Id"
+                                               class="btn-app btn-secondary-app btn-icon"
+                                               title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        }
 
                                     <a asp-controller="TaskTracker"
                                        asp-action="Index"
@@ -242,12 +255,15 @@
                                         <i class="bi bi-activity"></i>
                                     </a>
 
-                                    <a asp-action="Delete"
-                                       asp-route-id="@task.Id"
-                                       class="btn-app btn-danger-app btn-icon"
-                                       title="Deactivate">
-                                        <i class="bi bi-trash"></i>
-                                    </a>
+                                        @if (User.IsInRole("Admin") || User.IsInRole("HR"))
+                                        {
+                                            <a asp-action="Delete"
+                                               asp-route-id="@task.Id"
+                                               class="btn-app btn-danger-app btn-icon"
+                                               title="Deactivate">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        }
 
                                 </div>
                             </td>

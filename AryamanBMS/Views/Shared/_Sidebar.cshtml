@@ -1,10 +1,12 @@
 ﻿@using AryamanBMS.Models
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.EntityFrameworkCore
+@using AryamanBMS.Repositories.Interfaces
 
 @inject AryamanBMS.Repositories.Interfaces.IEmployeeRepository EmployeeRepository
 @inject AryamanBMS.Repositories.Interfaces.IProjectMemberRepository ProjectMemberRepository
 @inject UserManager<ApplicationUserModel> UserManager
+@inject IProjectRepository ProjectRepository
 
 @{
     var currentController =
@@ -36,9 +38,7 @@
         currentUser != null &&
         await UserManager.IsInRoleAsync(currentUser, "Employee");
 
-    var isProjectManager =
-        currentUser != null &&
-        await UserManager.IsInRoleAsync(currentUser, "ProjectManager");
+    
 
     var isFinance =
         currentUser != null &&
@@ -50,6 +50,7 @@
         isEmployee && !isAdmin && !isHR;
 
     var hasEmployeeProjectAccess = false;
+    var managesProjects = false;
 
     if (isEmployeeOnly && currentUser != null)
     {
@@ -61,17 +62,16 @@
 
         if (linkedEmployee != null)
         {
-            hasEmployeeProjectAccess =
-                await ProjectMemberRepository.ProjectMembers
-                    .AsNoTracking()
-                    .AnyAsync(x =>
-                        x.EmployeeId == linkedEmployee.Id &&
-                        x.IsActive);
+            managesProjects = await ProjectRepository.Projects
+                .AnyAsync(p =>
+                    p.IsActive &&
+                    p.ProjectManagerId == linkedEmployee.Id);
+
+            hasEmployeeProjectAccess = managesProjects;
         }
     }
 
-    var canAccessProjectManagement =
-        isAdminOrHR || isProjectManager || hasEmployeeProjectAccess;
+    var canAccessProjectManagement =  isAdminOrHR || isEmployeeOnly;
 
     var canAccessAccounts =
         isAdmin || isFinance;
@@ -224,8 +224,13 @@
     <div class="sidebar-menu" id="sidebarAccordion">
 
         
-        @*  Dashboard *@
+        @* 
+        ==========================================
+           DASHBOARD
+        ========================================== *@
         <div class="menu-group">
+
+            @* Admin / HR Dashboard *@
             @if (isAdminOrHR)
             {
                 <a asp-controller="Dashboard"
@@ -234,12 +239,14 @@
 
                     <div class="menu-group-left">
                         <i class="bi bi-speedometer2"></i>
-                        <span>Dashboard</span>
+                        <span>DASHBOARD</span>
                     </div>
 
                 </a>
             }
-            else if (isEmployeeOnly)
+
+            @* Employee Dashboard (includes employees who manage projects) *@
+            else
             {
                 <a asp-controller="Employee"
                    asp-action="MyDashboard"
@@ -252,9 +259,14 @@
 
                 </a>
             }
+
         </div>
 
-        @* Master Setup *@
+        @* ==========================================
+           MASTER SETUP
+        ========================================== *@
+
+        @* ---------- Admin + HR ---------- *@
         @if (isAdminOrHR)
         {
             <div class="menu-group">
@@ -267,7 +279,7 @@
 
                     <div class="menu-group-left">
                         <i class="bi bi-gear"></i>
-                        <span>Master Setup</span>
+                        <span>MASTER SETUP</span>
                     </div>
 
                     <i class="bi bi-chevron-down"></i>
@@ -278,68 +290,70 @@
                      id="masterSetupMenu"
                      data-bs-parent="#sidebarAccordion">
 
-                    <div class="submenu">
+                    <div class="submenu">                                               
+                        
+                        @* ==========================================
+                           USERS
+                        ========================================== *@
+                        <a asp-controller="User"
+                           asp-action="Index"
+                           class="submenu-item @(currentController == "User" ? "active-menu" : "")">
+                            <i class="bi bi-people-fill"></i>
+                            <span>Users</span>
+                        </a>
 
-                        @if (isAdmin)
-                        {
-                            <a asp-controller="User"
-                               asp-action="Index"
-                               class="submenu-item @(currentController == "User" ? "active-menu" : "")">
+                        @* ==========================================
+                           USER ROLES
+                        ========================================== *@
+                        <a asp-controller="Role"
+                           asp-action="Index"
+                           class="submenu-item @(currentController == "Role" ? "active-menu" : "")">
+                            <i class="bi bi-person-lock"></i>
+                            <span>User Roles</span>
+                        </a>
 
-                                <i class="bi bi-people-fill"></i>
-                                <span>Users</span>
-
-                            </a>
-
-                            <a asp-controller="Role"
-                                 asp-action="Index"
-                                 class="submenu-item @(currentController == "Role" ? "active-menu" : "")">
-
-                                <i class="bi bi-person-lock"></i>
-                                <span>User Roles</span>
-                            
-                            </a>
-                        }
-
+                        @* ==========================================
+                           DEPARTMENTS
+                        ========================================== *@
                         <a asp-controller="Department"
                            asp-action="Index"
                            class="submenu-item @(currentController == "Department" ? "active-menu" : "")">
-
                             <i class="bi bi-building"></i>
                             <span>Departments</span>
-
                         </a>
 
+                        @* ==========================================
+                           DESIGNATIONS
+                        ========================================== *@
                         <a asp-controller="Designation"
                            asp-action="Index"
                            class="submenu-item @(currentController == "Designation" ? "active-menu" : "")">
-
                             <i class="bi bi-award"></i>
                             <span>Designations</span>
-
                         </a>
 
-                        @if (isAdmin)
-                        {
+                        @* ---------- Security Logs ---------- *@
+
+                        @* ==========================================
+                           LOGIN HISTORY
+                        ========================================== *@
                             <a asp-controller="LoginHistory"
                                asp-action="Index"
-                               class="submenu-item
-                               @(currentController == "LoginHistory"? "active-menu": "")">
-                               
-                                 <i class="bi bi-shield-lock"></i>
-                                 <span>Login History</span>
-
+                               class="submenu-item @(currentController == "LoginHistory" ? "active-menu" : "")">
+                                <i class="bi bi-shield-lock"></i>
+                                <span>Login History</span>
                             </a>
 
+                        @* ==========================================
+                           PASSWORD CHANGE HISTORY
+                        ========================================== *@
                             <a asp-controller="PasswordChangeLog"
                                asp-action="Index"
-                               class="submenu-item
-                                @(currentController == "PasswordChangeLog"?"active-menu" :"") ">
+                               class="submenu-item @(currentController == "PasswordChangeLog" ? "active-menu" : "")">
                                 <i class="bi bi-shield-lock"></i>
-                                Password Change Logs
+                                <span>Password Change Logs</span>
                             </a>
-                         }
-
+                        
                     </div>
 
                 </div>
@@ -347,7 +361,9 @@
             </div>
         }
 
-        @* HR & Adm. *@
+        @* ==========================================
+           HR & ADMINISTRATION
+        ========================================== *@
         <div class="menu-group">
 
             <button class="menu-group-header @(isHrActive ? "active-menu" : "")"
@@ -358,7 +374,7 @@
 
                 <div class="menu-group-left">
                     <i class="bi bi-person-workspace"></i>
-                    <span>HR & Administration</span>
+                    <span>HR ADMINISTRATION</span>
                 </div>
 
                 <i class="bi bi-chevron-down"></i>
@@ -371,7 +387,9 @@
 
                 <div class="submenu">
 
-                    @* Employee *@
+                    @* ==========================================
+                        EMPLOYEES
+                    ========================================== *@
                     <div class="submenu-nested">
 
                         <button class="submenu-item submenu-toggle @(isEmployeeActive ? "active-menu" : "")"
@@ -391,8 +409,13 @@
                         <div class="collapse @(isEmployeeActive ? "show" : "")"
                              id="employeeSubMenu">
 
+                            @* ---------- Admin + HR ---------- *@
                             @if (isAdminOrHR)
                             {
+
+                                @* ==========================================
+                                    EMPLOYEE DASHBOARD
+                                ========================================== *@
                                 <a asp-controller="Employee"
                                 asp-action="Dashboard"
                                 class="submenu-item nested-item @(currentController == "Employee" && currentAction == "Dashboard" ? "active-menu" : "")">
@@ -402,6 +425,9 @@
 
                                 </a>
 
+                                @* ==========================================
+                                    EMPLOYEE REGISTER
+                                ========================================== *@
                                 <a asp-controller="Employee"
                                 asp-action="Index"
                                 class="submenu-item nested-item @(currentController == "Employee" && currentAction == "Index" ? "active-menu" : "")">
@@ -412,9 +438,12 @@
                                 </a>
                             }
 
-                            
+                            @* ---------- HR + Employee ---------- *@
                             @if (!isAdmin)
                             {
+                                @* ==========================================
+                                    EMPLOYEE PROFILE
+                                ========================================== *@
                                 <a asp-controller="Employee"
                                    asp-action="Profile"
                                    class="submenu-item nested-item @(currentController == "Employee" && currentAction == "Profile" ? "active-menu" : "")">
@@ -431,7 +460,9 @@
 
                     </div>
 
-                    @* Leave *@
+                    @* ==========================================
+                        LEAVE
+                    ========================================== *@
                     <div class="submenu-nested">
 
                         <button class="submenu-item submenu-toggle @(isLeaveActive ? "active-menu" : "")"
@@ -441,7 +472,7 @@
                                 aria-expanded="@isLeaveActive.ToString().ToLower()">
 
                             <i class="bi bi-calendar2-check"></i>
-                            <span>Leave</span>
+                            <span>Leaves</span>
                             <i class="bi bi-chevron-down ms-auto"></i>
 
                         </button>
@@ -451,6 +482,9 @@
 
                             @if (isAdminOrHR)
                             {
+                                @* ==========================================
+                                    LEAVE DASHBOARD
+                                ========================================== *@
                                 <a asp-controller="LeaveApplication"
                                    asp-action="Dashboard"
                                    class="submenu-item nested-item @(currentController == "LeaveApplication" && currentAction == "Dashboard" ? "active-menu" : "")">
@@ -461,6 +495,9 @@
                                 </a>
                             }
 
+                            @* ============================================================
+                                LEAVE APPLICATION
+                             =========================================================== *@
                             <a asp-controller="LeaveApplication"
                                asp-action="Index"
                                class="submenu-item nested-item @(currentController == "LeaveApplication" && currentAction == "Index" ? "active-menu" : "")">
@@ -470,6 +507,9 @@
 
                             </a>
 
+                            @* ============================================================
+                                COMP-OFF MANAGEMENT
+                            =========================================================== *@
                             <a asp-controller="CompOffCredit"
                                asp-action="Index"
                                class="submenu-item nested-item @(currentController == "CompOffCredit" ? "active-menu" : "")">
@@ -477,15 +517,16 @@
                                 <i class="bi bi-arrow-repeat"></i>
 
                                 <span>
-                                    @(isEmployeeOnly
-                                                                        ? "My Comp Off"
-                                                                        : "Comp Off Management")
+                                    @(isEmployeeOnly ? "My Comp Off" : "Comp Off")
                                 </span>
 
                             </a>
 
                             @if (isAdminOrHR)
                             {
+                                @* ============================================================
+                                   LEAVE BALANCES
+                                =========================================================== *@
                                 <a asp-controller="LeaveBalance"
                                    asp-action="Index"
                                    class="submenu-item nested-item @(currentController == "LeaveBalance" ? "active-menu" : "")">
@@ -495,6 +536,9 @@
 
                                 </a>
 
+                                @* ============================================================
+                                   LEAVE TYPES
+                                =========================================================== *@
                                 <a asp-controller="LeaveType"
                                    asp-action="Index"
                                    class="submenu-item nested-item @(currentController == "LeaveType" ? "active-menu" : "")">
@@ -509,8 +553,9 @@
 
                     </div>
 
-
-                    @* Attendance *@
+                    @* ==========================================
+                        ATTENDANCE
+                    ========================================== *@
                     <div class="submenu-nested">
 
                         <button class="submenu-item submenu-toggle @(isAttendanceActive ? "active-menu" : "")"
@@ -530,6 +575,9 @@
 
                             @if (isEmployeeOnly)
                             {
+                                @* ==========================================
+                                    EMPLOYEE DAILY ATTENDANCE
+                                ========================================== *@
                                 <a asp-controller="Attendance"
                                    asp-action="Index"
                                    class="submenu-item nested-item @(currentController == "Attendance" && currentAction == "Index" ? "active-menu" : "")">
@@ -539,6 +587,9 @@
 
                                 </a>
 
+                                @* ==========================================
+                                    EMPLOYEE MONTHLY ATTENDANCE
+                                ========================================== *@
                                 <a asp-controller="Attendance"
                                    asp-action="MyMonthly"
                                    class="submenu-item nested-item @(currentController == "Attendance" && currentAction == "MyMonthly" ? "active-menu" : "")">
@@ -551,6 +602,9 @@
 
                             @if (isAdminOrHR)
                             {
+                                @* ==========================================
+                                    ATTENDANCE DASHBOARD
+                                ========================================== *@
                                 <a asp-controller="Attendance"
                                    asp-action="Dashboard"
                                    class="submenu-item nested-item @(currentController == "Attendance" && currentAction == "Dashboard" ? "active-menu" : "")">
@@ -560,6 +614,9 @@
 
                                 </a>
 
+                                @* ==========================================
+                                    ATTENDANCE REGISTER
+                                ========================================== *@
                                 <a asp-controller="Attendance"
                                    asp-action="Register"
                                    class="submenu-item nested-item @(currentController == "Attendance" && currentAction == "Register" ? "active-menu" : "")">
@@ -569,6 +626,9 @@
 
                                 </a>
 
+                                @* ==========================================
+                                    ATTENDANCE SUMMARY
+                                ========================================== *@
                                 <a asp-controller="Attendance"
                                    asp-action="Summary"
                                    class="submenu-item nested-item @(currentController == "Attendance" && currentAction == "Summary" ? "active-menu" : "")">
@@ -583,7 +643,9 @@
 
                     </div>
 
-                    @* Salary *@
+                    @* ==========================================
+                        SALARY
+                    ========================================== *@
                     <div class="submenu-nested">
 
                         <button class="submenu-item submenu-toggle @(isSalaryActive ? "active-menu" : "")"
@@ -598,11 +660,13 @@
 
                         </button>
 
-                        <div class="collapse @(isSalaryActive ? "show" : "")"
-                             id="salarySubMenu">
+                        <div class="collapse @(isSalaryActive ? "show" : "")" id="salarySubMenu">
 
                             @if (isAdminOrHR)
                             {
+                                @* ==========================================
+                                    SALARY DASHBOARD
+                                ========================================== *@
                                 <a asp-controller="Salary"
                                    asp-action="Dashboard"
                                    class="submenu-item nested-item @(currentController == "Salary" && currentAction == "Dashboard" ? "active-menu" : "")">
@@ -612,6 +676,9 @@
 
                                 </a>
 
+                                @* ==========================================
+                                    SALARY STRUCTURE 
+                                ========================================== *@
                                 <a asp-controller="SalaryStructure"
                                    asp-action="Index"
                                    class="submenu-item nested-item @(currentController == "SalaryStructure" ? "active-menu" : "")">
@@ -621,15 +688,21 @@
 
                                 </a>
 
+                                @* ==========================================
+                                    SALARY PAY DAYS
+                                ========================================== *@
                                 <a asp-controller="Salary"
                                    asp-action="AttendanceSummary"
                                    class="submenu-item nested-item @(currentController == "Salary" && currentAction == "AttendanceSummary" ? "active-menu" : "")">
 
                                     <i class="bi bi-cash-stack"></i>
-                                    <span>Attendance Count</span>
+                                    <span>Pay Days</span>
 
                                 </a>
 
+                                @* ==========================================
+                                    SALARY REGISTER
+                                ========================================== *@
                                 <a asp-controller="Salary"
                                    asp-action="Index"
                                    class="submenu-item nested-item @(currentController == "Salary" && currentAction == "Index" ? "active-menu" : "")">
@@ -639,15 +712,21 @@
 
                                 </a>
 
+                                @* ==========================================
+                                    SALARY ADVANCES
+                                ========================================== *@
                                 <a asp-controller="SalaryAdvance"
                                    asp-action="Index"
                                    class="submenu-item nested-item @(currentController == "SalaryAdvance" ? "active-menu" : "")">
 
                                     <i class="bi bi-wallet"></i>
-                                    <span>Salary Advances</span>
+                                    <span>Advances Tracker</span>
 
                                 </a>
 
+                                @* ==========================================
+                                    SALARY BATCHES
+                                ========================================== *@
                                 <a asp-controller="SalaryPaymentBatch"
                                    asp-action="Index"
                                    class="submenu-item nested-item @(currentController == "SalaryPaymentBatch" ? "active-menu" : "")">
@@ -657,20 +736,24 @@
 
                                 </a>
 
+                                @* ==========================================
+                                    SALARY FINAL PAYOUTS
+                                ========================================== *@
                                 <a asp-controller="FullAndFinalSettlement"
                                    asp-action="Index"
                                    class="submenu-item nested-item @(currentController == "FullAndFinalSettlement" ? "active-menu" : "")">
 
                                     <i class="bi bi-person-check"></i>
-                                    <span>Full & Final</span>
+                                    <span>Final Payouts</span>
 
                                 </a>
-
-
                             }
 
                             @if (isEmployeeOnly)
                             {
+                                @* ==========================================
+                                    EMPLOYEE SALARY PAYSLIP
+                                ========================================== *@
                                 <a asp-controller="Salary"
                                    asp-action="MyPayslip"
                                    class="submenu-item nested-item">
@@ -680,6 +763,9 @@
 
                                 </a>
 
+                                @* ==========================================
+                                    EMPLOYEE SALARY HISTORY
+                                ========================================== *@
                                 <a asp-controller="Salary"
                                    asp-action="MySalary"
                                    class="submenu-item nested-item @(currentController == "Salary" && currentAction == "MySalary" ? "active-menu" : "")">
@@ -694,9 +780,14 @@
 
                     </div>
 
-                    @* Letters *@
+                    @* ==========================================
+                        LETTERS
+                    ========================================== *@
                     @if (isAdminOrHR)
                     {
+                        @* ==========================================
+                            ALL SCANNED LETTER 
+                        ========================================== *@
                         <a asp-controller="Letter"
                            asp-action="Index"
                            class="submenu-item @(isLetterActive ? "active-menu" : "")">
@@ -713,8 +804,10 @@
 
         </div>    
 
-        @* Project Management *@
-        @* Project Management *@
+       
+        @* ==========================================
+           PROJECT MANAGEMENT
+        ========================================== *@
         @if (canAccessProjectManagement)
         {
             <div class="menu-group">
@@ -726,7 +819,7 @@
 
                     <div class="menu-group-left">
                         <i class="bi bi-kanban"></i>
-                        <span>Project Management</span>
+                        <span>PROJECT MGMT</span>
                     </div>
 
                     <i class="bi bi-chevron-down"></i>
@@ -738,8 +831,11 @@
 
                     <div class="submenu" id="projectSubAccordion">
 
-                        @if (isEmployeeOnly)
+                        @if (isEmployeeOnly && !managesProjects)
                         {
+                            @* ==========================================
+                                EMPLOYEE-ASSIGNED PROJECT
+                             ========================================== *@
                             <a asp-controller="Project"
                                asp-action="Index"
                                class="submenu-item @(currentController == "Project" ? "active-menu" : "")">
@@ -747,6 +843,9 @@
                                 <span>My Projects</span>
                             </a>
 
+                            @* ==========================================
+                                EMPLOYEE-ASSIGNED PROJECT TASKS
+                             ========================================== *@
                             <a asp-controller="EmployeeProject"
                                asp-action="MyTasks"
                                class="submenu-item @(currentController == "EmployeeProject" ? "active-menu" : "")">
@@ -756,6 +855,9 @@
                         }
                         else
                         {
+                            @* ==========================================
+                                PROJECT DASHBOARD
+                             ========================================== *@
                             <a asp-controller="Project"
                                asp-action="Overview"
                                class="submenu-item @(currentController == "Project" && currentAction == "Overview" ? "active-menu" : "")">
@@ -769,7 +871,7 @@
                                         data-bs-toggle="collapse"
                                         data-bs-target="#projectSetupSubMenu"
                                         aria-expanded="@isProjectSetupActive.ToString().ToLower()">
-
+                                    
                                     <i class="bi bi-folder2-open"></i>
                                     <span>Project Setup</span>
                                     <i class="bi bi-chevron-down ms-auto"></i>
@@ -779,8 +881,12 @@
                                      id="projectSetupSubMenu"
                                      data-bs-parent="#projectSubAccordion">
 
+                                     @*-----------Admin + HR ---*@
                                     @if (isAdmin || isHR)
                                     {
+                                        @* ==========================================
+                                            PROJECTS
+                                        ========================================== *@
                                         <a asp-controller="Project"
                                            asp-action="Index"
                                            class="submenu-item nested-item @(currentController == "Project" && currentAction != "Overview" ? "active-menu" : "")">
@@ -788,6 +894,9 @@
                                             <span>Projects</span>
                                         </a>
 
+                                        @* ==========================================
+                                            PROJECT MEMBERS
+                                        ========================================== *@
                                         <a asp-controller="ProjectMember"
                                            asp-action="AllMembers"
                                            class="submenu-item nested-item @(currentController == "ProjectMember" ? "active-menu" : "")">
@@ -816,6 +925,9 @@
 
                                     @if (isAdmin || isHR)
                                     {
+                                        @* ==========================================
+                                            PROJECT TASKS
+                                        ========================================== *@
                                         <a asp-controller="ProjectTask"
                                            asp-action="Index"
                                            class="submenu-item nested-item @(currentController == "ProjectTask" ? "active-menu" : "")">
@@ -823,6 +935,9 @@
                                             <span>Tasks</span>
                                         </a>
 
+                                        @* ==========================================
+                                            PROJECT MILESTONES
+                                        ========================================== *@
                                         <a asp-controller="ProjectFlow"
                                            asp-action="Index"
                                            class="submenu-item nested-item @(currentController == "ProjectFlow" ? "active-menu" : "")">
@@ -851,6 +966,9 @@
 
                                     @if (isAdmin || isHR)
                                     {
+                                        @* ==========================================
+                                            PROJECT TASK UPDATES
+                                        ========================================== *@
                                         <a asp-controller="TaskTracker"
                                            asp-action="Index"
                                            class="submenu-item nested-item @(currentController == "TaskTracker" ? "active-menu" : "")">
@@ -859,6 +977,9 @@
                                         </a>
                                     }
 
+                                    @* ==========================================
+                                        PROJECT MEETINGS
+                                    ========================================== *@
                                     <a asp-controller="MOM"
                                        asp-action="Index"
                                        class="submenu-item nested-item @(currentController == "MOM" ? "active-menu" : "")">
@@ -868,6 +989,9 @@
 
                                     @if (isAdmin || isHR)
                                     {
+                                        @* ==========================================
+                                            PROJECT RISKS
+                                        ========================================== *@
                                         <a asp-controller="Risk"
                                            asp-action="Index"
                                            class="submenu-item nested-item @(currentController == "Risk" ? "active-menu" : "")">
@@ -884,7 +1008,9 @@
             </div>
         }
 
-        @* Employee Self-Service *@
+        @* ==========================================
+           EMPLOYEE SELF-SERVICE
+        ========================================== *@
         @if (isEmployeeOnly)
         {
             <div class="menu-group">
@@ -949,7 +1075,9 @@
             </div>
                 }
 
-        @* Accounts & Finance *@
+        @* ==========================================
+           ACCOUNTS & FINANCE
+        ========================================== *@
         @if (canAccessAccounts)
         {
             <div class="menu-group">

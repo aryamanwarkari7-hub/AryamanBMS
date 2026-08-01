@@ -164,11 +164,41 @@ namespace AryamanBMS.Controllers
             ViewBag.TotalPages =
                 (int)Math.Ceiling(totalRecords / (double)pageSize);
 
+            bool canManageProject =
+                User.IsInRole("Admin") ||
+                User.IsInRole("HR");
+
+            if (!canManageProject)
+            {
+                var employeeId =
+                    await _projectAccessService.GetCurrentEmployeeIdAsync(User);
+
+                if (employeeId.HasValue)
+                {
+                    if (projectId.HasValue)
+                    {
+                        canManageProject =
+                            await _projectRepository.Projects.AnyAsync(p =>
+                                p.Id == projectId.Value &&
+                                p.ProjectManagerId == employeeId.Value);
+                    }
+                    else
+                    {
+                        canManageProject =
+                            await _projectRepository.Projects.AnyAsync(p =>
+                                p.ProjectManagerId == employeeId.Value &&
+                                p.IsActive);
+                    }
+                }
+            }
+
+            ViewBag.CanManageProject = canManageProject;
+
             return View(data);
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin,HR,ProjectManager")]
+        [Authorize]
         public async Task<IActionResult> Create(int? projectId)
         {
             await LoadProjectsAsync();
@@ -177,9 +207,17 @@ namespace AryamanBMS.Controllers
 
             if (projectId.HasValue)
             {
-                if (!await _projectAccessService.CanAccessProjectAsync(
-                    User,
-                    projectId.Value))
+                var employeeId =    await _projectAccessService.GetCurrentEmployeeIdAsync(User);
+
+                bool canManage =
+                    User.IsInRole("Admin") ||
+                    User.IsInRole("HR") ||
+                    (employeeId.HasValue &&
+                     await _projectRepository.Projects.AnyAsync(p =>
+                         p.Id == projectId.Value &&
+                         p.ProjectManagerId == employeeId.Value));
+
+                if (!canManage)
                 {
                     return Forbid();
                 }
@@ -197,12 +235,21 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,HR,ProjectManager")]
+        
+        [Authorize]
         public async Task<IActionResult> Create(ProjectTaskModel model)
         {
-            if (!await _projectAccessService.CanAccessProjectAsync(
-              User,
-              model.ProjectId))
+            var employeeId = await _projectAccessService.GetCurrentEmployeeIdAsync(User);
+
+            bool canManage =
+                User.IsInRole("Admin") ||
+                User.IsInRole("HR") ||
+                (employeeId.HasValue &&
+                 await _projectRepository.Projects.AnyAsync(p =>
+                     p.Id == model.ProjectId &&
+                     p.ProjectManagerId == employeeId.Value));
+
+            if (!canManage)
             {
                 return Forbid();
             }
@@ -336,7 +383,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin,HR,ProjectManager")]
+        [Authorize]
         public async Task<IActionResult> Edit(int id)
         {
             var task =
@@ -345,9 +392,17 @@ namespace AryamanBMS.Controllers
             if (task == null)
                 return NotFound();
 
-            if (!await _projectAccessService.CanAccessProjectAsync(
-               User,
-               task.ProjectId))
+            var employeeId = await _projectAccessService.GetCurrentEmployeeIdAsync(User);
+
+            bool canManage =
+                User.IsInRole("Admin") ||
+                User.IsInRole("HR") ||
+                (employeeId.HasValue &&
+                 await _projectRepository.Projects.AnyAsync(p =>
+                     p.Id == task.ProjectId &&
+                     p.ProjectManagerId == employeeId.Value));
+
+            if (!canManage)
             {
                 return Forbid();
             }
@@ -360,13 +415,21 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,HR,ProjectManager")]
+        [Authorize]
         public async Task<IActionResult> Edit(ProjectTaskModel model)
         {
 
-            if (!await _projectAccessService.CanAccessProjectAsync(
-              User,
-              model.ProjectId))
+            var employeeId = await _projectAccessService.GetCurrentEmployeeIdAsync(User);
+
+            bool canManage =
+                User.IsInRole("Admin") ||
+                User.IsInRole("HR") ||
+                (employeeId.HasValue &&
+                 await _projectRepository.Projects.AnyAsync(p =>
+                     p.Id == model.ProjectId &&
+                     p.ProjectManagerId == employeeId.Value));
+
+            if (!canManage)
             {
                 return Forbid();
             }
@@ -571,7 +634,7 @@ namespace AryamanBMS.Controllers
         
 
         [HttpGet]
-        [Authorize(Roles = "Admin,HR,ProjectManager")]
+        [Authorize]
         public async Task<IActionResult> Delete(int id)
         {
             var task =
@@ -580,9 +643,18 @@ namespace AryamanBMS.Controllers
             if (task == null)
                 return NotFound();
 
-            if (!await _projectAccessService.CanAccessProjectAsync(
-              User,
-              task.ProjectId))
+            var employeeId =
+    await _projectAccessService.GetCurrentEmployeeIdAsync(User);
+
+            bool canManage =
+                User.IsInRole("Admin") ||
+                User.IsInRole("HR") ||
+                (employeeId.HasValue &&
+                 await _projectRepository.Projects.AnyAsync(p =>
+                     p.Id == task.ProjectId &&
+                     p.ProjectManagerId == employeeId.Value));
+
+            if (!canManage)
             {
                 return Forbid();
             }
@@ -592,7 +664,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,HR,ProjectManager")]
+        [Authorize]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var task =
@@ -601,9 +673,18 @@ namespace AryamanBMS.Controllers
             if (task == null)
                 return NotFound();
 
-            if (!await _projectAccessService.CanAccessProjectAsync(
-               User,
-               task.ProjectId))
+            var employeeId =
+    await _projectAccessService.GetCurrentEmployeeIdAsync(User);
+
+            bool canManage =
+                User.IsInRole("Admin") ||
+                User.IsInRole("HR") ||
+                (employeeId.HasValue &&
+                 await _projectRepository.Projects.AnyAsync(p =>
+                     p.Id == task.ProjectId &&
+                     p.ProjectManagerId == employeeId.Value));
+
+            if (!canManage)
             {
                 return Forbid();
             }
@@ -622,13 +703,21 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin,HR,ProjectManager")]
+        [Authorize]
         public async Task<IActionResult> GetProjectMembers(int projectId)
         {
 
-            if (!await _projectAccessService.CanAccessProjectAsync(
-                 User,
-                 projectId))
+            var employeeId = await _projectAccessService.GetCurrentEmployeeIdAsync(User);
+
+            bool canManage =
+                User.IsInRole("Admin") ||
+                User.IsInRole("HR") ||
+                (employeeId.HasValue &&
+                 await _projectRepository.Projects.AnyAsync(p =>
+                     p.Id == projectId&&
+                     p.ProjectManagerId == employeeId.Value));
+
+            if (!canManage)
             {
                 return Forbid();
             }

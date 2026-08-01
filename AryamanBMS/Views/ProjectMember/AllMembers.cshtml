@@ -31,16 +31,31 @@
             }
             else
             {
-                <span>
-                    View employee assignments across all projects
-                </span>
+                @if (selectedProject != null)
+                {
+                    <span>
+                        @selectedProject.ProjectCode - @selectedProject.ProjectName
+                    </span>
+                }
+                else if (User.IsInRole("Admin") || User.IsInRole("HR"))
+                {
+                    <span>
+                        View employee assignments across all projects
+                    </span>
+                }
+                else
+                {
+                    <span>
+                        View employee assignments for your projects
+                    </span>
+                }
             }
         </p>
     </div>
 
     <div class="d-flex gap-2">
 
-        @if (selectedProjectId.HasValue)
+        @if (selectedProjectId.HasValue && ViewBag.CanManageProject == true)
         {
             <a asp-action="Add"
                asp-route-projectId="@selectedProjectId"
@@ -63,15 +78,18 @@
         }
         else
         {
-            <button type="button"
-                    class="btn-app btn-primary-app"
-                    disabled
-                    title="Select a project first">
+            @if (ViewBag.CanManageProject == true)
+            {
+                <button type="button"
+                        class="btn-app btn-primary-app"
+                        disabled
+                        title="Select a project first">
 
-                <i class="bi bi-person-plus"></i>
-                Select Project to Add Member
+                    <i class="bi bi-person-plus"></i>
+                    Select Project to Add Member
 
-            </button>
+                </button>
+            }
         }
 
     </div>
@@ -223,26 +241,29 @@
 
                                     </a>
 
-                                    <form asp-action="Remove"
-                                          method="post"
-                                          class="d-inline"
-                                          onsubmit="return confirm('Remove this project member?');">
+                                        @if (ViewBag.CanManageProject == true)
+                                        {
+                                            <form asp-action="Remove"
+                                                  method="post"
+                                                  class="d-inline"
+                                                  onsubmit="return confirm('Remove this project member?');">
 
-                                        @Html.AntiForgeryToken()
+                                                @Html.AntiForgeryToken()
 
-                                        <input type="hidden"
-                                               name="id"
-                                               value="@member.Id" />
+                                                <input type="hidden"
+                                                       name="id"
+                                                       value="@member.Id" />
 
-                                        <button type="submit"
-                                                class="btn-app btn-icon btn-danger-app btn-delete"
-                                                title="Remove Member">
+                                                <button type="submit"
+                                                        class="btn-app btn-icon btn-danger-app btn-delete"
+                                                        title="Remove Member">
 
-                                            <i class="bi bi-trash"></i>
+                                                    <i class="bi bi-trash"></i>
 
-                                        </button>
+                                                </button>
 
-                                    </form>
+                                            </form>
+                                        }
 
                                 </div>
                             </td>

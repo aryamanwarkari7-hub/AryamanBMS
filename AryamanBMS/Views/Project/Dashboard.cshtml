@@ -68,6 +68,7 @@
             </button>
 
             <ul class="dropdown-menu dropdown-menu-end">
+
                 <li>
                     <a asp-controller="TaskTracker"
                        asp-action="Index"
@@ -88,35 +89,39 @@
                     </a>
                 </li>
 
-                <li>
-                    <a asp-controller="Risk"
-                       asp-action="Index"
-                       asp-route-projectId="@Model.Project.Id"
-                       class="dropdown-item">
-                        <i class="bi bi-exclamation-triangle"></i>
-                        Risk Register
-                    </a>
-                </li>
+                @if (Model.CanManageProject)
+                {
+                    <li>
+                        <a asp-controller="Risk"
+                           asp-action="Index"
+                           asp-route-projectId="@Model.Project.Id"
+                           class="dropdown-item">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            Risk Register
+                        </a>
+                    </li>
 
-                <li>
-                    <a asp-controller="ProjectTimeline"
-                       asp-action="Index"
-                       asp-route-projectId="@Model.Project.Id"
-                       class="dropdown-item">
-                        <i class="bi bi-clock-history"></i>
-                        Activity Timeline
-                    </a>
-                </li>
+                    <li>
+                        <a asp-controller="ProjectTimeline"
+                           asp-action="Index"
+                           asp-route-projectId="@Model.Project.Id"
+                           class="dropdown-item">
+                            <i class="bi bi-clock-history"></i>
+                            Activity Timeline
+                        </a>
+                    </li>
 
-                <li>
-                    <a asp-controller="ClientCommunication"
-                       asp-action="ProjectTimeline"
-                       asp-route-projectId="@Model.Project.Id"
-                       class="btn-app btn-secondary-app">
-                        <i class="bi bi-chat-dots"></i>
-                        Communication
-                    </a>
-                </li>
+                    <li>
+                        <a asp-controller="ClientCommunication"
+                           asp-action="ProjectTimeline"
+                           asp-route-projectId="@Model.Project.Id"
+                           class="dropdown-item">
+                            <i class="bi bi-chat-dots"></i>
+                            Communication
+                        </a>
+                    </li>
+                }
+
             </ul>
         </div>
 

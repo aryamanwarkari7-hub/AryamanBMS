@@ -21,11 +21,14 @@
         <p class="module-subtitle">Manage project records</p>
     </div>
 
-    <a asp-action="Create"
-       class="btn-app btn-primary-app">
-        <i class="bi bi-plus-lg"></i>
-        Add Project
-    </a>
+    @if (User.IsInRole("Admin") || User.IsInRole("HR"))
+    {
+        <a asp-action="Create"
+           class="btn-app btn-primary-app">
+            <i class="bi bi-plus-lg"></i>
+            Add Project
+        </a>
+    }
 
 </div>
 
@@ -133,7 +136,10 @@
                             <th>Client</th>
                             <th>Manager</th>
                             <th>Schedule</th>
-                            <th>Budget</th>
+                            @if (User.IsInRole("Admin") || User.IsInRole("HR"))
+                            {
+                                <th>Budget</th>
+                            }
                             <th>Status</th>
                             <th>Priority</th>
                             <th>Actions</th>
@@ -174,9 +180,12 @@
                                     </div>
                                 </td>
 
-                                <td>
-                                    ₹@project.Budget.ToString("N2")
-                                </td>
+                                @if (User.IsInRole("Admin") || User.IsInRole("HR"))
+                                {
+                                    <td>
+                                        ₹@project.Budget.ToString("N2")
+                                    </td>
+                                }
 
                                 <td>
                                     @if (project.Status == "Completed")
@@ -225,19 +234,25 @@
                                             <i class="bi bi-eye"></i>
                                         </a>
 
-                                        <a asp-action="Edit"
-                                           asp-route-id="@project.Id"
-                                           class="btn-app btn-secondary-app btn-icon"
-                                           title="Edit">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
+                                        @if (User.IsInRole("Admin") || User.IsInRole("HR"))
+                                        {
+                                            <a asp-action="Edit"
+                                               asp-route-id="@project.Id"
+                                               class="btn-app btn-secondary-app btn-icon"
+                                               title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        }
 
-                                        <a asp-action="Delete"
-                                           asp-route-id="@project.Id"
-                                           class="btn-app btn-danger-app btn-icon"
-                                           title="Deactivate">
-                                            <i class="bi bi-trash"></i>
-                                        </a>
+                                        @if (User.IsInRole("Admin") || User.IsInRole("HR"))
+                                        {
+                                            <a asp-action="Delete"
+                                               asp-route-id="@project.Id"
+                                               class="btn-app btn-danger-app btn-icon"
+                                               title="Deactivate">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        }
 
                                     </div>
                                 </td>

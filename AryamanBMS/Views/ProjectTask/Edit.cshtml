@@ -7,7 +7,7 @@
 <div class="module-header">
     <div>
         <h1 class="module-title">Edit Project Task</h1>
-        <p class="module-subtitle">Update project task information</p>
+        <p class="module-subtitle">Modify task details and assignment</p>
     </div>
 
     <a asp-action="Index"
@@ -210,15 +210,18 @@
                            readonly />
                 </div>
 
-               <div class="form-group">
-                    <label asp-for="IsActive">Task Availability</label>
+                @if (User.IsInRole("Admin") || User.IsInRole("HR"))
+                {
+                    <div class="form-group">
+                        <label asp-for="IsActive">Task Availability</label>
 
-                    <select asp-for="IsActive"
-                            class="app-select">
-                        <option value="true">Active</option>
-                        <option value="false">Inactive</option>
-                    </select>
-                </div>
+                        <select asp-for="IsActive"
+                                class="app-select">
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                    </div>
+                }
 
             </div>
 
