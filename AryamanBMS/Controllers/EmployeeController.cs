@@ -1728,7 +1728,7 @@ namespace AryamanBMS.Controllers
             return View(model);
         }
 
-        [Authorize(Roles = "Employee,Admin,HR,ProjectManager")]
+        [Authorize(Roles = "Employee,Admin,HR")]
         [HttpGet]
         public async Task<IActionResult> MyDashboard()
         {
@@ -1750,6 +1750,35 @@ namespace AryamanBMS.Controllers
                 TempData["Error"] = "Employee profile is not linked with this user account.";
                 return RedirectToAction("Profile", "Account");
             }
+
+            bool isProjectManager = await _context.Projects
+                .AnyAsync(p =>
+                    p.ProjectManagerId == employee.Id &&
+                    p.IsActive);
+
+            var managedProjects = await _context.Projects
+                 .AsNoTracking()
+                 .Where(p =>
+                     p.ProjectManagerId == employee.Id &&
+                     p.IsActive)
+                 .OrderBy(p => p.ProjectCode)
+                 .ToListAsync();
+
+            var managedProjectIds = managedProjects
+                .Select(x => x.Id)
+                .ToList();
+
+            var managedProjectOpenTaskCounts = await _context.ProjectTasks
+                .AsNoTracking()
+                .Where(t =>
+                    t.IsActive &&
+                    managedProjectIds.Contains(t.ProjectId) &&
+                    t.Status != "Completed")
+                .GroupBy(t => t.ProjectId)
+                .ToDictionaryAsync(
+                    g => g.Key,
+                    g => g.Count());
+
 
             var today = DateTime.Today;
             var monthStart = new DateTime(today.Year, today.Month, 1);
@@ -1822,6 +1851,8 @@ namespace AryamanBMS.Controllers
                 .Where(x => x.EmployeeId == employee.Id)
                 .ToListAsync();
 
+
+
             var model = new EmployeeMyDashboardViewModel
             {
                 EmployeeId = employee.Id,
@@ -1829,6 +1860,7 @@ namespace AryamanBMS.Controllers
                 EmployeeCode = employee.EmployeeCode ?? string.Empty,
                 DepartmentName = employee.Department?.DepartmentName,
                 DesignationName = employee.Designation?.DesignationName,
+                IsProjectManager = isProjectManager,
 
                 Attendance = new EmployeeTodayAttendanceCard
                 {
@@ -1913,11 +1945,24 @@ namespace AryamanBMS.Controllers
                     OpenTaskCount = assignedTasks.Count(t =>
                         t.ProjectId == x.ProjectId &&
                         t.Status != "Completed")
-                }).ToList()
-            };
+                }).ToList(),
 
-            return View(model);
-        }
+                ManagedProjects = managedProjects
+    .Select(x => new EmployeeDashboardProjectItem
+    {
+        ProjectId = x.Id,
+        ProjectCode = x.ProjectCode,
+        ProjectName = x.ProjectName,
+        RoleInProject = "Project Manager",
+        Status = x.Status,
+        OpenTaskCount = managedProjectOpenTaskCounts
+            .GetValueOrDefault(x.Id, 0)
+    })
+    .ToList()
+            };
+                
+                        return View(model);
+                    }
 
         [Authorize]
         [HttpGet]

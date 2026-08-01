@@ -38,13 +38,16 @@
             Tasks
         </a>
 
-        <a asp-controller="ProjectMember"
-           asp-action="AllMembers"
-           asp-route-projectId="@Model.Project.Id"
-           class="btn-app btn-secondary-app">
-            <i class="bi bi-people"></i>
-            Project Members
-        </a>
+        @if (Model.CanManageProject)
+        {
+            <a asp-controller="ProjectMember"
+               asp-action="AllMembers"
+               asp-route-projectId="@Model.Project.Id"
+               class="btn-app btn-secondary-app">
+                <i class="bi bi-people"></i>
+                Project Members
+            </a>
+        }
 
         <a asp-controller="ProjectFlow"
            asp-action="Index"

@@ -57,13 +57,9 @@ namespace AryamanBMS.Services
                 return true;
             }
 
-            if (!user.IsInRole("ProjectManager"))
-            {
-                return false;
-            }
+            var employeeId = await GetCurrentEmployeeIdAsync(user);
 
-            var employeeId =
-                await GetCurrentEmployeeIdAsync(user);
+            throw new Exception($"EmployeeId = {employeeId}");
 
             if (!employeeId.HasValue)
             {
@@ -97,10 +93,7 @@ namespace AryamanBMS.Services
                 return projects;
             }
 
-            if (!user.IsInRole("ProjectManager"))
-            {
-                return projects.Where(p => false);
-            }
+            
 
             var employeeId =
                 await GetCurrentEmployeeIdAsync(user);

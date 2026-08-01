@@ -218,7 +218,7 @@
 
     <div class="app-card dashboard-section-card dashboard-finance-card">
         <div class="card-header">
-            <h5 class="card-title">My Projects</h5>
+            <h5 class="card-title">Assigned Projects</h5>
         </div>
 
         <div class="card-body">
@@ -245,4 +245,49 @@
             }
         </div>
     </div>
+    @if (Model.IsProjectManager)
+    {
+        <div class="app-card dashboard-section-card dashboard-finance-card">
+
+            <div class="card-header">
+                <h5 class="card-title">Managed Projects</h5>
+            </div>
+
+            <div class="card-body">
+
+                @if (!Model.ManagedProjects.Any())
+                {
+                    <div class="empty-state">
+                        No managed projects.
+                    </div>
+                }
+                else
+                {
+                    foreach (var project in Model.ManagedProjects)
+                    {
+                        <a asp-controller="Project"
+                           asp-action="Dashboard"
+                           asp-route-id="@project.ProjectId"
+                           class="dashboard-list-link">
+
+                            <span>
+                                <strong>@project.ProjectName</strong>
+                                <small>
+                                    @project.ProjectCode
+                                    · @project.OpenTaskCount Open Tasks
+                                </small>
+                            </span>
+
+                            <span class="badge-info">
+                                @project.Status
+                            </span>
+
+                        </a>
+                    }
+                }
+
+            </div>
+
+        </div>
+    }
 </div>

@@ -740,6 +740,13 @@
 
                         @if (isEmployeeOnly)
                         {
+                            <a asp-controller="Project"
+                               asp-action="Index"
+                               class="submenu-item @(currentController == "Project" ? "active-menu" : "")">
+                                <i class="bi bi-kanban"></i>
+                                <span>My Projects</span>
+                            </a>
+
                             <a asp-controller="EmployeeProject"
                                asp-action="MyTasks"
                                class="submenu-item @(currentController == "EmployeeProject" ? "active-menu" : "")">

@@ -5,6 +5,7 @@ namespace AryamanBMS.ViewModels
     public class ProjectDashboardViewModel
     {
         public ProjectModel Project { get; set; } = null!;
+        public bool CanManageProject { get; set; }
 
         // Members
         public int ActiveMemberCount { get; set; }

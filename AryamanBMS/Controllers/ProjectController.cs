@@ -9,7 +9,8 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,HR,ProjectManager")]
+    [Authorize]
+    
     public class ProjectController : Controller
     {
         private readonly IProjectRepository _projectRepository;
@@ -70,12 +71,12 @@ namespace AryamanBMS.Controllers
                 string search = searchText.Trim();
 
                 projects = projects.Where(p =>
-    p.ProjectCode.Contains(search) ||
-    p.ProjectName.Contains(search) ||
-    (p.ClientName != null &&
-     p.ClientName.Contains(search)) ||
-    (p.Client != null &&
-     p.Client.ClientName.Contains(search)));
+                p.ProjectCode.Contains(search) ||
+                p.ProjectName.Contains(search) ||
+                (p.ClientName != null &&
+                 p.ClientName.Contains(search)) ||
+                (p.Client != null &&
+                 p.Client.ClientName.Contains(search)));
             }
 
             if (!string.IsNullOrWhiteSpace(status))
@@ -496,6 +497,8 @@ namespace AryamanBMS.Controllers
         [HttpGet]
         public async Task<IActionResult> Dashboard(int id)
         {
+            
+
             var project =
                 await _projectRepository.GetDetailsAsync(id);
 
@@ -506,6 +509,11 @@ namespace AryamanBMS.Controllers
             {
                 return Forbid();
             }
+
+            var currentEmployee =   await _employeeRepository.Employees
+            .FirstOrDefaultAsync(e =>
+            e.ApplicationUser != null &&
+            e.ApplicationUser.UserName == User.Identity!.Name);
 
             var tasks =
                 _projectTaskRepository.ProjectTasks
@@ -825,7 +833,7 @@ namespace AryamanBMS.Controllers
             }
 
             int openRiskCount =
-    await _projectRiskRepository.ProjectRisks
+           await _projectRiskRepository.ProjectRisks
         .CountAsync(r =>
             r.ProjectId == id &&
             r.IsActive &&
@@ -878,6 +886,13 @@ namespace AryamanBMS.Controllers
                 Project = project,
 
                 Gantt = ganttModel,
+                CanManageProject =
+                 User.IsInRole("Admin") ||
+                 User.IsInRole("HR") ||
+                 (
+                     currentEmployee != null &&
+                     project.ProjectManagerId == currentEmployee.Id
+                 ),
 
                 ActiveMemberCount =
                     await _projectMemberRepository.ProjectMembers
@@ -939,7 +954,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin,HR")]
+        
         public async Task<IActionResult> Edit(int id)
         {
             var project =
@@ -956,7 +971,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,HR")]
+        
         public async Task<IActionResult> Edit(ProjectModel model)
         {
 
@@ -1300,8 +1315,6 @@ namespace AryamanBMS.Controllers
                     .ThenBy(e => e.LastName)
                     .ToListAsync();
         }
-
-
 
         private void ValidateDates(ProjectModel model)
         {
