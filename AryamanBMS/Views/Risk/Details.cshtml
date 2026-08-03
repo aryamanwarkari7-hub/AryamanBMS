@@ -39,12 +39,17 @@
     </div>
 
     <div class="module-header-actions">
-        <a asp-action="Edit"
-           asp-route-id="@Model.Id"
-           class="btn-app btn-primary-app">
-            <i class="bi bi-pencil"></i>
-            Edit
-        </a>
+        @if (ViewBag.CanManageProject == true)
+        {
+            <a asp-action="Edit"
+               asp-route-id="@Model.Id"
+               class="btn-app btn-primary-app">
+
+                <i class="bi bi-pencil"></i>
+                Edit
+
+            </a>
+        }
 
         <a asp-action="Index"
            asp-route-projectId="@Model.ProjectId"

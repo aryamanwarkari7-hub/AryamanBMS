@@ -213,6 +213,8 @@
         </div>
 
         <div class="card-body">
+            @if (ViewBag.CanEditMeeting == true)
+            {
             <form asp-action="AddAttendee" method="post">
                 @Html.AntiForgeryToken()
 
@@ -253,6 +255,7 @@
                     </div>
                 </div>
             </form>
+            }
 
             <div class="table-responsive mt-4">
                 <table class="app-table">
@@ -290,17 +293,20 @@
                                     <td>@(attendee.Remarks ?? "-")</td>
 
                                     <td>
-                                        <form asp-action="DeleteAttendee" method="post">
-                                            @Html.AntiForgeryToken()
-
-                                            <input type="hidden" name="id" value="@attendee.Id" />
-
-                                            <button type="submit"
-                                                    class="btn-app btn-icon btn-danger-app"
-                                                    title="Remove">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </form>
+                                        @if (ViewBag.CanEditMeeting == true)
+                                        {
+                                            <form asp-action="DeleteAttendee" method="post">
+                                                @Html.AntiForgeryToken()
+                                            
+                                                <input type="hidden" name="id" value="@attendee.Id" />
+                                            
+                                                <button type="submit"
+                                                        class="btn-app btn-icon btn-danger-app"
+                                                        title="Remove">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        }
                                     </td>
                                 </tr>
                             }
@@ -325,6 +331,8 @@
         </div>
 
         <div class="card-body">
+            @if (ViewBag.CanEditMeeting == true)
+{
             <form asp-action="AddActionItem" method="post">
                 @Html.AntiForgeryToken()
 
@@ -368,6 +376,7 @@
                     Add Action Item
                 </button>
             </form>
+            }
 
             <div class="table-responsive mt-4">
                 <table class="app-table">
@@ -410,7 +419,8 @@
                                                title="Edit">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
-
+        @if (ViewBag.CanEditMeeting == true)
+        {
                                             <form asp-action="DeleteActionItem" method="post">
                                                 @Html.AntiForgeryToken()
 
@@ -422,6 +432,7 @@
                                                     <i class="bi bi-trash"></i>
                                                 </button>
                                             </form>
+                                            }
                                         </div>
                                     </td>
                                 </tr>
@@ -442,4 +453,3 @@
     </div>
 
 </div>
-```

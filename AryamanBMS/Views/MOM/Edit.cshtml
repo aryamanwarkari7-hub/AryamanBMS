@@ -186,21 +186,24 @@
 
                 </div>
 
-                <div class="form-group">
+                @if (User.IsInRole("Admin") || User.IsInRole("HR"))
+                {
+                    <div class="form-group">
 
-                    <label asp-for="IsActive">
-                        Active Status
-                    </label>
+                        <label asp-for="IsActive">
+                            Active Status
+                        </label>
 
-                    <select asp-for="IsActive"
-                            class="app-select">
+                        <select asp-for="IsActive"
+                                class="app-select">
 
-                        <option value="true">Active</option>
-                        <option value="false">Inactive</option>
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
 
-                    </select>
+                        </select>
 
-                </div>
+                    </div>
+                }
 
             </div>
 

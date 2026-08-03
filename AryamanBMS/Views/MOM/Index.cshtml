@@ -31,14 +31,17 @@
             </a>
         }
 
-        <a asp-action="Create"
-           asp-route-projectId="@ViewBag.ProjectId"
-           class="btn-app btn-primary-app">
+        @if (ViewBag.CanManageProject == true)
+        {
+            <a asp-action="Create"
+               asp-route-projectId="@ViewBag.ProjectId"
+               class="btn-app btn-primary-app">
 
-            <i class="bi bi-plus-lg"></i>
-            Add Meeting
+                <i class="bi bi-plus-lg"></i>
+                Add Meeting
 
-        </a>
+            </a>
+        }
 
     </div>
 
@@ -234,14 +237,17 @@
 
                                 </a>
 
-                                <a asp-action="Edit"
-                                   asp-route-id="@meeting.Id"
-                                           class="btn-app btn-icon btn-secondary-app btn-edit"
-                                   title="Edit">
+                                @if (ViewBag.CanManageProject == true)
+                                {
+                                    <a asp-action="Edit"
+                                       asp-route-id="@meeting.Id"
+                                       class="btn-app btn-icon btn-secondary-app btn-edit"
+                                       title="Edit">
 
-                                    <i class="bi bi-pencil"></i>
+                                        <i class="bi bi-pencil"></i>
 
-                                </a>
+                                    </a>
+                                }
 
                                 <a asp-action="Delete"
                                    asp-route-id="@meeting.Id"

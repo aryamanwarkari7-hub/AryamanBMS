@@ -231,17 +231,20 @@
                             <td>
                                 <div class="action-buttons d-flex d-row gap-1">
 
-                                    <a asp-controller="Employee"
-                                       asp-action="Details"
-                                       asp-route-id="@member.EmployeeId"
-                                       class="btn-app btn-icon btn-primary-app btn-view"
-                                       title="View Employee">
+                                        @if (User.IsInRole("Admin") || User.IsInRole("HR"))
+                                        {
+                                            <a asp-controller="Employee"
+                                               asp-action="Details"
+                                               asp-route-id="@member.EmployeeId"
+                                               class="btn-app btn-icon btn-primary-app btn-view"
+                                               title="View Employee">
 
-                                        <i class="bi bi-eye"></i>
+                                                <i class="bi bi-eye"></i>
 
-                                    </a>
+                                            </a>
+                                        }
 
-                                        @if (ViewBag.CanManageProject == true)
+                                        @if (User.IsInRole("Admin") || User.IsInRole("HR"))
                                         {
                                             <form asp-action="Remove"
                                                   method="post"

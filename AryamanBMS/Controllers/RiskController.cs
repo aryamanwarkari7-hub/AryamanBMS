@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,HR,ProjectManager")]
+    [Authorize]
     public class RiskController : Controller
     {
         private readonly IProjectRiskRepository _riskRepository;

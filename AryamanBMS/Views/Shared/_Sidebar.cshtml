@@ -816,7 +816,7 @@
                         data-bs-toggle="collapse"
                         data-bs-target="#projectMenu"
                         aria-expanded="@isProjectActive.ToString().ToLower()">
-
+                       
                     <div class="menu-group-left">
                         <i class="bi bi-kanban"></i>
                         <span>PROJECT MGMT</span>
@@ -882,7 +882,7 @@
                                      data-bs-parent="#projectSubAccordion">
 
                                      @*-----------Admin + HR ---*@
-                                    @if (isAdmin || isHR)
+                                    @if (isAdminOrHR || managesProjects)
                                     {
                                         @* ==========================================
                                             PROJECTS
@@ -923,7 +923,7 @@
                                      id="projectPlanningSubMenu"
                                      data-bs-parent="#projectSubAccordion">
 
-                                    @if (isAdmin || isHR)
+                                    @if (isAdminOrHR || managesProjects)
                                     {
                                         @* ==========================================
                                             PROJECT TASKS
@@ -964,7 +964,7 @@
                                      id="projectTrackingSubMenu"
                                      data-bs-parent="#projectSubAccordion">
 
-                                    @if (isAdmin || isHR)
+                                    @if (isAdminOrHR || managesProjects)
                                     {
                                         @* ==========================================
                                             PROJECT TASK UPDATES

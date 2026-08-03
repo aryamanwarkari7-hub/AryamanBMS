@@ -36,14 +36,17 @@
             </a>
         }
 
-        <a asp-action="Create"
-           asp-route-projectId="@ViewBag.ProjectId"
-           class="btn-app btn-primary-app">
+        @if (ViewBag.CanManageProject == true)
+        {
+            <a asp-action="Create"
+               asp-route-projectId="@ViewBag.ProjectId"
+               class="btn-app btn-primary-app">
 
-            <i class="bi bi-plus-lg"></i>
-            Add Risk
+                <i class="bi bi-plus-lg"></i>
+                Add Risk
 
-        </a>
+            </a>
+        }
 
     </div>
 
@@ -304,23 +307,29 @@
 
                                         </a>
 
-                                        <a asp-action="Edit"
-                                           asp-route-id="@risk.Id"
-                                           class=" btn-app btn-icon btn-secondary-app btn-edit"
-                                           title="Edit">
+                                        @if (ViewBag.CanManageProject == true)
+                                        {
+                                            <a asp-action="Edit"
+                                               asp-route-id="@risk.Id"
+                                               class="btn-app btn-icon btn-secondary-app btn-edit"
+                                               title="Edit">
+                                        
+                                                <i class="bi bi-pencil"></i>
+                                        
+                                            </a>
+                                        }
 
-                                            <i class="bi bi-pencil"></i>
+                                        @if (ViewBag.CanManageProject == true)
+                                        {
+                                            <a asp-action="Delete"
+                                               asp-route-id="@risk.Id"
+                                               class="btn-app btn-icon btn-danger-app btn-delete"
+                                               title="Deactivate">
 
-                                        </a>
+                                                <i class="bi bi-x-circle"></i>
 
-                                        <a asp-action="Delete"
-                                           asp-route-id="@risk.Id"
-                                           class="btn-app btn-icon btn-danger-app btn-delete"
-                                           title="Deactivate">
-
-                                            <i class="bi bi-x-circle"></i>
-
-                                        </a>
+                                            </a>
+                                        }
 
                                     </div>
 

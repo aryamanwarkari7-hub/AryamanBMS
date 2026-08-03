@@ -49,9 +49,7 @@
         <form method="get" asp-action="Index">
             <div class="form-grid-4">
 
-                @if (ViewBag.CanManageProject == true|| 
-                    User.IsInRole("Admin") || 
-                    User.IsInRole("HR"))
+                @if (ViewBag.CanManageProject == true)
                 {
                     <div class="form-group">
                         <label>Project</label>

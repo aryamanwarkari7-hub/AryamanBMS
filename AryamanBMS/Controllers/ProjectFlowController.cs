@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,HR,ProjectManager")]
+    [Authorize]
     public class ProjectFlowController : Controller
     {
         private readonly IProjectRepository _projectRepository;
@@ -80,10 +80,7 @@ namespace AryamanBMS.Controllers
         {
             await LoadProjectsAsync();
 
-            if (projectId.HasValue &&
-             !await _projectAccessService.CanAccessProjectAsync(
-                 User,
-                 projectId.Value))
+            if (projectId.HasValue &&     !await CanManageProjectAsync(projectId.Value))
             {
                 return Forbid();
             }
@@ -100,9 +97,7 @@ namespace AryamanBMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ProjectFlowModel model)
         {
-            if (!await _projectAccessService.CanAccessProjectAsync(
-             User,
-             model.ProjectId))
+            if (!await CanManageProjectAsync(model.ProjectId))
             {
                 return Forbid();
             }
@@ -152,9 +147,7 @@ namespace AryamanBMS.Controllers
             if (flow == null)
                 return NotFound();
 
-            if (!await _projectAccessService.CanAccessProjectAsync(
-             User,
-             flow.ProjectId))
+            if (!await CanManageProjectAsync(flow.ProjectId))
             {
                 return Forbid();
             }
@@ -170,9 +163,7 @@ namespace AryamanBMS.Controllers
 
             if (flow == null)
                 return NotFound();
-            if (!await _projectAccessService.CanAccessProjectAsync(
-              User,
-              flow.ProjectId))
+            if (!await CanManageProjectAsync(flow.ProjectId))
             {
                 return Forbid();
             }
@@ -187,9 +178,7 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> Edit(ProjectFlowModel model)
         {
 
-            if (!await _projectAccessService.CanAccessProjectAsync(
-              User,
-              model.ProjectId))
+            if (!await CanManageProjectAsync(model.ProjectId))
             {
                 return Forbid();
             }
@@ -208,9 +197,7 @@ namespace AryamanBMS.Controllers
             if (existing == null)
                 return NotFound();
 
-            if (!await _projectAccessService.CanAccessProjectAsync(
-                User,
-                existing.ProjectId))
+            if (!await CanManageProjectAsync(model.ProjectId))
             {
                 return Forbid();
             }
@@ -331,9 +318,7 @@ namespace AryamanBMS.Controllers
             if (flow == null)
                 return NotFound();
 
-            if (!await _projectAccessService.CanAccessProjectAsync(
-               User,
-               flow.ProjectId))
+            if (!await CanManageProjectAsync(flow.ProjectId))
             {
                 return Forbid();
             }
@@ -351,9 +336,7 @@ namespace AryamanBMS.Controllers
             if (flow == null)
                 return NotFound();
 
-            if (!await _projectAccessService.CanAccessProjectAsync(
-              User,
-              flow.ProjectId))
+            if (!await CanManageProjectAsync(flow.ProjectId))
             {
                 return Forbid();
             }
@@ -517,7 +500,7 @@ namespace AryamanBMS.Controllers
         [HttpGet]
         public async Task<IActionResult> GetNextSequence(int projectId)
         {
-            if (!await _projectAccessService.CanAccessProjectAsync(User, projectId))
+            if (!await CanManageProjectAsync(projectId))
             {
                 return Forbid();
             }
@@ -528,6 +511,26 @@ namespace AryamanBMS.Controllers
             {
                 sequence = nextSequence
             });
+        }
+
+        private async Task<bool> CanManageProjectAsync(int projectId)
+        {
+            if (User.IsInRole("Admin") || User.IsInRole("HR"))
+            {
+                return true;
+            }
+
+            var employeeId =
+                await _projectAccessService.GetCurrentEmployeeIdAsync(User);
+
+            if (!employeeId.HasValue)
+            {
+                return false;
+            }
+
+            return await _projectRepository.Projects.AnyAsync(p =>
+                p.Id == projectId &&
+                p.ProjectManagerId == employeeId.Value);
         }
     }
 }

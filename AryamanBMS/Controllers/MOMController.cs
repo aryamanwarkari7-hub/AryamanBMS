@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,HR,ProjectManager,Employee")]
+    [Authorize]
     public class MOMController : Controller
     {
         private readonly IProjectMeetingRepository _meetingRepository;

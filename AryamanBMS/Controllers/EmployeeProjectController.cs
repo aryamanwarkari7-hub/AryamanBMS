@@ -159,6 +159,12 @@ namespace AryamanBMS.Controllers
                 return Forbid();
             }
 
+            if (task.Status == "Completed")
+            {
+                TempData["Error"] = "Completed tasks cannot be updated.";
+                return RedirectToAction(nameof(TaskDetails), new { id });
+            }
+
             return View(task);
         }
 
@@ -180,10 +186,15 @@ namespace AryamanBMS.Controllers
                 .AsNoTracking()
                 .FirstOrDefaultAsync(e => e.ApplicationUserId == currentUserId);
 
-            if (employee == null ||
-                existing.AssignedEmployeeId != employee.Id)
+            if (employee == null ||existing.AssignedEmployeeId != employee.Id)
             {
                 return Forbid();
+            }
+
+            if (existing.Status == "Completed")
+            {
+                TempData["Error"] = "Completed tasks cannot be modified.";
+                return RedirectToAction(nameof(TaskDetails), new { id = existing.Id });
             }
 
             string previousStatus = existing.Status;
