@@ -62,6 +62,19 @@ namespace AryamanBMS.Models
         public string Status { get; set; } = "Open";
         // Open, Follow-up, Closed
 
+
+        [Display(Name = "Share with Project Team")]
+        public bool ShareWithProjectTeam { get; set; }
+
+        [StringLength(200)]
+        [Display(Name = "Project Communication Subject")]
+        public string? ProjectSubject { get; set; }
+
+        [StringLength(5000)]
+        [Display(Name = "Project Communication Summary")]
+
+        public string? ProjectSummary { get; set; }
+
         [StringLength(450)]
         public string? CreatedByUserId { get; set; }
 

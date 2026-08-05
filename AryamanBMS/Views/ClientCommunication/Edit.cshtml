@@ -118,7 +118,7 @@
 
     <div class="app-card form-card">
         <div class="card-header">
-            <h5 class="card-title">Follow-up & Links</h5>
+            <h5 class="card-title">Follow-up </h5>
         </div>
 
         <div class="card-body">
@@ -145,11 +145,32 @@
                     <input asp-for="ActionItem" class="app-input" />
                 </div>
 
+                
+
+            </div>
+
+        </div>
+    </div>
+    <div class="app-card form-card">
+
+        <div class="card-header">
+            <h5 class="card-title">Project Link</h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="form-grid-2">
+
                 <div class="form-group">
-                    <label asp-for="ProposalId" class="form-label">Related Proposal</label>
+
+                    <label asp-for="ProposalId" class="form-label">
+                        Related Proposal
+                    </label>
+
                     <select asp-for="ProposalId"
-                            class="app-select"
-                            id="ProposalId">
+                            id="ProposalId"
+                            class="app-select">
+
                         <option value="">None</option>
 
                         @foreach (var proposal in ViewBag.Proposals)
@@ -160,31 +181,120 @@
                                 @proposal.ProposalDisplay
                             </option>
                         }
+
                     </select>
+
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="ProjectId" class="form-label">Related Project</label>
+
+                    <label asp-for="ProjectId" class="form-label">
+                        Related Project
+                    </label>
+
                     <select asp-for="ProjectId"
                             asp-items="ViewBag.Projects"
-                            class="app-select"
-                            id="ProjectId">
+                            id="ProjectId"
+                            class="app-select">
+
                         <option value="">None</option>
+
                     </select>
+
+                    <span asp-validation-for="ProjectId"
+                          class="validation-message"></span>
+
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="InvoiceId" class="form-label">Related Invoice</label>
+
+                    <label asp-for="InvoiceId" class="form-label">
+                        Related Invoice
+                    </label>
+
                     <select asp-for="InvoiceId"
                             asp-items="ViewBag.Invoices"
                             class="app-select">
+
                         <option value="">None</option>
+
                     </select>
+
                 </div>
 
             </div>
 
         </div>
+
+    </div>
+
+    <div class="app-card form-card">
+
+        <div class="card-header">
+            <h5 class="card-title">
+                Project Workspace
+            </h5>
+        </div>
+
+        <div class="card-body">
+
+            <label class="form-check-app mb-3">
+
+                <input asp-for="ShareWithProjectTeam"
+                       id="ShareWithProjectTeam" />
+
+                <span>
+                    <strong>Publish to Project Workspace</strong>
+                    <small>
+                        Publish a project-safe version of this communication
+                        in the Project Workspace.
+                    </small>
+                </span>
+
+            </label>
+
+            <div id="projectShareSection">
+
+                <div class="form-group">
+
+                    <label asp-for="ProjectSubject"
+                           class="form-label">
+                        Workspace  Subject
+                    </label>
+
+                    <input asp-for="ProjectSubject"
+                           class="app-input" />
+                    <span asp-validation-for="ProjectSubject"
+                          class="validation-message"></span>
+
+                </div>
+
+                <div class="form-group mt-3">
+
+                    <label asp-for="ProjectSummary"
+                           class="form-label">
+                        Message for Project Team
+                    </label>
+
+                    <textarea asp-for="ProjectSummary"
+                              rows="4"
+                              class="app-input">
+                </textarea>
+                    <span asp-validation-for="ProjectSummary"
+                          class="validation-message">
+                      </span>
+
+                    <small class="text-muted">
+                        Only this message will be visible inside the Project Workspace.
+                        The original client communication remains private.
+                    </small>
+
+                </div>
+
+            </div>
+
+        </div>
+
     </div>
 
     <div class="app-card">
@@ -197,28 +307,58 @@
     </div>
 </form>
 
-@section Scripts {
+@section Scripts
+{
     <partial name="_ValidationScriptsPartial" />
 
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const proposalSelect = document.getElementById("ProposalId");
-            const projectSelect = document.getElementById("ProjectId");
 
-            if (!proposalSelect || !projectSelect) {
-                return;
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const proposalSelect =
+                document.getElementById("ProposalId");
+
+            const projectSelect =
+                document.getElementById("ProjectId");
+
+            if (proposalSelect && projectSelect)
+            {
+                proposalSelect.addEventListener("change", function () {
+
+                    const option =
+                        proposalSelect.options[
+                            proposalSelect.selectedIndex];
+
+                    const projectId =
+                        option.getAttribute("data-project-id");
+
+                    projectSelect.value =
+                        projectId ?? "";
+                });
             }
 
-            proposalSelect.addEventListener("change", function () {
-                const selectedOption = proposalSelect.options[proposalSelect.selectedIndex];
-                const projectId = selectedOption?.getAttribute("data-project-id");
+            const shareCheckbox =
+                document.getElementById("ShareWithProjectTeam");
 
-                if (projectId) {
-                    projectSelect.value = projectId;
-                } else {
-                    projectSelect.value = "";
-                }
-            });
+            const shareSection =
+                document.getElementById("projectShareSection");
+
+            function toggleProjectWorkspace()
+            {
+                if (!shareCheckbox || !shareSection)
+                    return;
+
+                shareSection.style.display =
+                    shareCheckbox.checked ? "" : "none";
+            }
+
+            toggleProjectWorkspace();
+
+            shareCheckbox?.addEventListener(
+                "change",
+                toggleProjectWorkspace);
+
         });
+
     </script>
 }

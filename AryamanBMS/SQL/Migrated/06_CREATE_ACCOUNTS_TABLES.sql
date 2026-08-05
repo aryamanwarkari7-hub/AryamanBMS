@@ -590,3 +590,79 @@
 -- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 
+
+-- CREATE TABLE TableProposalTemplate
+-- (
+--     ProposalTemplateId INT NOT NULL AUTO_INCREMENT,
+--     TemplateName VARCHAR(150) NOT NULL,
+--     VersionNumber INT NOT NULL,
+--     OriginalFileName VARCHAR(255) NOT NULL,
+--     StoredFilePath VARCHAR(500) NOT NULL,
+--     ContentType VARCHAR(150) NOT NULL,
+--     FileSize BIGINT NOT NULL,
+--     IsActive TINYINT(1) NOT NULL DEFAULT 1,
+--     UploadedByUserId VARCHAR(450) NOT NULL,
+--     UploadedOn DATETIME NOT NULL,
+--     Remarks VARCHAR(500) NULL,
+
+--     PRIMARY KEY (ProposalTemplateId),
+
+--     UNIQUE KEY UX_ProposalTemplate_NameVersion
+--     (
+--         TemplateName,
+--         VersionNumber
+--     )
+-- );
+
+CREATE TABLE TableProposalDocumentVersion
+(
+    ProposalDocumentVersionId INT NOT NULL AUTO_INCREMENT,
+    ProposalId INT NOT NULL,
+    ProposalTemplateId INT NOT NULL,
+    VersionNumber INT NOT NULL,
+    OriginalFileName VARCHAR(255) NOT NULL,
+    StoredFilePath VARCHAR(500) NOT NULL,
+    ContentType VARCHAR(150) NOT NULL,
+    FileSize BIGINT NOT NULL,
+    GeneratedByUserId VARCHAR(450) NOT NULL,
+    GeneratedOn DATETIME NOT NULL,
+    IsCurrent TINYINT(1) NOT NULL DEFAULT 1,
+    Remarks VARCHAR(500) NULL,
+
+    PRIMARY KEY
+    (
+        ProposalDocumentVersionId
+    ),
+
+    UNIQUE KEY UX_ProposalDocument_Version
+    (
+        ProposalId,
+        VersionNumber
+    ),
+
+    KEY IX_ProposalDocument_Proposal
+    (
+        ProposalId
+    ),
+
+    KEY IX_ProposalDocument_Template
+    (
+        ProposalTemplateId
+    ),
+
+    CONSTRAINT FK_ProposalDocument_Proposal
+    FOREIGN KEY (ProposalId)
+    REFERENCES TableProposal
+    (
+        ProposalId
+    )
+    ON DELETE RESTRICT,
+
+    CONSTRAINT FK_ProposalDocument_Template
+    FOREIGN KEY (ProposalTemplateId)
+    REFERENCES TableProposalTemplate
+    (
+        ProposalTemplateId
+    )
+    ON DELETE RESTRICT
+);

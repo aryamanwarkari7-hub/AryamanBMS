@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,HR,ProjectManager")]
+    [Authorize(Roles = "Admin,HR,Employee")]
     public class ProjectTimelineController : Controller
     {
         private readonly IProjectRepository

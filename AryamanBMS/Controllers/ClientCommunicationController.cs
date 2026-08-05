@@ -85,6 +85,38 @@ namespace AryamanBMS.Controllers
             model.Subject = model.Subject?.Trim() ?? string.Empty;
             model.Summary = model.Summary?.Trim() ?? string.Empty;
             model.ActionItem = model.ActionItem?.Trim();
+            model.ProjectSubject = model.ProjectSubject?.Trim();
+            model.ProjectSummary = model.ProjectSummary?.Trim();
+
+            if (model.ShareWithProjectTeam)
+            {
+                if (!model.ProjectId.HasValue)
+                {
+                    ModelState.AddModelError(
+                        nameof(model.ProjectId),
+                        "Please select a Related Project.");
+                }
+
+                if (string.IsNullOrWhiteSpace(model.ProjectSubject))
+                {
+                    ModelState.AddModelError(
+                        nameof(model.ProjectSubject),
+                        "Workspace Subject is required.");
+                }
+
+                if (string.IsNullOrWhiteSpace(model.ProjectSummary))
+                {
+                    ModelState.AddModelError(
+                        nameof(model.ProjectSummary),
+                        "Message for Project Team is required.");
+                }
+            }
+
+            if (!model.ShareWithProjectTeam)
+            {
+                model.ProjectSubject = null;
+                model.ProjectSummary = null;
+            }
             model.CreatedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             model.CreatedOn = DateTime.Now;
 
@@ -111,6 +143,50 @@ namespace AryamanBMS.Controllers
 
             _context.ClientCommunications.Add(model);
             await _context.SaveChangesAsync();
+
+            
+
+            
+            if (model.ShareWithProjectTeam && model.ProjectId.HasValue)
+            {
+               
+
+                var projectCommunication =
+                    new ProjectCommunicationModel
+                    {
+                        ProjectId = model.ProjectId.Value,
+                    
+                        ClientCommunicationId = model.Id,
+                    
+                        CreatedByUserId =
+                            User.FindFirstValue(ClaimTypes.NameIdentifier),
+                    
+                        IsSystemGenerated = true,
+                    
+                        Subject =
+                            string.IsNullOrWhiteSpace(model.ProjectSubject)
+                                ? model.Subject
+                                : model.ProjectSubject,
+                    
+                        Message =
+                            string.IsNullOrWhiteSpace(model.ProjectSummary)
+                                ? model.Summary
+                                : model.ProjectSummary,
+                    
+                        CommunicationType = "Client",
+                    
+                        Status = model.Status,
+                    
+                        CreatedOn = DateTime.Now,
+                    
+                        IsActive = true
+                    };
+
+                _context.ProjectCommunications.Add(projectCommunication);
+
+                await _context.SaveChangesAsync();
+               
+            }
 
             TempData["Success"] = "Client communication recorded successfully.";
 
@@ -181,6 +257,38 @@ namespace AryamanBMS.Controllers
             model.Subject = model.Subject?.Trim() ?? string.Empty;
             model.Summary = model.Summary?.Trim() ?? string.Empty;
             model.ActionItem = model.ActionItem?.Trim();
+            model.ProjectSubject = model.ProjectSubject?.Trim();
+            model.ProjectSummary = model.ProjectSummary?.Trim();
+
+            if (model.ShareWithProjectTeam)
+            {
+                if (!model.ProjectId.HasValue)
+                {
+                    ModelState.AddModelError(
+                        nameof(model.ProjectId),
+                        "Please select a Related Project.");
+                }
+
+                if (string.IsNullOrWhiteSpace(model.ProjectSubject))
+                {
+                    ModelState.AddModelError(
+                        nameof(model.ProjectSubject),
+                        "Workspace Subject is required.");
+                }
+
+                if (string.IsNullOrWhiteSpace(model.ProjectSummary))
+                {
+                    ModelState.AddModelError(
+                        nameof(model.ProjectSummary),
+                        "Message for Project Team is required.");
+                }
+            }
+
+            if (!model.ShareWithProjectTeam)
+            {
+                model.ProjectSubject = null;
+                model.ProjectSummary = null;
+            }
             model.UpdatedOn = DateTime.Now;
 
             if (model.ProposalId.HasValue && !model.ProjectId.HasValue)
@@ -217,6 +325,12 @@ namespace AryamanBMS.Controllers
             existing.Summary = model.Summary;
             existing.ActionRequired = model.ActionRequired;
             existing.ActionItem = model.ActionItem;
+
+            existing.ShareWithProjectTeam = model.ShareWithProjectTeam;
+            existing.ProjectSubject = model.ProjectSubject;
+            existing.ProjectSummary = model.ProjectSummary;
+            
+
             existing.FollowUpDate = model.FollowUpDate;
             existing.AssignedToEmployeeId = model.AssignedToEmployeeId;
             existing.ProposalId = model.ProposalId;
@@ -224,6 +338,69 @@ namespace AryamanBMS.Controllers
             existing.InvoiceId = model.InvoiceId;
             existing.Status = model.Status;
             existing.UpdatedOn = DateTime.Now;
+
+            var projectCommunication = await _context.ProjectCommunications
+              .FirstOrDefaultAsync(x =>
+                  x.ClientCommunicationId == existing.Id);
+
+            if (model.ShareWithProjectTeam &&  model.ProjectId.HasValue)
+            {
+                if (projectCommunication == null)
+                {
+                    projectCommunication =
+                      new ProjectCommunicationModel
+                      {
+                          ClientCommunicationId = existing.Id,
+                      
+                          ProjectId = model.ProjectId.Value,
+                      
+                          CreatedByUserId =
+                              User.FindFirstValue(ClaimTypes.NameIdentifier),
+                      
+                          IsSystemGenerated = true,
+                      
+                          CreatedOn = DateTime.Now,
+                      
+                          IsActive = true
+                      };
+
+                    _context.ProjectCommunications.Add(projectCommunication);
+                }
+
+                if (projectCommunication != null)
+                {
+                    projectCommunication.ProjectId =
+                        model.ProjectId.Value;
+
+                    projectCommunication.Subject =
+                        string.IsNullOrWhiteSpace(model.ProjectSubject)
+                            ? model.Subject
+                            : model.ProjectSubject;
+
+                    projectCommunication.Message =
+                        string.IsNullOrWhiteSpace(model.ProjectSummary)
+                            ? model.Summary
+                            : model.ProjectSummary;
+
+                    projectCommunication.Status =
+                        model.Status;
+
+                    projectCommunication.CommunicationType =
+                        "Client";
+
+                    projectCommunication.IsActive = true;
+
+                    projectCommunication.IsEdited = true;
+
+                    projectCommunication.UpdatedOn = DateTime.Now;
+                }
+            }
+
+            else if (projectCommunication != null)
+            {
+                projectCommunication.IsActive = false;
+                projectCommunication.UpdatedOn = DateTime.Now;
+            }
 
             await _context.SaveChangesAsync();
 

@@ -1,0 +1,267 @@
+﻿@model AryamanBMS.Models.ProjectCommunicationModel
+
+@{
+    ViewData["Title"] = "Edit Project Communication";
+}
+
+<div class="module-header">
+
+    <div>
+
+        <h1 class="module-title">
+            Edit Project Communication
+        </h1>
+
+        <p class="module-subtitle">
+            Update project communication.
+        </p>
+
+    </div>
+
+    <a asp-action="Index"
+       asp-route-projectId="@Model.ProjectId"
+       class="btn-app btn-secondary-app">
+
+        <i class="bi bi-arrow-left"></i>
+
+        Back
+
+    </a>
+
+</div>
+
+<form asp-action="Edit" method="post">
+
+    @Html.AntiForgeryToken()
+
+    <div asp-validation-summary="ModelOnly"
+         class="app-alert-danger"></div>
+
+    <input asp-for="Id" type="hidden" />
+    <input asp-for="ProjectId" type="hidden" />
+    <input asp-for="CreatedByEmployeeId" type="hidden" />
+    <input asp-for="CreatedByUserId" type="hidden" />
+    <input asp-for="ClientCommunicationId" type="hidden" />
+    <input asp-for="CommunicationType" type="hidden" />
+    <input asp-for="IsSystemGenerated" type="hidden" />
+    <input asp-for="CreatedOn" type="hidden" />
+
+    <div class="app-card form-card">
+
+        <div class="card-header">
+
+            <h5 class="card-title">
+                Communication Details
+            </h5>
+
+        </div>
+
+        <div class="card-body">
+            <div class="form-group">
+
+                <label asp-for="Subject"
+                       class="form-label">
+                </label>
+
+                <input asp-for="Subject"
+                       class="app-input" />
+
+                <span asp-validation-for="Subject"
+                      class="validation-message"></span>
+
+            </div>
+            <div class="form-group mt-3">
+
+                <label asp-for="Message"
+                       class="form-label">
+                </label>
+
+                <textarea asp-for="Message"
+                          rows="6"
+                          class="app-textarea">
+    </textarea>
+
+                <span asp-validation-for="Message"
+                      class="validation-message"></span>
+
+            </div>
+            <div class="form-group mt-3">
+
+                <label asp-for="Status"
+                       class="form-label">
+                </label>
+
+                <select asp-for="Status"
+                        class="app-select">
+
+                    <option value="Open">Open</option>
+
+                    <option value="Information">
+                        Information
+                    </option>
+
+                    <option value="Action Required">
+                        Action Required
+                    </option>
+
+                    <option value="Closed">
+                        Closed
+                    </option>
+
+                </select>
+
+            </div>
+        </div>
+
+    </div>
+    <div class="app-card mt-4">
+
+        <div class="card-header">
+
+            <h5 class="card-title">
+                Communication Source
+            </h5>
+
+        </div>
+
+        <div class="card-body">
+
+            @if (Model.IsSystemGenerated)
+            {
+                <div class="app-alert-info">
+
+                    <i class="bi bi-info-circle"></i>
+
+                    <strong>Shared Client Communication</strong>
+
+                    <p class="mb-0 mt-2">
+
+                        This communication was published from the
+                        <strong>Client Communication</strong> module.
+
+                        To edit this communication,
+                        return to the Client Communication module.
+
+                    </p>
+
+                </div>
+            }
+            else
+            {
+                <div class="app-alert-success">
+
+                    <i class="bi bi-chat-dots"></i>
+
+                    <strong>Internal Project Communication</strong>
+
+                    <p class="mb-0 mt-2">
+
+                        This communication was created directly within
+                        the Project Workspace.
+
+                    </p>
+
+                </div>
+            }
+
+            <div class="details-grid mt-4">
+
+                <div>
+
+                    <strong>Communication Type</strong>
+
+                    <p>@Model.CommunicationType</p>
+
+                </div>
+
+                <div>
+
+                    <strong>Status</strong>
+
+                    <p>@Model.Status</p>
+
+                </div>
+
+                <div>
+
+                    <strong>Created On</strong>
+
+                    <p>
+                        @Model.CreatedOn.ToString("dd-MMM-yyyy hh:mm tt")
+                    </p>
+
+                </div>
+
+                <div>
+
+                    <strong>Last Updated</strong>
+
+                    <p>
+                        @(Model.UpdatedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+    <div class="app-card mt-4">
+
+        <div class="card-body form-actions">
+
+            @if (Model.IsSystemGenerated)
+            {
+                <a asp-controller="ClientCommunication"
+                   asp-action="Edit"
+                   asp-route-id="@Model.ClientCommunicationId"
+                   class="btn-app btn-info-app">
+
+                    <i class="bi bi-box-arrow-up-right"></i>
+
+                    Edit in Client Communication
+
+                </a>
+
+                <a asp-action="Index"
+                   asp-route-projectId="@Model.ProjectId"
+                   class="btn-app btn-secondary-app">
+
+                    <i class="bi bi-arrow-left"></i>
+
+                    Back
+
+                </a>
+            }
+            else
+            {
+                <button type="submit"
+                        class="btn-app btn-primary-app">
+
+                    <i class="bi bi-check-circle"></i>
+
+                    Save Changes
+
+                </button>
+
+                <a asp-action="Index"
+                   asp-route-projectId="@Model.ProjectId"
+                   class="btn-app btn-secondary-app">
+
+                    <i class="bi bi-x-circle"></i>
+
+                    Cancel
+
+                </a>
+            }
+
+        </div>
+
+    </div>
+</form>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

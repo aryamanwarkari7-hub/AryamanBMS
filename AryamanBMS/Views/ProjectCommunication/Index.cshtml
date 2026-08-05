@@ -1,0 +1,258 @@
+﻿@model IEnumerable<AryamanBMS.Models.ProjectCommunicationModel>
+
+@{
+    ViewData["Title"] = "Project Communication";
+
+    var project =
+        ViewBag.Project as AryamanBMS.Models.ProjectModel;
+        
+    
+
+}
+
+<div class="module-header">
+
+    <div>
+
+        <h1 class="module-title">
+            Project Communication
+        </h1>
+
+        <p class="module-subtitle">
+            Internal project communication and shared client updates.
+        </p>
+
+    </div>
+
+    <div class="module-header-actions">
+
+        <a asp-action="Create"
+           asp-route-projectId="@project?.Id"
+           class="btn-app btn-primary-app">
+
+            <i class="bi bi-plus-circle"></i>
+
+            New Communication
+
+        </a>
+
+        <a asp-controller="Project"
+           asp-action="Dashboard"
+           asp-route-id="@project?.Id"
+           class="btn-app btn-secondary-app">
+
+            <i class="bi bi-kanban"></i>
+
+            Workspace
+
+        </a>
+
+    </div>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+
+        <h5 class="card-title">
+            Project Communication Timeline
+        </h5>
+
+    </div>
+
+    <div class="card-body">
+
+        @if (!Model.Any())
+{
+    <div class="empty-state">
+
+        <i class="bi bi-chat-left-text"></i>
+
+        <p class="mb-0">
+            No project communications yet.
+        </p>
+
+    </div>
+}
+else
+{
+    <div class="project-communication-timeline">
+
+        @foreach (var item in Model)
+        {
+
+
+                    <div class="project-communication-item @(item.IsSystemGenerated ? "project-left shared" : "project-right internal")">
+
+                <div class="project-communication-marker">
+
+                    @if (item.IsSystemGenerated)
+                    {
+                        <i class="bi bi-share"></i>
+                    }
+                    else
+                    {
+                        <i class="bi bi-chat-left-text"></i>
+                    }
+
+                </div>
+
+                <div class="project-communication-card">
+
+                    <div class="project-communication-header">
+
+                        <div class="project-communication-left">
+
+                            <span class="project-communication-type">
+
+                                @(item.IsSystemGenerated
+                                    ? "Shared Client"
+                                    : "Internal")
+
+                            </span>
+
+                            <h5 class="project-communication-title">
+
+                                @item.Subject
+
+                            </h5>
+
+                        </div>
+
+                        <div class="project-communication-date">
+
+                            @item.CreatedOn.ToString("dd-MMM-yyyy hh:mm tt")
+
+                        </div>
+
+                    </div>
+
+                    <div class="project-communication-message">
+
+                        @item.Message
+
+                    </div>
+
+                            <div class="project-communication-footer">
+
+                                <div class="project-communication-badges">
+
+                            @if (item.IsSystemGenerated)
+                                    {
+                                        <span class="badge-secondary">
+                                            Shared Client
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-secondary">
+                                            Internal
+                                        </span>
+                                    }
+
+                                    @if (item.Status == "Closed")
+                                    {
+                                        <span class="badge-success">
+                                            Closed
+                                        </span>
+                                    }
+                                    else if (item.Status == "Action Required")
+                                    {
+                                        <span class="badge-warning">
+                                            Action Required
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-primary">
+                                            @item.Status
+                                        </span>
+                                    }
+
+                                </div>
+
+                                <div class="project-communication-actions">
+
+                                    <a asp-action="Details"
+                                       asp-route-id="@item.Id"
+                                       class="btn-app btn-secondary-app btn-sm-app">
+
+                                        <i class="bi bi-eye"></i>
+
+                                        Details
+
+                                    </a>
+
+                                    @if (!item.IsSystemGenerated)
+                                    {
+                                        <a asp-action="Edit"
+                                           asp-route-id="@item.Id"
+                                           class="btn-app btn-warning-app btn-sm-app">
+
+                                            <i class="bi bi-pencil"></i>
+
+                                            Edit
+
+                                        </a>
+
+                                        <a asp-action="Delete"
+                                           asp-route-id="@item.Id"
+                                           class="btn-app btn-danger-app btn-sm-app">
+
+                                            <i class="bi bi-trash"></i>
+
+                                            Delete
+
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a asp-controller="ClientCommunication"
+                                           asp-action="Details"
+                                           asp-route-id="@item.ClientCommunicationId"
+                                           class="btn-app btn-info-app btn-sm-app">
+
+                                            <i class="bi bi-box-arrow-up-right"></i>
+
+                                            Open Client
+
+                                        </a>
+                                    }
+
+                                </div>
+
+                            </div>
+
+                            @if (item.IsSystemGenerated)
+                            {
+                                <div class="detail-note-box project-source-box">
+
+                                    <strong>Source:</strong>
+
+                                    Shared from Client Communication
+
+                                </div>
+                            }
+                            else if (item.CreatedByEmployee != null)
+                            {
+                                <div class="detail-note-box project-source-box">
+
+                                    <strong>Created By:</strong>
+
+                                    @item.CreatedByEmployee.FullName
+
+                                </div>
+                            }
+
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+        }
+
+    </div>
+
+</div>

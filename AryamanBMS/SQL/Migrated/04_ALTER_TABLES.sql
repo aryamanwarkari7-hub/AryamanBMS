@@ -314,4 +314,32 @@
 -- FOREIGN KEY (ClientId)
 -- REFERENCES tableclientmaster(ClientId);
 
+-- ALTER TABLE aspnetusers
+-- ADD COLUMN CreatedOn DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP;
+
+-- ALTER TABLE TableProjectCommunications
+-- ADD CommunicationType VARCHAR(50) NOT NULL DEFAULT 'Internal';
+
+-- ALTER TABLE TableProjectCommunications
+-- ADD Subject VARCHAR(200) NOT NULL DEFAULT '';
+
+-- ALTER TABLE TableProjectCommunications
+-- ADD Status VARCHAR(30) NOT NULL DEFAULT 'Open';
+
+-- ALTER TABLE tableclientcommunications
+-- ADD COLUMN ShareWithProjectTeam BIT(1) NOT NULL DEFAULT b'0';
+
+-- ALTER TABLE tableclientcommunications
+-- ADD COLUMN ProjectSubject VARCHAR(200) NULL;
+
+-- ALTER TABLE tableclientcommunications
+-- ADD COLUMN ProjectSummary VARCHAR(5000) NULL;
+
+-- ALTER TABLE tableprojectcommunications
+-- ADD COLUMN ClientCommunicationId INT NULL;
+
+-- ALTER TABLE tableprojectcommunications
+-- ADD CONSTRAINT FK_ProjectCommunication_ClientCommunication
+-- FOREIGN KEY (ClientCommunicationId)
+-- REFERENCES tableclientcommunications(Id);
 

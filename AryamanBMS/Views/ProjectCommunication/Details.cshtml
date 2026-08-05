@@ -1,0 +1,168 @@
+﻿@model AryamanBMS.Models.ProjectCommunicationModel
+
+@{
+    ViewData["Title"] = "Project Communication Details";
+}
+
+<div class="module-header">
+
+    <div>
+
+        <h1 class="module-title">
+            Project Communication
+        </h1>
+
+        <p class="module-subtitle">
+            Communication Details
+        </p>
+
+    </div>
+
+    <a asp-action="Index"
+       asp-route-projectId="@Model.ProjectId"
+       class="btn-app btn-secondary-app">
+
+        <i class="bi bi-arrow-left"></i>
+
+        Back
+
+    </a>
+
+</div>
+
+<div class="app-card">
+
+    <div class="card-header">
+        <h5 class="card-title">
+            Communication Details
+        </h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="details-grid">
+
+            <div>
+                <strong>Subject</strong>
+                <p>@Model.Subject</p>
+            </div>
+
+            <div>
+                <strong>Communication Type</strong>
+                <p>@Model.CommunicationType</p>
+            </div>
+
+            <div>
+                <strong>Status</strong>
+                <p>@Model.Status</p>
+            </div>
+
+            <div>
+                <strong>Created On</strong>
+                <p>@Model.CreatedOn.ToString("dd-MMM-yyyy hh:mm tt")</p>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="app-card mt-4">
+
+    <div class="card-header">
+        <h5 class="card-title">
+            Source
+        </h5>
+    </div>
+
+    <div class="card-body">
+
+        @if (Model.IsSystemGenerated)
+        {
+            <div class="app-alert-info">
+
+                <i class="bi bi-info-circle"></i>
+
+                This communication was published from
+                Client Communication.
+
+            </div>
+        }
+        else
+        {
+            <div class="app-alert-success">
+
+                <i class="bi bi-chat-dots"></i>
+
+                Internal Project Communication
+
+            </div>
+        }
+
+    </div>
+
+</div>
+
+<div class="app-card mt-4">
+
+    <div class="card-header">
+        <h5 class="card-title">
+            Message
+        </h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="detail-note-box">
+
+            @Model.Message
+
+        </div>
+
+    </div>
+
+</div>
+<div class="app-card mt-4">
+
+    <div class="card-body form-actions">
+
+        @if (Model.IsSystemGenerated)
+        {
+            <a asp-controller="ClientCommunication"
+               asp-action="Details"
+               asp-route-id="@Model.ClientCommunicationId"
+               class="btn-app btn-info-app">
+
+                <i class="bi bi-box-arrow-up-right"></i>
+
+                Open Client Communication
+
+            </a>
+        }
+        else
+        {
+            <a asp-action="Edit"
+               asp-route-id="@Model.Id"
+               class="btn-app btn-warning-app">
+
+                <i class="bi bi-pencil"></i>
+
+                Edit
+
+            </a>
+
+            <a asp-action="Delete"
+               asp-route-id="@Model.Id"
+               class="btn-app btn-danger-app">
+
+                <i class="bi bi-trash"></i>
+
+                Delete
+
+            </a>
+        }
+
+    </div>
+
+</div>

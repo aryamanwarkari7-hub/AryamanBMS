@@ -1,0 +1,222 @@
+﻿/*
+==================================================
+ARYAMAN BMS DESIGN SYSTEM
+Project Communication
+==================================================
+*/
+
+/* ==========================================
+   PROJECT COMMUNICATION TIMELINE
+========================================== */
+
+.project-communication-timeline {
+    position: relative;
+}
+
+    .project-communication-timeline::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 50%;
+        width: 2px;
+        background: var(--border-color);
+        transform: translateX(-50%);
+    }
+.project-communication-item {
+    position: relative;
+    width: 50%;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-lg);
+    margin-bottom: var(--space-xl);
+}
+
+.project-left {
+    padding-right: 36px;
+}
+
+.project-right {
+    margin-left: 50%;
+    padding-left: 36px;
+}
+
+.project-communication-marker {
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: var(--text-light);
+    background: var(--primary-color);
+    z-index: 2;
+    position: absolute;
+    top: 150px;
+}
+
+.project-left .project-communication-marker {
+    right: -21px;
+}
+
+.project-right .project-communication-marker {
+    left: -21px;
+}
+
+.project-communication-item.shared
+.project-communication-marker {
+    background: var(--success-color);
+}
+
+.project-communication-item.internal
+.project-communication-marker {
+    background: var(--primary-color);
+}
+
+.project-communication-card {
+    flex: 1;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--space-lg);
+    transition: .2s;
+}
+
+    .project-communication-card:hover {
+        box-shadow: var(--shadow-md);
+        border-color: var(--primary-color);
+    }
+
+/* ==========================================
+   CARD HEADER
+========================================== */
+
+.project-communication-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--space-lg);
+}
+
+.project-communication-left {
+    flex: 1;
+}
+
+.project-communication-title {
+    margin: var(--space-sm) 0 0;
+    color: var(--text-primary);
+    font-size: var(--font-lg);
+    font-weight: var(--fw-bold);
+}
+
+.project-communication-date {
+    color: var(--secondary-color);
+    font-size: var(--font-sm);
+    white-space: nowrap;
+}
+
+.project-communication-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    font-size: var(--font-xs);
+    font-weight: var(--fw-semibold);
+    background: var(--primary-accent-tint);
+    color: var(--primary-color);
+}
+
+.project-communication-item.shared
+.project-communication-type {
+    background: var(--success-soft);
+    color: var(--success-color);
+}
+
+/* ==========================================
+   MESSAGE
+========================================== */
+
+.project-communication-message {
+    margin: var(--space-lg) 0;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    white-space: pre-wrap;
+}
+
+/* ==========================================
+   FOOTER
+========================================== */
+
+.project-communication-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--border-color);
+}
+
+.project-communication-badges {
+    display: flex;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+}
+
+.project-communication-actions {
+    display: flex;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+}
+
+/* ==========================================
+   SOURCE / INFO
+========================================== */
+
+.project-source-box {
+    margin-top: var(--space-md);
+}
+
+/* ==========================================
+   MOBILE
+========================================== */
+
+@media (max-width:768px) {
+
+    .project-communication-item {
+        gap: var(--space-md);
+    }
+
+    .project-communication-header {
+        flex-direction: column;
+    }
+
+    .project-communication-footer {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .project-communication-actions {
+        width: 100%;
+    }
+    .project-communication-timeline::before {
+        left: 21px;
+        transform: none;
+    }
+
+    .project-communication-item,
+    .project-right,
+    .project-left {
+        width: 100%;
+        margin-left: 0;
+        padding-left: 64px;
+        padding-right: 0;
+    }
+
+    .project-communication-marker {
+        left: 0 !important;
+        right: auto !important;
+    }
+}

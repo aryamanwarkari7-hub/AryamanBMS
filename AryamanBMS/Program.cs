@@ -117,6 +117,7 @@ builder.Services.AddScoped<IProjectTaskRepository, ProjectTaskRepository>();
 builder.Services.AddScoped<IProjectFlowRepository, ProjectFlowRepository>();
 builder.Services.AddScoped<IProjectTaskProgressRepository, ProjectTaskProgressRepository>();
 builder.Services.AddScoped<IProjectTimelineRepository, ProjectTimelineRepository>();
+builder.Services.AddScoped<IProjectCommunicationRepository,ProjectCommunicationRepository>();
 
 // Meetings
 builder.Services.AddScoped<IProjectMeetingRepository, ProjectMeetingRepository>();

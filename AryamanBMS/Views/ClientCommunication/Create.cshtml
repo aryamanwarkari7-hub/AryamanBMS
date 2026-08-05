@@ -111,8 +111,9 @@
     </div>
 
     <div class="app-card form-card">
+
         <div class="card-header">
-            <h5 class="card-title">Follow-up & Links</h5>
+            <h5 class="card-title">Follow-up</h5>
         </div>
 
         <div class="card-body">
@@ -120,30 +121,65 @@
             <label class="form-check-app mb-3">
                 <input asp-for="ActionRequired" />
                 <span>
-                    <strong>Action required</strong>
-                    <small>Create a follow-up item for this communication.</small>
+                    <strong>Action Required</strong>
+                    <small>Create a follow-up task for this communication.</small>
                 </span>
             </label>
 
             <div class="form-grid-2">
 
                 <div class="form-group">
-                    <label asp-for="FollowUpDate" class="form-label">Follow-up Date</label>
+                    <label asp-for="FollowUpDate" class="form-label"></label>
                     <input asp-for="FollowUpDate"
                            type="date"
                            class="app-input" />
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="ActionItem" class="form-label">Action Item</label>
-                    <input asp-for="ActionItem" class="app-input" />
+                    <label asp-for="ActionItem" class="form-label"></label>
+                    <input asp-for="ActionItem"
+                           class="app-input" />
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="ProposalId" class="form-label">Related Proposal</label>
+                    <label asp-for="AssignedToEmployeeId"
+                           class="form-label">
+                        Assigned To
+                    </label>
+
+                    <select asp-for="AssignedToEmployeeId"
+                            asp-items="ViewBag.Employees"
+                            class="app-select">
+                        <option value="">Not assigned</option>
+                    </select>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+    <div class="app-card form-card">
+
+        <div class="card-header">
+            <h5 class="card-title">Project Link</h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+
+                    <label asp-for="ProposalId"
+                           class="form-label">
+                        Related Proposal
+                    </label>
+
                     <select asp-for="ProposalId"
-                            class="app-select"
-                            id="ProposalId">
+                            id="ProposalId"
+                            class="app-select">
+
                         <option value="">None</option>
 
                         @foreach (var proposal in ViewBag.Proposals)
@@ -153,31 +189,134 @@
                                 @proposal.ProposalDisplay
                             </option>
                         }
+
                     </select>
+
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="ProjectId" class="form-label">Related Project</label>
+
+                    <label asp-for="ProjectId"
+                           class="form-label">
+                        Related Project
+                    </label>
+
                     <select asp-for="ProjectId"
                             asp-items="ViewBag.Projects"
-                            class="app-select"
-                            id="ProjectId">
+                            id="ProjectId"
+                            class="app-select">
+
                         <option value="">None</option>
+
                     </select>
+
+                    <span asp-validation-for="ProjectId"
+                          class="validation-message"></span>
+
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="InvoiceId" class="form-label">Related Invoice</label>
+
+                    <label asp-for="InvoiceId"
+                           class="form-label">
+                        Related Invoice
+                    </label>
+
                     <select asp-for="InvoiceId"
                             asp-items="ViewBag.Invoices"
                             class="app-select">
+
                         <option value="">None</option>
+
                     </select>
+
                 </div>
 
             </div>
 
         </div>
+
+    </div>
+
+    <div class="app-card form-card">
+
+        <div class="card-header">
+            <h5 class="card-title">
+                Project Workspace
+            </h5>
+        </div>
+
+        <div class="card-body">
+
+            <label class="form-check-app mb-4">
+
+                <input asp-for="ShareWithProjectTeam"
+                       id="ShareWithProjectTeam" />
+
+                <span>
+                    <strong>Publish to Project Workspace</strong>
+                    <small>
+                        Create a project-facing communication that will be visible
+                        to the Project Manager and Project Members.
+                        The original client communication remains private.
+                    </small>
+                </span>
+
+            </label>
+
+            <div id="projectShareSection">
+
+                <div class="app-alert-info mb-3">
+
+                    <i class="bi bi-info-circle"></i>
+
+                    Only the information below will be published inside the
+                    Project Workspace.
+
+                </div>
+
+                <div class="form-group mb-3">
+
+                    <label asp-for="ProjectSubject"
+                           class="form-label">
+                        Workspace Subject
+                    </label>
+
+                    <input asp-for="ProjectSubject"
+                           class="app-input"
+                           placeholder="Enter project-facing subject" />
+
+                    <span asp-validation-for="ProjectSubject"
+                          class="validation-message"></span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="ProjectSummary"
+                           class="form-label">
+                        Message for Project Team
+                    </label>
+
+                    <textarea asp-for="ProjectSummary"
+                              rows="5"
+                              class="app-input"
+                              placeholder="Enter only the information that should be visible to the project team."></textarea>
+
+                    <span asp-validation-for="ProjectSummary"
+                          class="validation-message"></span>
+
+                    <small class="text-muted">
+                        Client-only notes will remain inside Client Communication.
+                        Only this message is copied to the Project Workspace.
+                    </small>
+
+                </div>
+
+            </div>
+
+        </div>
+
     </div>
 
     <div class="app-card">
@@ -212,6 +351,32 @@
                     projectSelect.value = "";
                 }
             });
+
+                    const shareCheckbox =
+            document.getElementById("ShareWithProjectTeam");
+
+        const shareSection =
+            document.getElementById("projectShareSection");
+
+        function toggleProjectShare() {
+
+            if (!shareCheckbox || !shareSection)
+                return;
+
+                    if (!shareCheckbox || !shareSection)
+            return;
+
+        shareSection.style.display =
+            shareCheckbox.checked
+                ? ""
+                : "none";
+        }
+
+        toggleProjectShare();
+
+        shareCheckbox?.addEventListener(
+            "change",
+            toggleProjectShare);
         });
     </script>
 }
