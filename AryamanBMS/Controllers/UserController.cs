@@ -1,5 +1,6 @@
 ﻿using AryamanBMS.Extensions;
 using AryamanBMS.Models;
+using AryamanBMS.Services.Interfaces;
 using AryamanBMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -15,15 +16,18 @@ namespace AryamanBMS.Controllers
         private readonly UserManager<ApplicationUserModel> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ApplicationDbContext _context;
+        private readonly INotificationService _notificationService;
 
         public UserController(
     UserManager<ApplicationUserModel> userManager,
     RoleManager<IdentityRole> roleManager,
-    ApplicationDbContext context)
+    ApplicationDbContext context,
+    INotificationService notificationService)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _context = context;
+            _notificationService = notificationService;
         }
 
         public async Task<IActionResult> Index(
@@ -236,6 +240,15 @@ namespace AryamanBMS.Controllers
                     user,
                     model.Role);
 
+                await NotifyUserAsync(
+                    user.Id,
+                    "Account Created",
+                    "Your Aryaman BMS account has been created.",
+                    "UserCreated",
+                    "User",
+                    0,
+                    "/Account/Profile");
+
                 TempData["Success"] =
                     "User created successfully.";
 
@@ -312,6 +325,21 @@ namespace AryamanBMS.Controllers
                 user,
                 model.Role);
 
+            if (!string.Equals(
+                currentRoles.FirstOrDefault(),
+                model.Role,
+                StringComparison.OrdinalIgnoreCase))
+            {
+                await NotifyUserAsync(
+                    user.Id,
+                    "Role Updated",
+                    $"Your account role has been updated to {model.Role}.",
+                    "UserRoleChanged",
+                    "User",
+                    0,
+                    "/Account/Profile");
+            }
+
             TempData["Success"] =
                 "User updated successfully.";
 
@@ -379,6 +407,15 @@ namespace AryamanBMS.Controllers
 
                 await _context.SaveChangesAsync();
 
+                await _notificationService.CreateAsync(
+                    user.Id,
+                    "Password Reset",
+                    "Your password was reset by an administrator.",
+                    "AdminPasswordReset",
+                    "User",
+                    0,
+                    "/Account/ChangePassword");
+
                 TempData["Success"] =
                     "Password reset successfully.";
 
@@ -391,6 +428,34 @@ namespace AryamanBMS.Controllers
             }
 
             return View(model);
+        }
+
+        private async Task NotifyUserAsync(
+            string userId,
+            string title,
+            string message,
+            string notificationType,
+            string referenceType,
+            int referenceId,
+            string actionUrl)
+        {
+            if (await _notificationService.ExistsAsync(
+                userId,
+                notificationType,
+                referenceType,
+                referenceId))
+            {
+                return;
+            }
+
+            await _notificationService.CreateAsync(
+                userId,
+                title,
+                message,
+                notificationType,
+                referenceType,
+                referenceId,
+                actionUrl);
         }
     }
 }

@@ -1,5 +1,6 @@
 using AryamanBMS.Data;
 using AryamanBMS.Models;
+using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,10 +12,14 @@ namespace AryamanBMS.Controllers
     public class SalaryStructureController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly INotificationService _notificationService;
 
-        public SalaryStructureController(ApplicationDbContext context)
+        public SalaryStructureController(
+            ApplicationDbContext context,
+            INotificationService notificationService)
         {
             _context = context;
+            _notificationService = notificationService;
         }
 
         [HttpGet]
@@ -149,6 +154,12 @@ namespace AryamanBMS.Controllers
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
+            await NotifyEmployeeSalaryStructureAsync(
+                model.EmployeeId,
+                "Salary Structure Added",
+                "Your salary structure has been added.",
+                "SalaryStructureCreated");
+
             TempData["Success"] =
                 "Salary structure added successfully.";
 
@@ -264,6 +275,12 @@ namespace AryamanBMS.Controllers
 
             await _context.SaveChangesAsync();
 
+            await NotifyEmployeeSalaryStructureAsync(
+                salaryStructure.EmployeeId,
+                "Salary Structure Updated",
+                "Your salary structure has been updated.",
+                "SalaryStructureUpdated");
+
             TempData["Success"] =
                 "Salary structure updated successfully.";
 
@@ -288,6 +305,18 @@ namespace AryamanBMS.Controllers
             salaryStructure.UpdatedOn = DateTime.Now;
 
             await _context.SaveChangesAsync();
+
+            await NotifyEmployeeSalaryStructureAsync(
+                salaryStructure.EmployeeId,
+                salaryStructure.IsActive
+                    ? "Salary Structure Activated"
+                    : "Salary Structure Deactivated",
+                salaryStructure.IsActive
+                    ? "Your salary structure has been activated."
+                    : "Your salary structure has been deactivated.",
+                salaryStructure.IsActive
+                    ? "SalaryStructureActivated"
+                    : "SalaryStructureDeactivated");
 
             TempData["Success"] =
                 salaryStructure.IsActive
@@ -442,6 +471,33 @@ namespace AryamanBMS.Controllers
                     .Where(x => x.IsActive)
                     .OrderBy(x => x.EmployeeCode)
                     .ToListAsync();
+        }
+
+        private async Task NotifyEmployeeSalaryStructureAsync(
+            int employeeId,
+            string title,
+            string message,
+            string notificationType)
+        {
+            var userId = await _context.Employees
+                .AsNoTracking()
+                .Where(x => x.Id == employeeId)
+                .Select(x => x.ApplicationUserId)
+                .FirstOrDefaultAsync();
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return;
+            }
+
+            await _notificationService.CreateAsync(
+                userId,
+                title,
+                message,
+                notificationType,
+                "SalaryStructure",
+                employeeId,
+                "/Salary/MySalary");
         }
     }
 }

@@ -198,7 +198,14 @@
                                 </td>
 
                                 <td>
-                                    @item.NumberOfDays
+                                    @item.NumberOfDays.ToString("0.##")
+                                    @if (item.IsHalfDay)
+                                    {
+                                        <br />
+                                        <small>
+                                            @(item.HalfDaySession == "FirstHalf" ? "First Half" : "Second Half")
+                                        </small>
+                                    }
                                 </td>
 
                                 <td>

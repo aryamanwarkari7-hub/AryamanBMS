@@ -85,7 +85,7 @@ namespace AryamanBMS.Services
                     continue;
                 }
 
-                int eligibleDays =
+                decimal eligibleDays =
                     (eligibleEnd - eligibleStart).Days + 1;
 
                 var employeeAttendance = attendanceRecords
@@ -101,92 +101,120 @@ namespace AryamanBMS.Services
                 var employeeApprovedLeaves = approvedLeaves
                     .Where(l => l.EmployeeId == employee.Id)
                     .ToList();
-                int presentCount = 0;
-                int markedAbsentCount = 0;
-                int leaveCount = 0;
-                int paidLeaveCount = 0;
-                int unpaidLeaveCount = 0;
-                int holidayCount = 0;
-                int weekOffCount = 0;
-                int onDutyCount = 0;
-                int missingDays = 0;
+                decimal presentCount = 0;
+                decimal markedAbsentCount = 0;
+                decimal leaveCount = 0;
+                decimal paidLeaveCount = 0;
+                decimal unpaidLeaveCount = 0;
+                decimal holidayCount = 0;
+                decimal weekOffCount = 0;
+                decimal onDutyCount = 0;
+                decimal missingDays = 0;
 
                 for (var date = eligibleStart.Date;
                      date <= eligibleEnd.Date;
                      date = date.AddDays(1))
                 {
                     employeeAttendance.TryGetValue(date, out var attendance);
+                    decimal attendanceValue =
+                        NormalizeDayValue(attendance?.AttendanceValue ?? 1m);
 
                     if (IsStatus(attendance?.Status, "P", "Present"))
                     {
-                        presentCount++;
+                        presentCount += attendanceValue;
                         continue;
                     }
 
                     if (IsStatus(attendance?.Status, "OD", "On Duty", "OnDuty"))
                     {
-                        onDutyCount++;
+                        onDutyCount += attendanceValue;
                         continue;
                     }
 
                     if (IsStatus(attendance?.Status, "A", "Absent"))
                     {
-                        markedAbsentCount++;
+                        markedAbsentCount += attendanceValue;
+
+                        if (attendanceValue < 1m)
+                        {
+                            presentCount += 1m - attendanceValue;
+                        }
+
                         continue;
                     }
 
                     if (IsStatus(attendance?.Status, "H", "Holiday") ||
                         IsOfficeHoliday(date, officeHolidays))
                     {
-                        holidayCount++;
+                        holidayCount += 1m;
                         continue;
                     }
 
                     if (IsStatus(attendance?.Status, "WO", "Week Off", "WeekOff", "Weekly Off") ||
                         IsWeeklyOff(date, weeklyOffDays))
                     {
-                        weekOffCount++;
+                        weekOffCount += 1m;
                         continue;
                     }
 
-                    var approvedLeave = employeeApprovedLeaves
-                        .FirstOrDefault(l =>
+                    var dateApprovedLeaves = employeeApprovedLeaves
+                        .Where(l =>
                             l.FromDate.Date <= date &&
-                            l.ToDate.Date >= date);
+                            l.ToDate.Date >= date)
+                        .ToList();
 
-                    if (approvedLeave != null ||
+                    if (dateApprovedLeaves.Any() ||
                         IsStatus(attendance?.Status, "L", "Leave"))
                     {
-                        leaveCount++;
+                        decimal leaveDayValue = dateApprovedLeaves.Any()
+                            ? Math.Min(
+                                1m,
+                                dateApprovedLeaves.Sum(l =>
+                                    GetLeaveDayValue(l, date)))
+                            : attendanceValue;
 
-                        if (approvedLeave?.LeaveType?.IsPaidLeave == true)
+                        leaveCount += leaveDayValue;
+
+                        if (dateApprovedLeaves.Any())
                         {
-                            paidLeaveCount++;
+                            decimal paidLeaveValue =
+                                dateApprovedLeaves
+                                    .Where(l =>
+                                        l.LeaveType != null &&
+                                        l.LeaveType.IsPaidLeave)
+                                    .Sum(l => GetLeaveDayValue(l, date));
+
+                            paidLeaveValue = Math.Min(
+                                paidLeaveValue,
+                                leaveDayValue);
+
+                            paidLeaveCount += paidLeaveValue;
+                            unpaidLeaveCount += leaveDayValue - paidLeaveValue;
                         }
                         else
                         {
-                            unpaidLeaveCount++;
+                            unpaidLeaveCount += leaveDayValue;
                         }
 
                         continue;
                     }
 
-                    missingDays++;
+                    missingDays += 1m;
                 }
 
-                int absentCount =
+                decimal absentCount =
                     markedAbsentCount
                     + missingDays
                     + unpaidLeaveCount;
 
-                int payDays =
+                decimal payDays =
                     presentCount
                     + onDutyCount
                     + holidayCount
                     + weekOffCount
                     + paidLeaveCount;
 
-                int workingDays =
+                decimal workingDays =
                     eligibleDays - holidayCount - weekOffCount;
 
                 decimal attendancePercentage =
@@ -321,6 +349,26 @@ namespace AryamanBMS.Services
             HashSet<DateTime> officeHolidays)
         {
             return officeHolidays.Contains(date.Date);
+        }
+
+        private decimal GetLeaveDayValue(
+            AryamanBMS.Models.LeaveApplicationModel leaveApplication,
+            DateTime date)
+        {
+            if (leaveApplication.IsHalfDay &&
+                leaveApplication.FromDate.Date == date.Date)
+            {
+                return 0.5m;
+            }
+
+            return 1m;
+        }
+
+        private static decimal NormalizeDayValue(decimal value)
+        {
+            return value == 0.5m
+                ? 0.5m
+                : 1m;
         }
 
         private bool IsStatus(  string? status, params string[] validStatuses)

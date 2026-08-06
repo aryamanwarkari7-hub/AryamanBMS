@@ -12,6 +12,8 @@ namespace AryamanBMS.Models
 
         public string Status { get; set; } = "P";
 
+        public decimal AttendanceValue { get; set; } = 1m;
+
         public DateTime? CheckInTime { get; set; }
 
         public DateTime? CheckOutTime { get; set; }

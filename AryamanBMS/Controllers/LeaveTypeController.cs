@@ -68,6 +68,8 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> Create(
             LeaveTypeModel leaveType)
         {
+            NormalizeCompOffLeaveType(leaveType);
+
             bool exists =
                 _leaveTypeRepository.LeaveTypes.Any(x =>
                     x.LeaveCode == leaveType.LeaveCode);
@@ -127,6 +129,8 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> Edit(
             LeaveTypeModel leaveType)
         {
+            NormalizeCompOffLeaveType(leaveType);
+
             if (!leaveType.IsCarryForward)
             {
                 leaveType.MaximumCarryForwardDays = 0;
@@ -188,6 +192,32 @@ namespace AryamanBMS.Controllers
             TempData["Success"] = "Leave type deactivated successfully.";
 
             return RedirectToAction(nameof(Index));
+        }
+
+        private static void NormalizeCompOffLeaveType(
+            LeaveTypeModel leaveType)
+        {
+            if (!IsCompOffLeaveType(leaveType))
+            {
+                return;
+            }
+
+            leaveType.DaysPerYear = 0;
+            leaveType.IsCarryForward = false;
+            leaveType.MaximumCarryForwardDays = 0;
+        }
+
+        private static bool IsCompOffLeaveType(
+            LeaveTypeModel leaveType)
+        {
+            return string.Equals(
+                       leaveType.LeaveCode?.Trim(),
+                       "COMP",
+                       StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(
+                       leaveType.LeaveName?.Trim(),
+                       "Comp Off",
+                       StringComparison.OrdinalIgnoreCase);
         }
     }
 }

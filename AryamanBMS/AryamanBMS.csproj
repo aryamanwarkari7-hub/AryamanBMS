@@ -65,6 +65,7 @@
     <Folder Include="Views\NewFolder2\" />
     <Folder Include="Views\NewFolder\" />
     <Folder Include="wwwroot\css\modules\NewFolder\" />
+    <Folder Include="wwwroot\css\NewFolder\" />
     <Folder Include="wwwroot\documents\letters\" />
     <Folder Include="wwwroot\lib\NewFolder\" />
   </ItemGroup>

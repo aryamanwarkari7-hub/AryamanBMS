@@ -97,6 +97,27 @@
 
                 </div>
 
+                <div class="form-group">
+
+                    <label asp-for="AttendanceValue"
+                           class="form-label">
+                        Day Value
+                    </label>
+
+                    <select asp-for="AttendanceValue"
+                            class="app-select">
+
+                        <option value="1">Full Day</option>
+                        <option value="0.5">Half Day</option>
+
+                    </select>
+
+                    <span asp-validation-for="AttendanceValue"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
             </div>
 
             <div class="form-group mt-3">

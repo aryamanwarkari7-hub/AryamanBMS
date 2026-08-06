@@ -189,16 +189,33 @@ namespace AryamanBMS.Controllers
                 leaveApplication.EmployeeId = employee.Id;
             }
 
+            if (leaveApplication.IsHalfDay)
+            {
+                leaveApplication.ToDate = leaveApplication.FromDate;
+                leaveApplication.NumberOfDays = 0.5m;
+
+                if (!IsValidHalfDaySession(leaveApplication.HalfDaySession))
+                {
+                    ModelState.AddModelError(
+                        "HalfDaySession",
+                        "Please select first half or second half.");
+                }
+            }
+            else
+            {
+                leaveApplication.HalfDaySession = null;
+
+                leaveApplication.NumberOfDays =
+                    (leaveApplication.ToDate.Date -
+                     leaveApplication.FromDate.Date).Days + 1;
+            }
+
             if (leaveApplication.FromDate > leaveApplication.ToDate)
             {
                 ModelState.AddModelError(
                     "ToDate",
                     "To Date cannot be earlier than From Date.");
             }
-
-            leaveApplication.NumberOfDays =
-                (leaveApplication.ToDate.Date -
-                 leaveApplication.FromDate.Date).Days + 1;
 
             if (leaveApplication.NumberOfDays <= 0)
             {
@@ -211,14 +228,20 @@ namespace AryamanBMS.Controllers
                       x.Id == leaveApplication.LeaveTypeId);
             }
 
-            bool overlappingLeaveExists =
+            var overlappingLeaves =
                await _leaveApplicationRepository.LeaveApplications
-               .AnyAsync(x =>
-                   x.EmployeeId == leaveApplication.EmployeeId &&
-                   x.Status != "Rejected" &&
-                   x.Status != "Cancelled" &&
-                   leaveApplication.FromDate <= x.ToDate &&
-                   leaveApplication.ToDate >= x.FromDate);
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.EmployeeId == leaveApplication.EmployeeId &&
+                        x.Status != "Rejected" &&
+                        x.Status != "Cancelled" &&
+                        leaveApplication.FromDate <= x.ToDate &&
+                        leaveApplication.ToDate >= x.FromDate)
+                    .ToListAsync();
+
+            bool overlappingLeaveExists =
+                overlappingLeaves.Any(x =>
+                    IsLeaveOverlap(x, leaveApplication));
 
             if (overlappingLeaveExists)
             {
@@ -308,7 +331,7 @@ namespace AryamanBMS.Controllers
                          .Where(x =>
                              x.EmployeeId == employee.Id &&
                              x.LeaveTypeId == selectedLeaveType.Id &&
-                             x.Status == "Pending")
+                            x.Status == "Pending")
                          .SumAsync(x => (decimal?)x.NumberOfDays)
                      ?? 0m;
 
@@ -543,6 +566,7 @@ namespace AryamanBMS.Controllers
                     a.EmployeeId == leaveApplication.EmployeeId &&
                     a.AttendanceDate.Date >= leaveApplication.FromDate.Date &&
                     a.AttendanceDate.Date <= leaveApplication.ToDate.Date &&
+                    !leaveApplication.IsHalfDay &&
                     (
                         a.Status == "P" ||
                         a.Status == "Present" ||
@@ -610,6 +634,9 @@ namespace AryamanBMS.Controllers
                  date <= leaveApplication.ToDate.Date;
                  date = date.AddDays(1))
             {
+                decimal leaveDayValue =
+                    GetLeaveDayValue(leaveApplication, date);
+
                 var existingAttendance =
                     await _attendanceRepository.Attendances
                     .FirstOrDefaultAsync(a =>
@@ -623,8 +650,9 @@ namespace AryamanBMS.Controllers
                         EmployeeId = leaveApplication.EmployeeId,
                         AttendanceDate = date,
                         Status = "L",
+                        AttendanceValue = leaveDayValue,
                         Remarks =
-                            $"Leave approved: {leaveApplication.ApplicationNumber}",
+                            BuildLeaveAttendanceRemarks(leaveApplication),
                         CreatedOn = DateTime.Now
                     };
 
@@ -633,15 +661,21 @@ namespace AryamanBMS.Controllers
                 else if (IsAttendanceStatus(existingAttendance.Status, "A", "Absent"))
                 {
                     existingAttendance.Status = "L";
+                    existingAttendance.AttendanceValue = leaveDayValue;
                     existingAttendance.Remarks =
-                        $"Absent converted to leave: {leaveApplication.ApplicationNumber}";
+                        $"Absent converted to leave: {BuildLeaveAttendanceRemarks(leaveApplication)}";
 
                     await _attendanceRepository.UpdateAsync(existingAttendance);
                 }
                 else if (IsAttendanceStatus(existingAttendance.Status, "L", "Leave"))
                 {
+                    existingAttendance.AttendanceValue =
+                        Math.Max(
+                            existingAttendance.AttendanceValue,
+                            leaveDayValue);
+
                     existingAttendance.Remarks =
-                        $"Leave approved: {leaveApplication.ApplicationNumber}";
+                        BuildLeaveAttendanceRemarks(leaveApplication);
 
                     await _attendanceRepository.UpdateAsync(existingAttendance);
                 }
@@ -1544,6 +1578,82 @@ namespace AryamanBMS.Controllers
                 "Cancelled" => "bucket-neutral",
                 _ => "bucket-info"
             };
+        }
+
+        private static bool IsLeaveOverlap(
+            LeaveApplicationModel existingLeave,
+            LeaveApplicationModel newLeave)
+        {
+            bool dateRangesOverlap =
+                newLeave.FromDate.Date <= existingLeave.ToDate.Date &&
+                newLeave.ToDate.Date >= existingLeave.FromDate.Date;
+
+            if (!dateRangesOverlap)
+            {
+                return false;
+            }
+
+            if (!existingLeave.IsHalfDay || !newLeave.IsHalfDay)
+            {
+                return true;
+            }
+
+            bool sameDate =
+                existingLeave.FromDate.Date == newLeave.FromDate.Date;
+
+            if (!sameDate)
+            {
+                return true;
+            }
+
+            return string.Equals(
+                existingLeave.HalfDaySession,
+                newLeave.HalfDaySession,
+                StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsValidHalfDaySession(string? halfDaySession)
+        {
+            return string.Equals(
+                    halfDaySession,
+                    "FirstHalf",
+                    StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(
+                    halfDaySession,
+                    "SecondHalf",
+                    StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static decimal GetLeaveDayValue(
+            LeaveApplicationModel leaveApplication,
+            DateTime date)
+        {
+            if (leaveApplication.IsHalfDay &&
+                leaveApplication.FromDate.Date == date.Date)
+            {
+                return 0.5m;
+            }
+
+            return 1m;
+        }
+
+        private static string BuildLeaveAttendanceRemarks(
+            LeaveApplicationModel leaveApplication)
+        {
+            if (!leaveApplication.IsHalfDay)
+            {
+                return $"Leave approved: {leaveApplication.ApplicationNumber}";
+            }
+
+            string sessionText =
+                string.Equals(
+                    leaveApplication.HalfDaySession,
+                    "FirstHalf",
+                    StringComparison.OrdinalIgnoreCase)
+                    ? "first half"
+                    : "second half";
+
+            return $"Half-day leave approved ({sessionText}): {leaveApplication.ApplicationNumber}";
         }
 
         [Authorize(Roles = "Admin,HR")]

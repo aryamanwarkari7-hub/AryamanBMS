@@ -28,21 +28,37 @@
         @if ((User.IsInRole("Admin") || User.IsInRole("HR"))
                 && Model.Status == "Pending")
         {
-            <a asp-action="Approve"
-               asp-route-id="@Model.Id"
-               class="btn-app btn-success-app"
-               onclick="return confirm('Approve this leave application?');">
+            <form asp-action="Approve"
+                  method="post"
+                  class="d-inline">
+                @Html.AntiForgeryToken()
+                <input type="hidden"
+                       name="id"
+                       value="@Model.Id" />
+
+                <button type="submit"
+                        class="btn-app btn-success-app"
+                        onclick="return confirm('Approve this leave application?');">
                 <i class="bi bi-check-lg"></i>
                 Approve
-            </a>
+                </button>
+            </form>
 
-            <a asp-action="Reject"
-               asp-route-id="@Model.Id"
-               class="btn-app btn-danger-app"
-               onclick="return confirm('Reject this leave application?');">
+            <form asp-action="Reject"
+                  method="post"
+                  class="d-inline">
+                @Html.AntiForgeryToken()
+                <input type="hidden"
+                       name="id"
+                       value="@Model.Id" />
+
+                <button type="submit"
+                        class="btn-app btn-danger-app"
+                        onclick="return confirm('Reject this leave application?');">
                 <i class="bi bi-x-lg"></i>
                 Reject
-            </a>
+                </button>
+            </form>
         }
 
         <a asp-action="Index"
@@ -107,7 +123,21 @@
                     <div class="detail-info-row">
                         <span class="detail-info-label">Number Of Days</span>
                         <strong class="detail-info-value">
-                            @Model.NumberOfDays
+                            @Model.NumberOfDays.ToString("0.##")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Duration</span>
+                        <strong class="detail-info-value">
+                            @if (Model.IsHalfDay)
+                            {
+                                @(Model.HalfDaySession == "FirstHalf" ? "Half Day - First Half" : "Half Day - Second Half")
+                            }
+                            else
+                            {
+                                @("Full Day")
+                            }
                         </strong>
                     </div>
 

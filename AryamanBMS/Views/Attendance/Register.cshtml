@@ -164,6 +164,7 @@
                             <th>Employee Code</th>
                             <th>Employee Name</th>
                             <th>Status</th>
+                            <th>Day Value</th>
                             <th>Location</th>
                             <th>Working Hours</th>
                             <th>Remarks</th>
@@ -240,6 +241,10 @@
                                             break;
                                     }
 
+                                </td>
+
+                                <td>
+                                    @attendance.AttendanceValue.ToString("0.##")
                                 </td>
 
                                 <td>

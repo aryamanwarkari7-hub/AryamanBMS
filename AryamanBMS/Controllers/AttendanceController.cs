@@ -2,6 +2,7 @@
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interface;
+using AryamanBMS.Services.Interfaces;
 using AryamanBMS.ViewModels;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
@@ -19,6 +20,7 @@ namespace AryamanBMS.Controllers
         private readonly UserManager<ApplicationUserModel> _userManager;
         private readonly ILeaveApplicationRepository _leaveApplicationRepository;
         private readonly IConfiguration _configuration;
+        private readonly INotificationService _notificationService;
 
         private readonly ISalaryAttendanceSummaryService _salaryAttendanceSummaryService;
 
@@ -28,7 +30,8 @@ namespace AryamanBMS.Controllers
     ILeaveApplicationRepository leaveApplicationRepository,
     UserManager<ApplicationUserModel> userManager,
     ISalaryAttendanceSummaryService salaryAttendanceSummaryService,
-    IConfiguration configuration)
+    IConfiguration configuration,
+    INotificationService notificationService)
         {
             _attendanceRepository = attendanceRepository;
             _employeeRepository = employeeRepository;
@@ -36,6 +39,7 @@ namespace AryamanBMS.Controllers
             _userManager = userManager;
             _salaryAttendanceSummaryService = salaryAttendanceSummaryService;
             _configuration = configuration;
+            _notificationService = notificationService;
         }
 
         public async Task<IActionResult> Index()
@@ -147,6 +151,9 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> Create(
             AttendanceModel model)
         {
+            model.AttendanceValue =
+                NormalizeAttendanceValue(model.AttendanceValue);
+
             bool alreadyExists =
                 await _attendanceRepository.Attendances
                 .AnyAsync(a =>
@@ -182,6 +189,14 @@ namespace AryamanBMS.Controllers
 
                 await _attendanceRepository.AddAsync(model);
                 await _attendanceRepository.SaveAsync();
+
+                await NotifyAttendanceChangedAsync(
+                    model.EmployeeId,
+                    model.AttendanceDate,
+                    model.Status,
+                    model.AttendanceValue,
+                    "Attendance Marked",
+                    "ManualAttendanceCreated");
 
                 TempData["Success"] =
                     "Attendance created successfully.";
@@ -280,6 +295,7 @@ namespace AryamanBMS.Controllers
                 }
 
                 todayAttendance.Status = "P";
+                todayAttendance.AttendanceValue = 1m;
                 todayAttendance.CheckInTime = DateTime.Now;
                 todayAttendance.LocationType = locationType;
 
@@ -295,6 +311,7 @@ namespace AryamanBMS.Controllers
                 EmployeeId = employee.Id,
                 AttendanceDate = DateTime.Today,
                 Status = "P",
+                AttendanceValue = 1m,
                 CheckInTime = DateTime.Now,
                 LocationType = locationType,
                 CreatedOn = DateTime.Now
@@ -511,6 +528,9 @@ namespace AryamanBMS.Controllers
             attendance.Status =
                 model.Status;
 
+            attendance.AttendanceValue =
+                NormalizeAttendanceValue(model.AttendanceValue);
+
             attendance.Remarks =
                 model.Remarks;
 
@@ -535,6 +555,14 @@ namespace AryamanBMS.Controllers
 
             await _attendanceRepository
                 .SaveAsync();
+
+            await NotifyAttendanceChangedAsync(
+                attendance.EmployeeId,
+                attendance.AttendanceDate,
+                attendance.Status,
+                attendance.AttendanceValue,
+                "Attendance Updated",
+                "ManualAttendanceUpdated");
 
             TempData["Success"] =
                 "Attendance updated successfully.";
@@ -589,11 +617,18 @@ namespace AryamanBMS.Controllers
 
             if (attendance != null)
             {
+                int employeeId = attendance.EmployeeId;
+                DateTime attendanceDate = attendance.AttendanceDate;
+
                 await _attendanceRepository
                     .DeleteAsync(attendance);
 
                 await _attendanceRepository
                     .SaveAsync();
+
+                await NotifyAttendanceDeletedAsync(
+                    employeeId,
+                    attendanceDate);
             }
 
             TempData["Success"] =
@@ -898,6 +933,63 @@ namespace AryamanBMS.Controllers
             return false;
         }
 
+        private static decimal NormalizeAttendanceValue(decimal value)
+        {
+            return value == 0.5m
+                ? 0.5m
+                : 1m;
+        }
+
+        private async Task NotifyAttendanceChangedAsync(
+            int employeeId,
+            DateTime attendanceDate,
+            string status,
+            decimal attendanceValue,
+            string title,
+            string notificationType)
+        {
+            var employee = await _employeeRepository.Employees
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == employeeId);
+
+            if (string.IsNullOrWhiteSpace(employee?.ApplicationUserId))
+            {
+                return;
+            }
+
+            await _notificationService.CreateAsync(
+                employee.ApplicationUserId,
+                title,
+                $"Your attendance for {attendanceDate:dd-MMM-yyyy} is marked as {status} ({attendanceValue:0.##} day).",
+                notificationType,
+                "Attendance",
+                employeeId,
+                "/Attendance/MyMonthly");
+        }
+
+        private async Task NotifyAttendanceDeletedAsync(
+            int employeeId,
+            DateTime attendanceDate)
+        {
+            var employee = await _employeeRepository.Employees
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == employeeId);
+
+            if (string.IsNullOrWhiteSpace(employee?.ApplicationUserId))
+            {
+                return;
+            }
+
+            await _notificationService.CreateAsync(
+                employee.ApplicationUserId,
+                "Attendance Deleted",
+                $"Your attendance record for {attendanceDate:dd-MMM-yyyy} was deleted.",
+                "ManualAttendanceDeleted",
+                "Attendance",
+                employeeId,
+                "/Attendance/MyMonthly");
+        }
+
         [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> ExportExcel(
                string? searchText,
@@ -955,10 +1047,11 @@ namespace AryamanBMS.Controllers
             worksheet.Cell(1, 4).Value = "Designation";
             worksheet.Cell(1, 5).Value = "Date";
             worksheet.Cell(1, 6).Value = "Status";
-            worksheet.Cell(1, 7).Value = "Remarks";
-            worksheet.Cell(1, 8).Value = "Created On";
+            worksheet.Cell(1, 7).Value = "Day Value";
+            worksheet.Cell(1, 8).Value = "Remarks";
+            worksheet.Cell(1, 9).Value = "Created On";
 
-            var headerRange = worksheet.Range("A1:H1");
+            var headerRange = worksheet.Range("A1:I1");
 
             headerRange.Style.Font.Bold = true;
             headerRange.Style.Alignment.Horizontal =
@@ -988,9 +1081,12 @@ namespace AryamanBMS.Controllers
                     attendance.Status;
 
                 worksheet.Cell(row, 7).Value =
-                    attendance.Remarks;
+                    attendance.AttendanceValue;
 
                 worksheet.Cell(row, 8).Value =
+                    attendance.Remarks;
+
+                worksheet.Cell(row, 9).Value =
                     attendance.CreatedOn;
 
                 row++;
@@ -999,7 +1095,7 @@ namespace AryamanBMS.Controllers
             worksheet.Columns().AdjustToContents();
             worksheet.Column(5).Style.DateFormat.Format = "dd-MMM-yyyy";
 
-            worksheet.Column(8).Style.DateFormat.Format = "dd-MMM-yyyy HH:mm";
+            worksheet.Column(9).Style.DateFormat.Format = "dd-MMM-yyyy HH:mm";
 
 
 

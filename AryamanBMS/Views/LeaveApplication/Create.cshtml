@@ -65,6 +65,33 @@
                 </div>
 
                 <div class="form-group">
+                    <label class="form-label">Leave Duration</label>
+
+                    <select asp-for="IsHalfDay"
+                            class="app-select"
+                            id="leaveDuration">
+                        <option value="false">Full Day</option>
+                        <option value="true">Half Day</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="halfDaySessionGroup">
+                    <label asp-for="HalfDaySession" class="form-label">Half Day</label>
+
+                    <select asp-for="HalfDaySession"
+                            class="app-select"
+                            id="halfDaySession">
+                        <option value="">Select Half</option>
+                        <option value="FirstHalf">First Half</option>
+                        <option value="SecondHalf">Second Half</option>
+                    </select>
+
+                    <span asp-validation-for="HalfDaySession"
+                          class="validation-message">
+                    </span>
+                </div>
+
+                <div class="form-group">
                     <label asp-for="FromDate" class="form-label">From Date</label>
 
                     <input asp-for="FromDate"
@@ -132,12 +159,37 @@
             const fromDateInput = document.getElementById('fromDate');
             const toDateInput = document.getElementById('toDate');
             const estimatedDays = document.getElementById('estimatedDays');
+            const leaveDuration = document.getElementById('leaveDuration');
+            const halfDaySessionGroup = document.getElementById('halfDaySessionGroup');
 
             function updateEstimatedDays() {
-                if (!fromDateInput.value || !toDateInput.value) {
-                    estimatedDays.textContent = '-';
+                const isHalfDay = leaveDuration.value === 'true';
+
+                halfDaySessionGroup.style.display = isHalfDay ? '' : 'none';
+
+                if (isHalfDay && fromDateInput.value) {
+                    toDateInput.value = fromDateInput.value;
+                    toDateInput.setAttribute('readonly', 'readonly');
+                    estimatedDays.textContent = '0.5 day';
                     return;
                 }
+
+                if (!fromDateInput.value || !toDateInput.value) {
+                    estimatedDays.textContent = '-';
+
+                    if (!isHalfDay) {
+                        toDateInput.removeAttribute('readonly');
+                    }
+
+                    return;
+                }
+
+                if (isHalfDay) {
+                    estimatedDays.textContent = '0.5 day';
+                    return;
+                }
+
+                toDateInput.removeAttribute('readonly');
 
                 const fromDate = new Date(fromDateInput.value);
                 const toDate = new Date(toDateInput.value);
@@ -160,6 +212,7 @@
 
             fromDateInput.addEventListener('change', updateEstimatedDays);
             toDateInput.addEventListener('change', updateEstimatedDays);
+            leaveDuration.addEventListener('change', updateEstimatedDays);
 
             updateEstimatedDays();
         })();

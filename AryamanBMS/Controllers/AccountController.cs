@@ -318,19 +318,64 @@ namespace AryamanBMS.Controllers
             if (!string.IsNullOrWhiteSpace(croppedProfilePhoto))
             {
                 var commaIndex = croppedProfilePhoto.IndexOf(',');
+                string? declaredContentType = null;
 
                 if (commaIndex >= 0)
                 {
+                    string metadata =
+                        croppedProfilePhoto[..commaIndex];
+
+                    if (metadata.StartsWith(
+                        "data:",
+                        StringComparison.OrdinalIgnoreCase))
+                    {
+                        int separatorIndex = metadata.IndexOf(';');
+
+                        if (separatorIndex > 5)
+                        {
+                            declaredContentType =
+                                metadata[5..separatorIndex];
+                        }
+                    }
+
                     croppedProfilePhoto = croppedProfilePhoto[(commaIndex + 1)..];
                 }
 
-                var bytes = Convert.FromBase64String(croppedProfilePhoto);
+                byte[] bytes;
+
+                try
+                {
+                    bytes = Convert.FromBase64String(croppedProfilePhoto);
+                }
+                catch (FormatException)
+                {
+                    TempData["Error"] =
+                        "Profile photo data is invalid.";
+
+                    return RedirectToAction(nameof(Profile));
+                }
 
                 const long croppedMaxBytes = 2 * 1024 * 1024;
 
                 if (bytes.Length > croppedMaxBytes)
                 {
                     TempData["Error"] = "Profile photo must be 2 MB or smaller.";
+                    return RedirectToAction(nameof(Profile));
+                }
+
+                if (!TryGetAllowedImageType(
+                    bytes,
+                    out string croppedExtension,
+                    out string croppedContentType) ||
+                    (!string.IsNullOrWhiteSpace(declaredContentType) &&
+                     !string.Equals(
+                         declaredContentType,
+                         croppedContentType,
+                         StringComparison.OrdinalIgnoreCase)))
+                {
+                    TempData["Error"] =
+                        "Only valid JPG, PNG or WEBP profile photos are allowed.";
+
                     return RedirectToAction(nameof(Profile));
                 }
 
@@ -341,10 +386,14 @@ namespace AryamanBMS.Controllers
 
                 Directory.CreateDirectory(croppedFolderPath);
 
-                string croppedFileName = $"{user.Id}.jpg";
+                string croppedFileName = $"{user.Id}{croppedExtension}";
                 string croppedFullPath = Path.Combine(
                     croppedFolderPath,
                     croppedFileName);
+
+                DeleteExistingProfilePhotoFiles(
+                    croppedFolderPath,
+                    user.Id);
 
                 await System.IO.File.WriteAllBytesAsync(croppedFullPath, bytes);
 
@@ -387,6 +436,29 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction(nameof(Profile));
             }
 
+            byte[] uploadedBytes;
+
+            await using (var memoryStream = new MemoryStream())
+            {
+                await profilePhoto.CopyToAsync(memoryStream);
+                uploadedBytes = memoryStream.ToArray();
+            }
+
+            if (!TryGetAllowedImageType(
+                uploadedBytes,
+                out string detectedExtension,
+                out string detectedContentType) ||
+                !string.Equals(
+                    profilePhoto.ContentType,
+                    detectedContentType,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["Error"] =
+                    "Uploaded profile photo content is not valid.";
+
+                return RedirectToAction(nameof(Profile));
+            }
+
             string folderPath = Path.Combine(
                 _webHostEnvironment.WebRootPath,
                 "uploads",
@@ -394,14 +466,17 @@ namespace AryamanBMS.Controllers
 
             Directory.CreateDirectory(folderPath);
 
-            string fileName = $"{user.Id}{extension}";
+            string fileName = $"{user.Id}{detectedExtension}";
 
             string fullPath = Path.Combine(folderPath, fileName);
 
-            using (var stream = new FileStream(fullPath, FileMode.Create))
-            {
-                await profilePhoto.CopyToAsync(stream);
-            }
+            DeleteExistingProfilePhotoFiles(
+                folderPath,
+                user.Id);
+
+            await System.IO.File.WriteAllBytesAsync(
+                fullPath,
+                uploadedBytes);
 
             user.ProfilePhotoPath = $"/uploads/profile-photos/{fileName}";
 
@@ -415,6 +490,75 @@ namespace AryamanBMS.Controllers
 
             TempData["Success"] = "Profile photo updated successfully.";
             return RedirectToAction(nameof(Profile));
+        }
+
+        private static bool TryGetAllowedImageType(
+            byte[] bytes,
+            out string extension,
+            out string contentType)
+        {
+            extension = string.Empty;
+            contentType = string.Empty;
+
+            if (bytes.Length >= 3 &&
+                bytes[0] == 0xFF &&
+                bytes[1] == 0xD8 &&
+                bytes[2] == 0xFF)
+            {
+                extension = ".jpg";
+                contentType = "image/jpeg";
+                return true;
+            }
+
+            if (bytes.Length >= 8 &&
+                bytes[0] == 0x89 &&
+                bytes[1] == 0x50 &&
+                bytes[2] == 0x4E &&
+                bytes[3] == 0x47 &&
+                bytes[4] == 0x0D &&
+                bytes[5] == 0x0A &&
+                bytes[6] == 0x1A &&
+                bytes[7] == 0x0A)
+            {
+                extension = ".png";
+                contentType = "image/png";
+                return true;
+            }
+
+            if (bytes.Length >= 12 &&
+                bytes[0] == 0x52 &&
+                bytes[1] == 0x49 &&
+                bytes[2] == 0x46 &&
+                bytes[3] == 0x46 &&
+                bytes[8] == 0x57 &&
+                bytes[9] == 0x45 &&
+                bytes[10] == 0x42 &&
+                bytes[11] == 0x50)
+            {
+                extension = ".webp";
+                contentType = "image/webp";
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void DeleteExistingProfilePhotoFiles(
+            string folderPath,
+            string userId)
+        {
+            foreach (string extension in new[] { ".jpg", ".jpeg", ".png", ".webp" })
+            {
+                string existingPath =
+                    Path.Combine(
+                        folderPath,
+                        $"{userId}{extension}");
+
+                if (System.IO.File.Exists(existingPath))
+                {
+                    System.IO.File.Delete(existingPath);
+                }
+            }
         }
 
         private static string BuildInitials(string name)

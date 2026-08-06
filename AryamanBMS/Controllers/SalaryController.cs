@@ -1168,6 +1168,19 @@ namespace AryamanBMS.Controllers
 
             TempData["Success"] = result.Message;
 
+            await NotifySalaryImportUsersAsync(
+                result.HasErrors
+                    ? "Salary Import Failed"
+                    : "Salary Import Completed",
+                result.HasErrors
+                    ? string.Join(Environment.NewLine, result.Errors.Take(3))
+                    : result.Message,
+                result.HasErrors
+                    ? "SalaryImportFailed"
+                    : "SalaryImportSucceeded",
+                month,
+                year);
+
             return RedirectToAction(
                 nameof(Index),
                 new { month, year });
@@ -1193,6 +1206,36 @@ namespace AryamanBMS.Controllers
             ViewBag.Year = year;
 
             return View(summary);
+        }
+
+        private async Task NotifySalaryImportUsersAsync(
+            string title,
+            string message,
+            string notificationType,
+            int month,
+            int year)
+        {
+            var recipients = new Dictionary<string, ApplicationUserModel>();
+
+            foreach (var role in new[] { "Admin", "HR" })
+            {
+                foreach (var user in await _userManager.GetUsersInRoleAsync(role))
+                {
+                    recipients[user.Id] = user;
+                }
+            }
+
+            foreach (var user in recipients.Values.Where(x => x.IsActive))
+            {
+                await _notificationService.CreateAsync(
+                    user.Id,
+                    title,
+                    message,
+                    notificationType,
+                    "SalaryImport",
+                    year * 100 + month,
+                    $"/Salary?month={month}&year={year}");
+            }
         }
     }
 }

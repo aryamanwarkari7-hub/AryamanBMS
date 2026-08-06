@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
-   
+    [Authorize(Roles = "Admin,HR,Employee")]
     public class ProjectMemberController : Controller
     {
         private readonly IProjectRepository _projectRepository;
@@ -16,6 +16,7 @@ namespace AryamanBMS.Controllers
         private readonly IProjectTaskRepository _projectTaskRepository;
         private readonly IProjectTimelineService _projectTimelineService;
         private readonly IProjectAccessService _projectAccessService;
+        private readonly INotificationService _notificationService;
 
         public ProjectMemberController(
             IProjectRepository projectRepository,
@@ -24,7 +25,8 @@ namespace AryamanBMS.Controllers
             IProjectTaskRepository projectTaskRepository,
 
             IProjectTimelineService projectTimelineService,
-            IProjectAccessService projectAccessService)
+            IProjectAccessService projectAccessService,
+            INotificationService notificationService)
         {
             _projectRepository = projectRepository;
             _projectMemberRepository = projectMemberRepository;
@@ -33,6 +35,7 @@ namespace AryamanBMS.Controllers
 
             _projectTimelineService = projectTimelineService;
             _projectAccessService = projectAccessService;
+            _notificationService = notificationService;
         }
 
 
@@ -147,6 +150,14 @@ namespace AryamanBMS.Controllers
                 relatedEntityId: model.Id,
                 newValue: model.RoleInProject);
 
+            await NotifyProjectMemberChangeAsync(
+                project,
+                employee,
+                "Project Member Added",
+                $"You were added to project {project.ProjectName}.",
+                "ProjectMemberAdded",
+                notifyManager: true);
+
             TempData["Success"] =
                 "Project member added successfully.";
 
@@ -243,6 +254,14 @@ namespace AryamanBMS.Controllers
               relatedEntityId: memberId,
               previousValue: roleName);
 
+            await NotifyProjectMemberChangeAsync(
+                project,
+                employee,
+                "Project Member Removed",
+                $"You were removed from project {project.ProjectName}.",
+                "ProjectMemberRemoved",
+                notifyManager: true);
+
             TempData["Success"] =
                 "Project member removed successfully.";
 
@@ -267,6 +286,53 @@ namespace AryamanBMS.Controllers
                     .OrderBy(e => e.FirstName)
                     .ThenBy(e => e.LastName)
                     .ToListAsync();
+        }
+
+        private async Task NotifyProjectMemberChangeAsync(
+            ProjectModel project,
+            EmployeeModel? memberEmployee,
+            string title,
+            string memberMessage,
+            string notificationType,
+            bool notifyManager)
+        {
+            if (!string.IsNullOrWhiteSpace(memberEmployee?.ApplicationUserId))
+            {
+                await _notificationService.CreateAsync(
+                    memberEmployee.ApplicationUserId,
+                    title,
+                    memberMessage,
+                    notificationType,
+                    "Project",
+                    project.Id,
+                    $"/Project/Details/{project.Id}");
+            }
+
+            if (!notifyManager ||
+                project.ProjectManagerId == memberEmployee?.Id)
+            {
+                return;
+            }
+
+            var managerUserId = await _employeeRepository.Employees
+                .AsNoTracking()
+                .Where(x => x.Id == project.ProjectManagerId)
+                .Select(x => x.ApplicationUserId)
+                .FirstOrDefaultAsync();
+
+            if (string.IsNullOrWhiteSpace(managerUserId))
+            {
+                return;
+            }
+
+            await _notificationService.CreateAsync(
+                managerUserId,
+                title,
+                $"{memberEmployee?.FullName ?? "A member"} change was made in project {project.ProjectName}.",
+                $"{notificationType}Manager",
+                "Project",
+                project.Id,
+                $"/Project/Details/{project.Id}");
         }
 
         [HttpGet]

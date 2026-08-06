@@ -21,7 +21,12 @@ namespace AryamanBMS.Models
 
         public DateTime ToDate { get; set; }
 
-        public int NumberOfDays { get; set; }
+        public decimal NumberOfDays { get; set; }
+
+        public bool IsHalfDay { get; set; }
+
+        [StringLength(20)]
+        public string? HalfDaySession { get; set; }
 
         public string Reason { get; set; } = string.Empty;
 

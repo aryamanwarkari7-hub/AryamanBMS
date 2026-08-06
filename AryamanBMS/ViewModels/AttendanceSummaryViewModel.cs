@@ -14,29 +14,29 @@
 
         public int Year { get; set; }
 
-        public int PresentCount { get; set; }
+        public decimal PresentCount { get; set; }
 
-        public int AbsentCount { get; set; }
+        public decimal AbsentCount { get; set; }
 
-        public int LeaveCount { get; set; }
+        public decimal LeaveCount { get; set; }
 
-        public int PaidLeaveCount { get; set; }
+        public decimal PaidLeaveCount { get; set; }
 
-        public int UnpaidLeaveCount { get; set; }
+        public decimal UnpaidLeaveCount { get; set; }
 
-        public int HolidayCount { get; set; }
+        public decimal HolidayCount { get; set; }
 
-        public int WeekOffCount { get; set; }
+        public decimal WeekOffCount { get; set; }
 
-        public int OnDutyCount { get; set; }
+        public decimal OnDutyCount { get; set; }
 
-        public int TotalDays { get; set; }
+        public decimal TotalDays { get; set; }
 
-        public int PayDays { get; set; }
+        public decimal PayDays { get; set; }
 
-        public int MarkedAbsentCount { get; set; }
+        public decimal MarkedAbsentCount { get; set; }
 
-        public int MissingDays { get; set; }
+        public decimal MissingDays { get; set; }
 
         public decimal AttendancePercentage { get; set; }
     }

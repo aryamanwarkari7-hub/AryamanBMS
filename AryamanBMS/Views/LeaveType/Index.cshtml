@@ -103,7 +103,23 @@
 
                         <td>@item.LeaveName</td>
 
-                        <td>@item.DaysPerYear</td>
+                        <td>
+                            @if (string.Equals(
+                                   item.LeaveCode,
+                                   "COMP",
+                                   StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals(
+                                   item.LeaveName,
+                                   "Comp Off",
+                                   StringComparison.OrdinalIgnoreCase))
+                            {
+                                <span>Dynamic</span>
+                            }
+                            else
+                            {
+                                <span>@item.DaysPerYear</span>
+                            }
+                        </td>
 
                         <td>
                             @(item.IsCarryForward ? "Yes" : "No")

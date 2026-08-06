@@ -48,22 +48,22 @@
 
     <div class="stats-card">
         <div class="stats-label">Pay Days</div>
-        <div class="stats-number">@Model.Sum(x => x.PayDays)</div>
+        <div class="stats-number">@Model.Sum(x => x.PayDays).ToString("0.##")</div>
     </div>
 
     <div class="stats-card">
         <div class="stats-label">Absent</div>
-        <div class="stats-number">@Model.Sum(x => x.AbsentCount)</div>
+        <div class="stats-number">@Model.Sum(x => x.AbsentCount).ToString("0.##")</div>
     </div>
 
     <div class="stats-card">
         <div class="stats-label">Missing Days</div>
-        <div class="stats-number">@Model.Sum(x => x.MissingDays)</div>
+        <div class="stats-number">@Model.Sum(x => x.MissingDays).ToString("0.##")</div>
     </div>
 
     <div class="stats-card">
         <div class="stats-label">Unpaid Leave</div>
-        <div class="stats-number">@Model.Sum(x => x.UnpaidLeaveCount)</div>
+        <div class="stats-number">@Model.Sum(x => x.UnpaidLeaveCount).ToString("0.##")</div>
     </div>
 
 </div>
@@ -225,59 +225,59 @@
 
                                 <td>
                                     <span class="badge-success">
-                                        @employee.PresentCount
+                                        @employee.PresentCount.ToString("0.##")
                                     </span>
                                 </td>
 
                                 <td>
                                     <span class="badge-info">
-                                        @employee.OnDutyCount
+                                        @employee.OnDutyCount.ToString("0.##")
                                     </span>
                                 </td>
 
                                 <td>
                                     <span class="badge-warning">
-                                        @employee.PaidLeaveCount
+                                        @employee.PaidLeaveCount.ToString("0.##")
                                     </span>
                                 </td>
 
                                 <td>
                                     <span class="badge-danger">
-                                        @employee.UnpaidLeaveCount
+                                        @employee.UnpaidLeaveCount.ToString("0.##")
                                     </span>
                                 </td>
 
                                 <td>
                                     <span class="badge-primary">
-                                        @employee.HolidayCount
+                                        @employee.HolidayCount.ToString("0.##")
                                     </span>
                                 </td>
 
                                 <td>
                                     <span class="badge-secondary">
-                                        @employee.WeekOffCount
+                                        @employee.WeekOffCount.ToString("0.##")
                                     </span>
                                 </td>
 
-                                <td>@employee.MarkedAbsentCount</td>
+                                <td>@employee.MarkedAbsentCount.ToString("0.##")</td>
 
-                                <td>@employee.MissingDays</td>
+                                <td>@employee.MissingDays.ToString("0.##")</td>
 
                                 <td>
                                     <strong>
-                                        @employee.AbsentCount
+                                        @employee.AbsentCount.ToString("0.##")
                                     </strong>
                                 </td>
 
                                 <td>
                                     <strong>
-                                        @employee.TotalDays
+                                        @employee.TotalDays.ToString("0.##")
                                     </strong>
                                 </td>
 
                                 <td>
                                     <strong>
-                                        @employee.PayDays
+                                        @employee.PayDays.ToString("0.##")
                                     </strong>
                                 </td>
 

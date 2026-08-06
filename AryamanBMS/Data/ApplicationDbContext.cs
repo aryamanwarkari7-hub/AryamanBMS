@@ -255,12 +255,20 @@ namespace AryamanBMS.Data
                 .HasForeignKey(a => a.EmployeeId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<AttendanceModel>()
+                .Property(a => a.AttendanceValue)
+                .HasPrecision(4, 2);
+
             // Leave 
             modelBuilder.Entity<LeaveTypeModel>()
                .ToTable("tableleavetypes");
 
             modelBuilder.Entity<LeaveApplicationModel>()
                .ToTable("tableleaveapplications");
+
+            modelBuilder.Entity<LeaveApplicationModel>()
+                .Property(x => x.NumberOfDays)
+                .HasPrecision(4, 2);
 
             modelBuilder.Entity<LeaveBalanceModel>()
                 .ToTable("tableleavebalances");

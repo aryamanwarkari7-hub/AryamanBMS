@@ -2,6 +2,7 @@
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interface;
+using AryamanBMS.Services.Interfaces;
 using AryamanBMS.ViewModels;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
@@ -23,6 +24,7 @@ namespace AryamanBMS.Controllers
         private readonly IEmployeeAcademicRepository _employeeAcademicRepository;
         private readonly IEmployeeDocumentRepository _employeeDocumentRepository;
         private readonly IEmployeeDocumentService _employeeDocumentService;
+        private readonly INotificationService _notificationService;
         private readonly ILocationRepository _locationRepository;
         private readonly IEmployeePreviousEmploymentRepository
     _employeePreviousEmploymentRepository;
@@ -36,6 +38,7 @@ namespace AryamanBMS.Controllers
             IEmployeeAcademicRepository employeeAcademicRepository,
             IEmployeeDocumentRepository employeeDocumentRepository,
             IEmployeeDocumentService employeeDocumentService,
+            INotificationService notificationService,
             ILocationRepository locationRepository,
             IEmployeePreviousEmploymentRepository employeePreviousEmploymentRepository)
         {
@@ -47,6 +50,7 @@ namespace AryamanBMS.Controllers
             _employeeAcademicRepository = employeeAcademicRepository;
             _employeeDocumentRepository = employeeDocumentRepository;
             _employeeDocumentService = employeeDocumentService;
+            _notificationService = notificationService;
             _locationRepository = locationRepository;
             _employeePreviousEmploymentRepository = employeePreviousEmploymentRepository;
         }
@@ -532,6 +536,13 @@ namespace AryamanBMS.Controllers
                     totalUploadedDocuments > 0
                         ? $"Employee created successfully. {totalUploadedDocuments} document(s) uploaded successfully."
                         : "Employee created successfully.";
+
+                await NotifyEmployeeUserAsync(
+                    employee.Id,
+                    "Employee Profile Created",
+                    "Your employee profile has been created.",
+                    "EmployeeProfileCreated",
+                    "/Employee/Profile");
 
                 return RedirectToAction(nameof(Index));
             }
@@ -1280,6 +1291,16 @@ namespace AryamanBMS.Controllers
                         ? $"Employee updated successfully. {totalUploadedDocuments} document(s) uploaded successfully."
                         : "Employee updated successfully.";
 
+                await NotifyEmployeeUserAsync(
+                    existingEmployee.Id,
+                    "Employee Profile Updated",
+                    totalUploadedDocuments > 0
+                        ? $"Your employee profile was updated. {totalUploadedDocuments} document(s) were uploaded."
+                        : "Your employee profile was updated.",
+                    "EmployeeProfileUpdated",
+                    "/Employee/Profile",
+                    allowDuplicate: true);
+
                 return RedirectToAction(
                     nameof(Details),
                     new { id = existingEmployee.Id });
@@ -1992,7 +2013,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR,Employee")]
         public async Task<IActionResult> DownloadDocument(int id)
         {
             var document = await _employeeDocumentRepository.Documents
@@ -2002,6 +2023,31 @@ namespace AryamanBMS.Controllers
             if (document == null)
             {
                 return NotFound();
+            }
+
+            bool isAdminOrHr =
+                User.IsInRole("Admin") ||
+                User.IsInRole("HR");
+
+            if (!isAdminOrHr)
+            {
+                var user = await _userManager.GetUserAsync(User);
+
+                if (user == null)
+                {
+                    return Forbid();
+                }
+
+                var employee = await _employeeRepository.Employees
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x =>
+                        x.ApplicationUserId == user.Id);
+
+                if (employee == null ||
+                    document.EmployeeId != employee.Id)
+                {
+                    return Forbid();
+                }
             }
 
             string filePath;
@@ -2068,9 +2114,54 @@ namespace AryamanBMS.Controllers
             TempData["Success"] =
                 "Document deleted successfully.";
 
+            await NotifyEmployeeUserAsync(
+                employeeId,
+                "Employee Document Deleted",
+                $"{document.DocumentType} document was deleted from your profile.",
+                "EmployeeDocumentDeleted",
+                "/Employee/Profile",
+                allowDuplicate: true);
+
             return RedirectToAction(
                 nameof(Edit),
                 new { id = employeeId });
+        }
+
+        private async Task NotifyEmployeeUserAsync(
+            int employeeId,
+            string title,
+            string message,
+            string notificationType,
+            string actionUrl,
+            bool allowDuplicate = false)
+        {
+            var employee = await _employeeRepository.Employees
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == employeeId);
+
+            if (string.IsNullOrWhiteSpace(employee?.ApplicationUserId))
+            {
+                return;
+            }
+
+            if (!allowDuplicate &&
+                await _notificationService.ExistsAsync(
+                    employee.ApplicationUserId,
+                    notificationType,
+                    "Employee",
+                    employeeId))
+            {
+                return;
+            }
+
+            await _notificationService.CreateAsync(
+                employee.ApplicationUserId,
+                title,
+                message,
+                notificationType,
+                "Employee",
+                employeeId,
+                actionUrl);
         }
 
         private async Task ReloadExistingDocumentsAsync(EmployeeFormViewModel model)

@@ -1,6 +1,7 @@
 ﻿using AryamanBMS.Extensions;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
+using AryamanBMS.Services.Interfaces;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,15 +15,18 @@ namespace AryamanBMS.Controllers
         private readonly ILeaveBalanceRepository _leaveBalanceRepository;
         private readonly ILeaveTypeRepository _leaveTypeRepository;
         private readonly IEmployeeRepository _employeeRepository;
+        private readonly INotificationService _notificationService;
 
         public LeaveBalanceController(
             ILeaveBalanceRepository leaveBalanceRepository,
             ILeaveTypeRepository leaveTypeRepository,
-            IEmployeeRepository employeeRepository)
+            IEmployeeRepository employeeRepository,
+            INotificationService notificationService)
         {
             _leaveBalanceRepository = leaveBalanceRepository;
             _leaveTypeRepository = leaveTypeRepository;
             _employeeRepository = employeeRepository;
+            _notificationService = notificationService;
         }
 
         [Authorize(Roles = "Admin,HR")]
@@ -104,6 +108,8 @@ namespace AryamanBMS.Controllers
             var leaveTypes = await _leaveTypeRepository.LeaveTypes
                 .Where(x => x.IsActive && x.IsPaidLeave)
                 .ToListAsync();
+
+            var notifiedEmployeeIds = new HashSet<int>();
 
             foreach (var employee in employees)
             {
@@ -202,11 +208,26 @@ namespace AryamanBMS.Controllers
                         };
 
                         await _leaveBalanceRepository.AddAsync(balance);
+                        notifiedEmployeeIds.Add(employee.Id);
                     }
                 }
             }
 
             await _leaveBalanceRepository.SaveAsync();
+
+            foreach (var employee in employees.Where(x =>
+                notifiedEmployeeIds.Contains(x.Id) &&
+                !string.IsNullOrWhiteSpace(x.ApplicationUserId)))
+            {
+                await _notificationService.CreateAsync(
+                    employee.ApplicationUserId!,
+                    "Leave Balance Generated",
+                    $"Your leave balance for {year} has been generated.",
+                    "LeaveBalanceGenerated",
+                    "LeaveBalance",
+                    year,
+                    "/LeaveApplication/Index");
+            }
 
             TempData["Success"] =
                 "Leave balances generated successfully.";
