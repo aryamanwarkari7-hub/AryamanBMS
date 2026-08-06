@@ -120,6 +120,9 @@ The startup seed process creates these roles:
 - `Finance`
 - `Employee`
 - `ProjectManager`
+- `Master`
+
+`Master` is a restricted management role. It is intended for access to Dashboard, Leaves, Attendance, Project Management, Proposals and Templates, PO/WO, Receipts, Billing Milestones, Expense Vouchers, and Vendor Payments. It does not expose user/role administration, employee master setup, salary, compliance, client/vendor setup, invoices, receivables, credit notes, or debit notes through the main navigation.
 
 An admin user can be seeded only when these configuration keys are present:
 
@@ -153,7 +156,7 @@ It handles:
 
 ### Dashboard
 
-Entry point for authenticated users after login. Admin, HR, and Finance users are routed toward the main dashboard. Employee-only users are routed through attendance/profile-oriented flows.
+Entry point for authenticated users after login. Admin, HR, Finance, and Master users are routed toward the main dashboard. Employee-only users are routed through attendance/profile-oriented flows.
 
 Key files:
 
@@ -248,7 +251,7 @@ AryamanBMS/wwwroot/templates/SalaryTemplate.xlsx
 ### Projects, Tasks, Meetings, Timeline, And Risks
 
 Supports project setup, project members, project tasks, task progress, project flows, timelines, communications, meetings/MOM, employee project tasks, and risk tracking.
-Project access includes Admin/HR users, project managers, and active assigned project members.
+Project access includes Admin, HR, Master, project managers, and active assigned project members.
 
 Key files:
 
@@ -576,7 +579,7 @@ ConnectionStrings__DefaultConnection
 
 ## Repository Notes
 
-The repository currently includes generated build output folders such as `bin`, `obj`, and `.codex-build` in several locations. Treat these as generated artifacts when reviewing source changes.
+Generated build output and local IDE state are ignored, including `bin`, `obj`, `.vs`, `.tmp-build`, and `.codex-build`.
 
 The main implementation should be understood from source files under the web project rather than from the empty supporting class-library project folders.
 
