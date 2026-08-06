@@ -66,9 +66,21 @@ namespace AryamanBMS.Services
                 return false;
             }
 
-            return await _projectRepository.Projects.AnyAsync(p =>
-            p.Id == projectId &&
-            p.ProjectManagerId == employeeId.Value);
+            bool isProjectManager =
+                await _projectRepository.Projects.AnyAsync(p =>
+                    p.Id == projectId &&
+                    p.ProjectManagerId == employeeId.Value);
+
+            if (isProjectManager)
+            {
+                return true;
+            }
+
+            return await _projectMemberRepository.ProjectMembers
+                .AnyAsync(pm =>
+                    pm.ProjectId == projectId &&
+                    pm.EmployeeId == employeeId.Value &&
+                    pm.IsActive);
         }
 
         public async Task<IQueryable<ProjectModel>> ApplyProjectFilterAsync(
@@ -90,7 +102,16 @@ namespace AryamanBMS.Services
                 return projects.Where(p => false);
             }
 
-            return projects.Where(p =>p.ProjectManagerId == employeeId.Value);
+            var memberProjectIds =
+                _projectMemberRepository.ProjectMembers
+                    .Where(pm =>
+                        pm.EmployeeId == employeeId.Value &&
+                        pm.IsActive)
+                    .Select(pm => pm.ProjectId);
+
+            return projects.Where(p =>
+                p.ProjectManagerId == employeeId.Value ||
+                memberProjectIds.Contains(p.Id));
         }
     }
 }

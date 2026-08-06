@@ -76,7 +76,7 @@ namespace AryamanBMS.Controllers
             if (!await _projectAccessService
                 .CanAccessProjectAsync(User, projectId))
             {
-                throw new Exception($"Project access failed. ProjectId = {projectId}");
+                return Forbid();
             }
 
             ViewBag.Project = project;

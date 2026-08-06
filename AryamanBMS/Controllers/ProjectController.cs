@@ -495,17 +495,20 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Dashboard(int id)
+        public async Task<IActionResult> Dashboard(int? id)
         {
-            
+            if (!id.HasValue || id.Value <= 0)
+            {
+                return RedirectToAction(nameof(Overview));
+            }
 
             var project =
-                await _projectRepository.GetDetailsAsync(id);
+                await _projectRepository.GetDetailsAsync(id.Value);
 
             if (project == null)
                 return NotFound();
 
-            if (!await _projectAccessService.CanAccessProjectAsync(User, id))
+            if (!await _projectAccessService.CanAccessProjectAsync(User, id.Value))
             {
                 return Forbid();
             }
