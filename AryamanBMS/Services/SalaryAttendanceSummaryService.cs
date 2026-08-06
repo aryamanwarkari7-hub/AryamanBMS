@@ -12,15 +12,18 @@ namespace AryamanBMS.Services
         private readonly IAttendanceRepository _attendanceRepository;
 
         private readonly ILeaveApplicationRepository _leaveApplicationRepository;
+        private readonly IConfiguration _configuration;
 
         public SalaryAttendanceSummaryService(
             IEmployeeRepository employeeRepository,
             IAttendanceRepository attendanceRepository,
-            ILeaveApplicationRepository leaveApplicationRepository)
+            ILeaveApplicationRepository leaveApplicationRepository,
+            IConfiguration configuration)
         {
             _employeeRepository = employeeRepository;
             _attendanceRepository = attendanceRepository;
             _leaveApplicationRepository = leaveApplicationRepository;
+            _configuration = configuration;
         }
 
         public async Task<List<AttendanceSummaryViewModel>> GetMonthlySummaryAsync(
@@ -61,6 +64,8 @@ namespace AryamanBMS.Services
                 .ToListAsync();
 
             var summaries = new List<AttendanceSummaryViewModel>();
+            var weeklyOffDays = GetWeeklyOffDays();
+            var officeHolidays = GetOfficeHolidays(startDate, endDate);
 
             foreach (var employee in employees)
             {
@@ -88,66 +93,91 @@ namespace AryamanBMS.Services
                         a.EmployeeId == employee.Id &&
                         a.AttendanceDate.Date >= eligibleStart &&
                         a.AttendanceDate.Date <= eligibleEnd)
-                    .ToList();
-
-                int presentCount = employeeAttendance
-    .Count(a => IsStatus(a.Status, "P", "Present"));
-
-                int markedAbsentCount = employeeAttendance
-                    .Count(a => IsStatus(a.Status, "A", "Absent"));
-
-                int leaveCount = employeeAttendance
-                    .Count(a => IsStatus(a.Status, "L", "Leave"));
-
-                int holidayCount = employeeAttendance
-                    .Count(a => IsStatus(a.Status, "H", "Holiday"));
-
-                int weekOffCount = employeeAttendance
-                    .Count(a => IsStatus(a.Status, "WO", "Week Off", "WeekOff", "Weekly Off"));
-
-                int onDutyCount = employeeAttendance
-                    .Count(a => IsStatus(a.Status, "OD", "On Duty", "OnDuty"));
+                    .GroupBy(a => a.AttendanceDate.Date)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.OrderByDescending(a => a.Id).First());
 
                 var employeeApprovedLeaves = approvedLeaves
                     .Where(l => l.EmployeeId == employee.Id)
                     .ToList();
+                int presentCount = 0;
+                int markedAbsentCount = 0;
+                int leaveCount = 0;
+                int paidLeaveCount = 0;
+                int unpaidLeaveCount = 0;
+                int holidayCount = 0;
+                int weekOffCount = 0;
+                int onDutyCount = 0;
+                int missingDays = 0;
 
-                int paidLeaveCount = employeeApprovedLeaves
-                    .Where(l => l.LeaveType != null && l.LeaveType.IsPaidLeave)
-                    .Sum(l => CountOverlapDays(
-                        l.FromDate,
-                        l.ToDate,
-                        eligibleStart,
-                        eligibleEnd));
-
-                int unpaidLeaveCount = employeeApprovedLeaves
-                    .Where(l => l.LeaveType != null && !l.LeaveType.IsPaidLeave)
-                    .Sum(l => CountOverlapDays(
-                        l.FromDate,
-                        l.ToDate,
-                        eligibleStart,
-                        eligibleEnd));
-
-                int accountedDays =
-                     presentCount
-                     + onDutyCount
-                     + holidayCount
-                     + weekOffCount
-                     + paidLeaveCount
-                     + unpaidLeaveCount
-                     + markedAbsentCount;
-
-                int missingDays = eligibleDays - accountedDays;
-
-                if (missingDays < 0)
+                for (var date = eligibleStart.Date;
+                     date <= eligibleEnd.Date;
+                     date = date.AddDays(1))
                 {
-                    missingDays = 0;
+                    employeeAttendance.TryGetValue(date, out var attendance);
+
+                    if (IsStatus(attendance?.Status, "P", "Present"))
+                    {
+                        presentCount++;
+                        continue;
+                    }
+
+                    if (IsStatus(attendance?.Status, "OD", "On Duty", "OnDuty"))
+                    {
+                        onDutyCount++;
+                        continue;
+                    }
+
+                    if (IsStatus(attendance?.Status, "A", "Absent"))
+                    {
+                        markedAbsentCount++;
+                        continue;
+                    }
+
+                    if (IsStatus(attendance?.Status, "H", "Holiday") ||
+                        IsOfficeHoliday(date, officeHolidays))
+                    {
+                        holidayCount++;
+                        continue;
+                    }
+
+                    if (IsStatus(attendance?.Status, "WO", "Week Off", "WeekOff", "Weekly Off") ||
+                        IsWeeklyOff(date, weeklyOffDays))
+                    {
+                        weekOffCount++;
+                        continue;
+                    }
+
+                    var approvedLeave = employeeApprovedLeaves
+                        .FirstOrDefault(l =>
+                            l.FromDate.Date <= date &&
+                            l.ToDate.Date >= date);
+
+                    if (approvedLeave != null ||
+                        IsStatus(attendance?.Status, "L", "Leave"))
+                    {
+                        leaveCount++;
+
+                        if (approvedLeave?.LeaveType?.IsPaidLeave == true)
+                        {
+                            paidLeaveCount++;
+                        }
+                        else
+                        {
+                            unpaidLeaveCount++;
+                        }
+
+                        continue;
+                    }
+
+                    missingDays++;
                 }
 
                 int absentCount =
-                        markedAbsentCount
-                        + missingDays
-                        + unpaidLeaveCount;
+                    markedAbsentCount
+                    + missingDays
+                    + unpaidLeaveCount;
 
                 int payDays =
                     presentCount
@@ -157,7 +187,7 @@ namespace AryamanBMS.Services
                     + paidLeaveCount;
 
                 int workingDays =
-                    totalDays - holidayCount - weekOffCount;
+                    eligibleDays - holidayCount - weekOffCount;
 
                 decimal attendancePercentage =
                     workingDays == 0
@@ -210,26 +240,87 @@ namespace AryamanBMS.Services
             return summaries;
         }
 
-        private int CountOverlapDays(
-            DateTime leaveFrom,
-            DateTime leaveTo,
-            DateTime monthStart,
-            DateTime monthEnd)
+        private HashSet<DayOfWeek> GetWeeklyOffDays()
         {
-            var fromDate = leaveFrom.Date > monthStart.Date
-                ? leaveFrom.Date
-                : monthStart.Date;
+            var configuredDays =
+                _configuration
+                    .GetSection("Attendance:WeeklyOffDays")
+                    .Get<string[]>();
 
-            var toDate = leaveTo.Date < monthEnd.Date
-                ? leaveTo.Date
-                : monthEnd.Date;
-
-            if (fromDate > toDate)
+            if (configuredDays == null || configuredDays.Length == 0)
             {
-                return 0;
+                return new HashSet<DayOfWeek>
+                {
+                    DayOfWeek.Sunday
+                };
             }
 
-            return (toDate - fromDate).Days + 1;
+            var weeklyOffDays = new HashSet<DayOfWeek>();
+
+            foreach (var configuredDay in configuredDays)
+            {
+                if (Enum.TryParse(
+                        configuredDay,
+                        ignoreCase: true,
+                        out DayOfWeek dayOfWeek))
+                {
+                    weeklyOffDays.Add(dayOfWeek);
+                }
+            }
+
+            if (weeklyOffDays.Count == 0)
+            {
+                weeklyOffDays.Add(DayOfWeek.Sunday);
+            }
+
+            return weeklyOffDays;
+        }
+
+        private HashSet<DateTime> GetOfficeHolidays(
+            DateTime startDate,
+            DateTime endDate)
+        {
+            var configuredHolidays =
+                _configuration
+                    .GetSection("Attendance:OfficeHolidays")
+                    .Get<string[]>();
+
+            var officeHolidays = new HashSet<DateTime>();
+
+            if (configuredHolidays == null)
+            {
+                return officeHolidays;
+            }
+
+            foreach (var configuredHoliday in configuredHolidays)
+            {
+                if (DateTime.TryParse(configuredHoliday, out var holiday))
+                {
+                    var holidayDate = holiday.Date;
+
+                    if (holidayDate >= startDate.Date &&
+                        holidayDate <= endDate.Date)
+                    {
+                        officeHolidays.Add(holidayDate);
+                    }
+                }
+            }
+
+            return officeHolidays;
+        }
+
+        private bool IsWeeklyOff(
+            DateTime date,
+            HashSet<DayOfWeek> weeklyOffDays)
+        {
+            return weeklyOffDays.Contains(date.DayOfWeek);
+        }
+
+        private bool IsOfficeHoliday(
+            DateTime date,
+            HashSet<DateTime> officeHolidays)
+        {
+            return officeHolidays.Contains(date.Date);
         }
 
         private bool IsStatus(  string? status, params string[] validStatuses)

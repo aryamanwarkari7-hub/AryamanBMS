@@ -4,15 +4,24 @@
     ViewData["Title"] = "My Attendance";
 
     var today = DateTime.Today;
+    string? calendarStatus = ViewBag.TodayCalendarStatus as string;
     var statusText = Model == null
-        ? "Not Marked"
+        ? calendarStatus == "H"
+            ? "Holiday"
+            : calendarStatus == "WO"
+                ? "Week Off"
+                : "Not Marked"
         : Model.Status == "P"
             ? "Present"
             : Model.Status == "L"
                 ? "Leave"
                 : Model.Status == "A"
                     ? "Absent"
-                    : Model.Status;
+                    : Model.Status == "H"
+                        ? "Holiday"
+                        : Model.Status == "WO"
+                            ? "Week Off"
+                            : Model.Status;
 
     string FormatTime(DateTime? value)
     {
@@ -83,7 +92,13 @@
         </div>
 
         <div class="card-body">
-            @if (Model == null || (Model.Status == "P" && Model.CheckInTime == null))
+            @if (Model == null && !string.IsNullOrWhiteSpace(calendarStatus))
+            {
+                <div class="empty-state">
+                    Attendance is not required today.
+                </div>
+            }
+            else if (Model == null || (Model.Status == "P" && Model.CheckInTime == null))
             {
                 <form asp-action="CheckIn"
                       method="post"

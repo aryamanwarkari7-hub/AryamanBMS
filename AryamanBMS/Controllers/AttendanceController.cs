@@ -18,6 +18,7 @@ namespace AryamanBMS.Controllers
         private readonly IEmployeeRepository _employeeRepository;
         private readonly UserManager<ApplicationUserModel> _userManager;
         private readonly ILeaveApplicationRepository _leaveApplicationRepository;
+        private readonly IConfiguration _configuration;
 
         private readonly ISalaryAttendanceSummaryService _salaryAttendanceSummaryService;
 
@@ -26,13 +27,15 @@ namespace AryamanBMS.Controllers
     IEmployeeRepository employeeRepository,
     ILeaveApplicationRepository leaveApplicationRepository,
     UserManager<ApplicationUserModel> userManager,
-    ISalaryAttendanceSummaryService salaryAttendanceSummaryService)
+    ISalaryAttendanceSummaryService salaryAttendanceSummaryService,
+    IConfiguration configuration)
         {
             _attendanceRepository = attendanceRepository;
             _employeeRepository = employeeRepository;
             _leaveApplicationRepository = leaveApplicationRepository;
             _userManager = userManager;
             _salaryAttendanceSummaryService = salaryAttendanceSummaryService;
+            _configuration = configuration;
         }
 
         public async Task<IActionResult> Index()
@@ -71,6 +74,10 @@ namespace AryamanBMS.Controllers
 
             ViewBag.Employee = employee;
             ViewBag.TodayAttendance = todayAttendance;
+            ViewBag.TodayCalendarStatus =
+                todayAttendance == null
+                    ? GetCalendarStatus(DateTime.Today)
+                    : null;
 
             return View(todayAttendance);
         }
@@ -222,6 +229,20 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            var calendarStatus = GetCalendarStatus(DateTime.Today);
+
+            if (calendarStatus == "H")
+            {
+                TempData["Error"] = "Today is configured as an office holiday. Attendance is not required.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (calendarStatus == "WO")
+            {
+                TempData["Error"] = "Today is configured as a weekly off. Attendance is not required.";
+                return RedirectToAction(nameof(Index));
+            }
+
             var approvedLeaveToday =
                 await _leaveApplicationRepository.HasApprovedLeaveTodayAsync(employee.Id);
 
@@ -303,6 +324,20 @@ namespace AryamanBMS.Controllers
             if (employee == null)
             {
                 TempData["Error"] = "Employee mapping not found.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var calendarStatus = GetCalendarStatus(DateTime.Today);
+
+            if (calendarStatus == "H")
+            {
+                TempData["Error"] = "Today is configured as an office holiday. Check-out is not required.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (calendarStatus == "WO")
+            {
+                TempData["Error"] = "Today is configured as a weekly off. Check-out is not required.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -795,6 +830,72 @@ namespace AryamanBMS.Controllers
                 Badge = badge,
                 Meta = meta
             };
+        }
+
+        private string? GetCalendarStatus(DateTime date)
+        {
+            if (IsOfficeHoliday(date))
+            {
+                return "H";
+            }
+
+            if (IsWeeklyOff(date))
+            {
+                return "WO";
+            }
+
+            return null;
+        }
+
+        private bool IsWeeklyOff(DateTime date)
+        {
+            var configuredDays =
+                _configuration
+                    .GetSection("Attendance:WeeklyOffDays")
+                    .Get<string[]>();
+
+            if (configuredDays == null || configuredDays.Length == 0)
+            {
+                return date.DayOfWeek == DayOfWeek.Sunday;
+            }
+
+            foreach (var configuredDay in configuredDays)
+            {
+                if (Enum.TryParse(
+                        configuredDay,
+                        ignoreCase: true,
+                        out DayOfWeek dayOfWeek) &&
+                    date.DayOfWeek == dayOfWeek)
+                {
+                    return true;
+                }
+            }
+
+            return date.DayOfWeek == DayOfWeek.Sunday;
+        }
+
+        private bool IsOfficeHoliday(DateTime date)
+        {
+            var configuredHolidays =
+                _configuration
+                    .GetSection("Attendance:OfficeHolidays")
+                    .Get<string[]>();
+
+            if (configuredHolidays == null)
+            {
+                return false;
+            }
+
+            foreach (var configuredHoliday in configuredHolidays)
+            {
+                if (DateTime.TryParse(configuredHoliday, out var holiday) &&
+                    holiday.Date == date.Date)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         [Authorize(Roles = "Admin,HR")]
