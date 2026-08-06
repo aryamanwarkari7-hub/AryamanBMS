@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Extensions;
+using AryamanBMS.Extensions;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interface;
@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,HR,Employee")]
+    [Authorize(Roles = "Admin,HR,Employee,Master")]
     public class AttendanceController : Controller
     {
         private readonly IAttendanceRepository _attendanceRepository;
@@ -134,7 +134,7 @@ namespace AryamanBMS.Controllers
             return View(attendanceRecords);
         }
 
-        [Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR,Master")]
         public IActionResult Create()
         {
             ViewBag.Employees = _employeeRepository.Employees
@@ -147,7 +147,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> Create(
             AttendanceModel model)
         {
@@ -400,7 +400,7 @@ namespace AryamanBMS.Controllers
         }
 
 
-        [Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> Register(
     string? searchText,
     DateTime? fromDate,
@@ -488,7 +488,7 @@ namespace AryamanBMS.Controllers
             return View(model);
         }
 
-        [Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> Edit(int id)
         {
             var attendance =
@@ -505,7 +505,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> Edit(AttendanceModel model)
         {
             if (!ModelState.IsValid)
@@ -570,7 +570,7 @@ namespace AryamanBMS.Controllers
             return RedirectToAction(nameof(Register));
         }
 
-        [Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> Details(int id)
         {
             var attendance =
@@ -587,7 +587,7 @@ namespace AryamanBMS.Controllers
             return View(attendance);
         }
 
-        [Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> Delete(int id)
         {
             var attendance =
@@ -606,7 +606,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR,Master")]
 
         public async Task<IActionResult> DeleteConfirmed(
             int id)
@@ -637,7 +637,7 @@ namespace AryamanBMS.Controllers
             return RedirectToAction(nameof(Register));
         }
 
-        [Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR,Master")]
         public IActionResult Dashboard(int? day, int? month, int? year)
         {
             var today = DateTime.Today;
@@ -990,7 +990,7 @@ namespace AryamanBMS.Controllers
                 "/Attendance/MyMonthly");
         }
 
-        [Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> ExportExcel(
                string? searchText,
                DateTime? fromDate,
@@ -1110,7 +1110,7 @@ namespace AryamanBMS.Controllers
                 $"Attendance_{DateTime.Now:yyyyMMdd}.xlsx");
         }
 
-        [Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> Summary(int? month, int? year)
         {
             int selectedMonth =

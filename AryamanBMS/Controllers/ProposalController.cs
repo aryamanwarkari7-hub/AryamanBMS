@@ -12,7 +12,7 @@ using System.Security.Claims;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,Finance")]
+    [Authorize(Roles = "Admin,Finance,Master")]
     public class ProposalController : Controller
     {
         private readonly IProposalRepository    _proposalRepo;

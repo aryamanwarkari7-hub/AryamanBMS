@@ -44,10 +44,15 @@
         currentUser != null &&
         await UserManager.IsInRoleAsync(currentUser, "Finance");
 
+    var isMaster =
+        currentUser != null &&
+        await UserManager.IsInRoleAsync(currentUser, "Master");
+
     var isAdminOrHR = isAdmin || isHR;
+    var isAdminHrOrMaster = isAdmin || isHR || isMaster;
 
     var isEmployeeOnly =
-        isEmployee && !isAdmin && !isHR;
+        isEmployee && !isAdmin && !isHR && !isMaster;
 
     var hasEmployeeProjectAccess = false;
     var managesProjects = false;
@@ -71,10 +76,10 @@
         }
     }
 
-    var canAccessProjectManagement =  isAdminOrHR || isEmployeeOnly;
+    var canAccessProjectManagement =  isAdminHrOrMaster || isEmployeeOnly;
 
     var canAccessAccounts =
-        isAdmin || isFinance;
+        isAdmin || isFinance || isMaster;
 
     var initials = string.Empty;
 
@@ -198,7 +203,7 @@
 
     bool isAccountsActive =
         isAccountsBillingActive ||
-        isComplianceDocumentsActive;
+        (!isMaster && isComplianceDocumentsActive);
 }
 
 <div class="sidebar">
@@ -231,7 +236,7 @@
         <div class="menu-group">
 
             @* Admin / HR Dashboard *@
-            @if (isAdminOrHR)
+            @if (isAdminOrHR || isMaster)
             {
                 <a asp-controller="Dashboard"
                    asp-action="Index"
@@ -390,6 +395,8 @@
                     @* ==========================================
                         EMPLOYEES
                     ========================================== *@
+                    @if (!isMaster)
+                    {
                     <div class="submenu-nested">
 
                         <button class="submenu-item submenu-toggle @(isEmployeeActive ? "active-menu" : "")"
@@ -459,6 +466,7 @@
                         </div>
 
                     </div>
+                    }
 
                     @* ==========================================
                         LEAVE
@@ -480,7 +488,7 @@
                         <div class="collapse @(isLeaveActive ? "show" : "")"
                              id="leaveSubMenu">
 
-                            @if (isAdminOrHR)
+                            @if (isAdminHrOrMaster)
                             {
                                 @* ==========================================
                                     LEAVE DASHBOARD
@@ -522,7 +530,7 @@
 
                             </a>
 
-                            @if (isAdminOrHR)
+                            @if (isAdminHrOrMaster)
                             {
                                 @* ============================================================
                                    LEAVE BALANCES
@@ -600,7 +608,7 @@
                                 </a>
                             }
 
-                            @if (isAdminOrHR)
+                            @if (isAdminHrOrMaster)
                             {
                                 @* ==========================================
                                     ATTENDANCE DASHBOARD
@@ -643,9 +651,12 @@
 
                     </div>
 
+                    @if (!isMaster)
+                    {
                     @* ==========================================
                         SALARY
                     ========================================== *@
+
                     <div class="submenu-nested">
 
                         <button class="submenu-item submenu-toggle @(isSalaryActive ? "active-menu" : "")"
@@ -749,7 +760,7 @@
                                 </a>
                             }
 
-                            @if (isEmployeeOnly)
+                            @if (isEmployeeOnly && !isMaster)
                             {
                                 @* ==========================================
                                     EMPLOYEE SALARY PAYSLIP
@@ -779,6 +790,8 @@
                         </div>
 
                     </div>
+
+                    }
 
                     @* ==========================================
                         LETTERS
@@ -882,7 +895,7 @@
                                      data-bs-parent="#projectSubAccordion">
 
                                      @*-----------Admin + HR ---*@
-                                    @if (isAdminOrHR || managesProjects)
+                                    @if (isAdminHrOrMaster || managesProjects)
                                     {
                                         @* ==========================================
                                             PROJECTS
@@ -923,7 +936,7 @@
                                      id="projectPlanningSubMenu"
                                      data-bs-parent="#projectSubAccordion">
 
-                                    @if (isAdminOrHR || managesProjects)
+                                    @if (isAdminHrOrMaster || managesProjects)
                                     {
                                         @* ==========================================
                                             PROJECT TASKS
@@ -964,7 +977,7 @@
                                      id="projectTrackingSubMenu"
                                      data-bs-parent="#projectSubAccordion">
 
-                                    @if (isAdminOrHR || managesProjects)
+                                    @if (isAdminHrOrMaster || managesProjects)
                                     {
                                         @* ==========================================
                                             PROJECT TASK UPDATES
@@ -987,7 +1000,7 @@
                                         <span>Meetings</span>
                                     </a>
 
-                                    @if (isAdmin || isHR)
+                                    @if (isAdminHrOrMaster)
                                     {
                                         @* ==========================================
                                             PROJECT RISKS
@@ -1103,13 +1116,18 @@
 
                     <div class="submenu" id="financeSubAccordion">
 
-                        <a asp-controller="AccountsFinance"
-                           asp-action="Dashboard"
-                           class="submenu-item @(currentController == "AccountsFinance" ? "active-menu" : "")">
-                            <i class="bi bi-speedometer2"></i>
-                            <span>Dashboard</span>
-                        </a>
+                        @if (!isMaster)
+                        {
+                            <a asp-controller="AccountsFinance"
+                               asp-action="Dashboard"
+                               class="submenu-item @(currentController == "AccountsFinance" ? "active-menu" : "")">
+                                <i class="bi bi-speedometer2"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        }
 
+                        @if (!isMaster)
+                        {
                         <div class="submenu-nested">
 
 
@@ -1217,6 +1235,7 @@
                             </div>
 
                         </div>
+                        }
 
                         <div class="submenu-nested">
 
@@ -1253,12 +1272,15 @@
                                     <div class="collapse @(isSalesActive ? "show" : "")"
                                          id="salesSubMenu">
 
-                                        <a asp-controller="Client"
-                                           asp-action="Index"
-                                           class="submenu-item nested-item @(currentController == "Client" ? "active-menu" : "")">
-                                            <i class="bi bi-building"></i>
-                                            <span>Clients</span>
-                                        </a>
+                                        @if (!isMaster)
+                                        {
+                                            <a asp-controller="Client"
+                                               asp-action="Index"
+                                               class="submenu-item nested-item @(currentController == "Client" ? "active-menu" : "")">
+                                                <i class="bi bi-building"></i>
+                                                <span>Clients</span>
+                                            </a>
+                                        }
 
                                         <a asp-controller="Proposal"
                                            asp-action="Index"
@@ -1291,12 +1313,15 @@
                                             <span>Billing Milestones</span>
                                         </a>
 
-                                        <a asp-controller="Invoice"
-                                           asp-action="Index"
-                                           class="submenu-item nested-item @(currentController == "Invoice" ? "active-menu" : "")">
-                                            <i class="bi bi-receipt-cutoff"></i>
-                                            <span>Invoices</span>
-                                        </a>
+                                        @if (!isMaster)
+                                        {
+                                            <a asp-controller="Invoice"
+                                               asp-action="Index"
+                                               class="submenu-item nested-item @(currentController == "Invoice" ? "active-menu" : "")">
+                                                <i class="bi bi-receipt-cutoff"></i>
+                                                <span>Invoices</span>
+                                            </a>
+                                        }
 
                                         <a asp-controller="AdvanceReceipt"
                                            asp-action="Index"
@@ -1312,26 +1337,29 @@
                                             <span>Receipts</span>
                                         </a>
 
-                                        <a asp-controller="Receivables"
-                                           asp-action="Index"
-                                           class="submenu-item nested-item @(currentController == "Receivables" ? "active-menu" : "")">
-                                            <i class="bi bi-graph-up-arrow"></i>
-                                            <span>Receivables</span>
-                                        </a>
+                                        @if (!isMaster)
+                                        {
+                                            <a asp-controller="Receivables"
+                                               asp-action="Index"
+                                               class="submenu-item nested-item @(currentController == "Receivables" ? "active-menu" : "")">
+                                                <i class="bi bi-graph-up-arrow"></i>
+                                                <span>Receivables</span>
+                                            </a>
 
-                                        <a asp-controller="CreditNote"
-                                           asp-action="Index"
-                                           class="submenu-item nested-item @(currentController == "CreditNote" ? "active-menu" : "")">
-                                            <i class="bi bi-file-minus"></i>
-                                            <span>Credit Notes</span>
-                                        </a>
+                                            <a asp-controller="CreditNote"
+                                               asp-action="Index"
+                                               class="submenu-item nested-item @(currentController == "CreditNote" ? "active-menu" : "")">
+                                                <i class="bi bi-file-minus"></i>
+                                                <span>Credit Notes</span>
+                                            </a>
 
-                                        <a asp-controller="DebitNote"
-                                           asp-action="Index"
-                                           class="submenu-item nested-item @(currentController == "DebitNote" ? "active-menu" : "")">
-                                            <i class="bi bi-file-plus"></i>
-                                            <span>Debit Notes</span>
-                                        </a>
+                                            <a asp-controller="DebitNote"
+                                               asp-action="Index"
+                                               class="submenu-item nested-item @(currentController == "DebitNote" ? "active-menu" : "")">
+                                                <i class="bi bi-file-plus"></i>
+                                                <span>Debit Notes</span>
+                                            </a>
+                                        }
 
                                     </div>
 
@@ -1354,12 +1382,15 @@
                                     <div class="collapse @(isPurchasesActive ? "show" : "")"
                                          id="purchasesSubMenu">
 
-                                        <a asp-controller="Vendor"
-                                           asp-action="Index"
-                                           class="submenu-item nested-item @(currentController == "Vendor" ? "active-menu" : "")">
-                                            <i class="bi bi-buildings"></i>
-                                            <span>Vendors</span>
-                                        </a>
+                                        @if (!isMaster)
+                                        {
+                                            <a asp-controller="Vendor"
+                                               asp-action="Index"
+                                               class="submenu-item nested-item @(currentController == "Vendor" ? "active-menu" : "")">
+                                                <i class="bi bi-buildings"></i>
+                                                <span>Vendors</span>
+                                            </a>
+                                        }
 
                                         <a asp-controller="ExpenseVoucher"
                                            asp-action="Index"
@@ -1375,26 +1406,29 @@
                                             <span>Vendor Payments</span>
                                         </a>
 
-                                        <a asp-controller="ExpenseCategory"
-                                           asp-action="Index"
-                                           class="submenu-item nested-item @(currentController == "ExpenseCategory" ? "active-menu" : "")">
-                                            <i class="bi bi-tags"></i>
-                                            <span>Expense Categories</span>
-                                        </a>
+                                        @if (!isMaster)
+                                        {
+                                            <a asp-controller="ExpenseCategory"
+                                               asp-action="Index"
+                                               class="submenu-item nested-item @(currentController == "ExpenseCategory" ? "active-menu" : "")">
+                                                <i class="bi bi-tags"></i>
+                                                <span>Expense Categories</span>
+                                            </a>
 
-                                        <a asp-controller="PurchaseReport"
-                                           asp-action="Index"
-                                           class="submenu-item nested-item @(currentController == "PurchaseReport" ? "active-menu" : "")">
-                                            <i class="bi bi-bar-chart"></i>
-                                            <span>Purchase Reports</span>
-                                        </a>
+                                            <a asp-controller="PurchaseReport"
+                                               asp-action="Index"
+                                               class="submenu-item nested-item @(currentController == "PurchaseReport" ? "active-menu" : "")">
+                                                <i class="bi bi-bar-chart"></i>
+                                                <span>Purchase Reports</span>
+                                            </a>
 
-                                        <a asp-controller="OfficeAsset"
-                                           asp-action="Index"
-                                           class="submenu-item nested-item @(currentController == "OfficeAsset" ? "active-menu" : "")">
-                                            <i class="bi bi-box-seam"></i>
-                                            <span>Office Assets</span>
-                                        </a>
+                                            <a asp-controller="OfficeAsset"
+                                               asp-action="Index"
+                                               class="submenu-item nested-item @(currentController == "OfficeAsset" ? "active-menu" : "")">
+                                                <i class="bi bi-box-seam"></i>
+                                                <span>Office Assets</span>
+                                            </a>
+                                        }
 
                                     </div>
 

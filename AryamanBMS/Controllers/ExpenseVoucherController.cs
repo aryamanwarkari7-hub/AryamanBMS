@@ -13,7 +13,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,Finance,Employee")]
+    [Authorize(Roles = "Admin,Finance,Employee,Master")]
     public class ExpenseVoucherController : Controller
     {
         private readonly IExpenseVoucherRepository _voucherRepository;

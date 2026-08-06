@@ -1,5 +1,33 @@
 @import url('components/page-header.css');
 
+@import url("./variables.css");
+@import url("./layout.css");
+@import url("./navbar.css");
+@import url("./sidebar.css");
+@import url("./index.css");
+@import url("./dashboard.css");
+@import url("./profile.css");
+@import url("./gantt.css");
+@import url("./timeline.css");
+@import url("./project-communication.css");
+@import url("./auth.css");
+
+@import url("./components/alerts.css");
+@import url("./components/avatar.css");
+@import url("./components/badges.css");
+@import url("./components/buttons.css");
+@import url("./components/cards.css");
+@import url("./components/forms.css");
+@import url("./components/notification.css");
+@import url("./components/page-header.css");
+@import url("./components/tables.css");
+
+@import url("./modules/detail-pages.css");
+
+@import url("./print.css");
+@import url("./modules/invoice-print.css");
+@import url("./modules/payslip-print.css");
+
 /* ==========================================
    GLOBAL RESET
 ========================================== */

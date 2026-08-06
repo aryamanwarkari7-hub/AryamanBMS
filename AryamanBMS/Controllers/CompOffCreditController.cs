@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,HR,Employee")]
+    [Authorize(Roles = "Admin,HR,Employee,Master")]
     public class CompOffCreditController : Controller
     {
         private readonly ICompOffCreditRepository
@@ -276,7 +276,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> Approve(int id)
         {
             var compOffCredit =
@@ -340,7 +340,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> Reject(int id)
         {
             var compOffCredit =

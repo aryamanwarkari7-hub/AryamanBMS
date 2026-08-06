@@ -198,7 +198,7 @@ AryamanBMS/Services/EmployeeDocumentService.cs
 
 ### Attendance
 
-Tracks attendance records, employee self attendance, summaries, registers, dashboards, and admin/HR adjustments.
+Tracks attendance records, employee self attendance, summaries, registers, dashboards, and admin/HR adjustments. Attendance supports full-day and half-day values so salary pay days can include decimal values such as `26.5`.
 
 Key files:
 
@@ -212,7 +212,7 @@ AryamanBMS/ViewModels/AttendanceSummaryViewModel.cs
 
 ### Leave And Comp-Off
 
-Supports leave type setup, leave applications, leave balances, approvals, cancellations, comp-off credits, and comp-off usage.
+Supports leave type setup, leave applications, half-day leave, leave balances, approvals, cancellations, comp-off credits, and comp-off usage. Comp Off is dynamic and is based on approved Comp Off credits, not fixed yearly days in Leave Type setup.
 
 Key files:
 
@@ -248,6 +248,7 @@ AryamanBMS/wwwroot/templates/SalaryTemplate.xlsx
 ### Projects, Tasks, Meetings, Timeline, And Risks
 
 Supports project setup, project members, project tasks, task progress, project flows, timelines, communications, meetings/MOM, employee project tasks, and risk tracking.
+Project access includes Admin/HR users, project managers, and active assigned project members.
 
 Key files:
 
@@ -328,13 +329,14 @@ AryamanBMS/Services/GstDashboardService.cs
 
 ### Notifications And Activity
 
-Supports persistent notifications, unread counts, SignalR realtime notification delivery, login notifications, password change notifications, and user activity state.
+Supports persistent notifications, unread counts, SignalR realtime delivery, login notifications, user/security notifications, leave and Comp Off notifications, attendance updates and reminders, salary notifications, project member notifications, and user activity state.
 
 Key files:
 
 ```text
 AryamanBMS/Controllers/NotificationController.cs
 AryamanBMS/Services/NotificationService.cs
+AryamanBMS/Services/Background/HrNotificationReminderBackgroundService.cs
 AryamanBMS/Hubs/NotificationHub.cs
 AryamanBMS/Middleware/UserActivityMiddleware.cs
 AryamanBMS/ViewComponents/NotificationBellViewComponent.cs
@@ -399,7 +401,7 @@ Optional admin seed configuration:
 }
 ```
 
-For GitHub and shared environments, prefer user secrets, environment variables, or deployment secret storage for credentials.
+Do not commit real credentials. Use user secrets, environment variables, or deployment secret storage for credentials.
 
 Environment variable examples:
 
@@ -425,6 +427,17 @@ Attendance calendar configuration:
 ```
 
 If `Attendance:WeeklyOffDays` is not configured, Sunday is treated as the default weekly off. Office holidays can be configured through `Attendance:OfficeHolidays` and are also supported through manually marked `H` attendance records.
+
+Notification reminder timing:
+
+```json
+{
+  "Notifications": {
+    "AttendanceMissingAfter": "10:30:00",
+    "CheckOutMissingAfter": "18:30:00"
+  }
+}
+```
 
 ## Local Development
 
@@ -489,6 +502,12 @@ dotnet ef database update --project AryamanBMS/AryamanBMS.csproj
 
 Review the `SQL` folder before assuming EF migrations alone represent the full database setup.
 
+Latest manual schema script:
+
+```text
+AryamanBMS/SQL/Manual_Half_Day_Leave_Attendance_Changes.sql
+```
+
 ## Static Assets And Frontend
 
 Static files are located under:
@@ -536,9 +555,24 @@ Background service classes exist for reminders:
 ```text
 AryamanBMS/Services/Background/TaskReminderBackgroundService.cs
 AryamanBMS/Services/Background/InvoiceReminderBackgroundService.cs
+AryamanBMS/Services/Background/HrNotificationReminderBackgroundService.cs
 ```
 
-Their registrations are currently commented out in `Program.cs`.
+`HrNotificationReminderBackgroundService` is registered in `Program.cs` for HR reminders such as Comp Off expiry, missing check-in, and missing check-out. Task and invoice reminder services are present separately.
+
+## Publishing To IIS
+
+Publish from the working machine:
+
+```powershell
+dotnet publish AryamanBMS/AryamanBMS.csproj -c Release -o ./Publish
+```
+
+Before replacing IIS files, run required SQL scripts on the server database and set the production connection string outside committed configuration:
+
+```text
+ConnectionStrings__DefaultConnection
+```
 
 ## Repository Notes
 

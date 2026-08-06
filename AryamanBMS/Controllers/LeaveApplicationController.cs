@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Extensions;
+using AryamanBMS.Extensions;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,HR,Employee")]
+    [Authorize(Roles = "Admin,HR,Employee,Master")]
     public class LeaveApplicationController : Controller
     {
         private readonly ILeaveApplicationRepository _leaveApplicationRepository;
@@ -430,7 +430,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> Approve(int id)
         {
             var leaveApplication =
@@ -723,7 +723,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR,Master")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Reject(int id)
         {
@@ -784,7 +784,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin,HR,Employee")]
+        [Authorize(Roles = "Admin,HR,Employee,Master")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Cancel(int id)
         {
@@ -843,7 +843,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,HR,Employee")]
+        [Authorize(Roles = "Admin,HR,Employee,Master")]
         public async Task<IActionResult> RequestCancellation(
     int id,
     string cancellationReason)
@@ -949,7 +949,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> ApproveCancellation(
     int id,
     string? cancellationRemarks)
@@ -1169,7 +1169,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> RejectCancellation(
     int id,
     string? cancellationRemarks)
@@ -1345,7 +1345,7 @@ namespace AryamanBMS.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> Dashboard()
         {
             DateTime today = DateTime.Today;
@@ -1656,7 +1656,7 @@ namespace AryamanBMS.Controllers
             return $"Half-day leave approved ({sessionText}): {leaveApplication.ApplicationNumber}";
         }
 
-        [Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> ExportApplications()
         {
             var applications = await _leaveApplicationRepository.LeaveApplications

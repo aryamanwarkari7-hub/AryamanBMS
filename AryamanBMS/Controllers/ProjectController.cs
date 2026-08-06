@@ -108,7 +108,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> Create()
         {
             await LoadEmployeesAsync();
@@ -119,7 +119,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> Create(ProjectModel model)
         {
 
@@ -1275,7 +1275,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> Delete(int id)
         {
             var project =
@@ -1289,7 +1289,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var project =

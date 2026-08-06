@@ -350,5 +350,7 @@ AryamanBMS/wwwroot/documents/letters/
 # Local Archives / Temporary Project Copies
 # =========================================================
 
-*.zipdocs/ 
-D:\CODING\ARYAMAN\AryamanBMS\AryamanBMS\User Manuals
+*.zipdocs/
+.tmp-build/
+.codex-build/
+User Manuals/

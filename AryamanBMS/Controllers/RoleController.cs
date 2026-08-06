@@ -131,7 +131,8 @@ namespace AryamanBMS.Controllers
             {
                 "Admin",
                 "HR",
-                "Employee"
+                "Employee",
+                "Master"
             };
 
             if (protectedRoles.Contains(

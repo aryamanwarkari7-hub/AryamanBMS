@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace AryamanBMS.Controllers
 {
     [Authorize]
-    [Authorize(Roles = "Admin,HR,Finance")]
+    [Authorize(Roles = "Admin,HR,Finance,Master")]
     public class DashboardController : Controller
     {
         private readonly ApplicationDbContext _context;

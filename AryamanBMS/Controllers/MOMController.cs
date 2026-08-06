@@ -1004,7 +1004,9 @@ namespace AryamanBMS.Controllers
             var activeProjects =
                 _projectRepository.Projects.Where(p => p.IsActive);
 
-            if (User.IsInRole("Admin") || User.IsInRole("HR"))
+            if (User.IsInRole("Admin") ||
+                User.IsInRole("HR") ||
+                User.IsInRole("Master"))
             {
                 return activeProjects;
             }
@@ -1051,7 +1053,9 @@ namespace AryamanBMS.Controllers
 
         private async Task<bool> CanCreateMomAsync(ProjectMeetingModel model)
         {
-            if (User.IsInRole("Admin") || User.IsInRole("HR"))
+            if (User.IsInRole("Admin") ||
+                User.IsInRole("HR") ||
+                User.IsInRole("Master"))
             {
                 return true;
             }

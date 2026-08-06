@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Extensions;
+using AryamanBMS.Extensions;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,HR")]
+    [Authorize(Roles = "Admin,HR,Master")]
     public class LeaveBalanceController : Controller
     {
         private readonly ILeaveBalanceRepository _leaveBalanceRepository;
@@ -29,7 +29,7 @@ namespace AryamanBMS.Controllers
             _notificationService = notificationService;
         }
 
-        [Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> Index(
               int? year,
               int? employeeId,
@@ -236,7 +236,7 @@ namespace AryamanBMS.Controllers
         }
 
 
-        [Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> Export(
         int? year,
         int? employeeId)

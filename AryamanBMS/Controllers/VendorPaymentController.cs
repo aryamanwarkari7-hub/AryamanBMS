@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,Finance")]
+    [Authorize(Roles = "Admin,Finance,Master")]
     public class VendorPaymentController : Controller
     {
         private readonly ApplicationDbContext _context;

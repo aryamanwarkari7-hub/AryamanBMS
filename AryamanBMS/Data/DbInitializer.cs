@@ -21,9 +21,8 @@ namespace AryamanBMS.Data
              {
                  "Admin",
                  "HR",
-                 "Finance",
                  "Employee",
-                 "ProjectManager"
+                 "Master"
              };
 
             foreach (var role in roles)

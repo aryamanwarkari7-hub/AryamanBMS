@@ -25,7 +25,8 @@ namespace AryamanBMS.Services
         public bool IsAdminOrHR(ClaimsPrincipal user)
         {
             return user.IsInRole("Admin") ||
-                   user.IsInRole("HR");
+                   user.IsInRole("HR") ||
+                   user.IsInRole("Master");
         }
 
         public async Task<int?> GetCurrentEmployeeIdAsync(
