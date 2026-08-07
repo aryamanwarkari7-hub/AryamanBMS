@@ -129,12 +129,16 @@
 
     bool isLetterActive = currentController == "Letter";
 
+    bool isHolidayActive =
+    currentController == "Holiday";
+
     bool isHrActive =
-         currentController == "Employee" ||
-         isAttendanceActive ||
-         isLeaveActive ||
-         isSalaryActive ||
-         isLetterActive;
+     currentController == "Employee" ||
+     isHolidayActive ||
+     isAttendanceActive ||
+     isLeaveActive ||
+     isSalaryActive ||
+     isLetterActive;
 
     bool isEmployeeActive = currentController == "Employee";
 
@@ -791,6 +795,16 @@
 
                     </div>
 
+                    }
+
+                    @if (isAdminHrOrMaster)
+                    {
+                        <a asp-controller="Holiday"
+                           asp-action="Index"
+                           class="submenu-item @(isHolidayActive ? "active-menu" : "")">
+                            <i class="bi bi-calendar-event"></i>
+                            <span>Holidays</span>
+                        </a>
                     }
 
                     @* ==========================================

@@ -143,6 +143,12 @@ namespace AryamanBMS.Data
         // Notification
         public DbSet<NotificationModel> TableNotification { get; set; }
 
+        // Calendar
+        public DbSet<CalendarManualEventModel> CalendarManualEvents { get; set; }
+
+        //Holiday
+        public DbSet<HolidayModel> Holidays { get; set; }
+
         //Login History
         public DbSet<LoginHistoryModel> TableLoginHistory { get; set; }
         public DbSet<PasswordChangeLogModel> PasswordChangeLogs { get; set; }
@@ -1194,6 +1200,48 @@ namespace AryamanBMS.Data
                     x.IsRead,
                     x.CreatedOn
                 });
+            });
+
+            //Calendar Events
+            modelBuilder.Entity<CalendarManualEventModel>()
+                .ToTable("TableCalendarManualEvent");
+
+            modelBuilder.Entity<CalendarManualEventModel>()
+                .HasOne(x => x.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(x => x.CreatedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<CalendarManualEventModel>()
+                .HasOne(x => x.UpdatedByUser)
+                .WithMany()
+                .HasForeignKey(x => x.UpdatedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Holiday
+            modelBuilder.Entity<HolidayModel>(entity =>
+            {
+                entity.ToTable("TableHoliday");
+
+                entity.HasKey(x => x.HolidayId);
+
+                entity.Property(x => x.HolidayName)
+                    .IsRequired()
+                    .HasMaxLength(160);
+
+                entity.Property(x => x.MonthName)
+                    .HasMaxLength(20);
+
+                entity.Property(x => x.DayName)
+                    .HasMaxLength(20);
+
+                entity.Property(x => x.HolidayType)
+                    .IsRequired()
+                    .HasMaxLength(80)
+                    .HasDefaultValue("Office Holiday");
+
+                entity.HasIndex(x => x.HolidayDate)
+                    .IsUnique();
             });
 
             // Login History

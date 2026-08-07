@@ -146,6 +146,12 @@ builder.Services.AddScoped<IInvoiceDocumentService,InvoiceDocumentService>();
 // NOTIFICATION SERVICE
 builder.Services.AddScoped<INotificationService,NotificationService>();
 
+// CALENDAR SERVICE
+builder.Services.AddScoped<ICalendarService, CalendarService>();
+
+//HOLIDAY SERVICE
+builder.Services.AddScoped<IHolidayExcelImportService, HolidayExcelImportService>();
+
 // BACKGROUND SERVICE
 builder.Services.AddHostedService<TaskReminderBackgroundService>();
 builder.Services.AddHostedService<InvoiceReminderBackgroundService>();

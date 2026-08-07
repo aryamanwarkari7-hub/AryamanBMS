@@ -74,6 +74,13 @@
     }
 
     <div class="navbar-actions">
+        <a asp-controller="Calendar"
+           asp-action="Index"
+           class="navbar-icon-btn @(currentController == "Calendar" ? "active" : "")"
+           title="Calendar">
+            <i class="bi bi-calendar2-week-fill"></i>
+        </a>
+
         @await Component.InvokeAsync("NotificationBell")
         
         <div class="navbar-user dropdown">

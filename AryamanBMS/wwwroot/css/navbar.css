@@ -114,6 +114,58 @@
         transform: translateY(-1px);
     }
 
+.navbar-icon-btn {
+    position: relative;
+    width: 42px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid rgba(29, 78, 216, 0.34);
+    border-radius: var(--radius-md);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.36), transparent), #DBEAFE;
+    color: #1D4ED8;
+    font-size: 20px;
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: 0 8px 18px rgba(29, 78, 216, 0.12);
+    transition: background-color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast), color var(--transition-fast);
+}
+
+.navbar-icon-btn.active {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.36), transparent), #DBEAFE;
+    border-color: rgba(29, 78, 216, 0.34);
+    color: #1D4ED8;
+    box-shadow: 0 8px 18px rgba(29, 78, 216, 0.12);
+    transform: none;
+}
+
+.navbar-icon-btn:hover {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.42), transparent), #BFDBFE;
+    border-color: rgba(29, 78, 216, 0.56);
+    color: #1E40AF;
+    box-shadow: 0 12px 24px rgba(29, 78, 216, 0.18);
+    transform: translateY(-1px);
+}
+
+.navbar-icon-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.22);
+}
+
+.navbar-icon-btn i {
+    color: #2563EB;
+    -webkit-text-stroke: 0.4px #1E3A8A;
+    filter: drop-shadow(0 1px 0 rgba(30, 58, 138, 0.18));
+}
+
+.navbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
 .navbar-date {
     padding: 8px 10px;
     border: 1px solid transparent;

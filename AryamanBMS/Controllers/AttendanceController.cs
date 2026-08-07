@@ -1,4 +1,5 @@
 using AryamanBMS.Extensions;
+using AryamanBMS.Data;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interface;
@@ -19,6 +20,7 @@ namespace AryamanBMS.Controllers
         private readonly IEmployeeRepository _employeeRepository;
         private readonly UserManager<ApplicationUserModel> _userManager;
         private readonly ILeaveApplicationRepository _leaveApplicationRepository;
+        private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
         private readonly INotificationService _notificationService;
 
@@ -30,6 +32,7 @@ namespace AryamanBMS.Controllers
     ILeaveApplicationRepository leaveApplicationRepository,
     UserManager<ApplicationUserModel> userManager,
     ISalaryAttendanceSummaryService salaryAttendanceSummaryService,
+    ApplicationDbContext context,
     IConfiguration configuration,
     INotificationService notificationService)
         {
@@ -38,6 +41,7 @@ namespace AryamanBMS.Controllers
             _leaveApplicationRepository = leaveApplicationRepository;
             _userManager = userManager;
             _salaryAttendanceSummaryService = salaryAttendanceSummaryService;
+            _context = context;
             _configuration = configuration;
             _notificationService = notificationService;
         }
@@ -80,7 +84,7 @@ namespace AryamanBMS.Controllers
             ViewBag.TodayAttendance = todayAttendance;
             ViewBag.TodayCalendarStatus =
                 todayAttendance == null
-                    ? GetCalendarStatus(DateTime.Today)
+                    ? await GetCalendarStatusAsync(DateTime.Today)
                     : null;
 
             return View(todayAttendance);
@@ -244,7 +248,7 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var calendarStatus = GetCalendarStatus(DateTime.Today);
+            var calendarStatus = await GetCalendarStatusAsync(DateTime.Today);
 
             if (calendarStatus == "H")
             {
@@ -344,7 +348,7 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var calendarStatus = GetCalendarStatus(DateTime.Today);
+            var calendarStatus = await GetCalendarStatusAsync(DateTime.Today);
 
             if (calendarStatus == "H")
             {
@@ -867,9 +871,9 @@ namespace AryamanBMS.Controllers
             };
         }
 
-        private string? GetCalendarStatus(DateTime date)
+        private async Task<string?> GetCalendarStatusAsync(DateTime date)
         {
-            if (IsOfficeHoliday(date))
+            if (await IsOfficeHolidayAsync(date))
             {
                 return "H";
             }
@@ -909,7 +913,7 @@ namespace AryamanBMS.Controllers
             return date.DayOfWeek == DayOfWeek.Sunday;
         }
 
-        private bool IsOfficeHoliday(DateTime date)
+        private async Task<bool> IsOfficeHolidayAsync(DateTime date)
         {
             var configuredHolidays =
                 _configuration
@@ -930,7 +934,11 @@ namespace AryamanBMS.Controllers
                 }
             }
 
-            return false;
+            return await _context.Holidays
+                .AsNoTracking()
+                .AnyAsync(x =>
+                    x.IsActive &&
+                    x.HolidayDate.Date == date.Date);
         }
 
         private static decimal NormalizeAttendanceValue(decimal value)

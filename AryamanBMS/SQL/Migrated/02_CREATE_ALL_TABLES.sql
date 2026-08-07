@@ -935,20 +935,63 @@
 --     CONSTRAINT FK_ClientCommunications_Client
 --         FOREIGN KEY (ClientId) REFERENCES tableclientmaster(ClientId));
 
-CREATE TABLE tablepasswordchangelogs (
+-- CREATE TABLE tablepasswordchangelogs (
+--     Id INT NOT NULL AUTO_INCREMENT,
+--     UserId VARCHAR(450) NOT NULL,
+--     UserName VARCHAR(150) NULL,
+--     Email VARCHAR(150) NULL,
+--     ChangedByUserId VARCHAR(450) NULL,
+--     ChangedByUserName VARCHAR(150) NULL,
+--     ChangeType VARCHAR(30) NOT NULL,
+--     ChangedOn DATETIME NOT NULL,
+--     IpAddress VARCHAR(100) NULL,
+--     UserAgent VARCHAR(500) NULL,
+--     PRIMARY KEY (Id),
+--     INDEX IX_PasswordChangeLogs_UserId (UserId),
+--     INDEX IX_PasswordChangeLogs_ChangedOn (ChangedOn)
+-- );
+
+CREATE TABLE tableprojectcommunications
+(
     Id INT NOT NULL AUTO_INCREMENT,
-    UserId VARCHAR(450) NOT NULL,
-    UserName VARCHAR(150) NULL,
-    Email VARCHAR(150) NULL,
-    ChangedByUserId VARCHAR(450) NULL,
-    ChangedByUserName VARCHAR(150) NULL,
-    ChangeType VARCHAR(30) NOT NULL,
-    ChangedOn DATETIME NOT NULL,
-    IpAddress VARCHAR(100) NULL,
-    UserAgent VARCHAR(500) NULL,
+
+    ProjectId INT NOT NULL,
+
+    CreatedByEmployeeId INT NOT NULL,
+
+    Message VARCHAR(5000) NOT NULL,
+
+    IsEdited BIT NOT NULL DEFAULT b'0',
+
+    IsActive BIT NOT NULL DEFAULT b'1',
+
+    CreatedOn DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    UpdatedOn DATETIME NULL,
+
     PRIMARY KEY (Id),
-    INDEX IX_PasswordChangeLogs_UserId (UserId),
-    INDEX IX_PasswordChangeLogs_ChangedOn (ChangedOn)
+
+    CONSTRAINT FK_ProjectCommunications_Projects
+        FOREIGN KEY (ProjectId)
+        REFERENCES tableproject(Id),
+
+    CONSTRAINT FK_ProjectCommunications_Employees
+        FOREIGN KEY (CreatedByEmployeeId)
+        REFERENCES tableemployee(Id)
+);
+
+CREATE TABLE IF NOT EXISTS TableHoliday (
+    HolidayId INT NOT NULL AUTO_INCREMENT,
+    HolidayDate DATE NOT NULL,
+    HolidayName VARCHAR(160) NOT NULL,
+    MonthName VARCHAR(20) NULL,
+    DayName VARCHAR(20) NULL,
+    HolidayType VARCHAR(80) NOT NULL DEFAULT 'Office Holiday',
+    IsActive TINYINT(1) NOT NULL DEFAULT 1,
+    CreatedOn DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedOn DATETIME NULL,
+    PRIMARY KEY (HolidayId),
+    UNIQUE KEY UX_TableHoliday_HolidayDate (HolidayDate)
 );
 
 -- -- ============================================================

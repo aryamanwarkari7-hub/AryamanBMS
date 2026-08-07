@@ -40,6 +40,29 @@
     --text-muted: #94A3B8;
     --text-light: #FFFFFF;
     --text-dark: #0F172A;
+    /* CALENDAR*/
+    --calendar-leave-bg: #16a34a;
+    --calendar-leave-text: #ffffff;
+    --calendar-attendance-bg: #1d4ed8;
+    --calendar-attendance-text: #ffffff;
+    --calendar-task-bg: #2563eb;
+    --calendar-task-text: #ffffff;
+    --calendar-meeting-bg: #0891b2;
+    --calendar-meeting-text: #ffffff;
+    --calendar-billing-bg: #334155;
+    --calendar-billing-text: #ffffff;
+    --calendar-filter-all-bg: var(--secondary-tint);
+    --calendar-filter-all-text: var(--text-secondary);
+    --calendar-filter-leave-bg: var(--success-soft);
+    --calendar-filter-leave-text: var(--success-soft-text);
+    --calendar-filter-attendance-bg: var(--primary-soft);
+    --calendar-filter-attendance-text: var(--primary-soft-text);
+    --calendar-filter-task-bg: var(--primary-soft);
+    --calendar-filter-task-text: var(--primary-soft-text);
+    --calendar-filter-meeting-bg: var(--info-soft);
+    --calendar-filter-meeting-text: var(--info-soft-text);
+    --calendar-filter-billing-bg: var(--neutral-soft);
+    --calendar-filter-billing-text: var(--neutral-soft-text);
     /* BORDER / SHADOW */
     --border-color: #E2E8F0;
     --border-muted: #DBE4EF;

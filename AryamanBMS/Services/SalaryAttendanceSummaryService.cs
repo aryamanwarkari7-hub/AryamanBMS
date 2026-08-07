@@ -1,6 +1,7 @@
 ﻿using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interface;
 using AryamanBMS.ViewModels;
+using AryamanBMS.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Services
@@ -12,17 +13,20 @@ namespace AryamanBMS.Services
         private readonly IAttendanceRepository _attendanceRepository;
 
         private readonly ILeaveApplicationRepository _leaveApplicationRepository;
+        private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
 
         public SalaryAttendanceSummaryService(
             IEmployeeRepository employeeRepository,
             IAttendanceRepository attendanceRepository,
             ILeaveApplicationRepository leaveApplicationRepository,
+            ApplicationDbContext context,
             IConfiguration configuration)
         {
             _employeeRepository = employeeRepository;
             _attendanceRepository = attendanceRepository;
             _leaveApplicationRepository = leaveApplicationRepository;
+            _context = context;
             _configuration = configuration;
         }
 
@@ -65,7 +69,7 @@ namespace AryamanBMS.Services
 
             var summaries = new List<AttendanceSummaryViewModel>();
             var weeklyOffDays = GetWeeklyOffDays();
-            var officeHolidays = GetOfficeHolidays(startDate, endDate);
+            var officeHolidays = await GetOfficeHolidaysAsync(startDate, endDate);
 
             foreach (var employee in employees)
             {
@@ -304,7 +308,7 @@ namespace AryamanBMS.Services
             return weeklyOffDays;
         }
 
-        private HashSet<DateTime> GetOfficeHolidays(
+        private async Task<HashSet<DateTime>> GetOfficeHolidaysAsync(
             DateTime startDate,
             DateTime endDate)
         {
@@ -315,12 +319,7 @@ namespace AryamanBMS.Services
 
             var officeHolidays = new HashSet<DateTime>();
 
-            if (configuredHolidays == null)
-            {
-                return officeHolidays;
-            }
-
-            foreach (var configuredHoliday in configuredHolidays)
+            foreach (var configuredHoliday in configuredHolidays ?? Array.Empty<string>())
             {
                 if (DateTime.TryParse(configuredHoliday, out var holiday))
                 {
@@ -332,6 +331,20 @@ namespace AryamanBMS.Services
                         officeHolidays.Add(holidayDate);
                     }
                 }
+            }
+
+            var uploadedHolidays = await _context.Holidays
+                .AsNoTracking()
+                .Where(x =>
+                    x.IsActive &&
+                    x.HolidayDate.Date >= startDate.Date &&
+                    x.HolidayDate.Date <= endDate.Date)
+                .Select(x => x.HolidayDate.Date)
+                .ToListAsync();
+
+            foreach (var holiday in uploadedHolidays)
+            {
+                officeHolidays.Add(holiday);
             }
 
             return officeHolidays;
