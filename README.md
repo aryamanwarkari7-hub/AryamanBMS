@@ -122,7 +122,7 @@ The startup seed process creates these roles:
 - `ProjectManager`
 - `Master`
 
-`Master` is a restricted management role. It is intended for access to Dashboard, Leaves, Attendance, Project Management, Proposals and Templates, PO/WO, Receipts, Billing Milestones, Expense Vouchers, and Vendor Payments. It does not expose user/role administration, employee master setup, salary, compliance, client/vendor setup, invoices, receivables, credit notes, or debit notes through the main navigation.
+`Master` is a restricted management role. It is intended for access to Dashboard, Leaves, Attendance, Project Management, Proposals and Templates, PO/WO, Receipts, Billing Milestones, Expense Vouchers, Vendor Payments, Calendar, and Holiday Register. It does not expose user/role administration, employee master setup, salary, compliance, client/vendor setup, invoices, receivables, credit notes, or debit notes through the main navigation.
 
 An admin user can be seeded only when these configuration keys are present:
 
@@ -201,7 +201,7 @@ AryamanBMS/Services/EmployeeDocumentService.cs
 
 ### Attendance
 
-Tracks attendance records, employee self attendance, summaries, registers, dashboards, and admin/HR adjustments. Attendance supports full-day and half-day values so salary pay days can include decimal values such as `26.5`.
+Tracks attendance records, employee self attendance, summaries, registers, dashboards, and admin/HR adjustments. Attendance supports full-day and half-day values so salary pay days can include decimal values such as `26.5`. Weekly offs are configuration-driven, and uploaded active holidays from the Holiday Register are treated as office holidays for attendance blocking and pay-day calculations.
 
 Key files:
 
@@ -211,6 +211,21 @@ AryamanBMS/Models/AttendanceModel.cs
 AryamanBMS/Repositories/AttendanceRepository.cs
 AryamanBMS/ViewModels/AttendanceDashboardViewModel.cs
 AryamanBMS/ViewModels/AttendanceSummaryViewModel.cs
+```
+
+### Holiday Register
+
+Supports yearly office holiday setup through a register page, downloadable blank Excel template, Excel import, filtered export, and Admin/HR/Master access. Holidays are stored as master data and are used by Calendar, Attendance, and Salary Pay Days.
+
+Key files:
+
+```text
+AryamanBMS/Controllers/HolidayController.cs
+AryamanBMS/Models/HolidayModel.cs
+AryamanBMS/Services/HolidayExcelImportService.cs
+AryamanBMS/ViewModels/HolidayImportResult.cs
+AryamanBMS/Views/Holiday/
+AryamanBMS/wwwroot/templates/HolidayTemplate.xlsx
 ```
 
 ### Leave And Comp-Off
@@ -233,7 +248,7 @@ AryamanBMS/Models/CompOffUsageModel.cs
 
 ### Payroll And Salary
 
-Covers salary records, salary structure, Excel salary imports, salary dashboard, payslips, salary advances, payment batches, attendance summaries, payroll policy, payroll locks, and full-and-final settlement.
+Covers salary records, salary structure, Excel salary imports, salary dashboard, payslips, salary advances, payment batches, attendance summaries, payroll policy, payroll locks, and full-and-final settlement. Salary attendance summaries include uploaded active holidays as payable holiday days and exclude them from working-day calculations.
 
 Key files:
 
@@ -267,6 +282,23 @@ AryamanBMS/Controllers/MOMController.cs
 AryamanBMS/Controllers/RiskController.cs
 AryamanBMS/Services/ProjectAccessService.cs
 AryamanBMS/Services/ProjectTimelineService.cs
+```
+
+### Calendar
+
+Provides a work calendar with month, week, day, and list views. Calendar events are aggregated from holidays, leave applications, attendance exceptions, project tasks, meetings, billing milestones, and manual calendar entries. Admin, HR, and Master users can add and edit manual calendar events; employees can view their own schedule and shared holiday/manual entries.
+
+Key files:
+
+```text
+AryamanBMS/Controllers/CalendarController.cs
+AryamanBMS/Models/CalendarManualEventModel.cs
+AryamanBMS/Services/CalendarService.cs
+AryamanBMS/ViewModels/CalendarEventViewModel.cs
+AryamanBMS/ViewModels/CalendarManualEventInputViewModel.cs
+AryamanBMS/Views/Calendar/
+AryamanBMS/wwwroot/css/calendar.css
+AryamanBMS/wwwroot/js/calendar.js
 ```
 
 ### Accounts, Billing, Receivables, And Documents
@@ -332,7 +364,7 @@ AryamanBMS/Services/GstDashboardService.cs
 
 ### Notifications And Activity
 
-Supports persistent notifications, unread counts, SignalR realtime delivery, login notifications, user/security notifications, leave and Comp Off notifications, attendance updates and reminders, salary notifications, project member notifications, and user activity state.
+Supports persistent notifications, unread counts, SignalR realtime delivery, login notifications, user/security notifications, leave and Comp Off notifications, attendance updates and reminders, salary notifications, project member notifications, holiday import notifications, and user activity state.
 
 Key files:
 
@@ -374,7 +406,7 @@ It inherits from:
 IdentityDbContext<ApplicationUserModel>
 ```
 
-The context defines DbSets and mappings for Identity, HR, attendance, leave, payroll, projects, meetings, risks, accounts, purchases, GST, statutory modules, company documents, audit documents, office assets, notices, notifications, login history, and password change logs.
+The context defines DbSets and mappings for Identity, HR, attendance, holidays, leave, payroll, calendar events, projects, meetings, risks, accounts, purchases, GST, statutory modules, company documents, audit documents, office assets, notices, notifications, login history, and password change logs.
 
 The current project contains both EF migrations and manual SQL scripts. The SQL folder is important because several business modules appear to have schema/data scripts outside the small EF migration set.
 
@@ -429,7 +461,7 @@ Attendance calendar configuration:
 }
 ```
 
-If `Attendance:WeeklyOffDays` is not configured, Sunday is treated as the default weekly off. Office holidays can be configured through `Attendance:OfficeHolidays` and are also supported through manually marked `H` attendance records.
+If `Attendance:WeeklyOffDays` is not configured, Sunday is treated as the default weekly off. Office holidays can still be configured through `Attendance:OfficeHolidays`, but the primary holiday source is now the Holiday Register (`TableHoliday`). Manually marked `H` attendance records are also respected.
 
 Notification reminder timing:
 
@@ -524,7 +556,7 @@ Important frontend areas:
 - `wwwroot/css`: global, layout, module, and component styles
 - `wwwroot/js`: module-specific behavior
 - `wwwroot/lib`: vendored frontend libraries
-- `wwwroot/templates`: import templates, including salary Excel template
+- `wwwroot/templates`: import templates, including salary and holiday Excel templates
 - `wwwroot/uploads`: public upload paths such as profile photos
 
 Shared layout and navigation:
@@ -577,6 +609,8 @@ Before replacing IIS files, run required SQL scripts on the server database and 
 ConnectionStrings__DefaultConnection
 ```
 
+Current deployment-sensitive tables include `TableHoliday`, `TableCalendarManualEvent`, and the current Project Management tables. When publishing to IIS, the server database schema must match the deployed models before testing Calendar, Holiday, Salary Pay Days, or Project Management pages.
+
 ## Repository Notes
 
 Generated build output and local IDE state are ignored, including `bin`, `obj`, `.vs`, `.tmp-build`, and `.codex-build`.
@@ -594,4 +628,4 @@ The main implementation should be understood from source files under the web pro
 
 ## Project Status
 
-This README reflects the current static project structure and implementation as of the latest code review. It is intended as the primary GitHub-facing project overview and onboarding reference.
+This README reflects the current static project structure and implementation after the Holiday Register, Calendar, and holiday attendance/pay-day integration work. It is intended as the primary GitHub-facing project overview and onboarding reference.
