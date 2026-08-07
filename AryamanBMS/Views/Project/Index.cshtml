@@ -21,7 +21,7 @@
         <p class="module-subtitle">Manage project records</p>
     </div>
 
-    @if (User.IsInRole("Admin") || User.IsInRole("HR"))
+    @if (User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("Master"))
     {
         <a asp-action="Create"
            class="btn-app btn-primary-app">
