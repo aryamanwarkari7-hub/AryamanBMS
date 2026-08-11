@@ -1,0 +1,74 @@
+﻿@model AryamanBMS.ViewModels.PaidLeaveBalanceSnapshotViewModel
+
+@{
+    ViewData["Title"] = "My Paid Leave Balance";
+    int selectedYear = ViewBag.SelectedYear;
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">My Paid Leave Balance</h1>
+        <p class="module-subtitle">Your financial year paid leave summary</p>
+    </div>
+</div>
+
+<div class="app-card mb-3">
+    <div class="card-body">
+        <form method="get" class="form-grid-3">
+            <div class="form-group">
+                <label class="form-label">Financial Year Start</label>
+                <input type="number"
+                       name="year"
+                       value="@selectedYear"
+                       class="app-input" />
+            </div>
+
+            <div class="form-group d-flex flex-row align-items-end gap-2">
+                <button type="submit" class="btn-app btn-primary-app">
+                    <i class="bi bi-search"></i>
+                    Apply
+                </button>
+
+                <a asp-action="MyPaidLeaveBalance"
+                   asp-controller="LeaveApplication"
+                   class="btn-app btn-secondary-app">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                    Reset
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="app-card">
+    <div class="card-body">
+
+        <div class="stats-card leave-balance-fy-card mb-3">
+            <div class="stats-label">FY Period</div>
+            <div class="stats-number">@Model.FinancialYearLabel</div>
+        </div>
+
+        <div class="leave-balance-card-grid">
+            <div class="stats-card">
+                <div class="stats-label">Annual Entitlement</div>
+                <div class="stats-number">@Model.AnnualEntitlement.ToString("0.##")</div>
+            </div>
+
+            <div class="stats-card">
+                <div class="stats-label">Prorated Entitlement</div>
+                <div class="stats-number">@Model.ProratedEntitlement.ToString("0.##")</div>
+            </div>
+
+            <div class="stats-card">
+                <div class="stats-label">Used Paid Leaves</div>
+                <div class="stats-number">@Model.PaidLeaveUsed.ToString("0.##")</div>
+            </div>
+
+            <div class="stats-card">
+                <div class="stats-label">Available Balance</div>
+                <div class="stats-number">@Model.PaidLeaveBalance.ToString("0.##")</div>
+            </div>
+        </div>
+
+    </div>
+</div>

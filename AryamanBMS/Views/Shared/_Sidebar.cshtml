@@ -100,7 +100,7 @@
 
     bool isLeaveOpen =
     currentController == "LeaveType" ||
-    currentController == "LeaveBalance" ||
+    
     currentController == "LeaveApplication" ||
     currentController == "CompOffCredit";
 
@@ -210,6 +210,12 @@
         (!isMaster && isComplianceDocumentsActive);
 }
 
+
+@* 
+==========================================
+   SIDEBAR
+========================================== 
+*@
 <div class="sidebar">
 
     <div class="sidebar-header d-flex flex-column align-items-center justify-content-center ">
@@ -510,6 +516,14 @@
                             @* ============================================================
                                 LEAVE APPLICATION
                              =========================================================== *@
+
+                              <a asp-controller="LeaveApplication"
+                               asp-action="MyPaidLeaveBalance"
+                               class="submenu-item nested-item @(currentController == "LeaveApplication" && currentAction == "MyPaidLeaveBalance" ? "active-menu" : "")">
+                                <i class="bi bi-wallet2"></i>
+                                <span>My Paid Leave</span>
+                            </a>
+
                             <a asp-controller="LeaveApplication"
                                asp-action="Index"
                                class="submenu-item nested-item @(currentController == "LeaveApplication" && currentAction == "Index" ? "active-menu" : "")">
@@ -518,6 +532,8 @@
                                 <span>@(isEmployeeOnly ? "My Applications" : "Applications")</span>
 
                             </a>
+
+                           
 
                             @* ============================================================
                                 COMP-OFF MANAGEMENT
@@ -539,13 +555,20 @@
                                 @* ============================================================
                                    LEAVE BALANCES
                                 =========================================================== *@
-                                <a asp-controller="LeaveBalance"
+                                @* <a asp-controller="LeaveBalance"
                                    asp-action="Index"
                                    class="submenu-item nested-item @(currentController == "LeaveBalance" ? "active-menu" : "")">
 
                                     <i class="bi bi-wallet2"></i>
                                     <span>Balance</span>
 
+                                </a> *@
+
+                                <a asp-controller="LeaveApplication"
+                                   asp-action="PaidLeaveBalanceRegister"
+                                   class="submenu-item nested-item @(currentController == "LeaveApplication" && currentAction == "PaidLeaveBalanceRegister" ? "active-menu" : "")">
+                                    <i class="bi bi-wallet2"></i>
+                                    <span>Paid Leave Balance</span>
                                 </a>
 
                                 @* ============================================================

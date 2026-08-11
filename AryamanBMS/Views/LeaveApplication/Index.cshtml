@@ -33,6 +33,14 @@
 
 </div>
 
+@if (TempData["LeaveApprovalSplit"] != null)
+{
+    <div class="app-alert-info">
+        <strong>Leave Approval Split:</strong>
+        @TempData["LeaveApprovalSplit"]
+    </div>
+}
+
 
 <div class="app-card mb-3">
 
@@ -153,6 +161,8 @@
                             <th>From</th>
                             <th>To</th>
                             <th>Days</th>
+                            <th>Paid</th>
+                            <th>Unpaid</th>
                             <th>Status</th>
                             <th>Cancellation</th>
                             <th>Applied On</th>
@@ -206,6 +216,18 @@
                                             @(item.HalfDaySession == "FirstHalf" ? "First Half" : "Second Half")
                                         </small>
                                     }
+                                </td>
+
+                                <td>
+                                    <span class="badge-success">
+                                        @item.PaidDays.ToString("0.##")
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="badge-danger">
+                                        @item.UnpaidDays.ToString("0.##")
+                                    </span>
                                 </td>
 
                                 <td>

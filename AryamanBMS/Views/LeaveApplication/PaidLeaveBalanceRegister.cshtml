@@ -1,0 +1,105 @@
+﻿@model List<AryamanBMS.ViewModels.EmployeePaidLeaveBalanceViewModel>
+
+@{
+    ViewData["Title"] = "Paid Leave Balance Register";
+    int selectedYear = ViewBag.SelectedYear;
+    string? searchText = ViewBag.SearchText;
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Paid Leave Balance Register</h1>
+        <p class="module-subtitle">Employee-wise financial year paid leave balances</p>
+    </div>
+</div>
+
+<div class="app-card mb-3">
+    <div class="card-body">
+        <form method="get" class="form-grid-3">
+            <div class="form-group">
+                <label class="form-label">Financial Year Start</label>
+                <input type="number"
+                       name="year"
+                       value="@selectedYear"
+                       class="app-input" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Search Employee</label>
+                <input type="text"
+                       name="searchText"
+                       value="@searchText"
+                       class="app-input"
+                       placeholder="Code or name" />
+            </div>
+
+            <div class="form-group d-flex flex-row align-items-end gap-2">
+                <button type="submit" class="btn-app btn-primary-app">
+                    <i class="bi bi-search"></i>
+                    Apply
+                </button>
+
+                <a asp-action="PaidLeaveBalanceRegister"
+                   asp-controller="LeaveApplication"
+                   class="btn-app btn-secondary-app">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                    Reset
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="app-card">
+    <div class="card-header">
+        <div>
+            <h5 class="card-title">FY @selectedYear-@(selectedYear + 1)</h5>
+            <p class="card-subtitle">Annual paid leave entitlement: 18 days</p>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table app-table">
+                <thead>
+                    <tr>
+                        <th>Employee Code</th>
+                        <th>Employee Name</th>
+                        <th>Joining Date</th>
+                        <th>FY Period</th>
+                        <th>Entitlement</th>
+                        <th>Used Paid</th>
+                        <th>Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.EmployeeCode</td>
+                                <td>@item.EmployeeName</td>
+                                <td>@item.JoiningDate.ToString("dd-MMM-yyyy")</td>
+                                <td>@item.FinancialYearLabel</td>
+                                <td>@item.ProratedEntitlement.ToString("0.##")</td>
+                                <td>@item.PaidUsed.ToString("0.##")</td>
+                                <td>
+                                    <strong>@item.PaidBalance.ToString("0.##")</strong>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center text-muted">
+                                No employees found.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

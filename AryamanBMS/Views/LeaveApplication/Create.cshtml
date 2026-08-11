@@ -2,7 +2,11 @@
 
 @{
     ViewData["Title"] = "Apply Leave";
+    var paidLeaveSnapshot =
+        ViewBag.PaidLeaveSnapshot as AryamanBMS.ViewModels.PaidLeaveBalanceSnapshotViewModel;
 }
+
+
 
 <div class="module-header">
     <div>
@@ -19,7 +23,23 @@
 </div>
 
 <div class="app-card form-card">
+    @if (paidLeaveSnapshot != null)
+    {
+        <div class="app-alert-info">
+            <strong>Paid Leave Balance:</strong>
+            FY @paidLeaveSnapshot.FinancialYearLabel |
+            Entitlement: @paidLeaveSnapshot.ProratedEntitlement.ToString("0.##") |
+            Used: @paidLeaveSnapshot.PaidLeaveUsed.ToString("0.##") |
+            Balance: @paidLeaveSnapshot.PaidLeaveBalance.ToString("0.##")
+        </div>
+
+        <div class="app-alert-warning mt-2" id="leaveSplitPreview">
+            Select leave dates to preview paid/unpaid split.
+        </div>
+    }
     <div class="card-header">
+        
+        
         <div>
             <h5 class="card-title">Leave Details</h5>
             <p class="card-subtitle">Select leave type, date range and reason</p>
@@ -162,6 +182,29 @@
             const leaveDuration = document.getElementById('leaveDuration');
             const halfDaySessionGroup = document.getElementById('halfDaySessionGroup');
 
+            const availablePaidLeaves =
+                Number("@(paidLeaveSnapshot?.PaidLeaveBalance ?? 0)");
+
+            function setSplitPreview(days) {
+                let preview = document.getElementById('leaveSplitPreview');
+
+                if (!preview) {
+                    return;
+                }
+
+                if (!days || days <= 0) {
+                    preview.textContent =
+                        'Select leave dates to preview paid/unpaid split.';
+                    return;
+                }
+
+                const paidDays = Math.min(days, availablePaidLeaves);
+                const unpaidDays = Math.max(0, days - paidDays);
+
+                preview.textContent =
+                    `Estimated split: ${paidDays} paid day(s), ${unpaidDays} unpaid day(s).`;
+            }
+
             function updateEstimatedDays() {
                 const isHalfDay = leaveDuration.value === 'true';
 
@@ -171,11 +214,13 @@
                     toDateInput.value = fromDateInput.value;
                     toDateInput.setAttribute('readonly', 'readonly');
                     estimatedDays.textContent = '0.5 day';
+                    setSplitPreview(0.5);
                     return;
                 }
 
                 if (!fromDateInput.value || !toDateInput.value) {
                     estimatedDays.textContent = '-';
+                    setSplitPreview(0);
 
                     if (!isHalfDay) {
                         toDateInput.removeAttribute('readonly');
@@ -186,6 +231,7 @@
 
                 if (isHalfDay) {
                     estimatedDays.textContent = '0.5 day';
+                    setSplitPreview(0.5);
                     return;
                 }
 
@@ -196,18 +242,23 @@
 
                 if (Number.isNaN(fromDate.getTime()) || Number.isNaN(toDate.getTime())) {
                     estimatedDays.textContent = '-';
+                    setSplitPreview(0);
                     return;
                 }
 
                 if (toDate < fromDate) {
                     estimatedDays.textContent = 'Invalid range';
+                    setSplitPreview(0);
                     return;
                 }
 
                 const diffTime = toDate.getTime() - fromDate.getTime();
                 const diffDays = Math.floor(diffTime / 86400000) + 1;
 
-                estimatedDays.textContent = diffDays + (diffDays === 1 ? ' day' : ' days');
+                estimatedDays.textContent =
+                    diffDays + (diffDays === 1 ? ' day' : ' days');
+
+                setSplitPreview(diffDays);
             }
 
             fromDateInput.addEventListener('change', updateEstimatedDays);

@@ -1,0 +1,39 @@
+﻿<style >
+.leave-balance-fy-card {
+    width: 100%;
+}
+
+.leave-balance-card-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-md);
+}
+
+    .leave-balance-card-grid .stats-card,
+    .leave-balance-fy-card {
+        min-height: 120px;
+        border: 1px solid var(--border-muted);
+        border-radius: var(--radius-md);
+        background: var(--card-bg);
+    }
+
+        .leave-balance-card-grid .stats-number,
+        .leave-balance-fy-card .stats-number {
+            font-size: 1.6rem;
+            line-height: 1.2;
+            word-break: break-word;
+        }
+
+@media (max-width: 1200px) {
+    .leave-balance-card-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 576px) {
+    .leave-balance-card-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+</style >

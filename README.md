@@ -215,7 +215,7 @@ AryamanBMS/ViewModels/AttendanceSummaryViewModel.cs
 
 ### Holiday Register
 
-Supports yearly office holiday setup through a register page, downloadable blank Excel template, Excel import, filtered export, and Admin/HR/Master access. Holidays are stored as master data and are used by Calendar, Attendance, and Salary Pay Days.
+Supports yearly office holiday setup through a register page, downloadable Excel template, Excel import, filtered export, and Admin/HR/Master access. The holiday template is maintained as the expected import format, and populated holiday Excel files can be imported after updating the template rows with the actual company holiday list for the year. Holidays are stored as master data and are used by Calendar, Attendance, and Salary Pay Days.
 
 Key files:
 
@@ -228,9 +228,21 @@ AryamanBMS/Views/Holiday/
 AryamanBMS/wwwroot/templates/HolidayTemplate.xlsx
 ```
 
-### Leave And Comp-Off
+### Leave, Paid Leave Balance, And Comp-Off
 
-Supports leave type setup, leave applications, half-day leave, leave balances, approvals, cancellations, comp-off credits, and comp-off usage. Comp Off is dynamic and is based on approved Comp Off credits, not fixed yearly days in Leave Type setup.
+Supports leave type setup, leave applications, half-day leave, approvals, cancellations, employee paid leave balance visibility, Admin/HR/Master paid leave balance register, comp-off credits, and comp-off usage.
+
+Paid leave is calculated from a single financial-year pool instead of fixed yearly days per leave type:
+
+- financial year runs from 1 April to 31 March
+- annual paid leave entitlement is 18 days
+- monthly accrual value is 1.5 days
+- employees joining after 1 April receive prorated entitlement
+- leave types act as categories/reasons rather than separate paid leave buckets
+- approval stores final `PaidDays` and `UnpaidDays` on each leave application
+- rejected or cancelled leaves do not consume paid or unpaid days
+
+Employees can view their own paid leave balance from the leave module and while applying for leave. Admin, HR, and Master users can view employee-wise paid leave balances through the paid leave balance register. Comp Off remains separate from the annual paid leave pool: it consumes approved Comp Off credits, stays salary-paid, and does not reduce the 18-day financial-year entitlement.
 
 Key files:
 
@@ -244,11 +256,15 @@ AryamanBMS/Models/LeaveApplicationModel.cs
 AryamanBMS/Models/LeaveBalanceModel.cs
 AryamanBMS/Models/CompOffCreditModel.cs
 AryamanBMS/Models/CompOffUsageModel.cs
+AryamanBMS/ViewModels/PaidLeaveBalanceSnapshotViewModel.cs
+AryamanBMS/ViewModels/EmployeePaidLeaveBalanceViewModel.cs
+AryamanBMS/Views/LeaveApplication/MyPaidLeaveBalance.cshtml
+AryamanBMS/Views/LeaveApplication/PaidLeaveBalanceRegister.cshtml
 ```
 
 ### Payroll And Salary
 
-Covers salary records, salary structure, Excel salary imports, salary dashboard, payslips, salary advances, payment batches, attendance summaries, payroll policy, payroll locks, and full-and-final settlement. Salary attendance summaries include uploaded active holidays as payable holiday days and exclude them from working-day calculations.
+Covers salary records, salary structure, Excel salary imports, salary dashboard, payslips, salary advances, payment batches, attendance summaries, payroll policy, payroll locks, and full-and-final settlement. Salary attendance summaries include uploaded active holidays as payable holiday days and exclude them from working-day calculations. Approved leave applications contribute salary pay days through stored `PaidDays` and `UnpaidDays`, allowing valid decimal pay-day values such as `26.5`.
 
 Key files:
 
@@ -328,7 +344,7 @@ AryamanBMS/Services/FinancialYearService.cs
 
 ### Purchases, Expenses, Vendors, And Assets
 
-Supports vendors, expense categories, expense vouchers, expense documents, vendor payments, purchase reports, and office assets with assignment, maintenance, document, and verification tracking.
+Supports vendors, expense categories, expense vouchers, expense documents, vendor payments, purchase reports, and office assets with assignment, maintenance, document, and verification tracking. Expense vouchers support registered vendors as well as unregistered, one-time, reimbursement, and petty-cash style expense parties so small or non-GST expenses do not require a saved vendor or GSTIN on every voucher.
 
 Key files:
 
@@ -452,16 +468,12 @@ Attendance calendar configuration:
 ```json
 {
   "Attendance": {
-    "WeeklyOffDays": [ "Sunday" ],
-    "OfficeHolidays": [
-      "2026-01-26",
-      "2026-08-15"
-    ]
+    "WeeklyOffDays": [ "Sunday" ]
   }
 }
 ```
 
-If `Attendance:WeeklyOffDays` is not configured, Sunday is treated as the default weekly off. Office holidays can still be configured through `Attendance:OfficeHolidays`, but the primary holiday source is now the Holiday Register (`TableHoliday`). Manually marked `H` attendance records are also respected.
+If `Attendance:WeeklyOffDays` is not configured, Sunday is treated as the default weekly off. The primary office holiday source is the Holiday Register (`TableHoliday`), maintained through the Holiday Excel template/import flow. `Attendance:OfficeHolidays` remains supported only as an optional fallback configuration source. Manually marked `H` attendance records are also respected.
 
 Notification reminder timing:
 
@@ -537,10 +549,11 @@ dotnet ef database update --project AryamanBMS/AryamanBMS.csproj
 
 Review the `SQL` folder before assuming EF migrations alone represent the full database setup.
 
-Latest manual schema script:
+Latest manual schema scripts:
 
 ```text
 AryamanBMS/SQL/Manual_Half_Day_Leave_Attendance_Changes.sql
+AryamanBMS/SQL/Migrated/04_ALTER_TABLES.sql
 ```
 
 ## Static Assets And Frontend
@@ -558,6 +571,7 @@ Important frontend areas:
 - `wwwroot/lib`: vendored frontend libraries
 - `wwwroot/templates`: import templates, including salary and holiday Excel templates
 - `wwwroot/uploads`: public upload paths such as profile photos
+- `wwwroot/css/leaves.css`: leave and paid leave balance page styling
 
 Shared layout and navigation:
 
@@ -609,7 +623,7 @@ Before replacing IIS files, run required SQL scripts on the server database and 
 ConnectionStrings__DefaultConnection
 ```
 
-Current deployment-sensitive tables include `TableHoliday`, `TableCalendarManualEvent`, and the current Project Management tables. When publishing to IIS, the server database schema must match the deployed models before testing Calendar, Holiday, Salary Pay Days, or Project Management pages.
+Current deployment-sensitive tables include `TableHoliday`, `TableCalendarManualEvent`, `tableleaveapplications`, expense voucher tables, and the current Project Management tables. When publishing to IIS, the server database schema must match the deployed models before testing Calendar, Holiday, Leave, Salary Pay Days, Expense Voucher, or Project Management pages.
 
 ## Repository Notes
 
@@ -628,4 +642,4 @@ The main implementation should be understood from source files under the web pro
 
 ## Project Status
 
-This README reflects the current static project structure and implementation after the Holiday Register, Calendar, and holiday attendance/pay-day integration work. It is intended as the primary GitHub-facing project overview and onboarding reference.
+This README reflects the current static project structure and implementation after the Holiday Register, Calendar, holiday attendance/pay-day integration, Expense Voucher party-type handling, and financial-year paid leave balance work. It is intended as the primary GitHub-facing project overview and onboarding reference.

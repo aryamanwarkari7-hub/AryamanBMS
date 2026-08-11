@@ -93,6 +93,8 @@ namespace AryamanBMS.Controllers
                     "Maximum carry-forward days must be greater than zero.");
             }
 
+            NormalizeLeaveTypeForNewPaidLeavePolicy(leaveType);
+
             if (ModelState.IsValid)
             {
                 await _leaveTypeRepository.AddAsync(
@@ -142,6 +144,9 @@ namespace AryamanBMS.Controllers
                     nameof(leaveType.MaximumCarryForwardDays),
                     "Maximum carry-forward days must be greater than zero.");
             }
+
+            NormalizeLeaveTypeForNewPaidLeavePolicy(leaveType);
+
             if (ModelState.IsValid)
             {
                 await _leaveTypeRepository
@@ -219,5 +224,21 @@ namespace AryamanBMS.Controllers
                        "Comp Off",
                        StringComparison.OrdinalIgnoreCase);
         }
+
+
+        #region Helpers
+        private static void NormalizeLeaveTypeForNewPaidLeavePolicy(
+    LeaveTypeModel leaveType)
+        {
+            leaveType.DaysPerYear = 0;
+            leaveType.IsPaidLeave = true;
+
+            if (IsCompOffLeaveType(leaveType))
+            {
+                leaveType.IsCarryForward = false;
+                leaveType.MaximumCarryForwardDays = 0;
+            }
+        }
+        #endregion
     }
 }

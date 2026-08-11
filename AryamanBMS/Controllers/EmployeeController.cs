@@ -1749,7 +1749,7 @@ namespace AryamanBMS.Controllers
             return View(model);
         }
 
-        [Authorize(Roles = "Employee,Admin,HR")]
+        [Authorize(Roles = "Employee,Admin,HR,Master")]
         [HttpGet]
         public async Task<IActionResult> MyDashboard()
         {
@@ -1862,17 +1862,59 @@ namespace AryamanBMS.Controllers
                 .Take(6)
                 .ToListAsync();
 
-            var leaveBalances = await _context.LeaveBalances
-                .AsNoTracking()
-                .Where(x => x.EmployeeId == employee.Id)
-                .ToListAsync();
+            
 
             var compOffCredits = await _context.CompOffCredits
                 .AsNoTracking()
                 .Where(x => x.EmployeeId == employee.Id)
                 .ToListAsync();
 
+            DateTime fyStart =
+    today.Month >= 4
+        ? new DateTime(today.Year, 4, 1)
+        : new DateTime(today.Year - 1, 4, 1);
 
+            DateTime fyEnd =
+                fyStart.AddYears(1).AddDays(-1);
+
+            int monthsLate = 0;
+
+            if (employee.JoiningDate.Date > fyStart.Date)
+            {
+                monthsLate =
+                    ((employee.JoiningDate.Year - fyStart.Year) * 12) +
+                    employee.JoiningDate.Month -
+                    fyStart.Month;
+
+                if (employee.JoiningDate.Day > 1)
+                {
+                    monthsLate += 1;
+                }
+
+                monthsLate = Math.Min(Math.Max(monthsLate, 0), 12);
+            }
+
+            decimal proratedPaidLeaveEntitlement =
+                Math.Max(0, 18m - (monthsLate * 1.5m));
+
+            decimal paidLeaveUsed =
+                await _context.LeaveApplications
+                    .AsNoTracking()
+                    .Include(x => x.LeaveType)
+                    .Where(x =>
+                        x.EmployeeId == employee.Id &&
+                        x.Status == "Approved" &&
+                        x.FromDate.Date >= fyStart.Date &&
+                        x.FromDate.Date <= fyEnd.Date &&
+                        (
+                            x.LeaveType == null ||
+                            x.LeaveType.LeaveCode == null ||
+                            x.LeaveType.LeaveCode != "COMP"
+                        ))
+                    .SumAsync(x => (decimal?)x.PaidDays) ?? 0m;
+
+            decimal paidLeaveBalance =
+                Math.Max(0, proratedPaidLeaveEntitlement - paidLeaveUsed);
 
             var model = new EmployeeMyDashboardViewModel
             {
@@ -1904,7 +1946,7 @@ namespace AryamanBMS.Controllers
                         x.FromDate >= monthStart &&
                         x.FromDate < nextMonth),
 
-                    AvailableBalance = leaveBalances.Sum(x => x.BalanceDays),
+                    AvailableBalance = paidLeaveBalance,
 
                     PendingCompOff = await _context.CompOffCredits.CountAsync(x =>
                         x.EmployeeId == employee.Id &&

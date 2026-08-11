@@ -343,3 +343,16 @@
 -- FOREIGN KEY (ClientCommunicationId)
 -- REFERENCES tableclientcommunications(Id);
 
+-- ALTER TABLE tableprojectcommunications
+-- ADD COLUMN CreatedByUserId VARCHAR(450) NULL;
+
+-- ALTER TABLE tableprojectcommunications
+-- ADD COLUMN IsSystemGenerated BIT(1)
+-- NOT NULL DEFAULT b'0';
+
+-- ALTER TABLE tableprojectcommunications
+-- MODIFY COLUMN CreatedByEmployeeId INT NULL;
+
+ALTER TABLE TableExpenseVoucher
+ADD COLUMN ExpensePartyType VARCHAR(30) NOT NULL DEFAULT 'Registered Vendor';
+

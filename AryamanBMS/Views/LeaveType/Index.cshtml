@@ -26,7 +26,9 @@
 </div>
 
 <div class="app-card">
+    
     <div class="card-body">
+        
         <form asp-action="Index" method="get" class="filter-form-row">
 
             <div class="form-group">
@@ -75,6 +77,10 @@
 
     <div class="card-body">
 
+        <div class="app-alert-info mb-3">
+            Leave types are categories only. Paid leave eligibility is calculated from the annual 18-day financial-year pool.
+        </div>
+
         <div class="table-responsive">
 
         <table class="app-table" id="leaveTypeTable">
@@ -84,9 +90,9 @@
                 <tr>
                     <th>Code</th>
                     <th>Name</th>
-                    <th>Days</th>
+                    
                     <th>Carry Forward</th>
-                    <th>Paid Leave</th>
+                    
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
@@ -103,31 +109,13 @@
 
                         <td>@item.LeaveName</td>
 
-                        <td>
-                            @if (string.Equals(
-                                   item.LeaveCode,
-                                   "COMP",
-                                   StringComparison.OrdinalIgnoreCase) ||
-                                 string.Equals(
-                                   item.LeaveName,
-                                   "Comp Off",
-                                   StringComparison.OrdinalIgnoreCase))
-                            {
-                                <span>Dynamic</span>
-                            }
-                            else
-                            {
-                                <span>@item.DaysPerYear</span>
-                            }
-                        </td>
+                        
 
                         <td>
                             @(item.IsCarryForward ? "Yes" : "No")
                         </td>
 
-                        <td>
-                            @(item.IsPaidLeave ? "Yes" : "No")
-                        </td>
+                        
 
                         <td>
 

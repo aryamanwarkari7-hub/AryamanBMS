@@ -23,6 +23,10 @@ namespace AryamanBMS.Models
 
         public decimal NumberOfDays { get; set; }
 
+        public decimal PaidDays { get; set; }
+
+        public decimal UnpaidDays { get; set; }
+
         public bool IsHalfDay { get; set; }
 
         [StringLength(20)]

@@ -980,19 +980,20 @@ CREATE TABLE tableprojectcommunications
         REFERENCES tableemployee(Id)
 );
 
-CREATE TABLE IF NOT EXISTS TableHoliday (
-    HolidayId INT NOT NULL AUTO_INCREMENT,
-    HolidayDate DATE NOT NULL,
-    HolidayName VARCHAR(160) NOT NULL,
-    MonthName VARCHAR(20) NULL,
-    DayName VARCHAR(20) NULL,
-    HolidayType VARCHAR(80) NOT NULL DEFAULT 'Office Holiday',
-    IsActive TINYINT(1) NOT NULL DEFAULT 1,
-    CreatedOn DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UpdatedOn DATETIME NULL,
-    PRIMARY KEY (HolidayId),
-    UNIQUE KEY UX_TableHoliday_HolidayDate (HolidayDate)
-);
+-- CREATE TABLE IF NOT EXISTS TableHoliday (
+--     HolidayId INT NOT NULL AUTO_INCREMENT,
+--     HolidayDate DATE NOT NULL,
+--     HolidayName VARCHAR(160) NOT NULL,
+--     MonthName VARCHAR(20) NULL,
+--     DayName VARCHAR(20) NULL,
+--     HolidayType VARCHAR(80) NOT NULL DEFAULT 'Office Holiday',
+--     IsActive TINYINT(1) NOT NULL DEFAULT 1,
+--     CreatedOn DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+--     UpdatedOn DATETIME NULL,
+--     PRIMARY KEY (HolidayId),
+--     UNIQUE KEY UX_TableHoliday_HolidayDate (HolidayDate)
+-- );
+
 
 -- -- ============================================================
 -- -- TABLE CREATION COMPLETED

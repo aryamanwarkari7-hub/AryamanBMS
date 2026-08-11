@@ -47,28 +47,13 @@
                        class="form-label">
                 </label>
 
+
                 <input asp-for="LeaveName"
                        class="app-input" />
 
             </div>
 
-            <div class="form-group mb-3"
-                 id="daysPerYearGroup">
-
-                <label asp-for="DaysPerYear"
-                       class="form-label">
-                </label>
-
-                <input asp-for="DaysPerYear"
-                       class="app-input" />
-
-                <small class="text-muted"
-                       id="compOffDaysNote"
-                       style="display:none;">
-                    Comp Off days are based on approved Comp Off credits.
-                </small>
-
-            </div>
+            <input type="hidden" asp-for="DaysPerYear" value="0" />
 
             <div class="form-check mb-2">
 
@@ -105,17 +90,7 @@
 
             </div>
 
-            <div class="form-check mb-2">
-
-                <input asp-for="IsPaidLeave"
-                       class="form-check-input" />
-
-                <label asp-for="IsPaidLeave"
-                       class="form-check-label">
-                    Paid Leave
-                </label>
-
-            </div>
+            <input type="hidden" asp-for="IsPaidLeave" value="true" />
 
             <div class="form-check mb-4">
 

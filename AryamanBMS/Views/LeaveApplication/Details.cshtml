@@ -14,6 +14,9 @@
 
     string employeeText =
         $"{Model.Employee?.FullName ?? "-"} ({Model.Employee?.EmployeeCode ?? "-"})";
+
+    var paidLeaveSnapshot =
+    ViewBag.PaidLeaveSnapshot as AryamanBMS.ViewModels.PaidLeaveBalanceSnapshotViewModel;
 }
 
 <div class="module-header">
@@ -127,6 +130,20 @@
                         </strong>
                     </div>
 
+                    <div class="detail-info-item">
+                        <span class="detail-info-label">Paid Days</span>
+                        <span class="detail-info-value">
+                            @Model.PaidDays.ToString("0.##")
+                        </span>
+                    </div>
+
+                    <div class="detail-info-item">
+                        <span class="detail-info-label">Unpaid Days</span>
+                        <span class="detail-info-value">
+                            @Model.UnpaidDays.ToString("0.##")
+                        </span>
+                    </div>
+
                     <div class="detail-info-row">
                         <span class="detail-info-label">Duration</span>
                         <strong class="detail-info-value">
@@ -176,6 +193,19 @@
                             <span class="@statusClass">@Model.Status</span>
                         </strong>
                     </div>
+
+                    @if (paidLeaveSnapshot != null)
+                    {
+                        <div class="app-alert-info mt-3">
+                            <strong>Approval Split:</strong>
+                            FY @paidLeaveSnapshot.FinancialYearLabel |
+                            Available: @paidLeaveSnapshot.PaidLeaveBalance.ToString("0.##") |
+                            Paid: @paidLeaveSnapshot.PaidDaysForRequest.ToString("0.##") |
+                            Unpaid: @paidLeaveSnapshot.UnpaidDaysForRequest.ToString("0.##")
+                        </div>
+                    }
+
+
                 </div>
             </div>
         </div>
