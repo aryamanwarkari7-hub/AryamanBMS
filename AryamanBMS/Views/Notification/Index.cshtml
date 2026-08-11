@@ -3,6 +3,28 @@
 @{
     ViewData["Title"] = "Notifications";
     int unreadCount = Model.Count(x => !x.IsRead);
+    int currentPage = ViewBag.Page ?? 1;
+    int pageSize = ViewBag.PageSize ?? 15;
+    int totalRecords = ViewBag.TotalRecords ?? Model.Count();
+    string? selectedType = ViewBag.NotificationType as string;
+    string? selectedReadStatus = ViewBag.ReadStatus as string;
+
+    var pagination = new AryamanBMS.ViewModels.PaginationViewModel
+    {
+        CurrentPage = currentPage,
+        PageSize = pageSize,
+        TotalRecords = totalRecords,
+        ControllerName = "Notification",
+        ActionName = "Index",
+        RouteValues = new Dictionary<string, string>()
+    };
+
+    if (!string.IsNullOrWhiteSpace(ViewBag.SearchText as string))
+    {
+        pagination.RouteValues["searchText"] = (ViewBag.SearchText as string)!;
+    }
+    if (!string.IsNullOrWhiteSpace(selectedType)) pagination.RouteValues["notificationType"] = selectedType!;
+    if (!string.IsNullOrWhiteSpace(selectedReadStatus)) pagination.RouteValues["readStatus"] = selectedReadStatus!;
 }
 
 <div class="module-header">
@@ -44,6 +66,38 @@
         }
     </div>
 
+</div>
+
+<div class="app-card mb-3">
+    <div class="card-body">
+        <form asp-action="Index" method="get" class="filter-form-row">
+            <input type="text"
+                   name="searchText"
+                   value="@ViewBag.SearchText"
+                   class="app-input flex-grow-1"
+                   placeholder="Search notifications" />
+
+            <select name="notificationType" class="app-select">
+                <option value="">All Types</option>
+                @foreach (var type in (IEnumerable<string>)(ViewBag.NotificationTypes ?? Array.Empty<string>()))
+                {
+                    <option value="@type" selected="@(selectedType == type)">@type</option>
+                }
+            </select>
+
+            <select name="readStatus" class="app-select">
+                <option value="">All Statuses</option>
+                <option value="Unread" selected="@(selectedReadStatus == "Unread")">Unread</option>
+                <option value="Read" selected="@(selectedReadStatus == "Read")">Read</option>
+            </select>
+
+            <button type="submit" class="btn-app btn-primary-app">
+                <i class="bi bi-funnel"></i>
+                Apply
+            </button>
+            <a asp-action="Index" class="btn-app btn-secondary-app">Reset</a>
+        </form>
+    </div>
 </div>
 
 <div class="app-card">
@@ -321,5 +375,7 @@
         }
 
     </div>
+
+    <partial name="_Pagination" model="pagination" />
 
 </div>

@@ -6,6 +6,37 @@
     int selectedYear = ViewBag.Year;
     int? selectedMonth = ViewBag.Month as int?;
     string selectedStatus = ViewBag.Status as string ?? "All";
+    int currentPage = ViewBag.Page ?? 1;
+    int pageSize = ViewBag.PageSize ?? 12;
+    int totalRecords = ViewBag.TotalRecords ?? Model.Count;
+    int totalPages = ViewBag.TotalPages ?? 1;
+    string sortBy = ViewBag.SortBy as string ?? "HolidayDate";
+    string sortOrder = ViewBag.SortOrder as string ?? "asc";
+
+    var pagination = new AryamanBMS.ViewModels.PaginationViewModel
+    {
+        CurrentPage = currentPage,
+        PageSize = pageSize,
+        TotalRecords = totalRecords,
+        ControllerName = "Holiday",
+        ActionName = "Index",
+        RouteValues = new Dictionary<string, string>
+        {
+            ["year"] = selectedYear.ToString(),
+            ["sortBy"] = sortBy,
+            ["sortOrder"] = sortOrder
+        }
+    };
+
+    if (selectedMonth.HasValue)
+    {
+        pagination.RouteValues["month"] = selectedMonth.Value.ToString();
+    }
+
+    if (selectedStatus != "All")
+    {
+        pagination.RouteValues["status"] = selectedStatus;
+    }
 }
 
 <div class="module-header">
@@ -72,6 +103,24 @@
                 </select>
             </div>
 
+            <div class="col-md-3">
+                <label class="form-label">Sort By</label>
+                <select name="sortBy" class="app-input">
+                    <option value="HolidayDate" selected="@(sortBy == "HolidayDate")">Date</option>
+                    <option value="HolidayName" selected="@(sortBy == "HolidayName")">Holiday Name</option>
+                    <option value="HolidayType" selected="@(sortBy == "HolidayType")">Type</option>
+                    <option value="Status" selected="@(sortBy == "Status")">Status</option>
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Order</label>
+                <select name="sortOrder" class="app-input">
+                    <option value="asc" selected="@(sortOrder == "asc")">Ascending</option>
+                    <option value="desc" selected="@(sortOrder == "desc")">Descending</option>
+                </select>
+            </div>
+
             <div class="col-md-3 d-flex gap-2">
                 <button type="submit" class="btn-app btn-primary-app flex-fill">
                     <i class="bi bi-funnel"></i>
@@ -127,7 +176,7 @@
     <div class="card-header">
         <div class="card-heading">
             <h2 class="card-title">Holiday List</h2>
-            <p class="card-subtitle">@Model.Count holiday(s) found.</p>
+            <p class="card-subtitle">@totalRecords holiday(s) found.</p>
         </div>
     </div>
 
@@ -136,6 +185,7 @@
             <table class="app-table mb-0">
                 <thead>
                     <tr>
+                        <th>#</th>
                         <th>Date</th>
                         <th>Day</th>
                         <th>Month</th>
@@ -149,16 +199,20 @@
                     @if (!Model.Any())
                     {
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-4">
+                            <td colspan="7" class="text-center text-muted py-4">
                                 No holidays found.
                             </td>
                         </tr>
                     }
                     else
                     {
-                        foreach (var item in Model)
+                        for (int index = 0; index < Model.Count; index++)
                         {
+                            var item = Model[index];
+                            int serialNumber = ((currentPage - 1) * pageSize) + index + 1;
+
                             <tr>
+                                <td>@serialNumber</td>
                                 <td>@item.HolidayDate.ToString("dd-MMM-yyyy")</td>
                                 <td>@item.DayName</td>
                                 <td>@item.MonthName</td>
@@ -175,5 +229,7 @@
                 </tbody>
             </table>
         </div>
+
+        <partial name="_Pagination" model="pagination" />
     </div>
 </div>

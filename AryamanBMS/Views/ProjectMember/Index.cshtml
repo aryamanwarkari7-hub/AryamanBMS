@@ -3,6 +3,22 @@
 @{
     ViewData["Title"] = "Project Members";
     var project = ViewBag.Project as AryamanBMS.Models.ProjectModel;
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int pageSize = ViewBag.PageSize ?? 10;
+    int totalRecords = ViewBag.TotalRecords ?? Model.Count();
+
+    var pagination = new AryamanBMS.ViewModels.PaginationViewModel
+    {
+        CurrentPage = currentPage,
+        PageSize = pageSize,
+        TotalRecords = totalRecords,
+        ControllerName = "ProjectMember",
+        ActionName = "AllMembers",
+        RouteValues = new Dictionary<string, string>()
+    };
+
+    if (project != null) pagination.RouteValues["projectId"] = project.Id.ToString();
+    if (!string.IsNullOrWhiteSpace(ViewBag.SearchText as string)) pagination.RouteValues["searchText"] = (ViewBag.SearchText as string)!;
 }
 
 <div class="module-header">
@@ -44,6 +60,7 @@
             <table class="app-table">
             <thead>
                 <tr>
+                    <th>#</th>
                     <th>Employee Code</th>
                     <th>Employee Name</th>
                     <th>Department</th>
@@ -58,9 +75,11 @@
             <tbody>
                 @if (Model.Any())
                 {
+                    int serialNumber = ((currentPage - 1) * pageSize) + 1;
                     foreach (var member in Model)
                     {
                         <tr>
+                            <td>@serialNumber</td>
                             <td>@member.Employee?.EmployeeCode</td>
 
                             <td>@member.Employee?.FullName</td>
@@ -87,7 +106,8 @@
                                     <span class="status-badge status-active">
                                         Active
                                     </span>
-                                }
+                        serialNumber++;
+                        }
                                 else
                                 {
                                     <span class="status-badge status-inactive">
@@ -126,5 +146,17 @@
             </tbody>
         </table>
         </div>
+        <partial name="_Pagination" model="pagination" />
+    </div>
+</div>
+
+<div class="app-card mb-3">
+    <div class="card-body">
+        <form asp-action="AllMembers" method="get" class="filter-form-row">
+            <input type="hidden" name="projectId" value="@project?.Id" />
+            <input type="text" name="searchText" value="@ViewBag.SearchText" class="app-input flex-grow-1" placeholder="Search employee, role, or project" />
+            <button type="submit" class="btn-app btn-primary-app"><i class="bi bi-search"></i> Search</button>
+            <a asp-action="AllMembers" asp-route-projectId="@project?.Id" class="btn-app btn-secondary-app">Reset</a>
+        </form>
     </div>
 </div>

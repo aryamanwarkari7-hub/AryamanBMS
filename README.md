@@ -203,7 +203,7 @@ AryamanBMS/Services/EmployeeDocumentService.cs
 
 ### Attendance
 
-Tracks attendance records, employee self attendance, summaries, registers, dashboards, and admin/HR adjustments. Attendance supports full-day and half-day values so salary pay days can include decimal values such as `26.5`. Weekly offs are configuration-driven, and uploaded active holidays from the Holiday Register are treated as office holidays for attendance blocking and pay-day calculations.
+Tracks attendance records, employee self attendance, summaries, registers, dashboards, and admin/HR adjustments. The attendance register supports employee/date search, selectable sorting, serial numbering, and pagination. Attendance supports full-day and half-day values so salary pay days can include decimal values such as `26.5`. Weekly offs are configuration-driven, and uploaded active holidays from the Holiday Register are treated as office holidays for attendance blocking and pay-day calculations.
 
 Key files:
 
@@ -217,7 +217,7 @@ AryamanBMS/ViewModels/AttendanceSummaryViewModel.cs
 
 ### Holiday Register
 
-Supports yearly office holiday setup through a register page, downloadable Excel template, Excel import, filtered export, and Admin/HR/Master access. The holiday template is maintained as the expected import format, and populated holiday Excel files can be imported after updating the template rows with the actual company holiday list for the year. Holidays are stored as master data and are used by Calendar, Attendance, and Salary Pay Days.
+Supports yearly office holiday setup through a register page, downloadable Excel template, Excel import, filtered export, and Admin/HR/Master access. The register also supports year/month/status filters, selectable sorting, serial numbering, and pagination. The holiday template is maintained as the expected import format, and populated holiday Excel files can be imported after updating the template rows with the actual company holiday list for the year. Holidays are stored as master data and are used by Calendar, Attendance, and Salary Pay Days.
 
 Key files:
 
@@ -232,7 +232,7 @@ AryamanBMS/wwwroot/templates/HolidayTemplate.xlsx
 
 ### Saturday Switcher
 
-Provides date-specific Saturday schedule changes for exceptional working Saturdays and weekly offs. A switch can mark a Saturday as a Working Saturday or Weekly Off, with a reason, active status, edit/deactivate actions, and Excel export. Working-day decisions use the following priority: manual switch, Holiday Register, configured weekly offs, and the alternate Saturday schedule.
+Provides date-specific Saturday schedule changes for exceptional working Saturdays and weekly offs. A switch can mark a Saturday as a Working Saturday or Weekly Off, with a reason, active status, edit/deactivate actions, and Excel export. The register also supports active/inactive filtering, selectable sorting, and serial numbering. Working-day decisions use the following priority: manual switch, Holiday Register, configured weekly offs, and the alternate Saturday schedule.
 
 The default alternate Saturday configuration is maintained in `appsettings.json`:
 
@@ -255,7 +255,7 @@ AryamanBMS/Views/WorkingDayOverride/
 
 ### Leave, Paid Leave Balance, And Comp-Off
 
-Supports leave type setup, leave applications, half-day leave, approvals, cancellations, employee paid leave balance visibility, Admin/HR/Master paid leave balance register, comp-off credits, and comp-off usage.
+Supports leave type setup, leave applications, half-day leave, approvals, cancellations, employee paid leave balance visibility, Admin/HR/Master paid leave balance register, comp-off credits, and comp-off usage. Leave applications support search, status filtering, selectable sorting, serial numbering, and pagination. The paid leave balance register supports employee search, selectable sorting, serial numbering, and pagination.
 
 Paid leave is calculated from a single financial-year pool instead of fixed yearly days per leave type:
 
@@ -416,7 +416,7 @@ AryamanBMS/Services/GstDashboardService.cs
 
 ### Notifications And Activity
 
-Supports persistent notifications, unread counts, SignalR realtime delivery, login notifications, user/security notifications, leave and Comp Off notifications, attendance updates and reminders, salary notifications, project member notifications, holiday import notifications, employee birthday notifications, and user activity state. The hourly HR notification reminder service creates one birthday notification per employee birthday per year for active employees with mapped user accounts.
+Supports persistent notifications, unread counts, SignalR realtime delivery, login notifications, user/security notifications, leave and Comp Off notifications, attendance updates and reminders, salary notifications, project member notifications, holiday import notifications, employee birthday notifications, and user activity state. The notification list supports text search, notification-type and read-status filters, and pagination. The hourly HR notification reminder service creates one birthday notification per employee birthday per year for active employees with mapped user accounts.
 
 Key files:
 

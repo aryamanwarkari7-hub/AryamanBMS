@@ -98,6 +98,22 @@
 
                 </select>
 
+                <select name="sortBy"
+                        class="app-select">
+                    <option value="AppliedOn" selected="@(ViewBag.SortBy == "AppliedOn")">Applied On</option>
+                    <option value="ApplicationNumber" selected="@(ViewBag.SortBy == "ApplicationNumber")">Application No</option>
+                    <option value="Employee" selected="@(ViewBag.SortBy == "Employee")">Employee</option>
+                    <option value="LeaveType" selected="@(ViewBag.SortBy == "LeaveType")">Leave Type</option>
+                    <option value="FromDate" selected="@(ViewBag.SortBy == "FromDate")">From Date</option>
+                    <option value="Status" selected="@(ViewBag.SortBy == "Status")">Status</option>
+                </select>
+
+                <select name="sortOrder"
+                        class="app-select">
+                    <option value="desc" selected="@(ViewBag.SortOrder == "desc")">Descending</option>
+                    <option value="asc" selected="@(ViewBag.SortOrder == "asc")">Ascending</option>
+                </select>
+
                 <div class="filter-form-actions">
                     <button type="submit"
                             class="btn-app btn-primary-app">
@@ -152,6 +168,7 @@
 
                     <thead>
                         <tr>
+                            <th>#</th>
                             <th>Application No</th>
                             @if (isAdminOrHr)
                             {
@@ -172,9 +189,11 @@
 
                     <tbody>
 
+                        @{ int serialNumber = ((Model.Pagination.CurrentPage - 1) * Model.Pagination.PageSize) + 1; }
                         @foreach (var item in Model.Items)
                         {
                             <tr>
+                                <td>@serialNumber</td>
 
                                 <td>
                                     <strong>
@@ -440,6 +459,7 @@
                                 </td>
 
                             </tr>
+                            serialNumber++;
                         }
 
                     </tbody>

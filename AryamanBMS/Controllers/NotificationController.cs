@@ -1,4 +1,5 @@
 using AryamanBMS.Data;
+using AryamanBMS.Extensions;
 using AryamanBMS.Models;
 using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -26,8 +27,13 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(
+            string? searchText,
+            string? notificationType,
+            string? readStatus,
+            int page = 1)
         {
+            const int pageSize = 15;
             var user = await _userManager.GetUserAsync(User);
 
             if (user == null)
@@ -35,10 +41,58 @@ namespace AryamanBMS.Controllers
                 return Unauthorized();
             }
 
-            var notifications =
-                await _notificationService.GetAllAsync(user.Id);
+            var query = _context.TableNotification
+                .AsNoTracking()
+                .Where(x => x.UserId == user.Id);
 
-            return View(notifications);
+            if (!string.IsNullOrWhiteSpace(searchText))
+            {
+                string keyword = searchText.Trim();
+                query = query.Where(x =>
+                    x.Title.Contains(keyword) ||
+                    x.Message.Contains(keyword));
+            }
+
+            if (!string.IsNullOrWhiteSpace(notificationType))
+            {
+                query = query.Where(x => x.NotificationType == notificationType);
+            }
+
+            if (readStatus == "Unread")
+            {
+                query = query.Where(x => !x.IsRead);
+            }
+            else if (readStatus == "Read")
+            {
+                query = query.Where(x => x.IsRead);
+            }
+
+            query = query
+                .OrderByDescending(x => x.CreatedOn)
+                .ThenByDescending(x => x.Id);
+
+            var routeValues = new Dictionary<string, string>();
+            if (!string.IsNullOrWhiteSpace(searchText)) routeValues["searchText"] = searchText.Trim();
+            if (!string.IsNullOrWhiteSpace(notificationType)) routeValues["notificationType"] = notificationType;
+            if (!string.IsNullOrWhiteSpace(readStatus)) routeValues["readStatus"] = readStatus;
+
+            var paged = await query.ToPagedListAsync(page, pageSize, routeValues);
+
+            ViewBag.SearchText = searchText;
+            ViewBag.NotificationType = notificationType;
+            ViewBag.ReadStatus = readStatus;
+            ViewBag.Page = paged.Pagination.CurrentPage;
+            ViewBag.PageSize = paged.Pagination.PageSize;
+            ViewBag.TotalRecords = paged.Pagination.TotalRecords;
+            ViewBag.NotificationTypes = await _context.TableNotification
+                .AsNoTracking()
+                .Where(x => x.UserId == user.Id)
+                .Select(x => x.NotificationType)
+                .Distinct()
+                .OrderBy(x => x)
+                .ToListAsync();
+
+            return View(paged.Items);
         }
 
         [HttpGet]

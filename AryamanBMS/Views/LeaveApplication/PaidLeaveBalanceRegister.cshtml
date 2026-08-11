@@ -4,6 +4,31 @@
     ViewData["Title"] = "Paid Leave Balance Register";
     int selectedYear = ViewBag.SelectedYear;
     string? searchText = ViewBag.SearchText;
+    int currentPage = ViewBag.Page ?? 1;
+    int pageSize = ViewBag.PageSize ?? 10;
+    int totalRecords = ViewBag.TotalRecords ?? Model.Count;
+    string sortBy = ViewBag.SortBy as string ?? "EmployeeCode";
+    string sortOrder = ViewBag.SortOrder as string ?? "asc";
+
+    var pagination = new AryamanBMS.ViewModels.PaginationViewModel
+    {
+        CurrentPage = currentPage,
+        PageSize = pageSize,
+        TotalRecords = totalRecords,
+        ControllerName = "LeaveApplication",
+        ActionName = "PaidLeaveBalanceRegister",
+        RouteValues = new Dictionary<string, string>
+        {
+            ["year"] = selectedYear.ToString(),
+            ["sortBy"] = sortBy,
+            ["sortOrder"] = sortOrder
+        }
+    };
+
+    if (!string.IsNullOrWhiteSpace(searchText))
+    {
+        pagination.RouteValues["searchText"] = searchText;
+    }
 }
 
 <div class="module-header">
@@ -46,6 +71,25 @@
                     Reset
                 </a>
             </div>
+
+            <div class="form-group">
+                <label class="form-label">Sort By</label>
+                <select name="sortBy" class="app-input">
+                    <option value="EmployeeCode" selected="@(sortBy == "EmployeeCode")">Employee Code</option>
+                    <option value="EmployeeName" selected="@(sortBy == "EmployeeName")">Employee Name</option>
+                    <option value="JoiningDate" selected="@(sortBy == "JoiningDate")">Joining Date</option>
+                    <option value="PaidBalance" selected="@(sortBy == "PaidBalance")">Paid Balance</option>
+                    <option value="BirthdayLeave" selected="@(sortBy == "BirthdayLeave")">Birthday Leave</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Order</label>
+                <select name="sortOrder" class="app-input">
+                    <option value="asc" selected="@(sortOrder == "asc")">Ascending</option>
+                    <option value="desc" selected="@(sortOrder == "desc")">Descending</option>
+                </select>
+            </div>
         </form>
     </div>
 </div>
@@ -63,6 +107,7 @@
             <table class="table app-table">
                 <thead>
                     <tr>
+                        <th>#</th>
                         <th>Employee Code</th>
                         <th>Employee Name</th>
                         <th>Joining Date</th>
@@ -76,9 +121,11 @@
                 <tbody>
                     @if (Model.Any())
                     {
-                        foreach (var item in Model)
+                        for (int index = 0; index < Model.Count; index++)
                         {
+                            var item = Model[index];
                             <tr>
+                                <td>@(((currentPage - 1) * pageSize) + index + 1)</td>
                                 <td>@item.EmployeeCode</td>
                                 <td>@item.EmployeeName</td>
                                 <td>@item.JoiningDate.ToString("dd-MMM-yyyy")</td>
@@ -111,5 +158,6 @@
                 </tbody>
             </table>
         </div>
+        <partial name="_Pagination" model="pagination" />
     </div>
 </div>

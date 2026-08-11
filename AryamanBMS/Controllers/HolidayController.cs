@@ -34,10 +34,29 @@ namespace AryamanBMS.Controllers
             _notificationService = notificationService;
         }
 
-        public async Task<IActionResult> Index(int? year, int? month, string? status)
+        public async Task<IActionResult> Index(
+            int? year,
+            int? month,
+            string? status,
+            string sortBy = "HolidayDate",
+            string sortOrder = "asc",
+            int page = 1)
         {
+            const int pageSize = 12;
             int selectedYear = year ?? DateTime.Today.Year;
             string selectedStatus = string.IsNullOrWhiteSpace(status) ? "All" : status;
+
+            sortBy = sortBy switch
+            {
+                "HolidayName" => "HolidayName",
+                "HolidayType" => "HolidayType",
+                "Status" => "Status",
+                _ => "HolidayDate"
+            };
+
+            sortOrder = string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase)
+                ? "desc"
+                : "asc";
 
             ViewBag.Year = selectedYear;
             ViewBag.Month = month;
@@ -60,9 +79,37 @@ namespace AryamanBMS.Controllers
                 query = query.Where(x => !x.IsActive);
             }
 
+            query = sortBy switch
+            {
+                "HolidayName" => sortOrder == "desc"
+                    ? query.OrderByDescending(x => x.HolidayName).ThenBy(x => x.HolidayDate)
+                    : query.OrderBy(x => x.HolidayName).ThenBy(x => x.HolidayDate),
+                "HolidayType" => sortOrder == "desc"
+                    ? query.OrderByDescending(x => x.HolidayType).ThenBy(x => x.HolidayDate)
+                    : query.OrderBy(x => x.HolidayType).ThenBy(x => x.HolidayDate),
+                "Status" => sortOrder == "desc"
+                    ? query.OrderByDescending(x => x.IsActive).ThenBy(x => x.HolidayDate)
+                    : query.OrderBy(x => x.IsActive).ThenBy(x => x.HolidayDate),
+                _ => sortOrder == "desc"
+                    ? query.OrderByDescending(x => x.HolidayDate).ThenBy(x => x.HolidayName)
+                    : query.OrderBy(x => x.HolidayDate).ThenBy(x => x.HolidayName)
+            };
+
+            int totalRecords = await query.CountAsync();
+            int totalPages = (int)Math.Ceiling(totalRecords / (double)pageSize);
+            page = Math.Clamp(page, 1, Math.Max(totalPages, 1));
+
             var holidays = await query
-                .OrderBy(x => x.HolidayDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+
+            ViewBag.Page = page;
+            ViewBag.PageSize = pageSize;
+            ViewBag.TotalRecords = totalRecords;
+            ViewBag.TotalPages = totalPages;
+            ViewBag.SortBy = sortBy;
+            ViewBag.SortOrder = sortOrder;
 
             return View(holidays);
         }

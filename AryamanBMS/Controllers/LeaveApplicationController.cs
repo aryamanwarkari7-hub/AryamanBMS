@@ -56,10 +56,25 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> Index(
            string? searchText,
            string status = "All",
+           string sortBy = "AppliedOn",
+           string sortOrder = "desc",
            int page = 1,
            bool mine = false)
         {
             const int pageSize = 10;
+
+            sortBy = sortBy switch
+            {
+                "ApplicationNumber" => "ApplicationNumber",
+                "Employee" => "Employee",
+                "LeaveType" => "LeaveType",
+                "FromDate" => "FromDate",
+                "Status" => "Status",
+                _ => "AppliedOn"
+            };
+            sortOrder = string.Equals(sortOrder, "asc", StringComparison.OrdinalIgnoreCase)
+                ? "asc"
+                : "desc";
 
             var query = _leaveApplicationRepository.LeaveApplications
                 .AsNoTracking()
@@ -128,9 +143,27 @@ namespace AryamanBMS.Controllers
                     x.Status == status);
             }
 
-            query = query
-                .OrderByDescending(x => x.AppliedOn)
-                .ThenByDescending(x => x.Id);
+            query = sortBy switch
+            {
+                "ApplicationNumber" => sortOrder == "asc"
+                    ? query.OrderBy(x => x.ApplicationNumber).ThenBy(x => x.Id)
+                    : query.OrderByDescending(x => x.ApplicationNumber).ThenByDescending(x => x.Id),
+                "Employee" => sortOrder == "asc"
+                    ? query.OrderBy(x => x.Employee!.FirstName).ThenBy(x => x.Employee!.LastName).ThenBy(x => x.Id)
+                    : query.OrderByDescending(x => x.Employee!.FirstName).ThenByDescending(x => x.Employee!.LastName).ThenByDescending(x => x.Id),
+                "LeaveType" => sortOrder == "asc"
+                    ? query.OrderBy(x => x.LeaveType!.LeaveName).ThenBy(x => x.Id)
+                    : query.OrderByDescending(x => x.LeaveType!.LeaveName).ThenByDescending(x => x.Id),
+                "FromDate" => sortOrder == "asc"
+                    ? query.OrderBy(x => x.FromDate).ThenBy(x => x.Id)
+                    : query.OrderByDescending(x => x.FromDate).ThenByDescending(x => x.Id),
+                "Status" => sortOrder == "asc"
+                    ? query.OrderBy(x => x.Status).ThenByDescending(x => x.AppliedOn).ThenByDescending(x => x.Id)
+                    : query.OrderByDescending(x => x.Status).ThenByDescending(x => x.AppliedOn).ThenByDescending(x => x.Id),
+                _ => sortOrder == "asc"
+                    ? query.OrderBy(x => x.AppliedOn).ThenBy(x => x.Id)
+                    : query.OrderByDescending(x => x.AppliedOn).ThenByDescending(x => x.Id)
+            };
 
             var routeValues = new Dictionary<string, string>();
 
@@ -149,6 +182,9 @@ namespace AryamanBMS.Controllers
                 routeValues["mine"] = "true";
             }
 
+            routeValues["sortBy"] = sortBy;
+            routeValues["sortOrder"] = sortOrder;
+
             var model = await query.ToPagedListAsync(
                 page,
                 pageSize,
@@ -162,6 +198,8 @@ namespace AryamanBMS.Controllers
 
             ViewBag.SearchText = searchText;
             ViewBag.Status = status;
+            ViewBag.SortBy = sortBy;
+            ViewBag.SortOrder = sortOrder;
 
             return View(model);
         }
@@ -1288,8 +1326,14 @@ namespace AryamanBMS.Controllers
 
         [HttpGet]
         [Authorize(Roles = "Admin,HR,Master")]
-        public async Task<IActionResult> PaidLeaveBalanceRegister(int? year,string? searchText)
+        public async Task<IActionResult> PaidLeaveBalanceRegister(
+            int? year,
+            string? searchText,
+            string sortBy = "EmployeeCode",
+            string sortOrder = "asc",
+            int page = 1)
         {
+            const int pageSize = 10;
             DateTime today = DateTime.Today;
 
             int selectedYear =
@@ -1414,10 +1458,55 @@ namespace AryamanBMS.Controllers
                 })
                 .ToList();
 
+            sortBy = sortBy switch
+            {
+                "EmployeeName" => "EmployeeName",
+                "JoiningDate" => "JoiningDate",
+                "PaidBalance" => "PaidBalance",
+                "BirthdayLeave" => "BirthdayLeave",
+                _ => "EmployeeCode"
+            };
+            sortOrder = string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase)
+                ? "desc"
+                : "asc";
+
+            model = sortBy switch
+            {
+                "EmployeeName" => sortOrder == "desc"
+                    ? model.OrderByDescending(x => x.EmployeeName).ToList()
+                    : model.OrderBy(x => x.EmployeeName).ToList(),
+                "JoiningDate" => sortOrder == "desc"
+                    ? model.OrderByDescending(x => x.JoiningDate).ToList()
+                    : model.OrderBy(x => x.JoiningDate).ToList(),
+                "PaidBalance" => sortOrder == "desc"
+                    ? model.OrderByDescending(x => x.PaidBalance).ToList()
+                    : model.OrderBy(x => x.PaidBalance).ToList(),
+                "BirthdayLeave" => sortOrder == "desc"
+                    ? model.OrderByDescending(x => x.BirthdayLeave.Available).ToList()
+                    : model.OrderBy(x => x.BirthdayLeave.Available).ToList(),
+                _ => sortOrder == "desc"
+                    ? model.OrderByDescending(x => x.EmployeeCode).ToList()
+                    : model.OrderBy(x => x.EmployeeCode).ToList()
+            };
+
+            int totalRecords = model.Count;
+            int totalPages = (int)Math.Ceiling(totalRecords / (double)pageSize);
+            page = Math.Clamp(page, 1, Math.Max(totalPages, 1));
+            var pageItems = model
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
             ViewBag.SelectedYear = selectedYear;
             ViewBag.SearchText = searchText;
+            ViewBag.SortBy = sortBy;
+            ViewBag.SortOrder = sortOrder;
+            ViewBag.Page = page;
+            ViewBag.PageSize = pageSize;
+            ViewBag.TotalRecords = totalRecords;
+            ViewBag.TotalPages = totalPages;
 
-            return View(model);
+            return View(pageItems);
         }
 
         [HttpGet]

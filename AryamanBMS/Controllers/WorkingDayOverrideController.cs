@@ -24,13 +24,53 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(
+            string? status,
+            string sortBy = "OverrideDate",
+            string sortOrder = "asc")
         {
-            var overrides =
-                await _context.WorkingDayOverrides
-                    .AsNoTracking()
-                    .OrderBy(x => x.OverrideDate)
-                    .ToListAsync();
+            string selectedStatus = string.IsNullOrWhiteSpace(status) ? "All" : status;
+            sortBy = sortBy switch
+            {
+                "OverrideType" => "OverrideType",
+                "Status" => "Status",
+                _ => "OverrideDate"
+            };
+            sortOrder = string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase)
+                ? "desc"
+                : "asc";
+
+            var query = _context.WorkingDayOverrides
+                .AsNoTracking()
+                .AsQueryable();
+
+            if (selectedStatus == "Active")
+            {
+                query = query.Where(x => x.IsActive);
+            }
+            else if (selectedStatus == "Inactive")
+            {
+                query = query.Where(x => !x.IsActive);
+            }
+
+            query = sortBy switch
+            {
+                "OverrideType" => sortOrder == "desc"
+                    ? query.OrderByDescending(x => x.OverrideType).ThenBy(x => x.OverrideDate)
+                    : query.OrderBy(x => x.OverrideType).ThenBy(x => x.OverrideDate),
+                "Status" => sortOrder == "desc"
+                    ? query.OrderByDescending(x => x.IsActive).ThenBy(x => x.OverrideDate)
+                    : query.OrderBy(x => x.IsActive).ThenBy(x => x.OverrideDate),
+                _ => sortOrder == "desc"
+                    ? query.OrderByDescending(x => x.OverrideDate)
+                    : query.OrderBy(x => x.OverrideDate)
+            };
+
+            var overrides = await query.ToListAsync();
+
+            ViewBag.Status = selectedStatus;
+            ViewBag.SortBy = sortBy;
+            ViewBag.SortOrder = sortOrder;
 
             return View(overrides);
         }

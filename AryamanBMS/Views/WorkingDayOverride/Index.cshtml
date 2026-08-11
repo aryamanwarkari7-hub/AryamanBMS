@@ -2,6 +2,9 @@
 
 @{
     ViewData["Title"] = "Saturday Switcher";
+    string selectedStatus = ViewBag.Status as string ?? "All";
+    string sortBy = ViewBag.SortBy as string ?? "OverrideDate";
+    string sortOrder = ViewBag.SortOrder as string ?? "asc";
 }
 
 <div class="module-header">
@@ -22,6 +25,43 @@
             <i class="bi bi-calendar2-plus"></i>
             Add Schedule Change
         </a>
+    </div>
+</div>
+
+<div class="app-card mb-3">
+    <div class="card-body">
+        <form asp-action="Index" method="get" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Status</label>
+                <select name="status" class="app-input">
+                    <option value="All" selected="@(selectedStatus == "All")">All</option>
+                    <option value="Active" selected="@(selectedStatus == "Active")">Active</option>
+                    <option value="Inactive" selected="@(selectedStatus == "Inactive")">Inactive</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Sort By</label>
+                <select name="sortBy" class="app-input">
+                    <option value="OverrideDate" selected="@(sortBy == "OverrideDate")">Date</option>
+                    <option value="OverrideType" selected="@(sortBy == "OverrideType")">Schedule</option>
+                    <option value="Status" selected="@(sortBy == "Status")">Status</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Order</label>
+                <select name="sortOrder" class="app-input">
+                    <option value="asc" selected="@(sortOrder == "asc")">Ascending</option>
+                    <option value="desc" selected="@(sortOrder == "desc")">Descending</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn-app btn-primary-app flex-fill">
+                    <i class="bi bi-funnel"></i>
+                    Apply
+                </button>
+                <a asp-action="Index" class="btn-app btn-secondary-app">Reset</a>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -50,6 +90,7 @@
             <table class="table app-table">
                 <thead>
                     <tr>
+                        <th>#</th>
                         <th>Date</th>
                         <th>Day</th>
                         <th>Schedule</th>
@@ -60,6 +101,7 @@
                 </thead>
 
                 <tbody>
+                    @{ int serialNumber = 1; }
                     @foreach (var item in Model)
                     {
                         var scheduleText =
@@ -68,6 +110,7 @@
                         : item.OverrideType;
 
                         <tr>
+                            <td>@serialNumber</td>
                             <td>
                                 @item.OverrideDate.ToString("dd-MMM-yyyy")
                             </td>
@@ -142,6 +185,7 @@
                                     </div>
                             </td>
                         </tr>
+                        serialNumber++;
                     }
                 </tbody>
             </table>

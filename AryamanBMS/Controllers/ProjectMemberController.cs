@@ -416,6 +416,9 @@ namespace AryamanBMS.Controllers
             ViewBag.ProjectId = projectId;
             ViewBag.SearchText = searchText;
             ViewBag.CurrentPage = page;
+            ViewBag.PageSize = pageSize;
+            ViewBag.TotalRecords = totalRecords;
+            ViewBag.TotalPages = totalPages;
 
             bool canManageProject =
               User.IsInRole("Admin") ||

@@ -409,9 +409,22 @@ namespace AryamanBMS.Controllers
     string? searchText,
     DateTime? fromDate,
     DateTime? toDate,
+    string sortBy = "AttendanceDate",
+    string sortOrder = "desc",
     int page = 1)
         {
             const int pageSize = 10;
+
+            sortBy = sortBy switch
+            {
+                "Employee" => "Employee",
+                "Status" => "Status",
+                "AttendanceValue" => "AttendanceValue",
+                _ => "AttendanceDate"
+            };
+            sortOrder = string.Equals(sortOrder, "asc", StringComparison.OrdinalIgnoreCase)
+                ? "asc"
+                : "desc";
 
             var query = _attendanceRepository.Attendances
                 .AsNoTracking()
@@ -454,9 +467,21 @@ namespace AryamanBMS.Controllers
                     a.AttendanceDate.Date <= toDate.Value.Date);
             }
 
-            query = query
-                .OrderByDescending(a => a.AttendanceDate)
-                .ThenByDescending(a => a.Id);
+            query = sortBy switch
+            {
+                "Employee" => sortOrder == "asc"
+                    ? query.OrderBy(a => a.Employee!.FirstName).ThenBy(a => a.Employee!.LastName).ThenBy(a => a.Id)
+                    : query.OrderByDescending(a => a.Employee!.FirstName).ThenByDescending(a => a.Employee!.LastName).ThenByDescending(a => a.Id),
+                "Status" => sortOrder == "asc"
+                    ? query.OrderBy(a => a.Status).ThenByDescending(a => a.AttendanceDate).ThenByDescending(a => a.Id)
+                    : query.OrderByDescending(a => a.Status).ThenByDescending(a => a.AttendanceDate).ThenByDescending(a => a.Id),
+                "AttendanceValue" => sortOrder == "asc"
+                    ? query.OrderBy(a => a.AttendanceValue).ThenByDescending(a => a.AttendanceDate).ThenByDescending(a => a.Id)
+                    : query.OrderByDescending(a => a.AttendanceValue).ThenByDescending(a => a.AttendanceDate).ThenByDescending(a => a.Id),
+                _ => sortOrder == "asc"
+                    ? query.OrderBy(a => a.AttendanceDate).ThenBy(a => a.Id)
+                    : query.OrderByDescending(a => a.AttendanceDate).ThenByDescending(a => a.Id)
+            };
 
             var routeValues = new Dictionary<string, string>();
 
@@ -477,6 +502,9 @@ namespace AryamanBMS.Controllers
                     toDate.Value.ToString("yyyy-MM-dd");
             }
 
+            routeValues["sortBy"] = sortBy;
+            routeValues["sortOrder"] = sortOrder;
+
             var model = await query.ToPagedListAsync(
                 page,
                 pageSize,
@@ -488,6 +516,8 @@ namespace AryamanBMS.Controllers
             ViewBag.SearchText = searchText;
             ViewBag.FromDate = fromDate?.ToString("yyyy-MM-dd");
             ViewBag.ToDate = toDate?.ToString("yyyy-MM-dd");
+            ViewBag.SortBy = sortBy;
+            ViewBag.SortOrder = sortOrder;
 
             return View(model);
         }

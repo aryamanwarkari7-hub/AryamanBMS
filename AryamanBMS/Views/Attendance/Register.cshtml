@@ -101,6 +101,24 @@
                            class="app-input" />
                 </div>
 
+                <div>
+                    <label class="form-label">Sort By</label>
+                    <select name="sortBy" class="app-select">
+                        <option value="AttendanceDate" selected="@(ViewBag.SortBy == "AttendanceDate")">Date</option>
+                        <option value="Employee" selected="@(ViewBag.SortBy == "Employee")">Employee</option>
+                        <option value="Status" selected="@(ViewBag.SortBy == "Status")">Status</option>
+                        <option value="AttendanceValue" selected="@(ViewBag.SortBy == "AttendanceValue")">Day Value</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="form-label">Order</label>
+                    <select name="sortOrder" class="app-select">
+                        <option value="desc" selected="@(ViewBag.SortOrder == "desc")">Descending</option>
+                        <option value="asc" selected="@(ViewBag.SortOrder == "asc")">Ascending</option>
+                    </select>
+                </div>
+
                 <div class="filter-form-actions">
                     <button type="submit"
                             class="btn-app btn-primary-app">
@@ -159,6 +177,7 @@
 
                     <thead>
                         <tr>
+                            <th>#</th>
                             <th>ID</th>
                             <th>Date</th>
                             <th>Employee Code</th>
@@ -174,9 +193,11 @@
 
                     <tbody>
 
+                        @{ int serialNumber = ((Model.Pagination.CurrentPage - 1) * Model.Pagination.PageSize) + 1; }
                         @foreach (var attendance in Model.Items)
                         {
                             <tr>
+                                <td>@serialNumber</td>
 
                                 <td>
                                     @attendance.Id
@@ -299,6 +320,7 @@
                                 </td>
 
                             </tr>
+                            serialNumber++;
                         }
 
                     </tbody>
