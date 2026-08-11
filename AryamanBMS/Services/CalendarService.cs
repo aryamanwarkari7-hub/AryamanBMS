@@ -29,7 +29,8 @@ namespace AryamanBMS.Services
         public async Task<List<CalendarEventViewModel>> GetEventsAsync(
              ClaimsPrincipal user,
              DateTime start,
-             DateTime end)
+             DateTime end,
+             bool personalOnly = false)
         {
             var events = new List<CalendarEventViewModel>();
 
@@ -37,11 +38,14 @@ namespace AryamanBMS.Services
             bool isHR = user.IsInRole("HR");
             bool isMaster = user.IsInRole("Master");
 
-            bool canViewAll = isAdmin || isHR || isMaster;
+            bool canViewAll =
+                !personalOnly &&
+                (isAdmin || isHR || isMaster);
 
             if (canViewAll)
             {
                 await AddNonWorkingDayBackgroundsAsync(events, start, end);
+                await AddBirthdaysAsync(events, start, end);
                 await AddHolidaysAsync(events, start, end);
                 await AddAllLeavesAsync(events, start, end);
                 await AddAttendanceExceptionsAsync(events, start, end);
@@ -79,11 +83,17 @@ namespace AryamanBMS.Services
                 return events;
             }
 
+            await AddNonWorkingDayBackgroundsAsync(events, start, end);
+            await AddBirthdaysAsync(events, start, end);
             await AddHolidaysAsync(events, start, end);
             await AddEmployeeLeavesAsync(events, employeeId.Value, start, end);
             await AddEmployeeTasksAsync(events, employeeId.Value, start, end);
             await AddEmployeeMeetingsAsync(events, employeeId.Value, start, end);
-            await AddManualEventsAsync(events, start, end);
+            await AddManualEventsAsync(
+                events,
+                start,
+                end,
+                appUser.Id);
 
             return events
                 .OrderBy(x => x.Start)
@@ -379,14 +389,18 @@ namespace AryamanBMS.Services
         private async Task AddManualEventsAsync(
             List<CalendarEventViewModel> events,
             DateTime start,
-            DateTime end)
+            DateTime end,
+            string? personalUserId = null)
         {
             var manualEvents = await _context.CalendarManualEvents
                 .AsNoTracking()
                 .Where(x =>
                     x.IsActive &&
                     x.StartDateTime <= end &&
-                    (x.EndDateTime ?? x.StartDateTime) >= start)
+                    (x.EndDateTime ?? x.StartDateTime) >= start &&
+                    (personalUserId == null ||
+                     x.VisibilityScope == "All" ||
+                     x.CreatedByUserId == personalUserId))
                 .ToListAsync();
 
             foreach (var item in manualEvents)
@@ -479,6 +493,68 @@ namespace AryamanBMS.Services
                         Status = "Weekly Off",
                         Color = "#e2e8f0",
                         TextColor = "#334155"
+                    });
+                }
+            }
+        }
+
+        private async Task AddBirthdaysAsync(
+    List<CalendarEventViewModel> events,
+    DateTime start,
+    DateTime end)
+        {
+            var employees =
+                await _context.Employees
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.IsActive &&
+                        x.DateOfBirth.HasValue)
+                    .Select(x => new
+                    {
+                        x.Id,
+                        x.FullName,
+                        DateOfBirth = x.DateOfBirth!.Value
+                    })
+                    .ToListAsync();
+
+            foreach (var employee in employees)
+            {
+                for (int year = start.Year - 1;
+                     year <= end.Year + 1;
+                     year++)
+                {
+                    DateTime birthday;
+
+                    if (employee.DateOfBirth.Month == 2 &&
+                        employee.DateOfBirth.Day == 29 &&
+                        !DateTime.IsLeapYear(year))
+                    {
+                        birthday = new DateTime(year, 2, 28);
+                    }
+                    else
+                    {
+                        birthday = new DateTime(
+                            year,
+                            employee.DateOfBirth.Month,
+                            employee.DateOfBirth.Day);
+                    }
+
+                    if (birthday.Date < start.Date ||
+                        birthday.Date > end.Date)
+                    {
+                        continue;
+                    }
+
+                    events.Add(new CalendarEventViewModel
+                    {
+                        Title = $"{employee.FullName} - Birthday",
+                        Start = birthday.Date,
+                        AllDay = true,
+                        Type = "Birthday",
+                        Status = "Birthday",
+                        Color = "#db2777",
+                        TextColor = "#ffffff",
+                        Url = null
                     });
                 }
             }

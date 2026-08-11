@@ -56,7 +56,8 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> Index(
            string? searchText,
            string status = "All",
-           int page = 1)
+           int page = 1,
+           bool mine = false)
         {
             const int pageSize = 10;
 
@@ -69,7 +70,8 @@ namespace AryamanBMS.Controllers
             bool isEmployeeOnly =
                 User.IsInRole("Employee") &&
                 !User.IsInRole("Admin") &&
-                !User.IsInRole("HR");
+                !User.IsInRole("HR") ||
+                mine;
 
             if (isEmployeeOnly)
             {
@@ -140,6 +142,11 @@ namespace AryamanBMS.Controllers
             if (!string.IsNullOrWhiteSpace(status))
             {
                 routeValues["status"] = status;
+            }
+
+            if (mine)
+            {
+                routeValues["mine"] = "true";
             }
 
             var model = await query.ToPagedListAsync(
@@ -286,7 +293,7 @@ namespace AryamanBMS.Controllers
                     "LeaveTypeId",
                     "Selected leave type is inactive or unavailable.");
             }
-            else if (employee != null &&   IsBirthdayLeave(selectedLeaveType))
+            else if (employee != null && IsBirthdayLeave(selectedLeaveType))
             {
                 if (!employee.DateOfBirth.HasValue)
                 {
@@ -300,32 +307,39 @@ namespace AryamanBMS.Controllers
                         "ToDate",
                         "Birthday Leave can be applied for one day only.");
                 }
-                else if (leaveApplication.FromDate.Year != DateTime.Today.Year)
+                else if (GetFinancialYearStart(leaveApplication.FromDate) !=
+                         GetFinancialYearStart(leaveApplication.ToDate))
                 {
                     ModelState.AddModelError(
-                        "FromDate",
-                        "Birthday Leave can only be applied for the current calendar year.");
+                        "ToDate",
+                        "Birthday Leave must be taken within one financial year.");
                 }
-                else if (!IsWithinBirthdayLeaveWindow(
-                             leaveApplication.FromDate,
-                             employee.DateOfBirth,
-                             leaveApplication.FromDate.Year) ||
-                         !IsWithinBirthdayLeaveWindow(
-                             leaveApplication.ToDate,
-                             employee.DateOfBirth,
-                             leaveApplication.FromDate.Year))
+                else
                 {
-                    var birthdayThisYear =
-                        new DateTime(
-                            leaveApplication.FromDate.Year,
-                            employee.DateOfBirth.Value.Month,
-                            employee.DateOfBirth.Value.Day);
+                    var financialYearStart =
+                        GetFinancialYearStart(leaveApplication.FromDate);
 
-                    ModelState.AddModelError(
-                        "FromDate",
-                        $"Birthday Leave can only be applied between " +
-                        $"{birthdayThisYear.AddDays(-3):dd MMM} and " +
-                        $"{birthdayThisYear.AddDays(3):dd MMM}.");
+                    var financialYearEnd =
+                        GetFinancialYearEnd(leaveApplication.FromDate);
+
+                    var birthdayLeaveAlreadyUsed =
+                        await _leaveApplicationRepository.LeaveApplications
+                            .AsNoTracking()
+                            .AnyAsync(x =>
+                                x.Id != leaveApplication.Id &&
+                                x.EmployeeId == employee.Id &&
+                                x.LeaveTypeId == selectedLeaveType.Id &&
+                                (x.Status == "Pending" ||
+                                 x.Status == "Approved") &&
+                                x.FromDate.Date >= financialYearStart.Date &&
+                                x.FromDate.Date <= financialYearEnd.Date);
+
+                    if (birthdayLeaveAlreadyUsed)
+                    {
+                        ModelState.AddModelError(
+                            "LeaveTypeId",
+                            "Birthday Leave has already been applied for this financial year.");
+                    }
                 }
             }
             else if (string.Equals(
@@ -509,6 +523,8 @@ namespace AryamanBMS.Controllers
                     "COMP",
                     StringComparison.OrdinalIgnoreCase);
 
+            bool isBirthdayLeave = IsBirthdayLeave(leaveType);
+
             var compOffAllocations =
                 new List<(CompOffCreditModel Credit, decimal DaysToUse)>();
 
@@ -593,6 +609,62 @@ namespace AryamanBMS.Controllers
             {
                 TempData["Error"] = "Employee not found.";
                 return RedirectToAction(nameof(Index));
+
+
+            }
+
+            if (isBirthdayLeave)
+            {
+                if (!employee.DateOfBirth.HasValue)
+                {
+                    TempData["Error"] =
+                        "Birthday Leave cannot be approved because the employee date of birth is missing.";
+
+                    return RedirectToAction(nameof(Index));
+                }
+
+                if (leaveApplication.NumberOfDays != 1)
+                {
+                    TempData["Error"] =
+                        "Birthday Leave can only be approved for one day.";
+
+                    return RedirectToAction(nameof(Index));
+                }
+
+                if (GetFinancialYearStart(leaveApplication.FromDate) !=
+                    GetFinancialYearStart(leaveApplication.ToDate))
+                {
+                    TempData["Error"] =
+                        "Birthday Leave must be within one financial year.";
+
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var financialYearStart =
+                    GetFinancialYearStart(leaveApplication.FromDate);
+
+                var financialYearEnd =
+                    GetFinancialYearEnd(leaveApplication.FromDate);
+
+                var birthdayLeaveAlreadyUsed =
+                    await _leaveApplicationRepository.LeaveApplications
+                        .AsNoTracking()
+                        .AnyAsync(x =>
+                            x.Id != leaveApplication.Id &&
+                            x.EmployeeId == leaveApplication.EmployeeId &&
+                            x.LeaveTypeId == leaveApplication.LeaveTypeId &&
+                            (x.Status == "Pending" ||
+                             x.Status == "Approved") &&
+                            x.FromDate.Date >= financialYearStart.Date &&
+                            x.FromDate.Date <= financialYearEnd.Date);
+
+                if (birthdayLeaveAlreadyUsed)
+                {
+                    TempData["Error"] =
+                        "Birthday Leave has already been used for this financial year.";
+
+                    return RedirectToAction(nameof(Index));
+                }
             }
 
             if (isCompOff)
@@ -602,6 +674,16 @@ namespace AryamanBMS.Controllers
 
                 TempData["LeaveApprovalSplit"] =
                     $"Comp Off | Paid: {leaveApplication.PaidDays:0.##}, Unpaid: 0";
+            }
+            else if (isBirthdayLeave)
+            {
+                leaveApplication.PaidDays =
+                    leaveApplication.NumberOfDays;
+
+                leaveApplication.UnpaidDays = 0;
+
+                TempData["LeaveApprovalSplit"] =
+                    $"Birthday Leave | Paid: {leaveApplication.PaidDays:0.##}, Unpaid: 0";
             }
             else
             {
@@ -1206,9 +1288,7 @@ namespace AryamanBMS.Controllers
 
         [HttpGet]
         [Authorize(Roles = "Admin,HR,Master")]
-        public async Task<IActionResult> PaidLeaveBalanceRegister(
-    int? year,
-    string? searchText)
+        public async Task<IActionResult> PaidLeaveBalanceRegister(int? year,string? searchText)
         {
             DateTime today = DateTime.Today;
 
@@ -1254,7 +1334,10 @@ namespace AryamanBMS.Controllers
                         (
                             x.LeaveType == null ||
                             x.LeaveType.LeaveCode == null ||
-                            x.LeaveType.LeaveCode != "COMP"
+                            (
+                                x.LeaveType.LeaveCode != "COMP" &&
+                                x.LeaveType.LeaveCode != "BDL"
+                            )
                         ))
                     .GroupBy(x => x.EmployeeId)
                     .Select(x => new
@@ -1269,6 +1352,29 @@ namespace AryamanBMS.Controllers
                     x => x.EmployeeId,
                     x => x.PaidUsed);
 
+            var approvedBirthdayLeaves =
+            await _leaveApplicationRepository.LeaveApplications
+                .AsNoTracking()
+                .Where(x =>
+                    employeeIds.Contains(x.EmployeeId) &&
+                    x.Status == "Approved" &&
+                    x.LeaveType != null &&
+                    x.LeaveType.LeaveCode == "BDL" &&
+                    x.FromDate.Date >= fyStart.Date &&
+                    x.FromDate.Date <= fyEnd.Date)
+                .GroupBy(x => x.EmployeeId)
+                .Select(x => new
+                {
+                    EmployeeId = x.Key,
+                    BirthdayUsed = x.Sum(l => l.PaidDays)
+                })
+                .ToListAsync();
+
+            var birthdayUsedMap =
+                approvedBirthdayLeaves.ToDictionary(
+                    x => x.EmployeeId,
+                    x => x.BirthdayUsed);
+
             var model =
                 employees.Select(employee =>
                 {
@@ -1282,6 +1388,10 @@ namespace AryamanBMS.Controllers
                             ? value
                             : 0m;
 
+                    decimal birthdayUsed =birthdayUsedMap.TryGetValue(employee.Id, out var birthdayValue)
+                                          ? birthdayValue
+                                          : 0m;
+
                     return new EmployeePaidLeaveBalanceViewModel
                     {
                         EmployeeId = employee.Id,
@@ -1294,7 +1404,12 @@ namespace AryamanBMS.Controllers
                         MonthlyAccrual = MonthlyPaidLeaveAccrual,
                         ProratedEntitlement = entitlement,
                         PaidUsed = used,
-                        PaidBalance = Math.Max(0, entitlement - used)
+                        PaidBalance = Math.Max(0, entitlement - used),
+                        BirthdayLeave = new BirthdayLeaveBalanceViewModel
+                        {
+                            Entitlement = 1m,
+                            Used = Math.Min(birthdayUsed, 1m)
+                        }
                     };
                 })
                 .ToList();
@@ -1907,6 +2022,47 @@ namespace AryamanBMS.Controllers
                 dateOfBirth.Day);
         }
 
+        private async Task<BirthdayLeaveBalanceViewModel> GetBirthdayLeaveBalanceAsync(
+        EmployeeModel employee,
+        DateTime referenceDate,
+        int? excludeLeaveApplicationId = null)
+        {
+            DateTime financialYearStart =
+                GetFinancialYearStart(referenceDate);
+
+            DateTime financialYearEnd =
+                GetFinancialYearEnd(referenceDate);
+
+            var birthdayLeaveQuery =
+                _leaveApplicationRepository.LeaveApplications
+                    .AsNoTracking()
+                    .Include(x => x.LeaveType)
+                    .Where(x =>
+            x.EmployeeId == employee.Id &&
+            x.Status == "Approved" &&
+            x.FromDate.Date >= financialYearStart.Date &&
+            x.FromDate.Date <= financialYearEnd.Date &&
+            x.LeaveType != null &&
+            x.LeaveType.LeaveCode == "BDL");
+
+            if (excludeLeaveApplicationId.HasValue)
+            {
+                birthdayLeaveQuery =
+                    birthdayLeaveQuery.Where(x =>
+                        x.Id != excludeLeaveApplicationId.Value);
+            }
+
+            decimal used =
+                await birthdayLeaveQuery
+                    .SumAsync(x => (decimal?)x.PaidDays) ?? 0m;
+
+            return new BirthdayLeaveBalanceViewModel
+            {
+                Entitlement = 1m,
+                Used = Math.Min(used, 1m)
+            };
+        }
+
         private static DateTime GetFinancialYearStart(DateTime date)
         {
             return date.Month >= FinancialYearStartMonth
@@ -1978,7 +2134,10 @@ namespace AryamanBMS.Controllers
                (
                    x.LeaveType == null ||
                    x.LeaveType.LeaveCode == null ||
-                   x.LeaveType.LeaveCode != "COMP"
+                   (
+                       x.LeaveType.LeaveCode != "COMP" &&
+                       x.LeaveType.LeaveCode != "BDL"
+                   )
                ));
 
             if (excludeLeaveApplicationId.HasValue)
@@ -2011,7 +2170,11 @@ namespace AryamanBMS.Controllers
                 PaidLeaveBalance = paidLeaveBalance,
                 RequestedDays = requestedDays,
                 PaidDaysForRequest = paidDaysForRequest,
-                UnpaidDaysForRequest = unpaidDaysForRequest
+                UnpaidDaysForRequest = unpaidDaysForRequest,
+                BirthdayLeave = await GetBirthdayLeaveBalanceAsync(
+                      employee,
+                      referenceDate,
+                      excludeLeaveApplicationId)
             };
         }
 

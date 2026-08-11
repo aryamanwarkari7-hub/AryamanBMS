@@ -3,9 +3,12 @@
 ========================================== */
 
 .profile-photo-wrap {
-    display: flex;
-    justify-content: center;
     position: relative;
+    width: 132px;
+    height: 132px;
+    margin: 0 auto;
+    display: grid;
+    place-items: center;
 }
 
 .profile-photo {
@@ -32,10 +35,11 @@
 ========================================== */
 
 .profile-photo-wrap {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    width: 132px;
+    height: 132px;
+    margin: 0 auto;
+    display: grid;
+    place-items: center;
 }
 
     .profile-photo-wrap img.profile-photo,
@@ -50,7 +54,19 @@
         aspect-ratio: 1 / 1;
     }
 
+    .profile-photo.profile-photo-initials {
+        display: grid !important;
+        place-items: center;
+        line-height: 1;
+        text-align: center;
+    }
+
 @media (max-width: 576px) {
+    .profile-photo-wrap {
+        width: 104px;
+        height: 104px;
+    }
+
     .profile-photo-wrap img.profile-photo,
     .profile-photo.profile-photo-initials {
         width: 104px !important;
@@ -63,10 +79,10 @@
 .profile-photo-wrap::after {
     content: "";
     position: absolute;
-    right: calc(50% - 64px);
-    bottom: 8px;
-    width: 16px;
-    height: 16px;
+    right: 15px;
+    bottom: 3px;
+    width: 18px;
+    height: 18px;
     border: 3px solid var(--card-bg);
     border-radius: 50%;
     background: var(--success-color);

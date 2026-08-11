@@ -54,7 +54,7 @@
     <div class="card-header">
         <div>
             <h5 class="card-title">FY @selectedYear-@(selectedYear + 1)</h5>
-            <p class="card-subtitle">Annual paid leave entitlement: 18 days</p>
+            <p class="card-subtitle">Regular paid leave: 18 days annually | Birthday Leave: 1 paid day separately</p>
         </div>
     </div>
 
@@ -70,6 +70,7 @@
                         <th>Entitlement</th>
                         <th>Used Paid</th>
                         <th>Balance</th>
+                        <th>Birthday Leave</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -87,13 +88,22 @@
                                 <td>
                                     <strong>@item.PaidBalance.ToString("0.##")</strong>
                                 </td>
+                                <td>
+                                    <span>
+                                        @item.BirthdayLeave.Available.ToString("0.##")
+                                        available
+                                    </span>
+                                    <small class="text-muted d-block">
+                                        Used: @item.BirthdayLeave.Used.ToString("0.##") / 1
+                                    </small>
+                                </td>
                             </tr>
                         }
                     }
                     else
                     {
                         <tr>
-                            <td colspan="7" class="text-center text-muted">
+                            <td colspan="8" class="text-center text-muted">
                                 No employees found.
                             </td>
                         </tr>

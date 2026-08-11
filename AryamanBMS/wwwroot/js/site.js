@@ -73,3 +73,32 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 });
+
+// Keep the main sidebar groups mutually exclusive. Nested menus inside a
+// group continue to work independently.
+document.addEventListener("click", function (event) {
+    const header = event.target.closest(
+        "#sidebarAccordion > .menu-group > .menu-group-header"
+    );
+
+    if (!header || !window.bootstrap) {
+        return;
+    }
+
+    const targetSelector = header.getAttribute("data-bs-target");
+    const target = targetSelector
+        ? document.querySelector(targetSelector)
+        : null;
+
+    setTimeout(function () {
+        document
+            .querySelectorAll("#sidebarAccordion > .menu-group > .collapse.show")
+            .forEach(function (panel) {
+                if (panel !== target) {
+                    bootstrap.Collapse.getOrCreateInstance(panel, {
+                        toggle: false
+                    }).hide();
+                }
+            });
+    }, 0);
+});

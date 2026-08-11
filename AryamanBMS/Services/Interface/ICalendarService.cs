@@ -8,6 +8,7 @@ namespace AryamanBMS.Services.Interfaces
         Task<List<CalendarEventViewModel>> GetEventsAsync(
             ClaimsPrincipal user,
             DateTime start,
-            DateTime end);
+            DateTime end,
+            bool personalOnly = false);
     }
 }

@@ -55,11 +55,12 @@ namespace AryamanBMS.Controllers
     DateTime? toDate,
     string sortBy = "VoucherDate",
     string sortOrder = "desc",
-    int page = 1)
+    int page = 1,
+    bool mine = false)
         {
             var vouchers = await _voucherRepository.GetAllAsync();
 
-            if (!IsFinanceUser())
+            if (mine || !IsFinanceUser())
             {
                 string userId = GetCurrentUserId();
 
@@ -172,6 +173,7 @@ namespace AryamanBMS.Controllers
             ViewBag.ToDate = toDate;
             ViewBag.SortBy = sortBy;
             ViewBag.SortOrder = sortOrder;
+            ViewBag.Mine = mine;
             ViewBag.CurrentPage = page;
             ViewBag.TotalPages =
                 (int)Math.Ceiling(totalRecords / (double)pageSize);
@@ -186,11 +188,12 @@ namespace AryamanBMS.Controllers
             int? categoryId,
             string? search,
             DateTime? fromDate,
-            DateTime? toDate)
+            DateTime? toDate,
+            bool mine = false)
         {
             var vouchers = await _voucherRepository.GetAllAsync();
 
-            if (!IsFinanceUser())
+            if (mine || !IsFinanceUser())
             {
                 string userId = GetCurrentUserId();
                 vouchers = vouchers.Where(x => x.CreatedByUserId == userId).ToList();

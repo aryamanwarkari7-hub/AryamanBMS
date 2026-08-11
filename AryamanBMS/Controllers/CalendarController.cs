@@ -29,20 +29,25 @@ namespace AryamanBMS.Controllers
 
         #region Index
         [HttpGet]
-        public IActionResult Index()
+        public IActionResult Index(bool mine = false)
         {
+            ViewBag.PersonalOnly = mine;
             return View();
         }
 
         #endregion
 
         [HttpGet]
-        public async Task<IActionResult> Events(DateTime start, DateTime end)
+        public async Task<IActionResult> Events(
+            DateTime start,
+            DateTime end,
+            bool mine = false)
         {
             var events = await _calendarService.GetEventsAsync(
                User,
                start,
-               end);
+               end,
+               mine);
 
             return Json(events.Select(x => new
             {

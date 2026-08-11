@@ -68,6 +68,28 @@
                 <div class="stats-label">Available Balance</div>
                 <div class="stats-number">@Model.PaidLeaveBalance.ToString("0.##")</div>
             </div>
+
+            <div class="stats-card">
+                <div class="stats-label">Birthday Leave Entitlement</div>
+                <div class="stats-number">
+                    @Model.BirthdayLeave.Entitlement.ToString("0.##")
+                </div>
+            </div>
+
+            <div class="stats-card">
+                <div class="stats-label">Birthday Leave Used</div>
+                <div class="stats-number">
+                    @Model.BirthdayLeave.Used.ToString("0.##")
+                </div>
+            </div>
+
+            <div class="stats-card">
+                <div class="stats-label">Birthday Leave Available</div>
+                <div class="stats-number">
+                    @Model.BirthdayLeave.Available.ToString("0.##")
+                </div>
+            </div>
+
         </div>
 
     </div>

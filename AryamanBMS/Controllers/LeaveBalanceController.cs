@@ -116,21 +116,18 @@ namespace AryamanBMS.Controllers
                 foreach (var leaveType in leaveTypes)
                 {
                     if (string.Equals(
-                     leaveType.LeaveCode,
-                     "COMP",
-                     StringComparison.OrdinalIgnoreCase))
+                    leaveType.LeaveCode,
+                    "COMP",
+                    StringComparison.OrdinalIgnoreCase) ||
+                       string.Equals(
+                    leaveType.LeaveCode,
+                    "BDL",
+                    StringComparison.OrdinalIgnoreCase))
                     {
                         continue;
                     }
 
-                    if (string.Equals(
-                        leaveType.LeaveCode,
-                        "BDL",
-                        StringComparison.OrdinalIgnoreCase) &&
-                    !employee.DateOfBirth.HasValue)
-                    {
-                        continue;
-                    }
+
 
                     bool exists = await _leaveBalanceRepository.LeaveBalances
                         .AnyAsync(x =>

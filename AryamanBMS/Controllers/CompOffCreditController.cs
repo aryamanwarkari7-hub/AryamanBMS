@@ -73,7 +73,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(bool mine = false)
         {
             await UpdateExpiredCreditsAsync();
 
@@ -84,8 +84,9 @@ namespace AryamanBMS.Controllers
                     .Include(x => x.Attendance)
                     .AsQueryable();
 
-            if (!User.IsInRole("Admin") &&
-                !User.IsInRole("HR"))
+            if (mine ||
+                (!User.IsInRole("Admin") &&
+                 !User.IsInRole("HR")))
             {
                 var user =
                     await _userManager.GetUserAsync(User);

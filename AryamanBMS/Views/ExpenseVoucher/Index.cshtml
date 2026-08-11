@@ -9,6 +9,7 @@
     DateTime? toDate = ViewBag.ToDate as DateTime?;
     string sortBy = ViewBag.SortBy as string ?? "VoucherDate";
     string sortOrder = ViewBag.SortOrder as string ?? "desc";
+    bool mine = ViewBag.Mine is true;
 
     bool isFinanceUser =
         User.IsInRole("Admin") ||
@@ -22,12 +23,12 @@
 <div class="module-header">
     <div>
         <h1 class="module-title">
-            @(isEmployeeOnly
+        @(isEmployeeOnly || mine
                         ? "My Expense Claims"
                         : "Expense Vouchers")
         </h1>
         <p class="module-subtitle">
-            @(isEmployeeOnly
+        @(isEmployeeOnly || mine
                         ? "Create and track your own expense claims"
                         : "Manage company expense vouchers")
         </p>
@@ -47,6 +48,7 @@
            asp-route-search="@search"
            asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
            asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
+           asp-route-mine="@mine"
            class="btn-app btn-success-app">
             <i class="bi bi-file-earmark-excel"></i>
             Export Excel
@@ -61,6 +63,7 @@
     <div class="card-header">
 
         <form method="get" class="w-100">
+            <input type="hidden" name="mine" value="@mine" />
             <input type="hidden"
                    name="status"
                    value="@status" />
@@ -394,6 +397,7 @@
                        asp-route-toDate="@toDate?.ToString("yyyy-MM-dd")"
                        asp-route-sortBy="@sortBy"
                        asp-route-sortOrder="@sortOrder"
+                       asp-route-mine="@mine"
                        class="page-link-app @(i == ViewBag.CurrentPage ? "active" : "")">
                         @i
                     </a>

@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Employee")]
+    [Authorize(Roles = "Employee,Admin,HR,Master")]
     public class EmployeeProjectController : Controller
     {
         private readonly UserManager<ApplicationUserModel> _userManager;
@@ -139,7 +139,7 @@ namespace AryamanBMS.Controllers
 
         #region Update Progress
         [HttpGet]
-        [Authorize(Roles = "Employee")]
+        [Authorize(Roles = "Employee,Admin,HR,Master")]
         public async Task<IActionResult> UpdateProgress(int id)
         {
             var task = await _projectTaskRepository.GetDetailsAsync(id);
@@ -170,7 +170,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Employee")]
+        [Authorize(Roles = "Employee,Admin,HR,Master")]
         public async Task<IActionResult> UpdateProgress(ProjectTaskModel model)
         {
             var existing =

@@ -72,6 +72,10 @@
         background: #7c3aed;
         border-color: #5b21b6;
     }
+    .calendar-dot.birthday {
+        background: #db2777;
+        border-color: #9d174d;
+    }
 
     .calendar-dot.weekly-off {
         background: #64748b;
@@ -287,6 +291,12 @@
         .fc .fc-bg-event.weekly-off-background {
             background: #e2e8f0 !important;
         }
+
+.calendar-event-icon {
+    margin-right: 5px;
+    font-size: 0.9em;
+    vertical-align: -1px;
+}
 
     /* ==========================================
    LIST VIEW

@@ -31,6 +31,12 @@
             Entitlement: @paidLeaveSnapshot.ProratedEntitlement.ToString("0.##") |
             Used: @paidLeaveSnapshot.PaidLeaveUsed.ToString("0.##") |
             Balance: @paidLeaveSnapshot.PaidLeaveBalance.ToString("0.##")
+            <br />
+            <strong>Birthday Leave:</strong>
+            Available:
+            @paidLeaveSnapshot.BirthdayLeave.Available.ToString("0.##")
+            of
+            @paidLeaveSnapshot.BirthdayLeave.Entitlement.ToString("0.##")
         </div>
 
         <div class="app-alert-warning mt-2" id="leaveSplitPreview">
@@ -65,7 +71,8 @@
 
                         @foreach (var leaveType in ViewBag.LeaveTypes)
                         {
-                            <option value="@leaveType.Id">
+                            <option value="@leaveType.Id"
+                                    data-leave-code="@leaveType.LeaveCode">
                                 @leaveType.LeaveCode - @leaveType.LeaveName
                             </option>
                         }
@@ -180,6 +187,11 @@
             const toDateInput = document.getElementById('toDate');
             const estimatedDays = document.getElementById('estimatedDays');
             const leaveDuration = document.getElementById('leaveDuration');
+
+            const leaveTypeSelect = document.getElementById('LeaveTypeId');
+
+            const availableBirthdayLeaves =
+               Number("@(paidLeaveSnapshot?.BirthdayLeave.Available ?? 0)");
             const halfDaySessionGroup = document.getElementById('halfDaySessionGroup');
 
             const availablePaidLeaves =
@@ -197,6 +209,25 @@
                         'Select leave dates to preview paid/unpaid split.';
                     return;
                 }
+
+                        const selectedOption =
+            leaveTypeSelect.options[leaveTypeSelect.selectedIndex];
+
+        const isBirthdayLeave =
+            selectedOption &&
+            selectedOption.dataset.leaveCode?.toUpperCase() === 'BDL';
+
+        if (isBirthdayLeave) {
+            const paidDays = Math.min(days, availableBirthdayLeaves);
+            const unpaidDays = Math.max(0, days - paidDays);
+
+            preview.textContent =
+                `Birthday Leave: ${paidDays} paid day(s), ` +
+                `${unpaidDays} unpaid day(s). ` +
+                `Regular 18-day balance is unaffected.`;
+
+            return;
+        }
 
                 const paidDays = Math.min(days, availablePaidLeaves);
                 const unpaidDays = Math.max(0, days - paidDays);
@@ -264,6 +295,7 @@
             fromDateInput.addEventListener('change', updateEstimatedDays);
             toDateInput.addEventListener('change', updateEstimatedDays);
             leaveDuration.addEventListener('change', updateEstimatedDays);
+            leaveTypeSelect.addEventListener('change', updateEstimatedDays);
 
             updateEstimatedDays();
         })();

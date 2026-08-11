@@ -16,6 +16,8 @@
         public decimal PaidUsed { get; set; }
         public decimal PaidBalance { get; set; }
 
+        public BirthdayLeaveBalanceViewModel BirthdayLeave { get; set; } = new();
+
         public string FinancialYearLabel =>
             $"{FinancialYearStart:dd-MMM-yyyy} to {FinancialYearEnd:dd-MMM-yyyy}";
     }

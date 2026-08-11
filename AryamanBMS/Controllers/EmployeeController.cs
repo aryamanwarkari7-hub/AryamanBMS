@@ -1909,7 +1909,10 @@ namespace AryamanBMS.Controllers
                         (
                             x.LeaveType == null ||
                             x.LeaveType.LeaveCode == null ||
-                            x.LeaveType.LeaveCode != "COMP"
+                            (
+                                x.LeaveType.LeaveCode != "COMP" &&
+                                x.LeaveType.LeaveCode != "BDL"
+                            )
                         ))
                     .SumAsync(x => (decimal?)x.PaidDays) ?? 0m;
 

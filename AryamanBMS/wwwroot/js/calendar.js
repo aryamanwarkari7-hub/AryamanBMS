@@ -5,11 +5,16 @@
         return;
     }
 
+    const personalOnly =
+        calendarElement.dataset.personalOnly === "true";
+
     const canManageManualEvents =
+        !personalOnly &&
         document.getElementById("calendarManualEventModal") !== null;
 
     const activeFilters = new Set([
         "Holiday",
+        "Birthday",
         "WeeklyOff",
         "Leave",
         "Attendance",
@@ -40,7 +45,7 @@
         },
         events: function (fetchInfo, successCallback, failureCallback) {
             const url =
-                `/Calendar/Events?start=${encodeURIComponent(fetchInfo.startStr)}&end=${encodeURIComponent(fetchInfo.endStr)}`;
+                `/Calendar/Events?start=${encodeURIComponent(fetchInfo.startStr)}&end=${encodeURIComponent(fetchInfo.endStr)}&mine=${personalOnly}`;
 
             fetch(url)
                 .then(function (response) {
@@ -98,12 +103,25 @@
 
             if (textColor) {
                 info.el.style.color = textColor;
+            }
 
-                info.el
-                    .querySelectorAll(".fc-event-title, .fc-event-time")
-                    .forEach(function (element) {
-                        element.style.color = textColor;
-                    });
+            const icons = {
+                Birthday: "bi-balloon",
+                Meeting: "bi-people",
+                Billing: "bi-receipt"
+            };
+
+            const iconClass = icons[type];
+            const titleElement =
+                info.el.querySelector(".fc-event-title");
+
+            if (iconClass && titleElement) {
+                const icon = document.createElement("i");
+
+                icon.className = `bi ${iconClass} calendar-event-icon`;
+                icon.setAttribute("aria-hidden", "true");
+
+                titleElement.prepend(icon);
             }
         }
     });

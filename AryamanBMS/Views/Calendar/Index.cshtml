@@ -40,6 +40,13 @@
 
             <button type="button"
                     class="calendar-filter active"
+                    data-filter="Birthday">
+                <i class="calendar-dot birthday"></i>
+                Birthday
+            </button>
+
+            <button type="button"
+                    class="calendar-filter active"
                     data-filter="WeeklyOff">
                 <i class="calendar-dot weekly-off"></i>
                 Weekly Off
@@ -74,7 +81,8 @@
 
     <div class="card-body">
         <div class="calendar-shell">
-            <div id="employeeCalendar"></div>
+            <div id="employeeCalendar"
+                 data-personal-only="@(ViewBag.PersonalOnly == true ? "true" : "false")"></div>
         </div>
     </div>
 </div>

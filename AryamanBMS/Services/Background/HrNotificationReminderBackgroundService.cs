@@ -65,6 +65,12 @@ namespace AryamanBMS.Services.Background
                 today,
                 cancellationToken);
 
+            await NotifyBirthdayEmployeesAsync(
+                context,
+                notificationService,
+                today,
+                cancellationToken);
+
             if (!await workingDayService.IsWorkingDayAsync(today))
             {
                 return;
@@ -136,6 +142,65 @@ namespace AryamanBMS.Services.Background
                     "CompOffCredit",
                     credit.Id,
                     "/CompOffCredit/Index");
+            }
+        }
+
+        private static async Task NotifyBirthdayEmployeesAsync(
+    ApplicationDbContext context,
+    INotificationService notificationService,
+    DateTime today,
+    CancellationToken cancellationToken)
+        {
+            var birthdayEmployees =
+                await context.Employees
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.IsActive &&
+                        x.DateOfBirth.HasValue &&
+                        x.DateOfBirth.Value.Month == today.Month &&
+                        x.DateOfBirth.Value.Day == today.Day)
+                    .ToListAsync(cancellationToken);
+
+            if (birthdayEmployees.Count == 0)
+            {
+                return;
+            }
+
+            var recipients =
+                await context.Employees
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.IsActive &&
+                        x.ApplicationUserId != null)
+                    .ToListAsync(cancellationToken);
+
+            foreach (var birthdayEmployee in birthdayEmployees)
+            {
+                int referenceId =
+                    (today.Year * 100000) + birthdayEmployee.Id;
+
+                foreach (var recipient in recipients)
+                {
+                    string userId = recipient.ApplicationUserId!;
+
+                    if (await notificationService.ExistsAsync(
+                        userId,
+                        "EmployeeBirthday",
+                        "EmployeeBirthday",
+                        referenceId))
+                    {
+                        continue;
+                    }
+
+                    await notificationService.CreateAsync(
+                        userId,
+                        "Employee Birthday",
+                        $"{birthdayEmployee.FullName} has a birthday today.",
+                        "EmployeeBirthday",
+                        "EmployeeBirthday",
+                        referenceId,
+                        "/Calendar/Index?mine=true");
+                }
             }
         }
 

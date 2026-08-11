@@ -90,7 +90,7 @@ namespace AryamanBMS.Controllers
             return View(todayAttendance);
         }
 
-        [Authorize(Roles = "Employee")]
+        [Authorize(Roles = "Employee,Admin,HR,Master")]
         public async Task<IActionResult> MyMonthly(int? month, int? year)
         {
             var user = await _userManager.GetUserAsync(User);
