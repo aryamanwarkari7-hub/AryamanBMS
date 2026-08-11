@@ -315,6 +315,18 @@
             <div class="form-grid-2">
 
                 <div class="form-group">
+                    <label asp-for="ExpensePartyType" class="form-label">Expense Party Type</label>
+                    <select asp-for="ExpensePartyType" class="app-select" id="expensePartyType">
+                        <option value="Registered Vendor">Registered Vendor</option>
+                        <option value="Unregistered Vendor">Unregistered Vendor</option>
+                        <option value="One-Time Vendor">One-Time Vendor</option>
+                        <option value="Employee Reimbursement">Employee Reimbursement</option>
+                        <option value="Petty Cash">Petty Cash</option>
+                    </select>
+                    <span asp-validation-for="ExpensePartyType" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
                     <label asp-for="VendorId" class="form-label">Vendor</label>
 
                     <select asp-for="VendorId" class="app-select" id="vendorSelect">
@@ -348,7 +360,15 @@
 
             </div>
 
-            <input type="hidden" asp-for="VendorName" id="vendorNameInput" />
+            <div class="form-group" id="vendorNameGroup">
+                <label asp-for="VendorName" class="form-label">Vendor / Payee Name</label>
+                <input asp-for="VendorName"
+                       id="vendorNameInput"
+                       class="app-input"
+                       maxlength="50"
+                       placeholder="Enter vendor/payee name" />
+                <span asp-validation-for="VendorName" class="validation-message"></span>
+            </div>
 
             <div class="form-grid-2">
                 <div class="form-group">

@@ -1055,6 +1055,11 @@ namespace AryamanBMS.Controllers
                 model.Description?.Trim() ??
                 string.Empty;
 
+            model.ExpensePartyType =
+    string.IsNullOrWhiteSpace(model.ExpensePartyType)
+        ? "Registered Vendor"
+        : model.ExpensePartyType.Trim();
+
             model.VendorName =
                 string.IsNullOrWhiteSpace(model.VendorName)
                     ? null
@@ -1128,6 +1133,39 @@ namespace AryamanBMS.Controllers
                 ModelState.AddModelError(
                     nameof(model.VendorGSTIN),
                     "Enter a valid 15-character GSTIN.");
+            }
+
+            bool isRegisteredVendor =
+    model.ExpensePartyType == "Registered Vendor";
+
+            bool isSmallOrNonGstExpense =
+                model.ExpensePartyType == "Unregistered Vendor" ||
+                model.ExpensePartyType == "One-Time Vendor" ||
+                model.ExpensePartyType == "Employee Reimbursement" ||
+                model.ExpensePartyType == "Petty Cash";
+
+            if (isRegisteredVendor && !model.VendorId.HasValue)
+            {
+                ModelState.AddModelError(
+                    nameof(model.VendorId),
+                    "Vendor is required for registered vendor expenses.");
+            }
+
+            if (isSmallOrNonGstExpense)
+            {
+                model.VendorId = null;
+                model.VendorGSTIN = null;
+                model.GSTRate = 0;
+                model.ITCEligible = false;
+            }
+
+            if (isSmallOrNonGstExpense &&
+                string.IsNullOrWhiteSpace(model.VendorName) &&
+                string.IsNullOrWhiteSpace(model.BeneficiaryName))
+            {
+                ModelState.AddModelError(
+                    nameof(model.VendorName),
+                    "Vendor or payee name is required.");
             }
 
             if (model.ITCEligible)

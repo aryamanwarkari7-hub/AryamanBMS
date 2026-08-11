@@ -25,6 +25,9 @@ namespace AryamanBMS.Models
 
         public int? VendorId { get; set; }
 
+        [StringLength(30)]
+        public string ExpensePartyType { get; set; } = "Registered Vendor";
+
         public int? ProjectId { get; set; }
 
         public int? DepartmentId { get; set; }
