@@ -19,7 +19,7 @@
 
             <div class="login-brand-text">
                 <p class="login-eyebrow">
-                    Aryaman Technologies Private Limited
+                    @* Aryaman Technologies Private Limited *@
                 </p>
                 <h1>
                     Business Management System
@@ -45,13 +45,23 @@
             </div>
 
         </div>
+        <a href="#loginPanel" class="mobile-scroll-cue" aria-label="Continue to sign in">
+    <span>Continue to sign in</span>
+    <i class="bi bi-arrow-down-short"></i>
+</a>
     </section>
 
-    <main class="login-form-panel">
+    <main class="login-form-panel" id="loginPanel">
+        
         <div class="login-card">
-
+            <div class="mobile-login-indicator">
+                <i class="bi bi-lock-fill"></i>
+                <span>Secure Sign In</span>
+            </div>
             <header class="login-card-header">
-                <p class="login-card-kicker">Secure sign in</p>
+                <p class="login-card-kicker">
+                    <i class="bi bi-lock-fill"></i>
+                    Secure sign in</p>
                 <h2>Welcome back</h2>
                 <p>Enter your system credentials to access your secure profile workspace.</p>
             </header>

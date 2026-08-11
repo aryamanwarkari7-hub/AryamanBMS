@@ -31,32 +31,35 @@
     .login-brand-panel::after {
         content: "";
         position: absolute;
-        width: 520px;
-        height: 520px;
-        right: -180px;
-        bottom: -190px;
-        border-radius: 50%;
-        background: radial-gradient( circle, rgba(49, 140, 231, 0.42), transparent 68% );
+        top: clamp(108px, 20vh, 180px);
+        left: 50%;
+        width: min(80%, 560px);
+        aspect-ratio: 1.45;
+        background: url("../images/aryaman_logo.svg") center / contain no-repeat;
+        opacity: 0.9;
+        pointer-events: none;
+        transform: translate(-50%, -50%);
     }
 
 .login-brand-content {
     position: relative;
     z-index: 1;
     width: min(100%, 660px);
+    transform: translateY(100px);
 }
 
-/* Login page brand panel polish */
+.login-brand-content > * {
+    position: relative;
+    z-index: 1;
+}
+
+.mobile-login-indicator {
+    display: none;
+}
+
+/* Logo is now used as background watermark instead of a small framed card */
 .corporate-login .login-logo-wrap {
-    width: 280px;
-    min-height: 112px;
-    padding: 10px 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255, 255, 255, 0.045);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 8px;
-    overflow: hidden;
+    display: none;
 }
 
 .corporate-login .login-logo {
@@ -120,15 +123,6 @@
     }
 
 @media (max-width: 900px) {
-    .corporate-login .login-logo-wrap {
-        width: 240px;
-        min-height: 108px;
-    }
-
-    .corporate-login .login-logo {
-        width: 200px;
-    }
-
     .corporate-login .login-highlights {
         grid-template-columns: 1fr;
     }
@@ -208,6 +202,10 @@
     align-items: center;
     justify-content: center;
     padding: clamp(28px, 5vw, 64px);
+}
+
+.mobile-scroll-cue {
+    display: none;
 }
 
 .corporate-login .login-card {
@@ -417,31 +415,6 @@
 }
 
 /* ==========================================
-   FIX FOR SMALL ENTERPRISE LOGO
-========================================== */
-..corporate-login .login-logo-wrap {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 16px 24px;
-    margin-bottom: var(--space-xl, 32px);
-    /* Premium glass layer providing background separation */
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-}
-
-.corporate-login .login-logo {
-    width: 220px;
-    height: auto;
-    display: block;
-    filter: none; /* Keeps original color scheme intact safely */
-}
-
-/* ==========================================
    PASSWORD RECOVERY COMPONENT UTILITIES
 ========================================== */
 
@@ -472,75 +445,297 @@
     align-items: center;
 }
 
-/* Adjust size for smaller screen layouts dynamically */
-@media (max-width: 576px) {
-    .corporate-login .login-logo {
-        max-width: 180px; /* Perfectly scales down on mobile viewports */
+/* Login responsive layout */
+@media (min-width: 1025px) {
+    .login-brand-panel::after {
+        top: 20%;
+        width: min(80%, 780px);
+    }
+
+    .login-brand-content {
+        transform: translateY(100px);
     }
 }
 
-@media (max-width: 1100px) {
+@media (min-width: 769px) and (max-width: 1024px) {
+    .login-brand-panel::after {
+        top: 18%;
+        width: min(76%, 430px);
+    }
+
+    .login-brand-content {
+        transform: translateY(90px);
+    }
+
+    .login-brand-content h1 {
+        font-size: 40px;
+        max-width: 420px;
+    }
+
+    .login-copy {
+        max-width: 430px;
+        font-size: 15px;
+    }
+
+    .corporate-login .login-highlights {
+        gap: 12px;
+    }
+
+    .corporate-login .login-highlights > div {
+        padding: 16px;
+    }
+}
+
+@media (max-width: 768px) {
     .corporate-login {
         grid-template-columns: 1fr;
     }
 
     .login-brand-panel {
         min-height: auto;
-        padding: 36px 24px;
+        align-items: flex-start;
+        padding: 28px 24px 36px;
+    }
+
+    .login-brand-panel::after {
+        top: 116px;
+        width: min(76%, 500px);
     }
 
     .login-brand-content {
         width: 100%;
+        transform: none;
+        padding-top: 210px;
     }
 
-    .login-highlights {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+    .corporate-login .login-eyebrow {
+        margin-top: 0;
+        margin-bottom: 10px;
+        font-size: 0.74rem;
+    }
+
+    .login-brand-content h1 {
+        font-size: 34px;
+        line-height: 1.12;
+        max-width: 576px;
+        text-align: center;
+        margin-inline: auto;
+        margin-bottom: 14px;
+    }
+
+    .login-copy {
+        max-width: 460px;
+        text-align: center;
+        margin-inline: auto;
+        margin-bottom: 24px;
+        font-size: 14px;
+        line-height: 1.55;
+    }
+
+    .corporate-login .login-highlights {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin-top: 22px;
+    }
+
+    .corporate-login .login-highlights > div {
+        min-height: auto;
+        padding: 14px 18px;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        text-align: left;
+        gap: 14px;
+    }
+
+    .corporate-login .login-highlights i {
+        width: 38px;
+        height: 38px;
+        flex: 0 0 38px;
+        font-size: 1.1rem;
     }
 
     .login-form-panel {
         min-height: auto;
-        padding: 40px 16px;
-    }
-}
-
-@media (max-width: 768px) {
-    .login-highlights {
-        grid-template-columns: 1fr;
+        padding: 28px 16px 42px;
     }
 
-        .login-highlights div {
-            min-height: auto;
-            flex-direction: row;
-            align-items: center;
-            justify-content: flex-start;
-            gap: 12px;
+    /* MOBILE CUE */
+    .login-brand-panel .mobile-scroll-cue,
+    .login-brand-panel .mobile-scroll-cue:visited,
+    .login-brand-panel .mobile-scroll-cue:hover,
+    .login-brand-panel .mobile-scroll-cue:focus,
+    .login-brand-panel .mobile-scroll-cue:active {
+        color: #ffffff !important;
+        text-decoration: none;
+    }
+
+    .login-brand-panel .mobile-scroll-cue span,
+    .login-brand-panel .mobile-scroll-cue i {
+        color: #ffffff !important;
+    }
+
+    .mobile-scroll-cue {
+        position: absolute;
+        left: 50%;
+        bottom: 3px;
+        transform: translateX(-50%);
+        z-index: 2;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 12px;
+        color: #ffffff;
+        background: rgba(49, 140, 231, 0.28);
+        border: 1px solid rgba(147, 197, 253, 0.35);
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-decoration: none;
+        backdrop-filter: blur(8px);
+    }
+
+    .mobile-scroll-cue i {
+        font-size: 1rem;
+        animation: scrollCueBounce 1.2s ease-in-out infinite;
+    }
+
+    @keyframes scrollCueBounce {
+        0%, 100% {
+            transform: translateY(0);
         }
-}
 
-@media (max-width: 576px) {
-    .login-brand-panel {
-        padding: 28px 18px;
+        50% {
+            transform: translateY(3px);
+        }
     }
 
-    .login-logo-wrap {
-        width: 168px;
-        min-height: 74px;
-        margin-bottom: 22px;
+    .login-brand-panel {
+        padding-bottom: 64px;
+    }
+
+    .corporate-login .login-card {
+        width: min(100%, 520px);
+        padding: 36px 32px;
+        border-radius: 18px;
+    }
+}
+
+@media (min-width: 576px) and (max-width: 768px) {
+    .corporate-login .login-highlights {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .corporate-login .login-highlights > div {
+        min-height: 116px;
+        padding: 14px;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: space-between;
+        text-align: left;
+    }
+
+    .corporate-login .login-highlights i {
+        width: 38px;
+        height: 38px;
+        flex: 0 0 38px;
+        font-size: 1.1rem;
+    }
+
+    .corporate-login .login-highlights span {
+        font-size: 0.95rem;
+        line-height: 1.25;
+    }
+
+}
+
+@media (max-width: 534px) {
+    .login-brand-panel {
+        padding: 24px 16px 30px;
+    }
+
+    .login-brand-panel::after {
+        top: 96px;
+        width: min(80%, 420px);
+    }
+
+    .login-brand-content {
+        padding-top: 178px;
     }
 
     .login-brand-content h1 {
-        font-size: 30px;
+        font-size: 29px;
+        max-width: 430px;
     }
 
     .login-copy {
-        font-size: 15px;
+        max-width: 390px;
+        font-size: 13px;
     }
 
-    .login-card {
-        padding: 28px 20px;
+    .corporate-login .login-highlights > div {
+        padding: 13px 16px;
     }
 
-        .login-card h2 {
-            font-size: 26px;
-        }
+    .corporate-login .login-card {
+        width: min(100%, 390px);
+        padding: 32px 24px;
+    }
+}
+
+@media (max-width: 425px) {
+    .login-brand-panel::after {
+        top: 104px;
+        width: min(85%, 400px);
+    }
+
+    .login-brand-content {
+        padding-top: 158px;
+    }
+
+    .mobile-scroll-cue {
+        font-size :0.7rem;
+    }
+
+    .corporate-login .login-eyebrow {
+        margin-top: 0;
+    }
+
+    .login-brand-content h1 {
+        font-size: 27px;
+        max-width: 360px;
+        text-align: center;
+    }
+
+    .login-copy {
+        max-width: 390px;
+        text-align: center;
+        margin-inline: auto;
+    }
+
+    .mobile-login-indicator {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 14px;
+        color: #1d4ed8;
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+
+    .login-card-header .login-card-kicker {
+        display: none;
+    }
+
+    .corporate-login .login-card {
+        padding: 30px 22px;
+    }
+
+    .corporate-login .login-card-header h2,
+    .login-card h2 {
+        font-size: 28px;
+        line-height: 1.12;
+    }
 }
