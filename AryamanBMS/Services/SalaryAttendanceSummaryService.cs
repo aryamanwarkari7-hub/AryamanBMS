@@ -9,25 +9,29 @@ namespace AryamanBMS.Services
     public class SalaryAttendanceSummaryService : ISalaryAttendanceSummaryService
     {
         private readonly IEmployeeRepository _employeeRepository;
-
         private readonly IAttendanceRepository _attendanceRepository;
-
         private readonly ILeaveApplicationRepository _leaveApplicationRepository;
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
+
+        private readonly IWorkingDayService _workingDayService;
 
         public SalaryAttendanceSummaryService(
             IEmployeeRepository employeeRepository,
             IAttendanceRepository attendanceRepository,
             ILeaveApplicationRepository leaveApplicationRepository,
             ApplicationDbContext context,
-            IConfiguration configuration)
+            IConfiguration configuration,
+
+            IWorkingDayService workingDayService)
         {
             _employeeRepository = employeeRepository;
             _attendanceRepository = attendanceRepository;
             _leaveApplicationRepository = leaveApplicationRepository;
             _context = context;
             _configuration = configuration;
+
+            _workingDayService = workingDayService;
         }
 
         public async Task<List<AttendanceSummaryViewModel>> GetMonthlySummaryAsync(
@@ -68,8 +72,8 @@ namespace AryamanBMS.Services
                 .ToListAsync();
 
             var summaries = new List<AttendanceSummaryViewModel>();
-            var weeklyOffDays = GetWeeklyOffDays();
-            var officeHolidays = await GetOfficeHolidaysAsync(startDate, endDate);
+
+            
 
             foreach (var employee in employees)
             {
@@ -119,6 +123,8 @@ namespace AryamanBMS.Services
                      date <= eligibleEnd.Date;
                      date = date.AddDays(1))
                 {
+                    var workingDayStatus = await _workingDayService.GetDayStatusAsync(date);
+
                     employeeAttendance.TryGetValue(date, out var attendance);
                     decimal attendanceValue =
                         NormalizeDayValue(attendance?.AttendanceValue ?? 1m);
@@ -148,14 +154,14 @@ namespace AryamanBMS.Services
                     }
 
                     if (IsStatus(attendance?.Status, "H", "Holiday") ||
-                        IsOfficeHoliday(date, officeHolidays))
+                        workingDayStatus == "Holiday")
                     {
                         holidayCount += 1m;
                         continue;
                     }
 
                     if (IsStatus(attendance?.Status, "WO", "Week Off", "WeekOff", "Weekly Off") ||
-                        IsWeeklyOff(date, weeklyOffDays))
+                       workingDayStatus == "WeeklyOff")
                     {
                         weekOffCount += 1m;
                         continue;
@@ -182,11 +188,24 @@ namespace AryamanBMS.Services
                         if (dateApprovedLeaves.Any())
                         {
                             decimal paidLeaveValue =
-                                dateApprovedLeaves
-                                    .Where(l =>
-                                        l.LeaveType != null &&
-                                        l.LeaveType.IsPaidLeave)
-                                    .Sum(l => GetLeaveDayValue(l, date));
+                            dateApprovedLeaves.Sum(l =>
+                            {
+                                decimal dateLeaveValue = GetLeaveDayValue(l, date);
+                            
+                                if (l.PaidDays <= 0)
+                                {
+                                    return 0m;
+                                }
+                            
+                                decimal paidRatio =
+                                    l.NumberOfDays <= 0
+                                        ? 0m
+                                        : l.PaidDays / l.NumberOfDays;
+                            
+                                return Math.Min(
+                                    dateLeaveValue,
+                                    Math.Round(dateLeaveValue * paidRatio, 2));
+                            });
 
                             paidLeaveValue = Math.Min(
                                 paidLeaveValue,
@@ -351,10 +370,23 @@ namespace AryamanBMS.Services
         }
 
         private bool IsWeeklyOff(
-            DateTime date,
-            HashSet<DayOfWeek> weeklyOffDays)
+          DateTime date,
+          HashSet<DayOfWeek> weeklyOffDays,
+          int[] workingSaturdayNumbers)
         {
-            return weeklyOffDays.Contains(date.DayOfWeek);
+            if (weeklyOffDays.Contains(date.DayOfWeek))
+            {
+                return true;
+            }
+
+            if (date.DayOfWeek == DayOfWeek.Saturday)
+            {
+                var saturdayNumber = ((date.Day - 1) / 7) + 1;
+
+                return !workingSaturdayNumbers.Contains(saturdayNumber);
+            }
+
+            return false;
         }
 
         private bool IsOfficeHoliday(

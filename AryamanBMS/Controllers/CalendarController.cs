@@ -27,11 +27,14 @@ namespace AryamanBMS.Controllers
             _userManager = userManager;
         }
 
+        #region Index
         [HttpGet]
         public IActionResult Index()
         {
             return View();
         }
+
+        #endregion
 
         [HttpGet]
         public async Task<IActionResult> Events(DateTime start, DateTime end)
@@ -50,6 +53,7 @@ namespace AryamanBMS.Controllers
                 start = x.Start,
                 end = x.End,
                 allDay = x.AllDay,
+                display = x.Display,
                 textColor = x.TextColor,
                 color = x.Color,
                 url = x.Url,
@@ -202,6 +206,9 @@ namespace AryamanBMS.Controllers
                 success = true
             });
         }
+        #endregion
+
+        #region 
         #endregion
 
         #region HELPERS

@@ -10,6 +10,7 @@
 
     const activeFilters = new Set([
         "Holiday",
+        "WeeklyOff",
         "Leave",
         "Attendance",
         "Task",
@@ -116,6 +117,7 @@
     }
 });
 
+/* Calendar event filter controls. */
 function wireCalendarFilters(calendar, activeFilters) {
     document
         .querySelectorAll("[data-calendar-filters] [data-filter]")
@@ -161,7 +163,7 @@ function wireCalendarFilters(calendar, activeFilters) {
                 if (allButton) {
                     allButton.classList.toggle(
                         "active",
-                        activeFilters.size >= 6
+                        activeFilters.size >= 7
                     );
                 }
 
@@ -170,6 +172,7 @@ function wireCalendarFilters(calendar, activeFilters) {
         });
 }
 
+/* Create, edit, and delete manually scheduled calendar events. */
 function wireManualEventForm(calendar) {
     const form = document.getElementById("calendarManualEventForm");
 
@@ -409,6 +412,7 @@ function toDateTimeLocalValue(value) {
     return offsetDate.toISOString().slice(0, 16);
 }
 
+/* Month picker: arrow navigation stays inside the popup. */
 function createCalendarMonthPicker(calendar) {
     let picker = null;
 
@@ -447,6 +451,10 @@ function createCalendarMonthPicker(calendar) {
         picker = document.createElement("div");
         picker.className = "calendar-month-picker";
         document.body.appendChild(picker);
+
+        picker.addEventListener("click", function (event) {
+            event.stopPropagation();
+        });
 
         renderPicker(calendar.getDate());
         positionPicker(anchor);
@@ -506,15 +514,14 @@ function createCalendarMonthPicker(calendar) {
             }
 
             button.addEventListener("click", function () {
-                button.addEventListener("click", function () {
-                    const selectedDate = new Date(button.dataset.date + "T00:00:00");
+                const selectedDate =
+                    new Date(button.dataset.date + "T00:00:00");
 
-                    calendar.gotoDate(selectedDate);
-                    calendar.select(selectedDate);
+                calendar.gotoDate(selectedDate);
+                calendar.select(selectedDate);
 
-                    closePicker();
-                    window.setTimeout(bindTitle, 50);
-                });
+                closePicker();
+                window.setTimeout(bindTitle, 50);
             });
 
             grid.appendChild(button);
@@ -523,9 +530,16 @@ function createCalendarMonthPicker(calendar) {
         picker
             .querySelectorAll("[data-picker-nav]")
             .forEach(function (button) {
-                button.addEventListener("click", function () {
-                    const nextDate = new Date(year, month + Number(button.dataset.pickerNav), 1);
-                    calendar.gotoDate(nextDate);
+                button.addEventListener("click", function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    const nextDate = new Date(
+                        year,
+                        month + Number(button.dataset.pickerNav),
+                        1
+                    );
+
                     renderPicker(nextDate);
                     window.setTimeout(bindTitle, 50);
                 });
@@ -565,6 +579,7 @@ function createCalendarMonthPicker(calendar) {
     });
 }
 
+/* Date formatting helpers used by the month picker and forms. */
 function toDateOnlyValue(date) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");

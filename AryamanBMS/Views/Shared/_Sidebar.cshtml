@@ -132,9 +132,13 @@
     bool isHolidayActive =
     currentController == "Holiday";
 
+    bool isSaturdaySwitcherActive =
+    currentController == "WorkingDayOverride";
+
     bool isHrActive =
      currentController == "Employee" ||
      isHolidayActive ||
+     isSaturdaySwitcherActive ||
      isAttendanceActive ||
      isLeaveActive ||
      isSalaryActive ||
@@ -822,11 +826,26 @@
 
                     @if (isAdminHrOrMaster)
                     {
+                         @* ==========================================
+                             HOLIDAYS
+                    ========================================== *@
                         <a asp-controller="Holiday"
                            asp-action="Index"
                            class="submenu-item @(isHolidayActive ? "active-menu" : "")">
                             <i class="bi bi-calendar-event"></i>
                             <span>Holidays</span>
+                        </a>
+
+                        @* ==========================================
+                            SATURDAY SWITCHER
+                    ========================================== *@
+
+                        <a asp-controller="WorkingDayOverride"
+                           asp-action="Index"
+                           class="submenu-item @(isSaturdaySwitcherActive ? "active-menu" : "")">
+
+                            <i class="bi bi-arrow-left-right"></i>
+                            <span>Saturday Switcher</span>
                         </a>
                     }
 

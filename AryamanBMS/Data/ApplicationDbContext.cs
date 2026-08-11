@@ -149,6 +149,9 @@ namespace AryamanBMS.Data
         //Holiday
         public DbSet<HolidayModel> Holidays { get; set; }
 
+        // Override Saturday Working (optional)
+        public DbSet<WorkingDayOverrideModel> WorkingDayOverrides { get; set; }
+
         //Login History
         public DbSet<LoginHistoryModel> TableLoginHistory { get; set; }
         public DbSet<PasswordChangeLogModel> PasswordChangeLogs { get; set; }
@@ -1241,6 +1244,27 @@ namespace AryamanBMS.Data
                     .HasDefaultValue("Office Holiday");
 
                 entity.HasIndex(x => x.HolidayDate)
+                    .IsUnique();
+            });
+
+            // Saturday working override
+            modelBuilder.Entity<WorkingDayOverrideModel>(entity =>
+            {
+                entity.ToTable("TableWorkingDayOverride");
+
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.OverrideType)
+                    .IsRequired()
+                    .HasMaxLength(20);
+
+                entity.Property(x => x.Reason)
+                    .HasMaxLength(250);
+
+                entity.Property(x => x.CreatedByUserId)
+                    .HasMaxLength(450);
+
+                entity.HasIndex(x => x.OverrideDate)
                     .IsUnique();
             });
 

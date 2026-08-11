@@ -1,4 +1,5 @@
 using AryamanBMS.Data;
+using AryamanBMS.Services.Interface;
 using AryamanBMS.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -55,13 +56,16 @@ namespace AryamanBMS.Services.Background
             var notificationService =
                 scope.ServiceProvider.GetRequiredService<INotificationService>();
 
+            var workingDayService =
+                scope.ServiceProvider.GetRequiredService<IWorkingDayService>();
+
             await NotifyCompOffExpiringAsync(
                 context,
                 notificationService,
                 today,
                 cancellationToken);
 
-            if (IsOfficeHoliday(today) || IsWeeklyOff(today))
+            if (!await workingDayService.IsWorkingDayAsync(today))
             {
                 return;
             }
@@ -229,37 +233,8 @@ namespace AryamanBMS.Services.Background
                     : fallback;
         }
 
-        private bool IsWeeklyOff(DateTime date)
-        {
-            var configuredDays =
-                _configuration
-                    .GetSection("Attendance:WeeklyOffDays")
-                    .Get<string[]>();
+        
 
-            if (configuredDays == null || configuredDays.Length == 0)
-            {
-                return date.DayOfWeek == DayOfWeek.Sunday;
-            }
-
-            return configuredDays.Any(day =>
-                Enum.TryParse(
-                    day,
-                    ignoreCase: true,
-                    out DayOfWeek dayOfWeek) &&
-                date.DayOfWeek == dayOfWeek);
-        }
-
-        private bool IsOfficeHoliday(DateTime date)
-        {
-            var configuredHolidays =
-                _configuration
-                    .GetSection("Attendance:OfficeHolidays")
-                    .Get<string[]>();
-
-            return configuredHolidays != null &&
-                   configuredHolidays.Any(x =>
-                       DateTime.TryParse(x, out var holiday) &&
-                       holiday.Date == date.Date);
-        }
+        
     }
 }

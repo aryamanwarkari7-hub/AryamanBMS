@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using AryamanBMS.Data;
 using AryamanBMS.Models;
+using AryamanBMS.Services.Interface;
 using AryamanBMS.Services.Interfaces;
 using AryamanBMS.ViewModels;
 using Microsoft.AspNetCore.Identity;
@@ -13,12 +14,16 @@ namespace AryamanBMS.Services
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUserModel> _userManager;
 
+        private readonly IWorkingDayService _workingDayService;
+
         public CalendarService(
-            ApplicationDbContext context,
-            UserManager<ApplicationUserModel> userManager)
+           ApplicationDbContext context,
+           UserManager<ApplicationUserModel> userManager,
+           IWorkingDayService workingDayService)
         {
             _context = context;
             _userManager = userManager;
+            _workingDayService = workingDayService;
         }
 
         public async Task<List<CalendarEventViewModel>> GetEventsAsync(
@@ -36,6 +41,7 @@ namespace AryamanBMS.Services
 
             if (canViewAll)
             {
+                await AddNonWorkingDayBackgroundsAsync(events, start, end);
                 await AddHolidaysAsync(events, start, end);
                 await AddAllLeavesAsync(events, start, end);
                 await AddAttendanceExceptionsAsync(events, start, end);
@@ -430,6 +436,51 @@ namespace AryamanBMS.Services
                     TextColor = "#ffffff",
                     Url = null
                 });
+            }
+        }
+
+        private async Task AddNonWorkingDayBackgroundsAsync(
+    List<CalendarEventViewModel> events,
+    DateTime start,
+    DateTime end)
+        {
+            for (var date = start.Date;
+                 date < end.Date;
+                 date = date.AddDays(1))
+            {
+                var status =
+                    await _workingDayService.GetDayStatusAsync(date);
+
+                if (status == "Holiday")
+                {
+                    events.Add(new CalendarEventViewModel
+                    {
+                        Title = "Company Holiday",
+                        Start = date,
+                        End = date.AddDays(1),
+                        AllDay = true,
+                        Display = "background",
+                        Type = "Holiday",
+                        Status = "Company Holiday",
+                        Color = "#ede9fe",
+                        TextColor = "#5b21b6"
+                    });
+                }
+                else if (status == "WeeklyOff")
+                {
+                    events.Add(new CalendarEventViewModel
+                    {
+                        Title = "Weekly Off",
+                        Start = date,
+                        End = date.AddDays(1),
+                        AllDay = true,
+                        Display = "background",
+                        Type = "WeeklyOff",
+                        Status = "Weekly Off",
+                        Color = "#e2e8f0",
+                        TextColor = "#334155"
+                    });
+                }
             }
         }
     }

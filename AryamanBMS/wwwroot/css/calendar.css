@@ -54,11 +54,14 @@
 ========================================== */
 
 .calendar-dot {
-    width: 9px;
-    height: 9px;
-    border-radius: var(--radius-pill);
+    width: 10px;
+    height: 10px;
+    min-width: 10px;
+    border-radius: 50%;
     display: inline-block;
-    flex: 0 0 auto;
+    flex: 0 0 10px;
+    border: 1px solid rgba(15, 23, 42, 0.25);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.7);
 }
 
     .calendar-dot.all {
@@ -67,6 +70,12 @@
 
     .calendar-dot.holiday {
         background: #7c3aed;
+        border-color: #5b21b6;
+    }
+
+    .calendar-dot.weekly-off {
+        background: #64748b;
+        border-color: #334155;
     }
 
     .calendar-dot.leave {
@@ -265,6 +274,19 @@
         white-space: normal;
         line-height: 1.25;
     }
+
+
+    .fc .fc-bg-event {
+        opacity: 0.72;
+    }
+
+        .fc .fc-bg-event.holiday-background {
+            background: #ede9fe !important;
+        }
+
+        .fc .fc-bg-event.weekly-off-background {
+            background: #e2e8f0 !important;
+        }
 
     /* ==========================================
    LIST VIEW

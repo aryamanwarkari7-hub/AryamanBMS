@@ -1,0 +1,118 @@
+﻿@model AryamanBMS.Models.WorkingDayOverrideModel
+
+@{
+    ViewData["Title"] = "Saturday Switcher";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Edit Saturday Schedule Change</h1>
+        <p class="module-subtitle">
+            Update the working status of one specific date.
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="Index" class="btn-app btn-outline-app">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
+</div>
+
+<div class="app-card">
+    <div class="card-header">
+        <div class="card-heading">
+            <h2 class="card-title">Schedule Change Details</h2>
+            <p class="card-subtitle">
+                Update the selected Saturday schedule.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <form asp-action="Edit" method="post">
+            @Html.AntiForgeryToken()
+
+            <input asp-for="Id" type="hidden" />
+
+            <div asp-validation-summary="ModelOnly"
+                 class="app-alert-danger mb-3"></div>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="OverrideDate" class="form-label">
+                        Date
+                    </label>
+
+                    <input asp-for="OverrideDate"
+                           type="date"
+                           class="app-input" />
+
+                    <span asp-validation-for="OverrideDate"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="OverrideType" class="form-label">
+                        Schedule Change
+                    </label>
+
+                    <select asp-for="OverrideType" class="app-input">
+                        <option value="Working Day">
+                            Working Saturday
+                        </option>
+                        <option value="Holiday">
+                            Holiday
+                        </option>
+                        <option value="Weekly Off">
+                            Weekly Off
+                        </option>
+                    </select>
+
+                    <span asp-validation-for="OverrideType"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="col-12">
+                    <label asp-for="Reason" class="form-label">
+                        Reason
+                    </label>
+
+                    <textarea asp-for="Reason"
+                              class="app-input"
+                              rows="4"
+                              maxlength="250"></textarea>
+
+                    <span asp-validation-for="Reason"
+                          class="validation-message"></span>
+                </div>
+
+                <div class="col-12">
+                    <div class="form-check">
+                        <input asp-for="IsActive"
+                               class="form-check-input" />
+
+                        <label asp-for="IsActive"
+                               class="form-check-label">
+                            Active
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions mt-4">
+                <button type="submit"
+                        class="btn-app btn-primary-app">
+                    <i class="bi bi-check-lg"></i>
+                    Save Changes
+                </button>
+
+                <a asp-action="Index"
+                   class="btn-app btn-secondary-app">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>

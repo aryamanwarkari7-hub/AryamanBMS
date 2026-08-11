@@ -891,26 +891,31 @@ namespace AryamanBMS.Controllers
             var configuredDays =
                 _configuration
                     .GetSection("Attendance:WeeklyOffDays")
-                    .Get<string[]>();
+                    .Get<string[]>()
+                ?? Array.Empty<string>();
 
-            if (configuredDays == null || configuredDays.Length == 0)
+            if (configuredDays.Any(day =>
+                Enum.TryParse(day, true, out DayOfWeek weeklyOffDay) &&
+                date.DayOfWeek == weeklyOffDay))
             {
-                return date.DayOfWeek == DayOfWeek.Sunday;
+                return true;
             }
 
-            foreach (var configuredDay in configuredDays)
+            // Apply the configured alternate-Saturday working pattern.
+            if (date.DayOfWeek == DayOfWeek.Saturday)
             {
-                if (Enum.TryParse(
-                        configuredDay,
-                        ignoreCase: true,
-                        out DayOfWeek dayOfWeek) &&
-                    date.DayOfWeek == dayOfWeek)
-                {
-                    return true;
-                }
+                var saturdayNumber = ((date.Day - 1) / 7) + 1;
+
+                var workingSaturdays =
+                    _configuration
+                        .GetSection("Attendance:WorkingSaturdayNumbers")
+                        .Get<int[]>()
+                    ?? new[] { 1, 3, 5 };
+
+                return !workingSaturdays.Contains(saturdayNumber);
             }
 
-            return date.DayOfWeek == DayOfWeek.Sunday;
+            return false;
         }
 
         private async Task<bool> IsOfficeHolidayAsync(DateTime date)

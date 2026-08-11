@@ -152,6 +152,9 @@ builder.Services.AddScoped<ICalendarService, CalendarService>();
 //HOLIDAY SERVICE
 builder.Services.AddScoped<IHolidayExcelImportService, HolidayExcelImportService>();
 
+// WORKING DAY SERVICE
+builder.Services.AddScoped<IWorkingDayService,WorkingDayService>();
+
 // BACKGROUND SERVICE
 builder.Services.AddHostedService<TaskReminderBackgroundService>();
 builder.Services.AddHostedService<InvoiceReminderBackgroundService>();

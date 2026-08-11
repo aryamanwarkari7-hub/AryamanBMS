@@ -16,5 +16,7 @@
         public int? Id { get; set; }
         public bool IsManual { get; set; }
 
+        public string? Display { get; set; }
+
     }
 }
