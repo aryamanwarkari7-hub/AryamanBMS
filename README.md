@@ -124,6 +124,8 @@ The startup seed process creates these roles:
 
 `Master` is a restricted management role. It is intended for access to Dashboard, Leaves, Attendance, Project Management, Proposals and Templates, PO/WO, Receipts, Billing Milestones, Expense Vouchers, Vendor Payments, Calendar, and Holiday Register. It does not expose user/role administration, employee master setup, salary, compliance, client/vendor setup, invoices, receivables, credit notes, or debit notes through the main navigation.
 
+Admin, HR, and Master users with a mapped employee record can also access **My Workspace** for their own employee-level attendance, leave, paid leave, Comp Off, expenses, calendar, project tasks, projects, and assigned assets. Employee-only users use My Workspace as their consolidated personal navigation; management menus are hidden for them.
+
 An admin user can be seeded only when these configuration keys are present:
 
 ```text
@@ -228,6 +230,29 @@ AryamanBMS/Views/Holiday/
 AryamanBMS/wwwroot/templates/HolidayTemplate.xlsx
 ```
 
+### Saturday Switcher
+
+Provides date-specific Saturday schedule changes for exceptional working Saturdays and weekly offs. A switch can mark a Saturday as a Working Saturday or Weekly Off, with a reason, active status, edit/deactivate actions, and Excel export. Working-day decisions use the following priority: manual switch, Holiday Register, configured weekly offs, and the alternate Saturday schedule.
+
+The default alternate Saturday configuration is maintained in `appsettings.json`:
+
+```json
+{
+  "Attendance": {
+    "WorkingSaturdayNumbers": [ 1, 3, 5 ]
+  }
+}
+```
+
+Key files:
+
+```text
+AryamanBMS/Controllers/WorkingDayOverrideController.cs
+AryamanBMS/Models/WorkingDayOverrideModel.cs
+AryamanBMS/Services/WorkingDayService.cs
+AryamanBMS/Views/WorkingDayOverride/
+```
+
 ### Leave, Paid Leave Balance, And Comp-Off
 
 Supports leave type setup, leave applications, half-day leave, approvals, cancellations, employee paid leave balance visibility, Admin/HR/Master paid leave balance register, comp-off credits, and comp-off usage.
@@ -241,6 +266,16 @@ Paid leave is calculated from a single financial-year pool instead of fixed year
 - leave types act as categories/reasons rather than separate paid leave buckets
 - approval stores final `PaidDays` and `UnpaidDays` on each leave application
 - rejected or cancelled leaves do not consume paid or unpaid days
+
+Birthday Leave is a separate paid entitlement and does not consume the regular 18-day pool:
+
+- Birthday Leave uses leave code `BDL` and remains an active paid leave type
+- each employee receives one Birthday Leave per financial year
+- it can be applied on any date within that financial year
+- it is limited to one day and duplicate applications in the same financial year are blocked
+- approval records it as fully paid and keeps it outside regular paid-leave calculations
+- the employee date of birth must be present in the Employee profile
+- Admin, HR, and Master users can see the separate Birthday Leave balance
 
 Employees can view their own paid leave balance from the leave module and while applying for leave. Admin, HR, and Master users can view employee-wise paid leave balances through the paid leave balance register. Comp Off remains separate from the annual paid leave pool: it consumes approved Comp Off credits, stays salary-paid, and does not reduce the 18-day financial-year entitlement.
 
@@ -258,6 +293,7 @@ AryamanBMS/Models/CompOffCreditModel.cs
 AryamanBMS/Models/CompOffUsageModel.cs
 AryamanBMS/ViewModels/PaidLeaveBalanceSnapshotViewModel.cs
 AryamanBMS/ViewModels/EmployeePaidLeaveBalanceViewModel.cs
+AryamanBMS/ViewModels/BirthdayLeaveBalanceViewModel.cs
 AryamanBMS/Views/LeaveApplication/MyPaidLeaveBalance.cshtml
 AryamanBMS/Views/LeaveApplication/PaidLeaveBalanceRegister.cshtml
 ```
@@ -302,7 +338,7 @@ AryamanBMS/Services/ProjectTimelineService.cs
 
 ### Calendar
 
-Provides a work calendar with month, week, day, and list views. Calendar events are aggregated from holidays, leave applications, attendance exceptions, project tasks, meetings, billing milestones, and manual calendar entries. Admin, HR, and Master users can add and edit manual calendar events; employees can view their own schedule and shared holiday/manual entries.
+Provides a work calendar with month, week, day, and list views. Calendar events are aggregated from holidays, weekly offs, birthdays, leave applications, attendance exceptions, project tasks, meetings, billing milestones, and manual calendar entries. Employee birthdays recur annually from the employee date of birth and are shown as separate Birthday events. Admin, HR, and Master users can add and edit manual calendar events; employees can view their personal schedule and shared birthday/holiday entries. Calendar filters and event colors distinguish Birthday, Holiday, Weekly Off, Leave, Attendance, Task, Meeting, and Billing events.
 
 Key files:
 
@@ -380,7 +416,7 @@ AryamanBMS/Services/GstDashboardService.cs
 
 ### Notifications And Activity
 
-Supports persistent notifications, unread counts, SignalR realtime delivery, login notifications, user/security notifications, leave and Comp Off notifications, attendance updates and reminders, salary notifications, project member notifications, holiday import notifications, and user activity state.
+Supports persistent notifications, unread counts, SignalR realtime delivery, login notifications, user/security notifications, leave and Comp Off notifications, attendance updates and reminders, salary notifications, project member notifications, holiday import notifications, employee birthday notifications, and user activity state. The hourly HR notification reminder service creates one birthday notification per employee birthday per year for active employees with mapped user accounts.
 
 Key files:
 
@@ -485,6 +521,8 @@ Notification reminder timing:
   }
 }
 ```
+
+Birthday notifications are generated by the running background service and are delivered in realtime when the recipient has realtime notifications enabled. They remain persisted in the notification database even when realtime delivery is unavailable.
 
 ## Local Development
 
@@ -623,7 +661,7 @@ Before replacing IIS files, run required SQL scripts on the server database and 
 ConnectionStrings__DefaultConnection
 ```
 
-Current deployment-sensitive tables include `TableHoliday`, `TableCalendarManualEvent`, `tableleaveapplications`, expense voucher tables, and the current Project Management tables. When publishing to IIS, the server database schema must match the deployed models before testing Calendar, Holiday, Leave, Salary Pay Days, Expense Voucher, or Project Management pages.
+Current deployment-sensitive tables include `TableHoliday`, `TableCalendarManualEvent`, `TableWorkingDayOverride`, `tableleavetypes`, `tableleaveapplications`, expense voucher tables, and the current Project Management tables. When publishing to IIS, the server database schema must match the deployed models before testing Calendar, Holiday, Saturday Switcher, Birthday Leave, Leave, Salary Pay Days, Expense Voucher, or Project Management pages.
 
 ## Repository Notes
 
@@ -642,4 +680,4 @@ The main implementation should be understood from source files under the web pro
 
 ## Project Status
 
-This README reflects the current static project structure and implementation after the Holiday Register, Calendar, holiday attendance/pay-day integration, Expense Voucher party-type handling, and financial-year paid leave balance work. It is intended as the primary GitHub-facing project overview and onboarding reference.
+This README reflects the current static project structure and implementation after the Holiday Register, alternate Saturday Switcher, Calendar birthday events, birthday notifications, Birthday Leave, holiday attendance/pay-day integration, Expense Voucher party-type handling, financial-year paid leave balance work, and My Workspace navigation. It is intended as the primary GitHub-facing project overview and onboarding reference.
