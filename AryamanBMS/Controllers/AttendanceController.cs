@@ -16,6 +16,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin,HR,Employee,Master")]
     public class AttendanceController : Controller
     {
+        #region Actions
+
         private readonly IAttendanceRepository _attendanceRepository;
         private readonly IEmployeeRepository _employeeRepository;
         private readonly UserManager<ApplicationUserModel> _userManager;
@@ -1177,5 +1179,6 @@ namespace AryamanBMS.Controllers
 
             return View(summary);
         }
+        #endregion
     }
 }

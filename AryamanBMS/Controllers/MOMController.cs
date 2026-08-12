@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Models;
+using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
 using AryamanBMS.ViewModels;
@@ -12,6 +12,8 @@ namespace AryamanBMS.Controllers
     [Authorize]
     public class MOMController : Controller
     {
+        #region Actions
+
         private readonly IProjectMeetingRepository _meetingRepository;
         private readonly IProjectMemberRepository _projectMemberRepository;
         private readonly IProjectRepository _projectRepository;
@@ -1090,5 +1092,6 @@ namespace AryamanBMS.Controllers
                 model.ProjectId,
                 currentEmployeeId.Value);
         }
+        #endregion
     }
 }

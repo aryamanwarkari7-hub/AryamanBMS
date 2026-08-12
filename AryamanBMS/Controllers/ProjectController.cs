@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Models;
+using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
 using AryamanBMS.ViewModels;
@@ -13,6 +13,8 @@ namespace AryamanBMS.Controllers
     
     public class ProjectController : Controller
     {
+        #region Actions
+
         private readonly IProjectRepository _projectRepository;
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IProjectMemberRepository _projectMemberRepository;
@@ -1340,5 +1342,6 @@ namespace AryamanBMS.Controllers
                 "ClientId",
                 "ClientName");
         }
+        #endregion
     }
 }

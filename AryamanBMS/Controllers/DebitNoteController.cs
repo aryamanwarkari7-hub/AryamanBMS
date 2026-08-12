@@ -10,6 +10,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin")]
     public class DebitNoteController : Controller
     {
+        #region Actions
+
         private readonly ApplicationDbContext _context;
 
         public DebitNoteController(ApplicationDbContext context)
@@ -283,5 +285,6 @@ namespace AryamanBMS.Controllers
                 invoice.PaymentStatus = "Unpaid";
             }
         }
+        #endregion
     }
 }

@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Models;
+using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -10,6 +10,8 @@ namespace AryamanBMS.Controllers
     [Authorize]
     public class ProjectFlowController : Controller
     {
+        #region Actions
+
         private readonly IProjectRepository _projectRepository;
         private readonly IProjectFlowRepository _projectFlowRepository;
         private readonly IProjectTimelineService _projectTimelineService;
@@ -532,5 +534,6 @@ namespace AryamanBMS.Controllers
                 p.Id == projectId &&
                 p.ProjectManagerId == employeeId.Value);
         }
+        #endregion
     }
 }

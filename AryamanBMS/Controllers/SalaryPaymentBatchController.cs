@@ -12,6 +12,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin,HR")]
     public class SalaryPaymentBatchController : Controller
     {
+        #region Actions
+
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUserModel> _userManager;
         private readonly INotificationService _notificationService;
@@ -203,5 +205,6 @@ namespace AryamanBMS.Controllers
             return new System.Globalization.CultureInfo("en-US")
                 .DateTimeFormat.GetMonthName(month);
         }
+        #endregion
     }
 }

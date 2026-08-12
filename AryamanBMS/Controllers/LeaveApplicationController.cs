@@ -14,6 +14,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin,HR,Employee,Master")]
     public class LeaveApplicationController : Controller
     {
+        #region Actions
+
         private readonly ILeaveApplicationRepository _leaveApplicationRepository;
         private readonly ILeaveTypeRepository _leaveTypeRepository;
         private readonly IEmployeeRepository _employeeRepository;
@@ -2267,6 +2269,6 @@ namespace AryamanBMS.Controllers
             };
         }
 
+        #endregion
     }
-
 }

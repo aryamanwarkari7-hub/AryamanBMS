@@ -11,6 +11,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin")]
     public class PtController : Controller
     {
+        #region Actions
+
         private readonly IPtRepository _ptRepository;
         private readonly IFileStorageService _fileStorageService;
         private readonly UserManager<ApplicationUserModel> _userManager;
@@ -363,5 +365,6 @@ namespace AryamanBMS.Controllers
                 _ => "application/octet-stream"
             };
         }
+        #endregion
     }
 }

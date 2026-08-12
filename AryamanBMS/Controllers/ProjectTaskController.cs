@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Models;
+using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -10,6 +10,8 @@ namespace AryamanBMS.Controllers
     [Authorize]
     public class ProjectTaskController : Controller
     {
+        #region Actions
+
         private readonly IProjectRepository _projectRepository;
         private readonly IProjectTaskRepository _projectTaskRepository;
         private readonly IProjectMemberRepository _projectMemberRepository;
@@ -818,5 +820,6 @@ namespace AryamanBMS.Controllers
                 referenceId: task.Id,
                 actionUrl: $"/EmployeeProject/TaskDetails/{task.Id}");
         }
+        #endregion
     }
 }

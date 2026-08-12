@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Models;
+using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -10,6 +10,8 @@ namespace AryamanBMS.Controllers
     [Authorize]
     public class TaskTrackerController : Controller
     {
+        #region Actions
+
         private readonly IProjectRepository _projectRepository;
         private readonly IProjectTaskRepository _projectTaskRepository;
         private readonly IProjectTaskProgressRepository _progressRepository;
@@ -227,5 +229,6 @@ namespace AryamanBMS.Controllers
 
 
         
+        #endregion
     }
 }

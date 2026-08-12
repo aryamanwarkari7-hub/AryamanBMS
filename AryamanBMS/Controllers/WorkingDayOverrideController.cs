@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Data;
+using AryamanBMS.Data;
 using AryamanBMS.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -12,6 +12,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin,HR,Master")]
     public class WorkingDayOverrideController : Controller
     {
+        #region Actions
+
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUserModel> _userManager;
 
@@ -294,5 +296,6 @@ namespace AryamanBMS.Controllers
                    value == "Holiday" ||
                    value == "Weekly Off";
         }
+        #endregion
     }
 }

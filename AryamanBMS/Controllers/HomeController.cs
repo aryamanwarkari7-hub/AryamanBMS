@@ -8,6 +8,8 @@ namespace AryamanBMS.Controllers
     [Authorize]
     public class HomeController : Controller
     {
+        #region Actions
+
         private readonly ILogger<HomeController> _logger;
 
         public HomeController(ILogger<HomeController> logger)
@@ -36,5 +38,6 @@ namespace AryamanBMS.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
+        #endregion
     }
 }

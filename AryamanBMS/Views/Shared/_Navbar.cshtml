@@ -1,4 +1,7 @@
-﻿@using AryamanBMS.Models
+@* ====================================
+   NAVBAR DIRECTIVES AND USER CONTEXT
+   ==================================== *@
+@using AryamanBMS.Models
 @using Microsoft.AspNetCore.Identity
 @inject UserManager<ApplicationUserModel> UserManager
 
@@ -45,6 +48,9 @@
     
 }
 
+@* =============================
+   NAVIGATION HEADER
+   ============================= *@
 <div class="top-navbar">
 
         <button class="mobile-sidebar-toggle"
@@ -73,6 +79,9 @@
         var activityClass = activityStatus.ToLower().Replace(" ", "-");
     }
 
+    @* =====================================
+       CALENDAR, NOTIFICATIONS, AND PROFILE
+       ===================================== *@
     <div class="navbar-actions">
         <a asp-controller="Calendar"
            asp-action="Index"

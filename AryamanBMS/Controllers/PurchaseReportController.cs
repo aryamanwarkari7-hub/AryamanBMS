@@ -9,6 +9,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin")]
     public class PurchaseReportController : Controller
     {
+        #region Actions
+
         private readonly ApplicationDbContext _context;
 
         public PurchaseReportController(ApplicationDbContext context)
@@ -154,5 +156,6 @@ namespace AryamanBMS.Controllers
         public decimal TotalAmount { get; set; }
         public decimal PaidAmount { get; set; }
         public decimal BalanceAmount { get; set; }
+        #endregion
     }
 }

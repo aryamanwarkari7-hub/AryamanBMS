@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
@@ -12,6 +12,8 @@ namespace AryamanBMS.Controllers
     [Authorize]
     public class ProjectCommunicationController : Controller
     {
+        #region Actions
+
         private readonly IProjectCommunicationRepository _communicationRepository;
         private readonly IProjectRepository _projectRepository;
         private readonly IEmployeeRepository _employeeRepository;
@@ -321,5 +323,6 @@ namespace AryamanBMS.Controllers
                     projectId = communication.ProjectId
                 });
         }
+        #endregion
     }
 }

@@ -14,6 +14,8 @@ namespace AryamanBMS.Controllers
     [Authorize]
     public class OfficeAssetController : Controller
     {
+        #region Actions
+
         private static readonly string[] AllowedStatuses =
         {
             "InUse",
@@ -1082,5 +1084,6 @@ namespace AryamanBMS.Controllers
                 .OrderBy(x => x.StateName)
                 .ToListAsync();
         }
+        #endregion
     }
 }

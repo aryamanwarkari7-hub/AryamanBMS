@@ -12,6 +12,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin,HR,Master")]
     public class LeaveBalanceController : Controller
     {
+        #region Actions
+
         private readonly ILeaveBalanceRepository _leaveBalanceRepository;
         private readonly ILeaveTypeRepository _leaveTypeRepository;
         private readonly IEmployeeRepository _employeeRepository;
@@ -337,5 +339,6 @@ namespace AryamanBMS.Controllers
              proratedLeave * 2,
              MidpointRounding.AwayFromZero) / 2;
         }
+        #endregion
     }
 }

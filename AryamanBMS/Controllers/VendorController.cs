@@ -11,6 +11,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin")]
     public class VendorController : Controller
     {
+        #region Actions
+
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUserModel> _userManager;
 
@@ -206,5 +208,6 @@ namespace AryamanBMS.Controllers
                 ModelState.AddModelError(nameof(model.GSTIN), "Enter a valid 15-character GSTIN.");
             }
         }
+        #endregion
     }
 }

@@ -13,6 +13,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin")]
     public class FinancialAuditDocumentController : Controller
     {
+        #region Actions
+
         private const string DocumentFolder = "FinancialAuditDocuments";
 
         private static readonly HashSet<string> AllowedCategories =
@@ -661,5 +663,6 @@ namespace AryamanBMS.Controllers
             value ??= string.Empty;
             return $"\"{value.Replace("\"", "\"\"")}\"";
         }
+        #endregion
     }
 }

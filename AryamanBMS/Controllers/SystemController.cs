@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AryamanBMS.Controllers
@@ -6,6 +6,8 @@ namespace AryamanBMS.Controllers
     [Authorize]
     public class SystemController : Controller
     {
+        #region Actions
+
         public IActionResult ComingSoon()
         {
             return View("~/Views/Shared/ComingSoon.cshtml");
@@ -16,5 +18,6 @@ namespace AryamanBMS.Controllers
         {
             return View("~/Views/Shared/NotFound.cshtml");
         }
+        #endregion
     }
 }

@@ -14,6 +14,8 @@ namespace AryamanBMS.Controllers
     public class ProposalTemplateController
         : Controller
     {
+        #region Actions
+
         private readonly IProposalTemplateRepository  _templateRepository;
 
         private readonly IFileStorageService _fileStorageService;
@@ -376,5 +378,6 @@ namespace AryamanBMS.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+        #endregion
     }
 }

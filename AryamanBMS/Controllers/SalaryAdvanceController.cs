@@ -12,6 +12,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin,HR")]
     public class SalaryAdvanceController : Controller
     {
+        #region Actions
+
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUserModel> _userManager;
         private readonly INotificationService _notificationService;
@@ -214,5 +216,6 @@ namespace AryamanBMS.Controllers
                     referenceId);
             }
         }
+        #endregion
     }
 }

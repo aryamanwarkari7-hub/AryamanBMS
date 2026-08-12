@@ -12,6 +12,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin,HR,Employee,Master")]
     public class CompOffCreditController : Controller
     {
+        #region Actions
+
         private readonly ICompOffCreditRepository
             _compOffCreditRepository;
 
@@ -563,5 +565,6 @@ namespace AryamanBMS.Controllers
 
             await _compOffCreditRepository.SaveAsync();
         }
+        #endregion
     }
 }

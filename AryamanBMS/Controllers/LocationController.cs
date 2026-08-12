@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Repositories.Interfaces;
+using AryamanBMS.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,6 +7,8 @@ namespace AryamanBMS.Controllers
     [Authorize]
     public class LocationController : Controller
     {
+        #region Actions
+
         private readonly ILocationRepository _locationRepository;
 
         public LocationController(
@@ -78,5 +80,6 @@ namespace AryamanBMS.Controllers
 
             return Json(data);
         }
+        #endregion
     }
 }

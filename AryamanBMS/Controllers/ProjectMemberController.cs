@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Models;
+using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -10,6 +10,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin,HR,Employee,Master")]
     public class ProjectMemberController : Controller
     {
+        #region Actions
+
         private readonly IProjectRepository _projectRepository;
         private readonly IProjectMemberRepository _projectMemberRepository;
         private readonly IEmployeeRepository _employeeRepository;
@@ -442,5 +444,6 @@ namespace AryamanBMS.Controllers
 
             return View(data);
         }
+        #endregion
     }
 }

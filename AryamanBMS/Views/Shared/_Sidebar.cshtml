@@ -43,8 +43,6 @@
         currentUser != null &&
         await UserManager.IsInRoleAsync(currentUser, "Employee");
 
-    
-
     var isFinance =
         currentUser != null &&
         await UserManager.IsInRoleAsync(currentUser, "Finance");

@@ -8,6 +8,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin")]
     public class CompanyProfileController : Controller
     {
+        #region Actions
+
         private readonly ICompanyProfileRepository _companyProfileRepository;
 
         public CompanyProfileController(
@@ -105,5 +107,6 @@ namespace AryamanBMS.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+        #endregion
     }
 }

@@ -9,6 +9,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin")]
     public class ReceivablesController : Controller
     {
+        #region Actions
+
         private readonly ApplicationDbContext _context;
 
         public ReceivablesController(ApplicationDbContext context)
@@ -221,5 +223,6 @@ namespace AryamanBMS.Controllers
 
             return "Above 90 Days";
         }
+        #endregion
     }
 }

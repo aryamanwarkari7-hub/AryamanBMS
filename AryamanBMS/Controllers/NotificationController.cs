@@ -12,6 +12,8 @@ namespace AryamanBMS.Controllers
     [Authorize]
     public class NotificationController : Controller
     {
+        #region Actions
+
         private readonly INotificationService _notificationService;
         private readonly UserManager<ApplicationUserModel> _userManager;
         private readonly ApplicationDbContext _context;
@@ -264,5 +266,6 @@ namespace AryamanBMS.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+        #endregion
     }
 }

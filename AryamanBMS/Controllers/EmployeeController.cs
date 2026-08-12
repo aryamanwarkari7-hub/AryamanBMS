@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Data;
+using AryamanBMS.Data;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interface;
@@ -15,6 +15,8 @@ namespace AryamanBMS.Controllers
     [Authorize]
     public class EmployeeController : Controller
     {
+        #region Actions
+
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IDepartmentRepository _departmentRepository;
         private readonly IDesignationRepository _designationRepository;
@@ -2797,6 +2799,6 @@ namespace AryamanBMS.Controllers
                 }
             }
         }
+        #endregion
     }
 }
-

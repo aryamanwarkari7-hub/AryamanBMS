@@ -14,6 +14,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Infrastructure;
 
+// =============================
+// APPLICATION CONFIGURATION
+// =============================
 var builder = WebApplication.CreateBuilder(args);
 
 var connectionString =
@@ -21,6 +24,9 @@ var connectionString =
     ?? throw new InvalidOperationException(
         "Connection string 'DefaultConnection' is not configured.");
 
+// =============================
+// DATABASE AND IDENTITY
+// =============================
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     options.UseMySql(
@@ -44,6 +50,9 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.AccessDeniedPath = "/Account/AccessDenied";
 });
 builder.Services.AddAuthorization();
+// =============================
+// REPOSITORIES
+// =============================
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 
 builder.Services.AddScoped<IEmployeeAcademicRepository, EmployeeAcademicRepository>();
@@ -116,6 +125,9 @@ builder.Services.AddScoped<IPtRepository, PtRepository>();
 builder.Services.AddScoped<INoticeRepository, NoticeRepository>();
 builder.Services.AddScoped<IProposalTemplateRepository,ProposalTemplateRepository>();
 
+// =============================
+// APPLICATION SERVICES
+// =============================
 // SALARY SERVICE
 builder.Services.AddScoped<ISalaryExcelImportService, SalaryExcelImportService>();
 builder.Services.AddScoped<ISalaryAttendanceSummaryService, SalaryAttendanceSummaryService>();
@@ -168,6 +180,9 @@ QuestPDF.Settings.License =LicenseType.Evaluation;
 builder.Services.AddControllersWithViews();
 builder.Services.AddSignalR();
 
+// =============================
+// HTTP PIPELINE
+// =============================
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -200,6 +215,9 @@ app.MapControllerRoute(
 app.MapHub<NotificationHub>("/notificationHub");
 
 
+// =============================
+// STARTUP INITIALIZATION
+// =============================
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;

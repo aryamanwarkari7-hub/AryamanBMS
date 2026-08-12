@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Extensions;
+using AryamanBMS.Extensions;
 using AryamanBMS.Models;
 using AryamanBMS.Services.Interfaces;
 using AryamanBMS.ViewModels;
@@ -13,6 +13,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin")]
     public class UserController : Controller
     {
+        #region Actions
+
         private readonly UserManager<ApplicationUserModel> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ApplicationDbContext _context;
@@ -457,5 +459,6 @@ namespace AryamanBMS.Controllers
                 referenceId,
                 actionUrl);
         }
+        #endregion
     }
 }

@@ -11,6 +11,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin,Master")]
     public class AdvanceReceiptController : Controller
     {
+        #region Actions
+
         private readonly ApplicationDbContext _context;
 
         public AdvanceReceiptController(ApplicationDbContext context)
@@ -439,5 +441,6 @@ namespace AryamanBMS.Controllers
                 invoice.PaymentStatus = "Unpaid";
             }
         }
+        #endregion
     }
 }

@@ -9,6 +9,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin")]
     public class AccountsFinanceController : Controller
     {
+        #region Actions
+
         private readonly ApplicationDbContext _context;
 
         public AccountsFinanceController(ApplicationDbContext context)
@@ -306,5 +308,6 @@ namespace AryamanBMS.Controllers
                 _ => "bucket-info"
             };
         }
+        #endregion
     }
 }

@@ -11,6 +11,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin,Sales")]
     public class ClientCommunicationController : Controller
     {
+        #region Actions
+
         private readonly ApplicationDbContext _context;
 
         public ClientCommunicationController(ApplicationDbContext context)
@@ -491,5 +493,6 @@ namespace AryamanBMS.Controllers
                 "InvoiceId",
                 "InvoiceNo");
         }
+        #endregion
     }
 }

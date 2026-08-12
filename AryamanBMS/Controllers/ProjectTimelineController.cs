@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Repositories.Interfaces;
+using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
 using AryamanBMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -10,6 +10,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin,HR,Employee,Master")]
     public class ProjectTimelineController : Controller
     {
+        #region Actions
+
         private readonly IProjectRepository
             _projectRepository;
 
@@ -143,5 +145,6 @@ namespace AryamanBMS.Controllers
 
             return View(viewModel);
         }
+        #endregion
     }
 }

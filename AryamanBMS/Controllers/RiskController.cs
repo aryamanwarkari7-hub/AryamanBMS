@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Models;
+using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -11,6 +11,8 @@ namespace AryamanBMS.Controllers
     [Authorize]
     public class RiskController : Controller
     {
+        #region Actions
+
         private readonly IProjectRiskRepository _riskRepository;
         private readonly IProjectMemberRepository _projectMemberRepository;
         private readonly IProjectRepository _projectRepository;
@@ -752,5 +754,6 @@ namespace AryamanBMS.Controllers
                 .Select(pm => pm.Employee!)
                 .ToListAsync();
         }
+        #endregion
     }
 }

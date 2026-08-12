@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Data;
+using AryamanBMS.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +8,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin")]
     public class PasswordChangeLogController : Controller
     {
+        #region Actions
+
         private readonly ApplicationDbContext _context;
 
         public PasswordChangeLogController(ApplicationDbContext context)
@@ -24,5 +26,6 @@ namespace AryamanBMS.Controllers
 
             return View(logs);
         }
+        #endregion
     }
 }

@@ -12,11 +12,23 @@ namespace AryamanBMS.Data
         {
         }
 
+        // ==================================//
+        //     $ MASTER SETUP SECTION $      //
+        // ==================================//
+
         public DbSet<DepartmentModel> Departments { get; set; }
 
         public DbSet<DesignationModel> Designations { get; set; }
 
-        // Employee
+
+
+        // ==================================//
+        //  $ HR & ADMINISTRATION SECTION $  //
+        // ==================================//
+
+        // =============================
+        // EMPLOYEE
+        // =============================
         public DbSet<EmployeeModel> Employees { get; set; }
         public DbSet<StateModel> States { get; set; }
         public DbSet<CityModel> Cities { get; set; }
@@ -29,7 +41,9 @@ namespace AryamanBMS.Data
         public DbSet<AttendanceModel> Attendances { get; set; }
 
 
-        // Leave
+        // =============================
+        // LEAVES
+        // =============================
         public DbSet<LeaveTypeModel> LeaveTypes { get; set; }
 
         public DbSet<LeaveApplicationModel> LeaveApplications { get; set; }
@@ -38,7 +52,9 @@ namespace AryamanBMS.Data
         public DbSet<CompOffCreditModel> CompOffCredits { get; set; }
         public DbSet<CompOffUsageModel> CompOffUsages { get; set; }
 
-        // Salary
+        // =============================
+        // SALARY
+        // =============================
         public DbSet<SalaryRecordModel> SalaryRecords { get; set; }
         public DbSet<EmployeeSalaryStructureModel> EmployeeSalaryStructures { get; set; }
         public DbSet<SalaryImportBatchModel> SalaryImportBatches { get; set; }
@@ -49,10 +65,27 @@ namespace AryamanBMS.Data
         public DbSet<FullAndFinalSettlementModel> FullAndFinalSettlements { get; set; }
         public DbSet<ProfessionalTaxSlabModel> ProfessionalTaxSlabs { get; set; }
 
-        // Letters
+        // =============================
+        // LETTERS
+        // =============================
         public DbSet<LetterModel> Letters { get; set; }
 
-        // Projects
+         // =============================
+        // LOGIN HISTORY
+        // =============================
+        public DbSet<LoginHistoryModel> TableLoginHistory { get; set; }
+
+        // =============================
+        // PASSWORD CHANGE HISTORY
+        // =============================
+        public DbSet<PasswordChangeLogModel> PasswordChangeLogs { get; set; }
+
+
+
+
+        // ==================================//
+        //  $ PROJECT MANAGEMENT SECTION $   //
+        // ==================================//
         public DbSet<ProjectModel> Projects { get; set; }
         public DbSet<ProjectMemberModel> ProjectMembers { get; set; }
         public DbSet<ProjectTaskModel> ProjectTasks { get; set; }
@@ -71,15 +104,29 @@ namespace AryamanBMS.Data
         // Risk
         public DbSet<ProjectRiskModel> ProjectRisks { get; set; }
 
-        // ACCOUNTS
+        // ==================================//
+        //  $ ACCOUNTS & FINANCE SECTION $   //
+        // ==================================//
+
+        // =============================
+        // COMPANY
+        // =============================
 
         public DbSet<CompanyProfileModel> CompanyProfiles { get; set; }
         public DbSet<CompanyDocumentCategoryModel> CompanyDocumentCategories { get; set; }
         public DbSet<CompanyDocumentModel> CompanyDocuments { get; set; }
 
+        // =============================
+        // CLIENTS
+        // =============================
+
         public DbSet<ClientModel> Clients { get; set; }
 
         public DbSet<ClientCommunicationModel> ClientCommunications { get; set; }
+
+         // =============================
+        // PROPOSAL
+        // =============================
         public DbSet<ProposalModel> Proposals { get; set; }
         public DbSet<ProposalTemplateModel>ProposalTemplates
         { get; set; }
@@ -87,26 +134,64 @@ namespace AryamanBMS.Data
 
         public DbSet<ProposalAuditModel> ProposalAudits { get; set; }
 
+        // =============================
+        // PO
+        // =============================
         public DbSet<PurchaseOrderModel> PurchaseOrders { get; set; }
 
+        // =============================
+        // BILLING MILESTONES
+        // =============================
         public DbSet<BillingMilestoneModel> BillingMilestones { get; set; }
 
+        // =============================
+        // INVOICES
+        // =============================
         public DbSet<InvoiceModel> Invoices { get; set; }
         public DbSet<InvoiceDetailsModel> InvoiceDetails { get; set; }
 
         public DbSet<InvoiceDocumentVersionModel> InvoiceDocumentVersions { get; set; }
+
+        // =============================
+        // PAYMENT RECEIPTS
+        // =============================
         public DbSet<PaymentReceiptModel> PaymentReceipts { get; set; }
 
+        // =============================
+        // ADVANCE PAYMENT RECEIPTS
+        // =============================
         public DbSet<AdvanceReceiptModel> AdvanceReceipts { get; set; }
+
+        // =============================
+        // CREDIT NOTES
+        // =============================
         public DbSet<CreditNoteModel> CreditNotes { get; set; }
+
+        // =============================
+        // DEBIT NOTES
+        // =============================
         public DbSet<DebitNoteModel> DebitNotes { get; set; }
 
+        // =============================
+        // EXPENSE CATEGORIES
+        // =============================
         public DbSet<ExpenseCategoryModel> ExpenseCategories { get; set; }
+
+        // =============================
+        // VENDORS
+        // =============================
         public DbSet<VendorModel> Vendors { get; set; }
-        public DbSet<ExpenseVoucherModel> ExpenseVouchers { get; set; }
-        public DbSet<ExpenseVoucherDocumentModel> ExpenseVoucherDocuments { get; set; }
         public DbSet<VendorPaymentModel> VendorPayments { get; set; }
 
+        // =============================
+        // EXPENSE VOUCHERS
+        // =============================
+        public DbSet<ExpenseVoucherModel> ExpenseVouchers { get; set; }
+        public DbSet<ExpenseVoucherDocumentModel> ExpenseVoucherDocuments { get; set; }
+
+        // =============================
+        // GST
+        // =============================
         public DbSet<GstMonthlySnapshotModel> GstMonthlySnapshots { get; set; }
         public DbSet<GstConfigurationModel> GstConfigurations { get; set; }
         public DbSet<GstReturnModel> GstReturns { get; set; }
@@ -114,8 +199,14 @@ namespace AryamanBMS.Data
         public DbSet<GstItcRecordModel> GstItcRecords { get; set; }
         public DbSet<GstDocumentModel> GstDocuments { get; set; }
 
+        // =============================
+        // FINANCIAL DOCUMENTS
+        // =============================
         public DbSet<FinancialAuditDocumentModel> FinancialAuditDocuments { get; set; }
-        
+
+        // =============================
+        // OFFICE ASSETS
+        // =============================
         public DbSet<OfficeAssetModel> OfficeAssets { get; set; }
         public DbSet<OfficeAssetAssignmentHistoryModel> OfficeAssetAssignmentHistories
         { get; set; }
@@ -123,39 +214,61 @@ namespace AryamanBMS.Data
         public DbSet<OfficeAssetMaintenanceModel> OfficeAssetMaintenances { get; set; }
         public DbSet<OfficeAssetVerificationModel> OfficeAssetVerifications { get; set; }
 
+        // =============================
+        // PF
+        // =============================
         public DbSet<PfMonthlySnapshotModel> PfMonthlySnapshots { get; set; }
         public DbSet<PfChallanModel> PfChallans { get; set; }
         public DbSet<PfDocumentModel> PfDocuments { get; set; }
 
+        // =============================
+        // ESIC
+        // =============================
         public DbSet<EsicMonthlySnapshotModel> EsicMonthlySnapshots { get; set; }
         public DbSet<EsicChallanModel> EsicChallans { get; set; }
         public DbSet<EsicDocumentModel> EsicDocuments { get; set; }
 
+        // =============================
+        // PT
+        // =============================
         public DbSet<PtMonthlySnapshotModel> PtMonthlySnapshots { get; set; }
         public DbSet<PtChallanModel> PtChallans { get; set; }
         public DbSet<PtDocumentModel> PtDocuments { get; set; }
-
+        
+        // =============================
+        // NOTICES
+        // =============================        
         public DbSet<NoticeModel> Notices { get; set; }
         public DbSet<NoticeDocumentModel> NoticeDocuments { get; set; }
 
         public DbSet<FinancialSequenceModel> FinancialSequences { get; set; }
 
-        // Notification
+        // =============================
+        // NOTIFICATIONS
+        // =============================
         public DbSet<NotificationModel> TableNotification { get; set; }
 
-        // Calendar
+        // =============================
+        // CALENDAR
+        // =============================
         public DbSet<CalendarManualEventModel> CalendarManualEvents { get; set; }
 
-        //Holiday
+        // =============================
+        // HOLIDAY
+        // =============================
         public DbSet<HolidayModel> Holidays { get; set; }
 
-        // Override Saturday Working (optional)
+        // =============================
+        // SATURDAY LEAVES SWITCHER
+        // =============================
         public DbSet<WorkingDayOverrideModel> WorkingDayOverrides { get; set; }
 
-        //Login History
-        public DbSet<LoginHistoryModel> TableLoginHistory { get; set; }
-        public DbSet<PasswordChangeLogModel> PasswordChangeLogs { get; set; }
+       
 
+
+        // =============================
+        // MODEL BUILDERS
+        // =============================
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

@@ -17,6 +17,8 @@ namespace AryamanBMS.Controllers
     [Authorize]
     public class SalaryController : Controller
     {
+        #region Actions
+
         private readonly ISalaryRecordRepository _salaryRecordRepository;
         private readonly IEmployeeRepository _employeeRepository;
         private readonly UserManager<ApplicationUserModel> _userManager;
@@ -1237,5 +1239,6 @@ namespace AryamanBMS.Controllers
                     $"/Salary?month={month}&year={year}");
             }
         }
+        #endregion
     }
 }

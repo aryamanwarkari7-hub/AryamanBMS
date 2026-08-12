@@ -14,6 +14,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin,Master")]
     public class VendorPaymentController : Controller
     {
+        #region Actions
+
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUserModel> _userManager;
         private readonly INotificationService _notificationService;
@@ -464,5 +466,6 @@ namespace AryamanBMS.Controllers
             value ??= string.Empty;
             return $"\"{value.Replace("\"", "\"\"")}\"";
         }
+        #endregion
     }
 }

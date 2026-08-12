@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Data;
+using AryamanBMS.Data;
 using AryamanBMS.Services.Interface;
 using AryamanBMS.Models;
 using AryamanBMS.Services.Interfaces;
@@ -14,6 +14,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin,HR,Master")]
     public class HolidayController : Controller
     {
+        #region Actions
+
         private readonly ApplicationDbContext _context;
         private readonly IHolidayExcelImportService _holidayExcelImportService;
         private readonly IWebHostEnvironment _webHostEnvironment;
@@ -264,5 +266,6 @@ namespace AryamanBMS.Controllers
                     $"/Holiday?year={year}");
             }
         }
+        #endregion
     }
 }

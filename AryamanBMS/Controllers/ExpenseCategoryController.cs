@@ -8,6 +8,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin")]
     public class ExpenseCategoryController : Controller
     {
+        #region Actions
+
         private readonly IExpenseCategoryRepository _categoryRepository;
 
         public ExpenseCategoryController(IExpenseCategoryRepository categoryRepository)
@@ -189,5 +191,6 @@ namespace AryamanBMS.Controllers
             TempData["Success"] = $"Expense Category '{category.CategoryName}' deleted successfully.";
             return RedirectToAction(nameof(Index));
         }
+        #endregion
     }
 }

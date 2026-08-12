@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Extensions;
+using AryamanBMS.Extensions;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -11,6 +11,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin,HR")]
     public class LetterController : Controller
     {
+        #region Actions
+
         private readonly ILetterRepository _letterRepository;
         private readonly IEmployeeRepository _employeeRepository;
         private readonly UserManager<ApplicationUserModel> _userManager;
@@ -289,5 +291,6 @@ namespace AryamanBMS.Controllers
 
             return $"LTR-{DateTime.Today.Year}-{nextId:000}";
         }
+        #endregion
     }
 }

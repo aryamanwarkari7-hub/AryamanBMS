@@ -11,6 +11,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin,HR")]
     public class SalaryStructureController : Controller
     {
+        #region Actions
+
         private readonly ApplicationDbContext _context;
         private readonly INotificationService _notificationService;
 
@@ -499,5 +501,6 @@ namespace AryamanBMS.Controllers
                 employeeId,
                 "/Salary/MySalary");
         }
+        #endregion
     }
 }

@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Models;
+using AryamanBMS.Models;
 using AryamanBMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -9,6 +9,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin")]
     public class RoleController : Controller
     {
+        #region Actions
+
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly UserManager<ApplicationUserModel> _userManager;
 
@@ -174,5 +176,6 @@ namespace AryamanBMS.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+        #endregion
     }
 }

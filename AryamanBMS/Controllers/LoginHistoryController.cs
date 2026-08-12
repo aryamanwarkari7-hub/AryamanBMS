@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Data;
+using AryamanBMS.Data;
 using AryamanBMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,6 +9,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin")]
     public class LoginHistoryController : Controller
     {
+        #region Actions
+
         private readonly ApplicationDbContext _context;
 
         public LoginHistoryController(
@@ -117,5 +119,6 @@ namespace AryamanBMS.Controllers
 
             return View(model);
         }
+        #endregion
     }
 }

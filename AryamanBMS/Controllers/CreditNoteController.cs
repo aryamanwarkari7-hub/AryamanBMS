@@ -10,6 +10,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin")]
     public class CreditNoteController : Controller
     {
+        #region Actions
+
         private readonly ApplicationDbContext _context;
 
         public CreditNoteController(ApplicationDbContext context)
@@ -282,5 +284,6 @@ namespace AryamanBMS.Controllers
                 invoice.PaymentStatus = "Unpaid";
             }
         }
+        #endregion
     }
 }

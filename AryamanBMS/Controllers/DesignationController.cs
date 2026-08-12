@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Extensions;
+using AryamanBMS.Extensions;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -10,6 +10,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin,HR")]
     public class DesignationController : Controller
     {
+        #region Actions
+
         private readonly IDesignationRepository _designationRepository;
         private readonly IDepartmentRepository _departmentRepository;
 
@@ -252,5 +254,6 @@ namespace AryamanBMS.Controllers
                 .OrderBy(d => d.DepartmentName)
                 .ToList();
         }
+        #endregion
     }
 }

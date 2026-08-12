@@ -10,6 +10,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin,HR,Master")]
     public class DashboardController : Controller
     {
+        #region Actions
+
         private readonly ApplicationDbContext _context;
 
         public DashboardController(ApplicationDbContext context)
@@ -532,5 +534,6 @@ namespace AryamanBMS.Controllers
                 _ => "bucket-neutral"
             };
         }
+        #endregion
     }
 }

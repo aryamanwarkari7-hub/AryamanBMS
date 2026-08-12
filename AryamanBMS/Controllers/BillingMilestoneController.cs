@@ -9,6 +9,8 @@ namespace AryamanBMS.Controllers
     [Authorize(Roles = "Admin,Master")]
     public class BillingMilestoneController : Controller
     {
+        #region Actions
+
         private readonly ApplicationDbContext _context;
 
         public BillingMilestoneController(ApplicationDbContext context)
@@ -445,5 +447,6 @@ namespace AryamanBMS.Controllers
         }
 
 
+        #endregion
     }
 }
