@@ -1,0 +1,28 @@
+name: AryamanBMS Build
+
+on:
+  push:
+    branches:
+      - bms-system-main
+  pull_request:
+    branches:
+      - bms-system-main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore AryamanBMS.slnx
+
+      - name: Build
+        run: dotnet build AryamanBMS.slnx --no-restore --configuration Release
