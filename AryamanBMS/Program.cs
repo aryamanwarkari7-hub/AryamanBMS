@@ -15,7 +15,7 @@ using Microsoft.EntityFrameworkCore;
 using QuestPDF.Infrastructure;
 
 // =============================
-// APPLICATION CONFIGURATION
+// APPLICATION HOST AND CONFIGURATION
 // =============================
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,7 +25,7 @@ var connectionString =
         "Connection string 'DefaultConnection' is not configured.");
 
 // =============================
-// DATABASE AND IDENTITY
+// DATABASE REGISTRATION
 // =============================
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
@@ -35,6 +35,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     );
 });
 
+// IDENTITY, PASSWORD SECURITY, AND ACCOUNT LOCKOUT
 builder.Services
     .AddIdentity<ApplicationUserModel, IdentityRole>(options =>
     {
@@ -44,14 +45,29 @@ builder.Services
     })
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
+
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/Account/Login";
     options.AccessDeniedPath = "/Account/AccessDenied";
+
+    // Configure the authentication cookie lifetime and redirect paths.
+    options.SlidingExpiration = true;
+    options.ExpireTimeSpan = TimeSpan.FromHours(8);
 });
+
+builder.Services.Configure<SecurityStampValidatorOptions>(options =>
+{
+    // A new login changes the security stamp and invalidates older sessions.
+    options.ValidationInterval = TimeSpan.Zero;
+});
+
+// AUTHORIZATION POLICIES
 builder.Services.AddAuthorization();
+
+
 // =============================
-// REPOSITORIES
+// DATA ACCESS REPOSITORIES
 // =============================
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 
@@ -68,7 +84,7 @@ builder.Services.AddScoped<IDepartmentRepository, DepartmentRepository>();
 
 builder.Services.AddScoped<IDesignationRepository, DesignationRepository>();
 
-// Leave Repo
+// Leave repositories
 builder.Services.AddScoped<ILeaveTypeRepository, LeaveTypeRepository>();
 
 builder.Services.AddScoped<ILeaveApplicationRepository, LeaveApplicationRepository>();
@@ -79,13 +95,13 @@ builder.Services.AddScoped<ICompOffCreditRepository, CompOffCreditRepository>();
 
 builder.Services.AddScoped<ICompOffUsageRepository, CompOffUsageRepository>();
 
-// Salary
+// Salary repositories
 builder.Services.AddScoped<ISalaryRecordRepository, SalaryRecordRepository>();
 
-// Letter
+// Letter repositories
 builder.Services.AddScoped<ILetterRepository, LetterRepository>();
 
-// Project
+// Project repositories
 builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddScoped<IProjectMemberRepository, ProjectMemberRepository>();
 builder.Services.AddScoped<IProjectTaskRepository, ProjectTaskRepository>();
@@ -94,13 +110,13 @@ builder.Services.AddScoped<IProjectTaskProgressRepository, ProjectTaskProgressRe
 builder.Services.AddScoped<IProjectTimelineRepository, ProjectTimelineRepository>();
 builder.Services.AddScoped<IProjectCommunicationRepository,ProjectCommunicationRepository>();
 
-// Meetings
+// Meeting repositories
 builder.Services.AddScoped<IProjectMeetingRepository, ProjectMeetingRepository>();
 
-//Risk
+// Risk repositories
 builder.Services.AddScoped<IProjectRiskRepository, ProjectRiskRepository>();
 
-// Accounts
+// Accounts, documents, billing, compliance, and asset repositories
 builder.Services.AddScoped<IClientRepository, ClientRepository>();
 builder.Services.AddScoped<ICompanyProfileRepository, CompanyProfileRepository>();
 builder.Services.AddScoped<ICompanyDocumentCategoryRepository, CompanyDocumentCategoryRepository>();
@@ -128,55 +144,56 @@ builder.Services.AddScoped<IProposalTemplateRepository,ProposalTemplateRepositor
 // =============================
 // APPLICATION SERVICES
 // =============================
-// SALARY SERVICE
+// Salary services
 builder.Services.AddScoped<ISalaryExcelImportService, SalaryExcelImportService>();
 builder.Services.AddScoped<ISalaryAttendanceSummaryService, SalaryAttendanceSummaryService>();
 
-// EMPLOYEE SERVICE
+// Employee services
 builder.Services.AddScoped<IEmployeeDocumentService, EmployeeDocumentService>();
 
-// PROJECT SERVICE
-
+// Project services
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddScoped<IProjectTimelineService, ProjectTimelineService>();
 
 builder.Services.AddScoped<IProjectAccessService, ProjectAccessService>();
 
-// ACCOUNTS SERVICE
+// Accounts, file storage, financial-year, and GST services
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 builder.Services.AddScoped<IFinancialYearService, FinancialYearService>();
 builder.Services.AddScoped<IGstCalculationService, GstCalculationService>();
 builder.Services.AddScoped<IGstDashboardService, GstDashboardService>();
 
-// PROPOSAL SERVICE
+// Proposal document service
 builder.Services.AddScoped< IProposalDocumentService,ProposalDocumentService>();
 
-// INVOICE SERVICE
+// Invoice document service
 builder.Services.AddScoped<IInvoiceDocumentService,InvoiceDocumentService>();
 
-// NOTIFICATION SERVICE
+// Notification service
 builder.Services.AddScoped<INotificationService,NotificationService>();
 
-// CALENDAR SERVICE
+// Calendar service
 builder.Services.AddScoped<ICalendarService, CalendarService>();
 
-//HOLIDAY SERVICE
+// Holiday Excel service
 builder.Services.AddScoped<IHolidayExcelImportService, HolidayExcelImportService>();
 
-// WORKING DAY SERVICE
+// Working-day and Saturday Switcher service
 builder.Services.AddScoped<IWorkingDayService,WorkingDayService>();
 
-// BACKGROUND SERVICE
+// Background reminder services
 builder.Services.AddHostedService<TaskReminderBackgroundService>();
 builder.Services.AddHostedService<InvoiceReminderBackgroundService>();
 builder.Services.AddHostedService<HrNotificationReminderBackgroundService>();
 
-// LOGIN HISTORY SERVICE
+// Login history service
 builder.Services.AddScoped<ILoginHistoryService,LoginHistoryService>();
 
-QuestPDF.Settings.License =LicenseType.Evaluation;
+// PDF DOCUMENT GENERATION
+QuestPDF.Settings.License = LicenseType.Evaluation;
 
+// MVC, RAZOR VIEWS, AND REALTIME COMMUNICATION
 builder.Services.AddControllersWithViews();
 builder.Services.AddSignalR();
 
@@ -185,7 +202,7 @@ builder.Services.AddSignalR();
 // =============================
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// ENVIRONMENT-SPECIFIC ERROR HANDLING AND SECURITY HEADERS
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -197,17 +214,20 @@ if (!app.Environment.IsDevelopment())
 app.UseStatusCodePagesWithReExecute(
     "/System/NotFoundPage");
 
+// HTTPS, STATIC FILES, AND ROUTING
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
 
+// AUTHENTICATION, ACTIVITY TRACKING, AND AUTHORIZATION
 app.UseAuthentication();
 
 app.UseMiddleware<UserActivityMiddleware>();
 
 app.UseAuthorization();
 
+// MVC DEFAULT ROUTE AND SIGNALR NOTIFICATION HUB
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Account}/{action=Login}/{id?}");
@@ -216,7 +236,7 @@ app.MapHub<NotificationHub>("/notificationHub");
 
 
 // =============================
-// STARTUP INITIALIZATION
+// DATABASE ROLE AND ADMIN SEEDING
 // =============================
 using (var scope = app.Services.CreateScope())
 {

@@ -125,12 +125,21 @@ namespace AryamanBMS.Controllers
                 return View(model);
             }
 
-            var result =
-                await _signInManager.PasswordSignInAsync(
-                    user.UserName ?? attemptedUserName,
-                    model.Password,
-                    model.RememberMe,
-                    lockoutOnFailure: true);
+            var result =  await _signInManager.CheckPasswordSignInAsync(
+                          user,
+                          model.Password,
+                          lockoutOnFailure: true);
+
+            if (result.Succeeded)
+            {
+                // This invalidates every previously issued login cookie
+                // for this user account.
+                await _userManager.UpdateSecurityStampAsync(user);
+
+                await _signInManager.SignInAsync(
+                    user,
+                    isPersistent: model.RememberMe);
+            }
 
             if (result.Succeeded)
             {

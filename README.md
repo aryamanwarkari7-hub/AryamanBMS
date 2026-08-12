@@ -45,6 +45,7 @@ The application uses MVC controllers for request handling, repositories for data
 - Vendor payments, GST, PF, ESIC, professional tax, company documents, notices, and office assets
 - Persistent and realtime notifications through SignalR
 - Login history, password-change logs, account lockout, and protected document storage
+- Single active login session per account; a newer login invalidates the previous browser/device session
 
 ## Technology
 
@@ -202,6 +203,8 @@ Before replacing the IIS application files:
 4. Replace the published files.
 5. Restart the IIS application pool.
 6. Test login, roles, attendance, leave, calendar, salary, projects, documents, and notifications.
+
+Each account may have only one active login session. If the same account signs in from another browser or device, the previous session is invalidated and must sign in again.
 
 ## Security Notes
 
