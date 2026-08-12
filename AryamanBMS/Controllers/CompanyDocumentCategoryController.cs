@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,Finance")]
+    [Authorize(Roles = "Admin,HR,Master")]
     public class CompanyDocumentCategoryController : Controller
     {
         private readonly ICompanyDocumentCategoryRepository _repository;

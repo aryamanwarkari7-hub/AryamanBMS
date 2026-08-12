@@ -48,7 +48,7 @@ namespace AryamanBMS.Controllers
             _notificationService = notificationService;
         }
 
-        [Authorize(Roles = "Admin,Finance")]
+        [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<IActionResult> Index(
             string? financialYear,
@@ -151,7 +151,7 @@ namespace AryamanBMS.Controllers
             return View(assets);
         }
 
-        [Authorize(Roles = "Admin,Finance")]
+        [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<IActionResult> Create()
         {
@@ -165,7 +165,7 @@ namespace AryamanBMS.Controllers
             });
         }
 
-        [Authorize(Roles = "Admin,Finance")]
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(OfficeAssetModel model)
@@ -192,7 +192,7 @@ namespace AryamanBMS.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        [Authorize(Roles = "Admin,Finance")]
+        [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
@@ -205,7 +205,7 @@ namespace AryamanBMS.Controllers
             return View(asset);
         }
 
-        [Authorize(Roles = "Admin,Finance")]
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, OfficeAssetModel model)
@@ -295,7 +295,7 @@ namespace AryamanBMS.Controllers
             return RedirectToAction(nameof(Details), new { id });
         }
 
-        [Authorize(Roles = "Admin,Finance")]
+        [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<IActionResult> Details(int id)
         {
@@ -311,7 +311,7 @@ namespace AryamanBMS.Controllers
         }
 
 
-        [Authorize(Roles = "Admin,Finance")]
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Assign(
@@ -396,7 +396,7 @@ namespace AryamanBMS.Controllers
         }
 
 
-        [Authorize(Roles = "Admin,Finance")]
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Return(
@@ -484,7 +484,7 @@ namespace AryamanBMS.Controllers
                 new { id });
         }
 
-        [Authorize(Roles = "Admin,Finance")]
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Delete(int id)
@@ -493,7 +493,7 @@ namespace AryamanBMS.Controllers
             return RedirectToAction(nameof(Details), new { id });
         }
 
-        [Authorize(Roles = "Admin,Finance")]
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Archive(int id, string reason)
@@ -541,7 +541,7 @@ namespace AryamanBMS.Controllers
         }
 
 
-        [Authorize(Roles = "Admin,Finance")]
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Capitalize(int id)
@@ -569,7 +569,7 @@ namespace AryamanBMS.Controllers
             return RedirectToAction(nameof(Details), new { id });
         }
 
-        [Authorize(Roles = "Admin,Finance")]
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddMaintenance(
@@ -700,7 +700,7 @@ namespace AryamanBMS.Controllers
         }
 
 
-        [Authorize(Roles = "Admin,Finance")]
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Verify(
@@ -736,7 +736,7 @@ namespace AryamanBMS.Controllers
             return RedirectToAction(nameof(Details), new { id });
         }
 
-        [Authorize(Roles = "Admin,Finance")]
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UploadDocument(

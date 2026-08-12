@@ -9,7 +9,7 @@ using System.Security.Claims;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,HR,Finance")]
+    [Authorize(Roles = "Admin,HR")]
     public class FullAndFinalSettlementController : Controller
     {
         private readonly ApplicationDbContext _context;

@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Data;
+using AryamanBMS.Data;
 using AryamanBMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,Finance")]
+    [Authorize(Roles = "Admin")]
     public class ReceivablesController : Controller
     {
         private readonly ApplicationDbContext _context;

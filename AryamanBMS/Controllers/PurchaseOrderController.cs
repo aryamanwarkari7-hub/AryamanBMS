@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,Finance,Master")]
+    [Authorize(Roles = "Admin,Master")]
     public class PurchaseOrderController : Controller
     {
         private readonly IPurchaseOrderRepository _orderRepo;

@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Models;
+using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
 using AryamanBMS.ViewModels;
@@ -18,7 +18,7 @@ namespace AryamanBMS.Controllers
     /// GST Management Controller
     /// Handles GST calculations, snapshots, compliance tracking, and configuration
     /// </summary>
-    [Authorize(Roles = "Admin,Finance")]
+    [Authorize(Roles = "Admin")]
     public class GstController : Controller
     {
         private readonly IGstCalculationService _calculationService;

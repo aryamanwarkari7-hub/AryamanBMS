@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Data;
+using AryamanBMS.Data;
 using AryamanBMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace AryamanBMS.Controllers
 {
     [Authorize]
-    [Authorize(Roles = "Admin,HR,Finance,Master")]
+    [Authorize(Roles = "Admin,HR,Master")]
     public class DashboardController : Controller
     {
         private readonly ApplicationDbContext _context;

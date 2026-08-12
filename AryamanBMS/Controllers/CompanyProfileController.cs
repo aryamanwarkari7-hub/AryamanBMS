@@ -1,11 +1,11 @@
-﻿using AryamanBMS.Models;
+using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,Finance")]
+    [Authorize(Roles = "Admin")]
     public class CompanyProfileController : Controller
     {
         private readonly ICompanyProfileRepository _companyProfileRepository;

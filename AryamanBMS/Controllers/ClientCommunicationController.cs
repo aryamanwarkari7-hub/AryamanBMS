@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Data;
+using AryamanBMS.Data;
 using AryamanBMS.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -8,7 +8,7 @@ using System.Security.Claims;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,Finance,Sales")]
+    [Authorize(Roles = "Admin,Sales")]
     public class ClientCommunicationController : Controller
     {
         private readonly ApplicationDbContext _context;

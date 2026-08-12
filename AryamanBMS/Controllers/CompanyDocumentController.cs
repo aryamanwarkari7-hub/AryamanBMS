@@ -10,7 +10,7 @@ using System.Security.Claims;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,Finance")]
+    [Authorize(Roles = "Admin,HR,Master")]
     public partial class CompanyDocumentController : Controller
     {
         private readonly ICompanyDocumentRepository _documentRepository;

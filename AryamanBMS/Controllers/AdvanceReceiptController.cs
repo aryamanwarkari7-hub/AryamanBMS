@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Data;
+using AryamanBMS.Data;
 using AryamanBMS.Models;
 using AryamanBMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -8,7 +8,7 @@ using System.Security.Claims;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,Finance,Master")]
+    [Authorize(Roles = "Admin,Master")]
     public class AdvanceReceiptController : Controller
     {
         private readonly ApplicationDbContext _context;

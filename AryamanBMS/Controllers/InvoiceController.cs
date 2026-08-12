@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Models;
+using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -12,7 +12,7 @@ using DocumentFormat.OpenXml.Spreadsheet;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,Finance")]
+    [Authorize(Roles = "Admin")]
     public class InvoiceController : Controller
     {
         private readonly IInvoiceRepository _invoiceRepository;

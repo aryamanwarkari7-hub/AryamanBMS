@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,Finance,Master")]
+    [Authorize(Roles = "Admin,Master")]
     public class BillingMilestoneController : Controller
     {
         private readonly ApplicationDbContext _context;

@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Data;
+using AryamanBMS.Data;
 using AryamanBMS.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,7 +7,7 @@ using System.Security.Claims;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,Finance")]
+    [Authorize(Roles = "Admin")]
     public class CreditNoteController : Controller
     {
         private readonly ApplicationDbContext _context;

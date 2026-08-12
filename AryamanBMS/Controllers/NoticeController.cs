@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Models;
+using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -8,7 +8,7 @@ using System.Text;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,Finance")]
+    [Authorize(Roles = "Admin")]
     public class NoticeController : Controller
     {
         private readonly INoticeRepository _noticeRepository;

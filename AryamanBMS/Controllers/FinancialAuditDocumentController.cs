@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,Finance")]
+    [Authorize(Roles = "Admin")]
     public class FinancialAuditDocumentController : Controller
     {
         private const string DocumentFolder = "FinancialAuditDocuments";

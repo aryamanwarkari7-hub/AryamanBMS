@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Extensions;
+using AryamanBMS.Extensions;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interface;
@@ -383,7 +383,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,HR,Finance")]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Reopen(
             int id,
             int month,

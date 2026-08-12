@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,Finance,Master")]
+    [Authorize(Roles = "Admin,Master")]
     public class PaymentReceiptController : Controller
     {
         private readonly IPaymentReceiptRepository _paymentRepository;
