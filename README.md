@@ -1,496 +1,147 @@
 # AryamanBMS
 
-AryamanBMS is an ASP.NET Core MVC business management system for internal operations across HR, attendance, leave, payroll, projects, accounts, statutory compliance, documents, assets, and notifications.
+AryamanBMS is an internal business management system for HR, attendance, leave, payroll, projects, finance operations, documents, assets, and notifications.
 
-The application is built as a .NET 8 web application with Razor views, ASP.NET Core Identity, Entity Framework Core, MySQL, Bootstrap, jQuery, SignalR, ClosedXML/OpenXML, and QuestPDF.
+## Project Overview
 
-## Current Implementation
+AryamanBMS centralizes everyday business operations in one role-based workspace. It replaces disconnected spreadsheets and manual follow-ups with controlled workflows for employee administration, attendance, leave approval, payroll preparation, project execution, finance operations, document management, and realtime notifications.
 
-The solution contains multiple projects, but the active implementation currently lives primarily inside the main web project, `AryamanBMS`.
+The system is designed for organizations that need:
 
-```text
-AryamanBMS.slnx
-├── AryamanBMS/                 Main ASP.NET Core MVC web application
-├── AryamanBMS.Business/        Supporting class library, mostly structural
-├── AryamanBMS.Database/        Supporting class library, mostly structural
-├── AryamanBMS.Models/          Supporting class library, mostly structural
-├── AryamanBMS.Repositories/    Supporting class library, mostly structural
-└── AryamanBMS.Utilities/       Supporting class library, mostly structural
-```
+- A single source of truth for employee and operational data
+- Controlled access based on responsibility
+- Traceable approvals and audit history
+- Excel-based imports and exports for practical office workflows
+- Attendance and payroll calculations that respect holidays, weekly offs, half-days, and leave balances
+- A browser-based application that can be hosted on Windows IIS with MySQL
 
-Within the web project, the application follows a conventional MVC layout:
+## How The Application Works
 
 ```text
-AryamanBMS/
-├── Areas/Identity/             Scaffolded Identity Razor pages
-├── Controllers/                MVC controllers for each business module
-├── Data/                       EF Core DbContext, Identity user seed, location seed data
-├── Extensions/                 Shared query/view helpers
-├── Hubs/                       SignalR hubs
-├── Middleware/                 Request middleware
-├── Migrations/                 EF Core migrations
-├── Models/                     Domain and persistence models
-├── Repositories/               Repository interfaces and implementations
-├── Services/                   Domain services and background service classes
-├── SQL/                        Manual and migrated SQL scripts
-├── ViewComponents/             Reusable MVC view components
-├── ViewModels/                 UI-specific models
-├── Views/                      Razor views
-└── wwwroot/                    Static assets, frontend libraries, templates, uploads
+User signs in
+    -> Role and employee mapping are checked
+    -> Sidebar and workspace show permitted features
+    -> User performs an operation
+    -> Controller validates authorization and input
+    -> Repository/service processes the workflow
+    -> MySQL stores the result
+    -> Razor view, Excel file, PDF, or notification is returned
 ```
 
-## Technology Stack
-
-|         Area            |                           Implementation                       |
-|         ---             |                           -------------                        |
-| Runtime                 | .NET 8                                                         |
-| Web framework           | ASP.NET Core MVC                                               |
-| Views                   | Razor views                                                    |
-| Authentication          | ASP.NET Core Identity                                          |
-| Authorization           | Role-based authorization attributes                            |
-| ORM                     | Entity Framework Core 8                                        |
-| Database provider       | Pomelo Entity Framework Core provider for MySQL                |
-| Database                | MySQL 8 compatible                                             |
-| Realtime updates        | SignalR                                                        |
-| Frontend                | Bootstrap, Bootstrap Icons, jQuery, jQuery Validation          |
-| Excel handling          | ClosedXML, DocumentFormat.OpenXml                              |
-| PDF/document generation | QuestPDF                                                       |
-| File storage            | Local filesystem, primarily under `App_Data` for private files |
-
-## Application Startup
-
-The application starts from:
-
-```text
-AryamanBMS/Program.cs
-```
-
-Startup responsibilities include:
-
-- Loading the `DefaultConnection` connection string.
-- Registering `ApplicationDbContext` with MySQL.
-- Registering ASP.NET Core Identity using `ApplicationUserModel` and `IdentityRole`.
-- Configuring cookie routes:
-  - Login: `/Account/Login`
-  - Access denied: `/Account/AccessDenied`
-- Registering repository and service dependencies.
-- Registering MVC controllers with views.
-- Registering SignalR.
-- Enabling HTTPS redirection, static files, routing, authentication, user activity middleware, and authorization.
-- Mapping the default MVC route to `Account/Login`.
-- Mapping the notification hub at `/notificationHub`.
-- Seeding roles and an optional admin account through `DbInitializer`.
-
-## Core Data Flow
-
-Typical request flow:
-
-```text
-Browser
-  -> MVC Controller
-  -> Repository and/or Service
-  -> ApplicationDbContext
-  -> MySQL
-  -> Razor View / JSON / File Result
-```
-
-Controllers are the main orchestration layer. Repositories expose EF-backed query access and CRUD operations. Services are used where the system has cross-cutting or heavier domain workflows such as file handling, notifications, GST calculations, salary imports, project timelines, document generation, and login history.
-
-## Authentication And Roles
-
-The system uses ASP.NET Core Identity with a custom user model:
-
-```text
-AryamanBMS/Models/ApplicationUserModel.cs
-```
-
-`ApplicationUserModel` extends `IdentityUser` with:
-
-- `FullName`
-- `IsActive`
-- `ProfilePhotoPath`
-- activity status fields
-- notification preferences
-- `CreatedOn`
-
-The startup seed process creates these roles:
-
-- `Admin`
-- `HR`
-- `Finance`
-- `Employee`
-- `ProjectManager`
-- `Master`
+The application uses MVC controllers for request handling, repositories for database access, services for reusable business workflows, Razor views for the interface, and SignalR for realtime notifications.
 
-`Master` is a restricted management role. It is intended for access to Dashboard, Leaves, Attendance, Project Management, Proposals and Templates, PO/WO, Receipts, Billing Milestones, Expense Vouchers, Vendor Payments, Calendar, and Holiday Register. It does not expose user/role administration, employee master setup, salary, compliance, client/vendor setup, invoices, receivables, credit notes, or debit notes through the main navigation.
+## Features
 
-Admin, HR, and Master users with a mapped employee record can also access **My Workspace** for their own employee-level attendance, leave, paid leave, Comp Off, expenses, calendar, project tasks, projects, and assigned assets. Employee-only users use My Workspace as their consolidated personal navigation; management menus are hidden for them.
-
-An admin user can be seeded only when these configuration keys are present:
-
-```text
-SeedAdmin:UserName
-SeedAdmin:Email
-SeedAdmin:Password
-```
-
-The main login flow is implemented in:
+- Role-based access for `Admin`, `HR`, `Master`, and `Employee`
+- Employee records, profiles, documents, departments, and designations
+- Attendance tracking with half-day support, weekly offs, holidays, and Saturday Switcher
+- Holiday Register with Excel template, import, export, and calendar integration
+- Leave applications, paid/unpaid leave split, financial-year leave balances, Comp Off, and Birthday Leave
+- Salary registers, attendance summaries, Excel imports, payslips, advances, and payment batches
+- Project management, members, tasks, timelines, meetings, communications, and risks
+- Calendar with holidays, weekly offs, birthdays, leave, attendance, tasks, meetings, billing, and manual events
+- Proposals, templates, purchase/work orders, billing milestones, invoices, receipts, and receivables
+- Expense Vouchers for registered vendors, unregistered vendors, reimbursements, and petty-cash expenses
+- Vendor payments, GST, PF, ESIC, professional tax, company documents, notices, and office assets
+- Persistent and realtime notifications through SignalR
+- Login history, password-change logs, account lockout, and protected document storage
 
-```text
-AryamanBMS/Controllers/AccountController.cs
-```
+## Technology
 
-It handles:
+- .NET 8 and ASP.NET Core MVC
+- Razor Views, Bootstrap, Bootstrap Icons, jQuery, and FullCalendar
+- ASP.NET Core Identity and role-based authorization
+- Entity Framework Core with MySQL 8
+- SignalR for realtime notifications
+- ClosedXML and OpenXML for Excel workflows
+- QuestPDF for document generation
 
-- login
-- logout
-- inactive-user checks
-- lockout-on-failure
-- password reset
-- profile display
-- profile photo upload
-- password change
-- user activity status
-- login history recording
-- admin login notifications
+## Roles
 
-## Major Functional Modules
+### Admin
 
-### Dashboard
+Full system administration and access to operational modules.
 
-Entry point for authenticated users after login. Admin, HR, Finance, and Master users are routed toward the main dashboard. Employee-only users are routed through attendance/profile-oriented flows.
+### HR
 
-Key files:
+Employee administration, attendance, leave, payroll, documents, and assigned operational modules.
 
-```text
-AryamanBMS/Controllers/DashboardController.cs
-AryamanBMS/ViewModels/MainDashboardViewModel.cs
-AryamanBMS/Views/Dashboard/
-```
+### Master
 
-### Account, Users, Roles, And Security Logs
+Restricted management access to Dashboard, Leaves, Attendance, Projects, Proposals and Templates, PO/WO, Receipts, Billing Milestones, Expense Vouchers, Vendor Payments, Calendar, Holidays, and assigned employee workspace features.
 
-Supports authentication, profile management, password changes, admin user management, role management, login history, and password change audit logs.
+### Employee
 
-Key files:
+Personal attendance, leave, paid leave balance, Comp Off, expenses, calendar, projects, tasks, notifications, and profile features.
 
-```text
-AryamanBMS/Controllers/AccountController.cs
-AryamanBMS/Controllers/UserController.cs
-AryamanBMS/Controllers/RoleController.cs
-AryamanBMS/Controllers/LoginHistoryController.cs
-AryamanBMS/Controllers/PasswordChangeLogController.cs
-AryamanBMS/Data/DbInitializer.cs
-AryamanBMS/Services/LoginHistoryService.cs
-```
+Admin, HR, and Master users with a mapped employee record can use My Workspace for their own employee-level activities. There is currently no active `Finance` or `ProjectManager` application role.
 
-### Employee Management
+## Typical Usage
 
-Handles employee records, departments, designations, employee profiles, academics, previous employment, documents, and Identity-user linkage.
+### Initial Setup
 
-Key files:
+1. Configure MySQL and the production or development connection string.
+2. Start the application so Identity roles and the configured administrator can be seeded.
+3. Create departments, designations, employees, and user accounts.
+4. Map users to employee records when they need personal attendance, leave, calendar, or workspace access.
+5. Configure weekly offs and alternate working Saturdays.
+6. Import the company holiday list using `HolidayTemplate.xlsx`.
+7. Configure leave types and confirm the Birthday Leave type uses code `BDL`.
+8. Configure salary structures and import salary data where required.
 
-```text
-AryamanBMS/Controllers/EmployeeController.cs
-AryamanBMS/Controllers/DepartmentController.cs
-AryamanBMS/Controllers/DesignationController.cs
-AryamanBMS/Models/EmployeeModel.cs
-AryamanBMS/Models/EmployeeAcademicModel.cs
-AryamanBMS/Models/EmployeeDocumentModel.cs
-AryamanBMS/Models/EmployeePreviousEmploymentModel.cs
-AryamanBMS/Services/EmployeeDocumentService.cs
-```
-
-### Attendance
+### Daily HR And Administration Flow
 
-Tracks attendance records, employee self attendance, summaries, registers, dashboards, and admin/HR adjustments. The attendance register supports employee/date search, selectable sorting, serial numbering, and pagination. Attendance supports full-day and half-day values so salary pay days can include decimal values such as `26.5`. Weekly offs are configuration-driven, and uploaded active holidays from the Holiday Register are treated as office holidays for attendance blocking and pay-day calculations.
+1. Review the dashboard and notifications.
+2. Maintain employee profiles and required documents.
+3. Review attendance, missing check-ins, missing check-outs, holidays, and weekly offs.
+4. Review leave applications and the employee’s paid leave balance.
+5. Approve or reject leave applications; the system records paid and unpaid days.
+6. Manage Comp Off credits and usage.
+7. Review salary attendance summaries and payroll registers.
+8. Use the Calendar to review birthdays, leave, deadlines, meetings, attendance exceptions, holidays, and manual events.
 
-Key files:
+### Employee Flow
 
-```text
-AryamanBMS/Controllers/AttendanceController.cs
-AryamanBMS/Models/AttendanceModel.cs
-AryamanBMS/Repositories/AttendanceRepository.cs
-AryamanBMS/ViewModels/AttendanceDashboardViewModel.cs
-AryamanBMS/ViewModels/AttendanceSummaryViewModel.cs
-```
-
-### Holiday Register
-
-Supports yearly office holiday setup through a register page, downloadable Excel template, Excel import, filtered export, and Admin/HR/Master access. The register also supports year/month/status filters, selectable sorting, serial numbering, and pagination. The holiday template is maintained as the expected import format, and populated holiday Excel files can be imported after updating the template rows with the actual company holiday list for the year. Holidays are stored as master data and are used by Calendar, Attendance, and Salary Pay Days.
-
-Key files:
-
-```text
-AryamanBMS/Controllers/HolidayController.cs
-AryamanBMS/Models/HolidayModel.cs
-AryamanBMS/Services/HolidayExcelImportService.cs
-AryamanBMS/ViewModels/HolidayImportResult.cs
-AryamanBMS/Views/Holiday/
-AryamanBMS/wwwroot/templates/HolidayTemplate.xlsx
-```
-
-### Saturday Switcher
-
-Provides date-specific Saturday schedule changes for exceptional working Saturdays and weekly offs. A switch can mark a Saturday as a Working Saturday or Weekly Off, with a reason, active status, edit/deactivate actions, and Excel export. The register also supports active/inactive filtering, selectable sorting, and serial numbering. Working-day decisions use the following priority: manual switch, Holiday Register, configured weekly offs, and the alternate Saturday schedule.
-
-The default alternate Saturday configuration is maintained in `appsettings.json`:
-
-```json
-{
-  "Attendance": {
-    "WorkingSaturdayNumbers": [ 1, 3, 5 ]
-  }
-}
-```
-
-Key files:
-
-```text
-AryamanBMS/Controllers/WorkingDayOverrideController.cs
-AryamanBMS/Models/WorkingDayOverrideModel.cs
-AryamanBMS/Services/WorkingDayService.cs
-AryamanBMS/Views/WorkingDayOverride/
-```
-
-### Leave, Paid Leave Balance, And Comp-Off
-
-Supports leave type setup, leave applications, half-day leave, approvals, cancellations, employee paid leave balance visibility, Admin/HR/Master paid leave balance register, comp-off credits, and comp-off usage. Leave applications support search, status filtering, selectable sorting, serial numbering, and pagination. The paid leave balance register supports employee search, selectable sorting, serial numbering, and pagination.
-
-Paid leave is calculated from a single financial-year pool instead of fixed yearly days per leave type:
-
-- financial year runs from 1 April to 31 March
-- annual paid leave entitlement is 18 days
-- monthly accrual value is 1.5 days
-- employees joining after 1 April receive prorated entitlement
-- leave types act as categories/reasons rather than separate paid leave buckets
-- approval stores final `PaidDays` and `UnpaidDays` on each leave application
-- rejected or cancelled leaves do not consume paid or unpaid days
-
-Birthday Leave is a separate paid entitlement and does not consume the regular 18-day pool:
-
-- Birthday Leave uses leave code `BDL` and remains an active paid leave type
-- each employee receives one Birthday Leave per financial year
-- it can be applied on any date within that financial year
-- it is limited to one day and duplicate applications in the same financial year are blocked
-- approval records it as fully paid and keeps it outside regular paid-leave calculations
-- the employee date of birth must be present in the Employee profile
-- Admin, HR, and Master users can see the separate Birthday Leave balance
-
-Employees can view their own paid leave balance from the leave module and while applying for leave. Admin, HR, and Master users can view employee-wise paid leave balances through the paid leave balance register. Comp Off remains separate from the annual paid leave pool: it consumes approved Comp Off credits, stays salary-paid, and does not reduce the 18-day financial-year entitlement.
-
-Key files:
-
-```text
-AryamanBMS/Controllers/LeaveTypeController.cs
-AryamanBMS/Controllers/LeaveApplicationController.cs
-AryamanBMS/Controllers/LeaveBalanceController.cs
-AryamanBMS/Controllers/CompOffCreditController.cs
-AryamanBMS/Models/LeaveTypeModel.cs
-AryamanBMS/Models/LeaveApplicationModel.cs
-AryamanBMS/Models/LeaveBalanceModel.cs
-AryamanBMS/Models/CompOffCreditModel.cs
-AryamanBMS/Models/CompOffUsageModel.cs
-AryamanBMS/ViewModels/PaidLeaveBalanceSnapshotViewModel.cs
-AryamanBMS/ViewModels/EmployeePaidLeaveBalanceViewModel.cs
-AryamanBMS/ViewModels/BirthdayLeaveBalanceViewModel.cs
-AryamanBMS/Views/LeaveApplication/MyPaidLeaveBalance.cshtml
-AryamanBMS/Views/LeaveApplication/PaidLeaveBalanceRegister.cshtml
-```
-
-### Payroll And Salary
-
-Covers salary records, salary structure, Excel salary imports, salary dashboard, payslips, salary advances, payment batches, attendance summaries, payroll policy, payroll locks, and full-and-final settlement. Salary attendance summaries include uploaded active holidays as payable holiday days and exclude them from working-day calculations. Approved leave applications contribute salary pay days through stored `PaidDays` and `UnpaidDays`, allowing valid decimal pay-day values such as `26.5`.
-
-Key files:
-
-```text
-AryamanBMS/Controllers/SalaryController.cs
-AryamanBMS/Controllers/SalaryStructureController.cs
-AryamanBMS/Controllers/SalaryAdvanceController.cs
-AryamanBMS/Controllers/SalaryPaymentBatchController.cs
-AryamanBMS/Controllers/FullAndFinalSettlementController.cs
-AryamanBMS/Services/SalaryExcelImportService.cs
-AryamanBMS/Services/SalaryAttendanceSummaryService.cs
-AryamanBMS/wwwroot/templates/SalaryTemplate.xlsx
-```
-
-### Projects, Tasks, Meetings, Timeline, And Risks
-
-Supports project setup, project members, project tasks, task progress, project flows, timelines, communications, meetings/MOM, employee project tasks, and risk tracking.
-Project access includes Admin, HR, Master, project managers, and active assigned project members.
-
-Key files:
-
-```text
-AryamanBMS/Controllers/ProjectController.cs
-AryamanBMS/Controllers/ProjectMemberController.cs
-AryamanBMS/Controllers/ProjectTaskController.cs
-AryamanBMS/Controllers/ProjectFlowController.cs
-AryamanBMS/Controllers/ProjectTimelineController.cs
-AryamanBMS/Controllers/ProjectCommunicationController.cs
-AryamanBMS/Controllers/EmployeeProjectController.cs
-AryamanBMS/Controllers/MOMController.cs
-AryamanBMS/Controllers/RiskController.cs
-AryamanBMS/Services/ProjectAccessService.cs
-AryamanBMS/Services/ProjectTimelineService.cs
-```
-
-### Calendar
-
-Provides a work calendar with month, week, day, and list views. Calendar events are aggregated from holidays, weekly offs, birthdays, leave applications, attendance exceptions, project tasks, meetings, billing milestones, and manual calendar entries. Employee birthdays recur annually from the employee date of birth and are shown as separate Birthday events. Admin, HR, and Master users can add and edit manual calendar events; employees can view their personal schedule and shared birthday/holiday entries. Calendar filters and event colors distinguish Birthday, Holiday, Weekly Off, Leave, Attendance, Task, Meeting, and Billing events.
-
-Key files:
-
-```text
-AryamanBMS/Controllers/CalendarController.cs
-AryamanBMS/Models/CalendarManualEventModel.cs
-AryamanBMS/Services/CalendarService.cs
-AryamanBMS/ViewModels/CalendarEventViewModel.cs
-AryamanBMS/ViewModels/CalendarManualEventInputViewModel.cs
-AryamanBMS/Views/Calendar/
-AryamanBMS/wwwroot/css/calendar.css
-AryamanBMS/wwwroot/js/calendar.js
-```
-
-### Accounts, Billing, Receivables, And Documents
-
-Supports company profile, clients, client communications, proposal templates, proposals, purchase/work orders, billing milestones, invoices, advance receipts, payment receipts, receivables, credit notes, debit notes, and document versioning.
-
-Key files:
-
-```text
-AryamanBMS/Controllers/AccountsFinanceController.cs
-AryamanBMS/Controllers/ClientController.cs
-AryamanBMS/Controllers/ClientCommunicationController.cs
-AryamanBMS/Controllers/ProposalTemplateController.cs
-AryamanBMS/Controllers/ProposalController.cs
-AryamanBMS/Controllers/PurchaseOrderController.cs
-AryamanBMS/Controllers/BillingMilestoneController.cs
-AryamanBMS/Controllers/InvoiceController.cs
-AryamanBMS/Controllers/AdvanceReceiptController.cs
-AryamanBMS/Controllers/PaymentReceiptController.cs
-AryamanBMS/Controllers/ReceivablesController.cs
-AryamanBMS/Controllers/CreditNoteController.cs
-AryamanBMS/Controllers/DebitNoteController.cs
-AryamanBMS/Services/ProposalDocumentService.cs
-AryamanBMS/Services/InvoiceDocumentService.cs
-AryamanBMS/Services/FinancialYearService.cs
-```
-
-### Purchases, Expenses, Vendors, And Assets
-
-Supports vendors, expense categories, expense vouchers, expense documents, vendor payments, purchase reports, and office assets with assignment, maintenance, document, and verification tracking. Expense vouchers support registered vendors as well as unregistered, one-time, reimbursement, and petty-cash style expense parties so small or non-GST expenses do not require a saved vendor or GSTIN on every voucher.
-
-Key files:
-
-```text
-AryamanBMS/Controllers/VendorController.cs
-AryamanBMS/Controllers/ExpenseCategoryController.cs
-AryamanBMS/Controllers/ExpenseVoucherController.cs
-AryamanBMS/Controllers/VendorPaymentController.cs
-AryamanBMS/Controllers/PurchaseReportController.cs
-AryamanBMS/Controllers/OfficeAssetController.cs
-AryamanBMS/Repositories/OfficeAssetRepository.cs
-```
-
-### Compliance And Statutory
-
-Supports GST, PF, ESIC, PT, company documents, document categories, financial audit documents, and notices.
-
-Key files:
-
-```text
-AryamanBMS/Controllers/GstController.cs
-AryamanBMS/Controllers/PfController.cs
-AryamanBMS/Controllers/EsicController.cs
-AryamanBMS/Controllers/PtController.cs
-AryamanBMS/Controllers/CompanyProfileController.cs
-AryamanBMS/Controllers/CompanyDocumentController.cs
-AryamanBMS/Controllers/CompanyDocumentCategoryController.cs
-AryamanBMS/Controllers/FinancialAuditDocumentController.cs
-AryamanBMS/Controllers/NoticeController.cs
-AryamanBMS/Services/GstCalculationService.cs
-AryamanBMS/Services/GstDashboardService.cs
-```
-
-### Notifications And Activity
-
-Supports persistent notifications, unread counts, SignalR realtime delivery, login notifications, user/security notifications, leave and Comp Off notifications, attendance updates and reminders, salary notifications, project member notifications, holiday import notifications, employee birthday notifications, and user activity state. The notification list supports text search, notification-type and read-status filters, and pagination. The hourly HR notification reminder service creates one birthday notification per employee birthday per year for active employees with mapped user accounts.
-
-Key files:
-
-```text
-AryamanBMS/Controllers/NotificationController.cs
-AryamanBMS/Services/NotificationService.cs
-AryamanBMS/Services/Background/HrNotificationReminderBackgroundService.cs
-AryamanBMS/Hubs/NotificationHub.cs
-AryamanBMS/Middleware/UserActivityMiddleware.cs
-AryamanBMS/ViewComponents/NotificationBellViewComponent.cs
-AryamanBMS/wwwroot/js/notification-realtime.js
-AryamanBMS/wwwroot/js/activity-heartbeat.js
-```
-
-### Location Data
-
-Supports state, city/district, and pincode master data.
-
-Key files:
-
-```text
-AryamanBMS/Controllers/LocationController.cs
-AryamanBMS/Data/all_india_pincode_directory.csv
-AryamanBMS/Data/README_ALL_INDIA_LOCATION_SEED.txt
-AryamanBMS/SQL/Migrated/SEED_ALL_INDIA_LOCATION_FROM_CSV.sql
-```
-
-## Database
-
-The EF Core context is:
-
-```text
-AryamanBMS/Data/ApplicationDbContext.cs
-```
-
-It inherits from:
-
-```csharp
-IdentityDbContext<ApplicationUserModel>
-```
-
-The context defines DbSets and mappings for Identity, HR, attendance, holidays, leave, payroll, calendar events, projects, meetings, risks, accounts, purchases, GST, statutory modules, company documents, audit documents, office assets, notices, notifications, login history, and password change logs.
-
-The current project contains both EF migrations and manual SQL scripts. The SQL folder is important because several business modules appear to have schema/data scripts outside the small EF migration set.
+1. Sign in and open My Workspace.
+2. Maintain the personal profile and view permitted documents.
+3. Mark or review personal attendance.
+4. Apply for full-day, half-day, regular paid, unpaid, Birthday Leave, or Comp Off leave as applicable.
+5. Review the paid leave balance and the paid/unpaid split of requests.
+6. View assigned projects, tasks, deadlines, calendar events, notifications, and personal expenses.
+
+### Project And Finance Flow
+
+1. Create or maintain projects and assign members.
+2. Add tasks, deadlines, project communication, meetings, risks, and progress updates.
+3. Create proposals, purchase/work orders, billing milestones, invoices, receipts, and payment records.
+4. Record expenses using a registered vendor or a one-time/unregistered expense party.
+5. Attach supporting documents and use authorized downloads for confidential files.
+6. Review notifications and audit-related records for important changes.
+
+## Leave And Payroll Rules
+
+- The financial year runs from 1 April to 31 March.
+- Regular paid leave entitlement is 18 days per financial year, accrued at 1.5 days per month.
+- Joining after 1 April produces a prorated entitlement.
+- Leave types classify the request; they do not create separate regular paid-leave pools.
+- Approved applications store paid and unpaid days, including half-day values such as `0.5`.
+- Birthday Leave is one additional paid day per financial year and does not reduce the regular 18-day pool.
+- Comp Off is maintained separately from regular paid leave.
+- Salary pay-day calculations respect approved leave, half-days, holidays, weekly offs, and working-Saturday switches.
+
+## Audience And Use Case
+
+AryamanBMS is intended for internal operations teams, HR departments, business administrators, project teams, and organizations that need an extensible business management platform rather than separate tools for every workflow. It demonstrates role-based authorization, MVC application design, relational data modeling, Excel interoperability, document security, background processing, realtime notifications, and IIS deployment practices.
+
+## Requirements
+
+- .NET 8 SDK
+- MySQL 8 compatible server
+- Visual Studio 2022, Rider, or VS Code
 
 ## Configuration
 
-The application requires a `DefaultConnection` connection string.
-
-Example shape:
-
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "server=localhost;database=aryamanbms;user=YOUR_USER;password=YOUR_PASSWORD;"
-  }
-}
-```
-
-Optional admin seed configuration:
-
-```json
-{
-  "SeedAdmin": {
-    "UserName": "admin",
-    "Email": "admin@example.com",
-    "Password": "ChangeThisPassword"
-  }
-}
-```
-
-Do not commit real credentials. Use user secrets, environment variables, or deployment secret storage for credentials.
-
-Environment variable examples:
+Keep credentials outside committed files. Configure the following environment variables or deployment secrets:
 
 ```text
 ConnectionStrings__DefaultConnection
@@ -499,185 +150,63 @@ SeedAdmin__Email
 SeedAdmin__Password
 ```
 
-Attendance calendar configuration:
+Optional attendance configuration:
 
 ```json
 {
   "Attendance": {
-    "WeeklyOffDays": [ "Sunday" ]
+    "WeeklyOffDays": [ "Sunday" ],
+    "WorkingSaturdayNumbers": [ 1, 3, 5 ]
   }
 }
 ```
 
-If `Attendance:WeeklyOffDays` is not configured, Sunday is treated as the default weekly off. The primary office holiday source is the Holiday Register (`TableHoliday`), maintained through the Holiday Excel template/import flow. `Attendance:OfficeHolidays` remains supported only as an optional fallback configuration source. Manually marked `H` attendance records are also respected.
+Holiday Register data is the primary holiday source. Weekly offs and exceptional Saturdays are managed through the application configuration and Saturday Switcher.
 
-Notification reminder timing:
-
-```json
-{
-  "Notifications": {
-    "AttendanceMissingAfter": "10:30:00",
-    "CheckOutMissingAfter": "18:30:00"
-  }
-}
-```
-
-Birthday notifications are generated by the running background service and are delivered in realtime when the recipient has realtime notifications enabled. They remain persisted in the notification database even when realtime delivery is unavailable.
-
-## Local Development
-
-Prerequisites:
-
-- .NET 8 SDK
-- MySQL 8 compatible server
-- Visual Studio 2022, JetBrains Rider, or VS Code
-
-Restore dependencies:
+## Run Locally
 
 ```powershell
 dotnet restore AryamanBMS.slnx
-```
-
-Build:
-
-```powershell
 dotnet build AryamanBMS.slnx
-```
-
-Run the web application:
-
-```powershell
 dotnet run --project AryamanBMS/AryamanBMS.csproj
 ```
 
-Development launch profiles are defined in:
+The development application uses the launch profiles in `AryamanBMS/Properties/launchSettings.json`.
 
-```text
-AryamanBMS/Properties/launchSettings.json
-```
+## Excel Templates
 
-Configured development URLs include:
+Templates are available under `AryamanBMS/wwwroot/templates`:
 
-```text
-http://localhost:5263
-https://localhost:7299
-```
+- `HolidayTemplate.xlsx`
+- `SalaryTemplate.xlsx`
 
-## Entity Framework
+Download the relevant blank template, fill it using the existing column structure, and import it through the corresponding register page.
 
-A local tool manifest exists at:
+## File Security
 
-```text
-AryamanBMS/dotnet-tools.json
-```
+Private employee and business documents are stored under `App_Data` and downloaded through authorized controller actions. Public static files are limited to intended assets such as profile photos and templates.
 
-It declares `dotnet-ef`.
+## IIS Deployment
 
-Restore local tools:
+Publish a Release build:
 
 ```powershell
-dotnet tool restore --tool-manifest AryamanBMS/dotnet-tools.json
+dotnet publish AryamanBMS/AryamanBMS.csproj -c Release -o .\Publish
 ```
 
-Common EF command shape:
+Before replacing the IIS application files:
 
-```powershell
-dotnet ef database update --project AryamanBMS/AryamanBMS.csproj
-```
+1. Back up the production database and current application folder.
+2. Apply required database scripts and verify the schema.
+3. Configure the production connection string as an environment variable or IIS deployment secret.
+4. Replace the published files.
+5. Restart the IIS application pool.
+6. Test login, roles, attendance, leave, calendar, salary, projects, documents, and notifications.
 
-Review the `SQL` folder before assuming EF migrations alone represent the full database setup.
+## Security Notes
 
-Latest manual schema scripts:
-
-```text
-AryamanBMS/SQL/Manual_Half_Day_Leave_Attendance_Changes.sql
-AryamanBMS/SQL/Migrated/04_ALTER_TABLES.sql
-```
-
-## Static Assets And Frontend
-
-Static files are located under:
-
-```text
-AryamanBMS/wwwroot
-```
-
-Important frontend areas:
-
-- `wwwroot/css`: global, layout, module, and component styles
-- `wwwroot/js`: module-specific behavior
-- `wwwroot/lib`: vendored frontend libraries
-- `wwwroot/templates`: import templates, including salary and holiday Excel templates
-- `wwwroot/uploads`: public upload paths such as profile photos
-- `wwwroot/css/leaves.css`: leave and paid leave balance page styling
-
-Shared layout and navigation:
-
-```text
-AryamanBMS/Views/Shared/_Layout.cshtml
-AryamanBMS/Views/Shared/_Sidebar.cshtml
-AryamanBMS/Views/Shared/_Navbar.cshtml
-```
-
-## File Storage
-
-The shared file storage service is:
-
-```text
-AryamanBMS/Services/FileStorageService.cs
-```
-
-It stores files under the application content root `App_Data`, validates folder names, restricts extensions, limits file size, and guards against path traversal when resolving physical paths.
-
-Some features also use public static paths under `wwwroot`, such as profile photos in:
-
-```text
-AryamanBMS/wwwroot/uploads/profile-photos
-```
-
-## Background Services
-
-Background service classes exist for reminders:
-
-```text
-AryamanBMS/Services/Background/TaskReminderBackgroundService.cs
-AryamanBMS/Services/Background/InvoiceReminderBackgroundService.cs
-AryamanBMS/Services/Background/HrNotificationReminderBackgroundService.cs
-```
-
-`HrNotificationReminderBackgroundService` is registered in `Program.cs` for HR reminders such as Comp Off expiry, missing check-in, and missing check-out. Task and invoice reminder services are present separately.
-
-## Publishing To IIS
-
-Publish from the working machine:
-
-```powershell
-dotnet publish AryamanBMS/AryamanBMS.csproj -c Release -o ./Publish
-```
-
-Before replacing IIS files, run required SQL scripts on the server database and set the production connection string outside committed configuration:
-
-```text
-ConnectionStrings__DefaultConnection
-```
-
-Current deployment-sensitive tables include `TableHoliday`, `TableCalendarManualEvent`, `TableWorkingDayOverride`, `tableleavetypes`, `tableleaveapplications`, expense voucher tables, and the current Project Management tables. When publishing to IIS, the server database schema must match the deployed models before testing Calendar, Holiday, Saturday Switcher, Birthday Leave, Leave, Salary Pay Days, Expense Voucher, or Project Management pages.
-
-## Repository Notes
-
-Generated build output and local IDE state are ignored, including `bin`, `obj`, `.vs`, `.tmp-build`, and `.codex-build`.
-
-The main implementation should be understood from source files under the web project rather than from the empty supporting class-library project folders.
-
-## Areas Requiring Extra Attention For Future Work
-
-- Keep secrets out of committed configuration files.
-- Verify role usage when adding protected controllers or views.
-- Check both EF migrations and SQL scripts before changing database schema.
-- Preserve object-level access checks for employee, salary, project, document, and finance records.
-- Be careful around modules that combine controller logic, repository queries, and direct `ApplicationDbContext` usage.
-- Revalidate file upload and download paths when adding document features.
-
-## Project Status
-
-This README reflects the current static project structure and implementation after the Holiday Register, alternate Saturday Switcher, Calendar birthday events, birthday notifications, Birthday Leave, holiday attendance/pay-day integration, Expense Voucher party-type handling, financial-year paid leave balance work, and My Workspace navigation. It is intended as the primary GitHub-facing project overview and onboarding reference.
+- Never commit database passwords or seed-admin passwords.
+- Keep production secrets outside `appsettings.json`.
+- Preserve role and object-level authorization when adding modules.
+- Keep confidential files outside `wwwroot`.
+- Validate uploads and use authorized download actions.
