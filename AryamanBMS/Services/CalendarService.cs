@@ -118,11 +118,42 @@ namespace AryamanBMS.Services
 
             foreach (var leave in leaves)
             {
+                await AddWorkingDayLeaveEventsAsync(
+                    events,
+                    leave,
+                    leave.LeaveType?.LeaveName ?? "Leave",
+                    start,
+                    end);
+            }
+        }
+
+        private async Task AddWorkingDayLeaveEventsAsync(
+            List<CalendarEventViewModel> events,
+            LeaveApplicationModel leave,
+            string title,
+            DateTime start,
+            DateTime end)
+        {
+            var rangeStart = leave.FromDate.Date > start.Date
+                ? leave.FromDate.Date
+                : start.Date;
+
+            var rangeEnd = leave.ToDate.Date < end.Date
+                ? leave.ToDate.Date
+                : end.Date;
+
+            for (var date = rangeStart; date <= rangeEnd; date = date.AddDays(1))
+            {
+                if (!await _workingDayService.IsWorkingDayAsync(date))
+                {
+                    continue;
+                }
+
                 events.Add(new CalendarEventViewModel
                 {
-                    Title = leave.LeaveType?.LeaveName ?? "Leave",
-                    Start = leave.FromDate.Date,
-                    End = leave.ToDate.Date.AddDays(1),
+                    Title = title,
+                    Start = date,
+                    End = date.AddDays(1),
                     AllDay = true,
                     Type = "Leave",
                     Status = leave.IsHalfDay
@@ -227,20 +258,12 @@ namespace AryamanBMS.Services
                 string leaveName =
                     leave.LeaveType?.LeaveName ?? "Leave";
 
-                events.Add(new CalendarEventViewModel
-                {
-                    Title = $"{employeeName} - {leaveName}",
-                    Start = leave.FromDate.Date,
-                    End = leave.ToDate.Date.AddDays(1),
-                    AllDay = true,
-                    Type = "Leave",
-                    Status = leave.IsHalfDay
-                        ? $"{leave.Status} Half Day"
-                        : leave.Status,
-                    Color = "#16a34a",
-                    TextColor = "#ffffff",
-                    Url = $"/LeaveApplication/Details/{leave.Id}"
-                });
+                await AddWorkingDayLeaveEventsAsync(
+                    events,
+                    leave,
+                    $"{employeeName} - {leaveName}",
+                    start,
+                    end);
             }
         }
 

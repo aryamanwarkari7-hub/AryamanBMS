@@ -5,6 +5,7 @@ using AryamanBMS.Services.Interface;
 using AryamanBMS.Services.Interfaces;
 using AryamanBMS.ViewModels;
 using ClosedXML.Excel;
+using DocumentFormat.OpenXml.InkML;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -21,7 +22,9 @@ namespace AryamanBMS.Controllers
         private readonly ILeaveTypeRepository _leaveTypeRepository;
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IAttendanceRepository _attendanceRepository;
-       
+        private readonly ILeaveBalanceRepository _leaveBalanceRepository;
+        private readonly ILeaveApplicationDayRepository _leaveApplicationDayRepository;
+
         private readonly UserManager<ApplicationUserModel> _userManager;
         private readonly ICompOffCreditRepository _compOffCreditRepository;
         private readonly ICompOffUsageRepository _compOffUsageRepository;
@@ -38,10 +41,11 @@ namespace AryamanBMS.Controllers
               ILeaveTypeRepository leaveTypeRepository,
               IEmployeeRepository employeeRepository,
               IAttendanceRepository attendanceRepository,
-              
+              ILeaveApplicationDayRepository leaveApplicationDayRepository,
               UserManager<ApplicationUserModel> userManager,
               ICompOffCreditRepository compOffCreditRepository,
               ICompOffUsageRepository compOffUsageRepository,
+              ILeaveBalanceRepository leaveBalanceRepository,
               INotificationService notificationService,
               IWorkingDayService workingDayService,
               ILogger<LeaveApplicationController> logger)
@@ -50,7 +54,8 @@ namespace AryamanBMS.Controllers
             _leaveTypeRepository = leaveTypeRepository;
             _employeeRepository = employeeRepository;
             _attendanceRepository = attendanceRepository;
-            
+            _leaveBalanceRepository = leaveBalanceRepository;
+            _leaveApplicationDayRepository = leaveApplicationDayRepository;
             _userManager = userManager;
             _compOffCreditRepository = compOffCreditRepository;
             _compOffUsageRepository = compOffUsageRepository;
@@ -86,6 +91,7 @@ namespace AryamanBMS.Controllers
                 .AsNoTracking()
                 .Include(x => x.Employee)
                 .Include(x => x.LeaveType)
+                .Include(x => x.LeaveDays)
                 .AsQueryable();
 
             bool isEmployeeOnly =
@@ -853,6 +859,8 @@ namespace AryamanBMS.Controllers
             await _leaveApplicationRepository.UpdateAsync(leaveApplication);
             await _leaveApplicationRepository.SaveAsync();
 
+            await RebuildLeaveApplicationDaysAsync(leaveApplication);
+
             if (isCompOff)
             {
                 await _compOffCreditRepository.SaveAsync();
@@ -1009,6 +1017,7 @@ namespace AryamanBMS.Controllers
         [Authorize(Roles = "Admin,HR,Employee,Master")]
            public async Task<IActionResult> RequestCancellation(
            int id,
+           int[]? leaveDayIds,
            string cancellationReason)
         {
             var leaveApplication =
@@ -1051,26 +1060,48 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            if (leaveApplication.CancellationStatus == "Pending")
-            {
-                TempData["Error"] =
-                    "A cancellation request is already pending.";
-
-                return RedirectToAction(nameof(Index));
-            }
-
-            if (leaveApplication.CancellationStatus == "Approved")
-            {
-                TempData["Error"] =
-                    "This leave application has already been cancelled.";
-
-                return RedirectToAction(nameof(Index));
-            }
-
             if (string.IsNullOrWhiteSpace(cancellationReason))
             {
                 TempData["Error"] =
                     "Cancellation reason is required.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            var leaveDays =
+                await EnsureLeaveApplicationDaysAsync(leaveApplication);
+
+            if (!leaveDays.Any(x => x.Status == "Active"))
+            {
+                TempData["Error"] =
+                    "No active leave days are available for cancellation.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (leaveDays.Any(x => x.Status == "CancellationRequested"))
+            {
+                TempData["Error"] =
+                    "A cancellation request is already pending for this leave application.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            var selectedLeaveDays =
+                leaveDayIds != null && leaveDayIds.Any()
+                    ? leaveDays
+                        .Where(x =>
+                            leaveDayIds.Contains(x.Id) &&
+                            x.Status == "Active")
+                        .ToList()
+                    : leaveDays
+                        .Where(x => x.Status == "Active")
+                        .ToList();
+
+            if (!selectedLeaveDays.Any())
+            {
+                TempData["Error"] =
+                    "Please select at least one active leave day to cancel.";
 
                 return RedirectToAction(nameof(Index));
             }
@@ -1089,9 +1120,23 @@ namespace AryamanBMS.Controllers
             leaveApplication.CancellationReviewedBy = null;
             leaveApplication.CancellationRemarks = null;
 
+            foreach (var leaveDay in selectedLeaveDays)
+            {
+                leaveDay.Status = "CancellationRequested";
+                leaveDay.CancellationReason = cancellationReason.Trim();
+                leaveDay.CancellationRequestedOn = DateTime.Now;
+                leaveDay.CancellationRequestedBy = User.Identity?.Name;
+                leaveDay.CancellationReviewedOn = null;
+                leaveDay.CancellationReviewedBy = null;
+                leaveDay.CancellationRemarks = null;
+
+                await _leaveApplicationDayRepository.UpdateAsync(leaveDay);
+            }
+
             await _leaveApplicationRepository
                 .UpdateAsync(leaveApplication);
 
+            await _leaveApplicationDayRepository.SaveAsync();
             await _leaveApplicationRepository.SaveAsync();
 
             await NotifyHrUsersAsync(
@@ -1099,7 +1144,7 @@ namespace AryamanBMS.Controllers
                 title: "Leave Cancellation Requested",
                 message:
                     $"{leaveApplication.Employee?.FullName ?? "Employee"} requested cancellation for " +
-                    $"leave {leaveApplication.ApplicationNumber}.",
+                    $"{selectedLeaveDays.Sum(x => x.DayValue):0.##} day(s) from leave {leaveApplication.ApplicationNumber}.",
                 referenceType: "LeaveApplication",
                 referenceId: leaveApplication.Id,
                 actionUrl: $"/LeaveApplication/Details/{leaveApplication.Id}",
@@ -1155,75 +1200,57 @@ namespace AryamanBMS.Controllers
             }
 
             bool isCompOff =
-    string.Equals(
-        leaveType.LeaveCode,
-        "COMP",
-        StringComparison.OrdinalIgnoreCase);
+                string.Equals(
+                    leaveType.LeaveCode,
+                    "COMP",
+                    StringComparison.OrdinalIgnoreCase);
 
-           
+            var leaveDays =
+                await EnsureLeaveApplicationDaysAsync(leaveApplication);
+
+            var cancellationRequestedDays =
+                leaveDays
+                    .Where(x => x.Status == "CancellationRequested")
+                    .ToList();
+
+            if (!cancellationRequestedDays.Any())
+            {
+                TempData["Error"] =
+                    "No leave days are pending cancellation for this application.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            decimal cancelledDayValue =
+                cancellationRequestedDays.Sum(x => x.DayValue);
 
             if (isCompOff)
             {
-                var usages =
-                    await _compOffUsageRepository.CompOffUsages
-                        .Include(x => x.CompOffCredit)
-                        .Where(x =>
-                            x.LeaveApplicationId == leaveApplication.Id &&
-                            !x.IsReversed)
-                        .ToListAsync();
+                bool compOffReversed =
+                    await ReverseCompOffUsageAsync(
+                        leaveApplication.Id,
+                        cancelledDayValue);
 
-                if (!usages.Any())
+                if (!compOffReversed)
                 {
                     TempData["Error"] =
                         "Comp Off usage records were not found.";
 
                     return RedirectToAction(nameof(Index));
                 }
-
-                foreach (var usage in usages)
-                {
-                    var credit = usage.CompOffCredit;
-
-                    if (credit == null)
-                    {
-                        TempData["Error"] =
-                            "A linked Comp Off credit was not found.";
-
-                        return RedirectToAction(nameof(Index));
-                    }
-
-                    credit.UsedDays -= usage.UsedDays;
-
-                    if (credit.UsedDays < 0)
-                    {
-                        credit.UsedDays = 0;
-                    }
-
-                    credit.Status =
-                        credit.ExpiryDate.Date < DateTime.Today
-                            ? "Expired"
-                            : "Available";
-
-                    credit.UpdatedOn = DateTime.Now;
-
-                    usage.IsReversed = true;
-                    usage.ReversedOn = DateTime.Now;
-                    usage.ReversedBy = User.Identity?.Name;
-
-                    await _compOffCreditRepository.UpdateAsync(credit);
-                    await _compOffUsageRepository.UpdateAsync(usage);
-                }
             }
+
+            var cancellationDates =
+                cancellationRequestedDays
+                    .Select(x => x.LeaveDate.Date)
+                    .ToList();
 
             var attendanceRecords =
                 await _attendanceRepository.Attendances
                     .Where(x =>
                         x.EmployeeId ==
                             leaveApplication.EmployeeId &&
-                        x.AttendanceDate.Date >=
-                            leaveApplication.FromDate.Date &&
-                        x.AttendanceDate.Date <=
-                            leaveApplication.ToDate.Date &&
+                        cancellationDates.Contains(x.AttendanceDate.Date) &&
                         x.Status == "L" &&
                         x.Remarks != null &&
                         x.Remarks.Contains(
@@ -1235,10 +1262,46 @@ namespace AryamanBMS.Controllers
                 await _attendanceRepository.DeleteAsync(attendance);
             }
 
-            leaveApplication.PaidDays = 0;
-            leaveApplication.UnpaidDays = 0;
-            leaveApplication.Status = "Cancelled";
-            leaveApplication.CancellationStatus = "Approved";
+            foreach (var leaveDay in cancellationRequestedDays)
+            {
+                leaveDay.Status = "Cancelled";
+                leaveDay.CancellationReviewedOn = DateTime.Now;
+                leaveDay.CancellationReviewedBy = User.Identity?.Name;
+                leaveDay.CancellationRemarks =
+                    string.IsNullOrWhiteSpace(cancellationRemarks)
+                        ? null
+                        : cancellationRemarks.Trim();
+
+                await _leaveApplicationDayRepository.UpdateAsync(leaveDay);
+            }
+
+            var activeLeaveDays =
+                leaveDays
+                    .Where(x => x.Status == "Active")
+                    .ToList();
+
+            leaveApplication.NumberOfDays =
+                activeLeaveDays.Sum(x => x.DayValue);
+
+            leaveApplication.PaidDays =
+                activeLeaveDays.Sum(x => x.PaidDays);
+
+            leaveApplication.UnpaidDays =
+                activeLeaveDays.Sum(x => x.UnpaidDays);
+
+            bool hasActiveLeaveDays =
+                activeLeaveDays.Any();
+
+            leaveApplication.Status =
+                hasActiveLeaveDays
+                    ? "Approved"
+                    : "Cancelled";
+
+            leaveApplication.CancellationStatus =
+                hasActiveLeaveDays
+                    ? null
+                    : "Approved";
+
             leaveApplication.CancellationReviewedOn = DateTime.Now;
             leaveApplication.CancellationReviewedBy = User.Identity?.Name;
             leaveApplication.CancellationRemarks =
@@ -1257,6 +1320,7 @@ namespace AryamanBMS.Controllers
                 await _compOffUsageRepository.SaveAsync();
             }
 
+            await _leaveApplicationDayRepository.SaveAsync();
             await _leaveApplicationRepository.SaveAsync();
 
             
@@ -1268,7 +1332,7 @@ namespace AryamanBMS.Controllers
                 notificationType: "LeaveCancellationApproved",
                 title: "Leave Cancellation Approved",
                 message:
-                    $"Cancellation for leave request {leaveApplication.ApplicationNumber} " +
+                    $"Cancellation for {cancelledDayValue:0.##} day(s) from leave request {leaveApplication.ApplicationNumber} " +
                     "has been approved.",
                 actionUrl: $"/LeaveApplication/Details/{leaveApplication.Id}");
 
@@ -1321,9 +1385,30 @@ namespace AryamanBMS.Controllers
                     ? null
                     : cancellationRemarks.Trim();
 
+            var leaveDays =
+                await _leaveApplicationDayRepository.LeaveApplicationDays
+                    .Where(x =>
+                        x.LeaveApplicationId == leaveApplication.Id &&
+                        x.Status == "CancellationRequested")
+                    .ToListAsync();
+
+            foreach (var leaveDay in leaveDays)
+            {
+                leaveDay.Status = "Active";
+                leaveDay.CancellationReviewedOn = DateTime.Now;
+                leaveDay.CancellationReviewedBy = User.Identity?.Name;
+                leaveDay.CancellationRemarks =
+                    string.IsNullOrWhiteSpace(cancellationRemarks)
+                        ? null
+                        : cancellationRemarks.Trim();
+
+                await _leaveApplicationDayRepository.UpdateAsync(leaveDay);
+            }
+
             await _leaveApplicationRepository
                 .UpdateAsync(leaveApplication);
 
+            await _leaveApplicationDayRepository.SaveAsync();
             await _leaveApplicationRepository.SaveAsync();
 
             await NotifyEmployeeLeaveAsync(
@@ -1443,6 +1528,28 @@ namespace AryamanBMS.Controllers
                     x => x.EmployeeId,
                     x => x.PendingRequested);
 
+            var carryForwardEntries = await _leaveBalanceRepository.LeaveBalances
+        .AsNoTracking()
+        .Include(x => x.LeaveType)
+        .Where(x =>
+            employeeIds.Contains(x.EmployeeId) &&
+            x.LeaveYear == selectedYear &&
+            x.LeaveType.IsPaidLeave &&
+            x.LeaveType.LeaveCode != "COMP" &&
+            x.LeaveType.LeaveCode != "BDL")
+        .GroupBy(x => x.EmployeeId)
+        .Select(x => new
+        {
+            EmployeeId = x.Key,
+            CarryForwardDays = x.Sum(b => b.CarryForwardDays)
+        })
+        .ToListAsync();
+
+            var carryForwardMap =
+                carryForwardEntries.ToDictionary(
+                    x => x.EmployeeId,
+                    x => x.CarryForwardDays);
+
             var approvedBirthdayLeaves =
             await _leaveApplicationRepository.LeaveApplications
                 .AsNoTracking()
@@ -1474,13 +1581,18 @@ namespace AryamanBMS.Controllers
                             employee.JoiningDate,
                             fyStart);
 
+                    decimal carryForwardDays =
+                        carryForwardMap.TryGetValue(employee.Id, out var carryForwardValue)
+                            ? carryForwardValue
+                            : 0m;
+
                     decimal used =
                         usedMap.TryGetValue(employee.Id, out var value)
                             ? value
                             : 0m;
 
                     decimal balanceBeforePending =
-                        Math.Max(0, entitlement - used);
+                        Math.Max(0, carryForwardDays + entitlement - used);
 
                     decimal pendingRequested =
                         pendingMap.TryGetValue(employee.Id, out var pendingValue)
@@ -1505,6 +1617,7 @@ namespace AryamanBMS.Controllers
                         AnnualEntitlement = AnnualPaidLeaveEntitlement,
                         MonthlyAccrual = MonthlyPaidLeaveAccrual,
                         ProratedEntitlement = entitlement,
+                        CarryForwardDays = carryForwardDays,
                         PaidUsed = used,
                         PendingPaidLeaveReserved = pendingReserved,
                         PaidBalance = Math.Max(0, balanceBeforePending - pendingReserved),
@@ -1566,6 +1679,102 @@ namespace AryamanBMS.Controllers
             ViewBag.TotalPages = totalPages;
 
             return View(pageItems);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,HR,Master")]
+        public async Task<IActionResult> UpdatePaidLeaveCarryForward(
+    int employeeId,
+    int year,
+    decimal carryForwardDays)
+        {
+            carryForwardDays = Math.Max(0, carryForwardDays);
+
+            var employee =
+                await _employeeRepository.Employees
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.Id == employeeId);
+
+            if (employee == null)
+            {
+                TempData["Error"] = "Employee not found.";
+                return RedirectToAction(nameof(PaidLeaveBalanceRegister), new { year });
+            }
+
+            var leaveType =
+                await _leaveTypeRepository.LeaveTypes
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.IsActive &&
+                        x.IsPaidLeave &&
+                        x.LeaveCode != "COMP" &&
+                        x.LeaveCode != "BDL")
+                    .OrderBy(x => x.Id)
+                    .FirstOrDefaultAsync();
+
+            if (leaveType == null)
+            {
+                TempData["Error"] = "Regular paid leave type not found.";
+                return RedirectToAction(nameof(PaidLeaveBalanceRegister), new { year });
+            }
+
+            DateTime fyStart = new DateTime(year, 4, 1);
+
+            var balance =
+                await _leaveBalanceRepository.LeaveBalances
+                    .FirstOrDefaultAsync(x =>
+                        x.EmployeeId == employeeId &&
+                        x.LeaveTypeId == leaveType.Id &&
+                        x.LeaveYear == year);
+
+            decimal currentYearAllocation =
+                GetProratedPaidLeaveEntitlement(
+                    employee.JoiningDate,
+                    fyStart);
+
+            decimal approvedPaidUsed =
+                await _leaveApplicationRepository.LeaveApplications
+                    .AsNoTracking()
+                    .Include(x => x.LeaveType)
+                    .Where(x =>
+                        x.EmployeeId == employeeId &&
+                        x.Status == "Approved" &&
+                        x.FromDate.Date >= fyStart.Date &&
+                        x.FromDate.Date <= fyStart.AddYears(1).AddDays(-1).Date &&
+                        (
+                            x.LeaveType == null ||
+                            x.LeaveType.LeaveCode == null ||
+                            (
+                                x.LeaveType.LeaveCode != "COMP" &&
+                                x.LeaveType.LeaveCode != "BDL"
+                            )
+                        ))
+                    .SumAsync(x => (decimal?)x.PaidDays) ?? 0m;
+
+            if (balance == null)
+            {
+                balance = new LeaveBalanceModel
+                {
+                    EmployeeId = employeeId,
+                    LeaveTypeId = leaveType.Id,
+                    LeaveYear = year
+                };
+
+                await _leaveBalanceRepository.AddAsync(balance);
+            }
+
+            balance.CurrentYearAllocation = currentYearAllocation;
+            balance.CarryForwardDays = carryForwardDays;
+            balance.AllocatedDays = currentYearAllocation + carryForwardDays;
+            balance.UsedDays = approvedPaidUsed;
+            balance.BalanceDays = Math.Max(0, balance.AllocatedDays - approvedPaidUsed);
+
+            await _leaveBalanceRepository.SaveAsync();
+
+            TempData["Success"] = "Paid leave carry forward updated.";
+
+            return RedirectToAction(nameof(PaidLeaveBalanceRegister), new { year });
         }
 
         [HttpGet]
@@ -2372,6 +2581,11 @@ namespace AryamanBMS.Controllers
             decimal proratedEntitlement =
                 monthlyCredits.Sum(x => x.Credit);
 
+            decimal carryForwardDays =
+    await GetPaidLeaveCarryForwardDaysAsync(
+        employee.Id,
+        fyStart.Year);
+
             var approvedLeavesQuery = _leaveApplicationRepository.LeaveApplications
                .AsNoTracking()
                .Include(x => x.LeaveType)
@@ -2427,7 +2641,7 @@ namespace AryamanBMS.Controllers
                     .SumAsync(x => (decimal?)x.NumberOfDays) ?? 0m;
 
             decimal balanceBeforePending =
-                Math.Max(0, proratedEntitlement - paidLeaveUsed);
+    Math.Max(0, carryForwardDays + proratedEntitlement - paidLeaveUsed);
 
             decimal pendingPaidLeaveReserved =
                 Math.Min(pendingRequestedDays, balanceBeforePending);
@@ -2448,6 +2662,7 @@ namespace AryamanBMS.Controllers
                 AnnualEntitlement = AnnualPaidLeaveEntitlement,
                 MonthlyAccrual = MonthlyPaidLeaveAccrual,
                 ProratedEntitlement = proratedEntitlement,
+                CarryForwardDays = carryForwardDays,
                 PaidLeaveUsed = paidLeaveUsed,
                 PendingPaidLeaveReserved = pendingPaidLeaveReserved,
                 PaidLeaveBalance = paidLeaveBalance,
@@ -2455,11 +2670,178 @@ namespace AryamanBMS.Controllers
                 RequestedDays = requestedDays,
                 PaidDaysForRequest = paidDaysForRequest,
                 UnpaidDaysForRequest = unpaidDaysForRequest,
+
                 BirthdayLeave = await GetBirthdayLeaveBalanceAsync(
                       employee,
                       referenceDate,
                       excludeLeaveApplicationId)
             };
+
+
+        }
+
+        private async Task<decimal> GetPaidLeaveCarryForwardDaysAsync(
+    int employeeId,
+    int leaveYear)
+        {
+            return await _leaveBalanceRepository.LeaveBalances
+                .AsNoTracking()
+                .Include(x => x.LeaveType)
+                .Where(x =>
+                    x.EmployeeId == employeeId &&
+                    x.LeaveYear == leaveYear &&
+                    x.LeaveType.IsPaidLeave &&
+                    x.LeaveType.LeaveCode != "COMP" &&
+                    x.LeaveType.LeaveCode != "BDL")
+                .SumAsync(x => (decimal?)x.CarryForwardDays) ?? 0m;
+        }
+
+        private async Task<List<LeaveApplicationDayModel>> EnsureLeaveApplicationDaysAsync(
+            LeaveApplicationModel leaveApplication)
+        {
+            var leaveDays =
+                await _leaveApplicationDayRepository.LeaveApplicationDays
+                    .Where(x => x.LeaveApplicationId == leaveApplication.Id)
+                    .OrderBy(x => x.LeaveDate)
+                    .ToListAsync();
+
+            if (leaveDays.Any() ||
+                leaveApplication.Status != "Approved")
+            {
+                return leaveDays;
+            }
+
+            await RebuildLeaveApplicationDaysAsync(leaveApplication);
+
+            return await _leaveApplicationDayRepository.LeaveApplicationDays
+                .Where(x => x.LeaveApplicationId == leaveApplication.Id)
+                .OrderBy(x => x.LeaveDate)
+                .ToListAsync();
+        }
+
+        private async Task<bool> ReverseCompOffUsageAsync(
+            int leaveApplicationId,
+            decimal daysToReverse)
+        {
+            if (daysToReverse <= 0)
+            {
+                return true;
+            }
+
+            var usages =
+                await _compOffUsageRepository.CompOffUsages
+                    .Include(x => x.CompOffCredit)
+                    .Where(x =>
+                        x.LeaveApplicationId == leaveApplicationId &&
+                        !x.IsReversed &&
+                        x.UsedDays > 0)
+                    .OrderByDescending(x => x.UsedOn)
+                    .ThenByDescending(x => x.Id)
+                    .ToListAsync();
+
+            if (!usages.Any())
+            {
+                return false;
+            }
+
+            decimal remainingDays = daysToReverse;
+
+            foreach (var usage in usages)
+            {
+                if (remainingDays <= 0)
+                {
+                    break;
+                }
+
+                var credit = usage.CompOffCredit;
+
+                if (credit == null)
+                {
+                    return false;
+                }
+
+                decimal reverseDays =
+                    Math.Min(usage.UsedDays, remainingDays);
+
+                credit.UsedDays -= reverseDays;
+
+                if (credit.UsedDays < 0)
+                {
+                    credit.UsedDays = 0;
+                }
+
+                credit.Status =
+                    credit.ExpiryDate.Date < DateTime.Today
+                        ? "Expired"
+                        : "Available";
+
+                credit.UpdatedOn = DateTime.Now;
+
+                usage.UsedDays -= reverseDays;
+
+                if (usage.UsedDays <= 0)
+                {
+                    usage.UsedDays = 0;
+                    usage.IsReversed = true;
+                    usage.ReversedOn = DateTime.Now;
+                    usage.ReversedBy = User.Identity?.Name;
+                }
+
+                await _compOffCreditRepository.UpdateAsync(credit);
+                await _compOffUsageRepository.UpdateAsync(usage);
+
+                remainingDays -= reverseDays;
+            }
+
+            return remainingDays <= 0;
+        }
+
+        private async Task RebuildLeaveApplicationDaysAsync(LeaveApplicationModel leaveApplication)
+        {
+            var existingDays = await _leaveApplicationDayRepository.LeaveApplicationDays
+                .Where(x => x.LeaveApplicationId == leaveApplication.Id)
+                .ToListAsync();
+
+            if (existingDays.Any())
+            {
+                await _leaveApplicationDayRepository.DeleteRangeAsync(existingDays);
+            }
+
+            var workingDates =
+                await GetLeaveWorkingDatesAsync(leaveApplication);
+
+            decimal remainingPaidDays = leaveApplication.PaidDays;
+
+            var leaveDays = new List<LeaveApplicationDayModel>();
+
+            foreach (var date in workingDates)
+            {
+                decimal dayValue =
+                    GetLeaveDayValue(leaveApplication, date);
+
+                decimal paidDays = Math.Min(dayValue, remainingPaidDays);
+                decimal unpaidDays = dayValue - paidDays;
+
+                leaveDays.Add(new LeaveApplicationDayModel
+                {
+                    LeaveApplicationId = leaveApplication.Id,
+                    LeaveDate = date,
+                    DayValue = dayValue,
+                    PaidDays = paidDays,
+                    UnpaidDays = unpaidDays,
+                    Status = "Active",
+                    HalfDaySession = leaveApplication.IsHalfDay ? leaveApplication.HalfDaySession : null
+                });
+
+                remainingPaidDays -= paidDays;
+            }
+
+            if (leaveDays.Any())
+            {
+                await _leaveApplicationDayRepository.AddRangeAsync(leaveDays);
+            }
+
+            await _leaveApplicationDayRepository.SaveAsync();
         }
 
         #endregion

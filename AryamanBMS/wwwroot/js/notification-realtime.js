@@ -105,15 +105,51 @@
             LeaveRequest: "bi-calendar-plus",
             LeaveApproved: "bi-calendar-check",
             LeaveRejected: "bi-calendar-x",
+            LeaveCancellationRequested: "bi-calendar-minus",
+            LeaveCancellationApproved: "bi-calendar2-x",
+            LeaveCancellationRejected: "bi-calendar2-check",
+            EmployeeBirthday: "bi-balloon",
+            EmployeeBirthdaySelf: "bi-balloon-heart",
+            CompOffRequested: "bi-clock-history",
+            CompOffApproved: "bi-clock",
+            CompOffRejected: "bi-clock-fill",
+            Login: "bi-box-arrow-in-right",
+            InvoiceDue: "bi-receipt",
+            InvoiceDueTomorrow: "bi-calendar-event",
+            InvoiceDueToday: "bi-receipt-cutoff",
+            InvoiceOverdue: "bi-exclamation-octagon",
+            InvoiceSettled: "bi-check-circle",
             ExpenseSubmitted: "bi-send",
             ExpenseApproved: "bi-check-circle",
             ExpenseRejected: "bi-x-circle",
+            ExpensePosted: "bi-journal-check",
+            ExpenseReversed: "bi-arrow-counterclockwise",
+            OfficeAssetAssigned: "bi-pc-display",
+            OfficeAssetReturned: "bi-arrow-return-left",
+            OfficeAssetUnderRepair: "bi-tools",
+            OfficeAssetMaintenanceCompleted: "bi-wrench-adjustable-circle",
+            InvoiceIssued: "bi-send-check",
+            InvoiceCancelled: "bi-file-earmark-x",
+            PaymentReceiptCancelled: "bi-receipt-cutoff",
             PaymentReceived: "bi-cash-coin",
             PayslipReleased: "bi-file-earmark-person",
             SalaryPaid: "bi-wallet2",
+            VendorPaymentMade: "bi-bank2",
+            SalaryAdvanceCreated: "bi-cash-stack",
+            FullAndFinalCreated: "bi-file-earmark-lock",
             ProjectMeetingCreated: "bi-people",
             MomActionAssigned: "bi-list-check",
-            ProjectRiskAssigned: "bi-shield-exclamation"
+            ProjectRiskAssigned: "bi-shield-exclamation",
+            ProjectRiskStatusChanged: "bi-arrow-repeat",
+            ProjectRiskSeverityChanged: "bi-exclamation-diamond",
+            GstSnapshotGenerated: "bi-calculator",
+            GstSnapshotRegenerated: "bi-arrow-repeat",
+            GstSnapshotVerified: "bi-patch-check",
+            Gstr1Filed: "bi-file-earmark-check",
+            Gstr3BFiled: "bi-file-earmark-check-fill",
+            GstChallanPaid: "bi-bank",
+            GstSnapshotLocked: "bi-lock",
+            GstSnapshotReopened: "bi-unlock"
         };
 
         return iconMap[type] || "bi-info-circle";
@@ -200,7 +236,10 @@
             "NotificationType",
             "");
 
-        toast.className = "notification-toast";
+        toast.className =
+            notificationType === "EmployeeBirthdaySelf"
+                ? "notification-toast notification-toast-birthday"
+                : "notification-toast";
         toast.innerHTML = `
             <div class="notification-icon">
                 <i class="bi ${notificationIcon(notificationType)}"></i>

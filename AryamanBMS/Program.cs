@@ -89,6 +89,8 @@ builder.Services.AddScoped<ILeaveTypeRepository, LeaveTypeRepository>();
 
 builder.Services.AddScoped<ILeaveApplicationRepository, LeaveApplicationRepository>();
 
+builder.Services.AddScoped<ILeaveApplicationDayRepository, LeaveApplicationDayRepository>();
+
 builder.Services.AddScoped<ILeaveBalanceRepository, LeaveBalanceRepository>();
 
 builder.Services.AddScoped<ICompOffCreditRepository, CompOffCreditRepository>();

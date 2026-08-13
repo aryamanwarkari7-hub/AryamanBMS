@@ -26,6 +26,7 @@ namespace AryamanBMS.Repositories
             return await _context.LeaveApplications
                 .Include(x => x.Employee)
                 .Include(x => x.LeaveType)
+                .Include(x => x.LeaveDays)
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
 

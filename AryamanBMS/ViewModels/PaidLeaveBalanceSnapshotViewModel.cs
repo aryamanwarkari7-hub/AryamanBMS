@@ -12,6 +12,8 @@
 
         public decimal ProratedEntitlement { get; set; }
 
+        public decimal CarryForwardDays { get; set; }
+
         public decimal PaidLeaveUsed { get; set; }
 
         public decimal PendingPaidLeaveReserved { get; set; }

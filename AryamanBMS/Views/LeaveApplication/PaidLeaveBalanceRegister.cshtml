@@ -113,6 +113,7 @@
                         <th>Joining Date</th>
                         <th>FY Period</th>
                         <th>Entitlement</th>
+                        <th>Carry Forward</th>
                         <th>Used Paid</th>
                         <th>Pending Reserved</th>
                         <th>Balance</th>
@@ -132,6 +133,31 @@
                                 <td>@item.JoiningDate.ToString("dd-MMM-yyyy")</td>
                                 <td>@item.FinancialYearLabel</td>
                                 <td>@item.ProratedEntitlement.ToString("0.##")</td>
+                                <td>
+                                    <form asp-action="UpdatePaidLeaveCarryForward"
+                                          asp-controller="LeaveApplication"
+                                          method="post"
+                                          class="d-flex gap-2 align-items-center">
+                                        @Html.AntiForgeryToken()
+
+                                        <input type="hidden" name="employeeId" value="@item.EmployeeId" />
+                                        <input type="hidden" name="year" value="@selectedYear" />
+
+                                        <input type="number"
+                                               name="carryForwardDays"
+                                               value="@item.CarryForwardDays.ToString("0.##")"
+                                               min="0"
+                                               step="0.5"
+                                               class="app-input"
+                                               style="max-width: 90px;" />
+
+                                        <button type="submit"
+                                                class="btn-app btn-secondary-app btn-icon"
+                                                title="Update carry forward">
+                                            <i class="bi bi-check-lg"></i>
+                                        </button>
+                                    </form>
+                                </td>
                                 <td>@item.PaidUsed.ToString("0.##")</td>
                                 <td>@item.PendingPaidLeaveReserved.ToString("0.##")</td>
                                 <td>
@@ -152,7 +178,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="9" class="text-center text-muted">
+                            <td colspan="10" class="text-center text-muted">
                                 No employees found.
                             </td>
                         </tr>

@@ -53,32 +53,54 @@
             <div class="stats-number">@Model.FinancialYearLabel</div>
         </div>
 
-        <div class="leave-balance-card-grid">
+        <div class="card-header px-0">
+            <h5 class="card-title">Paid Leave Summary</h5>
+        </div>
+
+        <div class="leave-balance-card-grid mb-4">
             <div class="stats-card">
-                <div class="stats-label">Annual Entitlement</div>
+                <div class="stats-label">Annual Leave Limit</div>
                 <div class="stats-number">@Model.AnnualEntitlement.ToString("0.##")</div>
             </div>
 
             <div class="stats-card">
-                <div class="stats-label">Prorated Entitlement</div>
-                <div class="stats-number">@Model.ProratedEntitlement.ToString("0.##")</div>
+                <div class="stats-label">Earned this FY</div>
+                <div class="stats-number">@Model.ProratedEntitlement.ToString("0.##") / @Model.AnnualEntitlement.ToString("0.##")</div>
+            </div>
+
+            <div class="stats-card">
+                <div class="stats-label">Carry Forward</div>
+                <div class="stats-number">@Model.CarryForwardDays.ToString("0.##")</div>
+            </div>
+
+            <div class="stats-card">
+                <div class="stats-label">Total Annual Leave Pool</div>
+                <div class="stats-number">
+                    @((Model.ProratedEntitlement + Model.CarryForwardDays).ToString("0.##"))
+                </div>
             </div>
 
             <div class="stats-card">
                 <div class="stats-label">Used Paid Leaves</div>
-                <div class="stats-number">@Model.PaidLeaveUsed.ToString("0.##")</div>
+                <div class="stats-number">@Model.PaidLeaveUsed.ToString("0.##") / @((Model.ProratedEntitlement + Model.CarryForwardDays).ToString("0.##"))</div>
             </div>
 
             <div class="stats-card">
-                <div class="stats-label">Pending Reserved</div>
+                <div class="stats-label">Pending Approvals</div>
                 <div class="stats-number">@Model.PendingPaidLeaveReserved.ToString("0.##")</div>
             </div>
 
-            <div class="stats-card">
+            <div class="stats-card stats-card-primary">
                 <div class="stats-label">Available Balance</div>
-                <div class="stats-number">@Model.PaidLeaveBalance.ToString("0.##")</div>
+                <div class="stats-number">@Model.PaidLeaveBalance.ToString("0.##") / @((Model.ProratedEntitlement + Model.CarryForwardDays).ToString("0.##"))</div>
             </div>
+        </div>
 
+        <div class="card-header px-0">
+            <h5 class="card-title">Birthday Leave Summary</h5>
+        </div>
+
+        <div class="leave-balance-card-grid">
             <div class="stats-card">
                 <div class="stats-label">Birthday Leave Entitlement</div>
                 <div class="stats-number">
@@ -93,18 +115,16 @@
                 </div>
             </div>
 
-            <div class="stats-card">
+            <div class="stats-card stats-card-primary">
                 <div class="stats-label">Birthday Leave Available</div>
                 <div class="stats-number">
                     @Model.BirthdayLeave.Available.ToString("0.##")
                 </div>
             </div>
-
         </div>
 
     </div>
 </div>
-
 <div class="app-card table-card mt-3">
     <div class="card-header">
         <h5 class="card-title">Monthly Paid Leave Credit</h5>
@@ -134,7 +154,7 @@
                     }
 
                     <tr>
-                        <td><strong>Total</strong></td>
+                        <td><strong>Current FY Total</strong></td>
                         <td>
                             <strong>@Model.MonthlyCredits.Sum(x => x.Credit).ToString("0.##")</strong>
                         </td>

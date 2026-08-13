@@ -48,6 +48,8 @@ namespace AryamanBMS.Data
 
         public DbSet<LeaveApplicationModel> LeaveApplications { get; set; }
 
+        public DbSet<LeaveApplicationDayModel> LeaveApplicationDays { get; set; }
+
         public DbSet<LeaveBalanceModel> LeaveBalances { get; set; }
         public DbSet<CompOffCreditModel> CompOffCredits { get; set; }
         public DbSet<CompOffUsageModel> CompOffUsages { get; set; }

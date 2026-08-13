@@ -62,5 +62,8 @@ namespace AryamanBMS.Models
 
         [StringLength(500)]
         public string? CancellationRemarks { get; set; }
+
+        public ICollection<LeaveApplicationDayModel> LeaveDays { get; set; }
+    = new List<LeaveApplicationDayModel>();
     }
 }
