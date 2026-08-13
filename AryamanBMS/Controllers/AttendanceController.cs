@@ -28,6 +28,9 @@ namespace AryamanBMS.Controllers
         private readonly IWorkingDayService _workingDayService;
 
         private readonly ISalaryAttendanceSummaryService _salaryAttendanceSummaryService;
+        private const decimal MonthlyPaidLeaveAccrual = 1.5m;
+        private const int FinancialYearStartMonth = 4;
+        private const int FinancialYearStartDay = 1;
 
         public AttendanceController(
     IAttendanceRepository attendanceRepository,
@@ -217,66 +220,13 @@ namespace AryamanBMS.Controllers
             ViewBag.ExpectedAttendanceDays = expectedAttendanceDays;
             ViewBag.MissingDays = missingDays;
 
-            DateTime fyStart =
-                DateTime.Today.Month >= 4
-                    ? new DateTime(DateTime.Today.Year, 4, 1)
-                    : new DateTime(DateTime.Today.Year - 1, 4, 1);
-
-            var paidLeaveSnapshot =
-                await _context.LeaveApplications
-                    .AsNoTracking()
-                    .Include(x => x.LeaveType)
-                    .Where(x =>
-                        x.EmployeeId == employee.Id &&
-                        x.FromDate.Date >= fyStart.Date &&
-                        x.FromDate.Date <= fyStart.AddYears(1).AddDays(-1).Date &&
-                        (
-                            x.LeaveType == null ||
-                            x.LeaveType.LeaveCode == null ||
-                            (
-                                x.LeaveType.LeaveCode != "COMP" &&
-                                x.LeaveType.LeaveCode != "BDL"
-                            )
-                        ))
-                    .ToListAsync();
-
-            decimal paidUsed =
-                paidLeaveSnapshot
-                    .Where(x => x.Status == "Approved")
-                    .Sum(x => x.PaidDays);
-
-            int monthsLate = 0;
-
-            if (employee.JoiningDate.Date > fyStart.Date)
-            {
-                monthsLate =
-                    ((employee.JoiningDate.Year - fyStart.Year) * 12) +
-                    employee.JoiningDate.Month -
-                    fyStart.Month;
-
-                if (employee.JoiningDate.Day > 1)
-                {
-                    monthsLate++;
-                }
-
-                monthsLate = Math.Clamp(monthsLate, 0, 12);
-            }
-
-            decimal entitlement =
-                Math.Max(0, 18m - (monthsLate * 1.5m));
-
-            decimal balanceBeforePending =
-                Math.Max(0, entitlement - paidUsed);
-
-            decimal pendingReserved =
-                Math.Min(
-                    paidLeaveSnapshot
-                        .Where(x => x.Status == "Pending")
-                        .Sum(x => x.NumberOfDays),
-                    balanceBeforePending);
+            DateTime balanceReferenceDate =
+               monthEnd.Date;
 
             ViewBag.PaidLeaveBalance =
-                Math.Max(0, balanceBeforePending - pendingReserved);
+                await GetPaidLeaveBalanceAsOfAsync(
+                    employee,
+                    balanceReferenceDate);
 
             return View(
                 visibleAttendanceRecords
@@ -286,14 +236,27 @@ namespace AryamanBMS.Controllers
         }
 
         [Authorize(Roles = "Admin,HR,Master")]
-        public IActionResult Create()
+        public IActionResult Create(
+            int? employeeId,
+            DateTime? attendanceDate,
+            string? status)
         {
             ViewBag.Employees = _employeeRepository.Employees
                 .Where(e => e.IsActive)
                 .OrderBy(e => e.FirstName)
                 .ToList();
 
-            return View();
+            var model = new AttendanceModel
+            {
+                EmployeeId = employeeId ?? 0,
+                AttendanceDate = attendanceDate?.Date ?? DateTime.Today,
+                Status = string.IsNullOrWhiteSpace(status)
+                    ? "P"
+                    : status.Trim(),
+                AttendanceValue = 1m
+            };
+
+            return View(model);
         }
 
         [HttpPost]
@@ -1600,6 +1563,124 @@ namespace AryamanBMS.Controllers
                 stream.ToArray(),
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 $"Attendance_{DateTime.Now:yyyyMMdd}.xlsx");
+        }
+
+        private async Task<decimal> GetPaidLeaveBalanceAsOfAsync(
+            EmployeeModel employee,
+            DateTime referenceDate)
+        {
+            DateTime fyStart = GetFinancialYearStart(referenceDate);
+            DateTime fyEnd = fyStart.AddYears(1).AddDays(-1);
+
+            decimal earnedThisFy =
+                GetPaidLeaveEntitlementAsOf(
+                    employee.JoiningDate,
+                    fyStart,
+                    referenceDate);
+
+            decimal carryForwardDays =
+                employee.JoiningDate.Date <= fyStart.Date
+                    ? await _context.LeaveBalances
+                        .AsNoTracking()
+                        .Include(x => x.LeaveType)
+                        .Where(x =>
+                            x.EmployeeId == employee.Id &&
+                            x.LeaveYear == fyStart.Year &&
+                            x.LeaveType.IsPaidLeave &&
+                            x.LeaveType.LeaveCode != "COMP" &&
+                            x.LeaveType.LeaveCode != "BDL")
+                        .SumAsync(x => (decimal?)x.CarryForwardDays) ?? 0m
+                    : 0m;
+
+            var paidLeaveApplications =
+                await _leaveApplicationRepository.LeaveApplications
+                    .AsNoTracking()
+                    .Include(x => x.LeaveType)
+                    .Where(x =>
+                        x.EmployeeId == employee.Id &&
+                        x.FromDate.Date >= fyStart.Date &&
+                        x.FromDate.Date <= fyEnd.Date &&
+                        x.FromDate.Date <= referenceDate.Date &&
+                        (
+                            x.LeaveType == null ||
+                            x.LeaveType.LeaveCode == null ||
+                            (
+                                x.LeaveType.LeaveCode != "COMP" &&
+                                x.LeaveType.LeaveCode != "BDL"
+                            )
+                        ))
+                    .ToListAsync();
+
+            decimal paidUsed =
+                paidLeaveApplications
+                    .Where(x => x.Status == "Approved")
+                    .Sum(x => x.PaidDays);
+
+            decimal balanceBeforePending =
+                Math.Max(0, carryForwardDays + earnedThisFy - paidUsed);
+
+            decimal pendingRequestedDays =
+                paidLeaveApplications
+                    .Where(x => x.Status == "Pending")
+                    .Sum(x => x.NumberOfDays);
+
+            decimal pendingReserved =
+                Math.Min(pendingRequestedDays, balanceBeforePending);
+
+            return Math.Max(0, balanceBeforePending - pendingReserved);
+        }
+
+        private static DateTime GetFinancialYearStart(DateTime referenceDate)
+        {
+            return referenceDate.Month >= FinancialYearStartMonth
+                ? new DateTime(
+                    referenceDate.Year,
+                    FinancialYearStartMonth,
+                    FinancialYearStartDay)
+                : new DateTime(
+                    referenceDate.Year - 1,
+                    FinancialYearStartMonth,
+                    FinancialYearStartDay);
+        }
+
+        private static decimal GetPaidLeaveEntitlementAsOf(
+            DateTime joiningDate,
+            DateTime fyStart,
+            DateTime referenceDate)
+        {
+            DateTime entitlementStart =
+                joiningDate.Date > fyStart.Date
+                    ? new DateTime(joiningDate.Year, joiningDate.Month, 1)
+                    : fyStart.Date;
+
+            DateTime referenceMonthStart =
+                new DateTime(referenceDate.Year, referenceDate.Month, 1);
+
+            if (entitlementStart > referenceMonthStart)
+            {
+                return 0m;
+            }
+
+            decimal entitlement = 0m;
+
+            for (var monthStart = entitlementStart;
+                 monthStart <= referenceMonthStart;
+                 monthStart = monthStart.AddMonths(1))
+            {
+                decimal credit = MonthlyPaidLeaveAccrual;
+
+                if (joiningDate.Year == monthStart.Year &&
+                    joiningDate.Month == monthStart.Month)
+                {
+                    credit = joiningDate.Day > 15
+                        ? 1m
+                        : MonthlyPaidLeaveAccrual;
+                }
+
+                entitlement += credit;
+            }
+
+            return entitlement;
         }
 
         [Authorize(Roles = "Admin,HR,Master")]

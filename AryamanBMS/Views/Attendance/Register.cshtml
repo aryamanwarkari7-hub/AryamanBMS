@@ -327,7 +327,28 @@
                                     }
                                     else
                                     {
-                                        <span>-</span>
+                                        @if (attendance.Status == "M")
+                                        {
+                                            <div class="table-actions justify-content-end">
+
+                                                <a asp-action="Create"
+                                                   asp-route-employeeId="@attendance.EmployeeId"
+                                                   asp-route-attendanceDate="@attendance.AttendanceDate.ToString("yyyy-MM-dd")"
+                                                   asp-route-status="A"
+                                                   class="btn-app btn-primary-app btn-icon"
+                                                   title="Mark attendance"
+                                                   aria-label="Mark attendance">
+
+                                                    <i class="bi bi-plus-circle"></i>
+
+                                                </a>
+
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span>-</span>
+                                        }
                                     }
 
                                 </td>

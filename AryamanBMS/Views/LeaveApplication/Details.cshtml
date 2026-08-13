@@ -17,6 +17,21 @@
 
     var paidLeaveSnapshot =
     ViewBag.PaidLeaveSnapshot as AryamanBMS.ViewModels.PaidLeaveBalanceSnapshotViewModel;
+
+    var leaveDays = Model.LeaveDays?
+        .OrderBy(x => x.LeaveDate)
+        .ToList() ?? new List<LeaveApplicationDayModel>();
+
+    string GetDayStatusClass(string status)
+    {
+        return status switch
+        {
+            "Active" => "badge-success",
+            "CancellationRequested" => "badge-warning",
+            "Cancelled" => "badge-secondary",
+            _ => "badge-secondary"
+        };
+    }
 }
 
 <div class="module-header">
@@ -130,14 +145,14 @@
                         </strong>
                     </div>
 
-                    <div class="detail-info-item">
+                    <div class="detail-info-row">
                         <span class="detail-info-label">Paid Days</span>
                         <span class="detail-info-value">
                             @Model.PaidDays.ToString("0.##")
                         </span>
                     </div>
 
-                    <div class="detail-info-item">
+                    <div class="detail-info-row">
                         <span class="detail-info-label">Unpaid Days</span>
                         <span class="detail-info-value">
                             @Model.UnpaidDays.ToString("0.##")
@@ -223,6 +238,134 @@
             </div>
         </div>
     </div>
+
+    @if (leaveDays.Any())
+    {
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Leave Day Details</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Days</th>
+                                <th>Paid</th>
+                                <th>Unpaid</th>
+                                <th>Status</th>
+                                <th>Cancellation</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var leaveDay in leaveDays)
+                            {
+                                <tr>
+                                    <td>
+                                        @leaveDay.LeaveDate.ToString("dd-MMM-yyyy")
+                                    </td>
+                                    <td>
+                                        @leaveDay.DayValue.ToString("0.##")
+                                    </td>
+                                    <td>
+                                        @leaveDay.PaidDays.ToString("0.##")
+                                    </td>
+                                    <td>
+                                        @leaveDay.UnpaidDays.ToString("0.##")
+                                    </td>
+                                    <td>
+                                        <span class="@GetDayStatusClass(leaveDay.Status)">
+                                            @leaveDay.Status
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (leaveDay.Status == "Active")
+                                        {
+                                            @("-")
+                                        }
+                                        else
+                                        {
+                                            <div>
+                                                <strong>Reason:</strong>
+                                                @(leaveDay.CancellationReason ?? "-")
+                                            </div>
+                                            <div>
+                                                <strong>Requested:</strong>
+                                                @(leaveDay.CancellationRequestedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")
+                                            </div>
+                                            <div>
+                                                <strong>Reviewed:</strong>
+                                                @(leaveDay.CancellationReviewedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")
+                                            </div>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Model.CancellationStatus) ||
+        !string.IsNullOrWhiteSpace(Model.CancellationReason) ||
+        !string.IsNullOrWhiteSpace(Model.CancellationRemarks))
+    {
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Cancellation Information</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-grid-3">
+                    <div class="detail-info-list">
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Cancellation Status</span>
+                            <strong class="detail-info-value">
+                                @(Model.CancellationStatus ?? "-")
+                            </strong>
+                        </div>
+                    </div>
+
+                    <div class="detail-info-list">
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Requested On</span>
+                            <strong class="detail-info-value">
+                                @(Model.CancellationRequestedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")
+                            </strong>
+                        </div>
+                    </div>
+
+                    <div class="detail-info-list">
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Reviewed On</span>
+                            <strong class="detail-info-value">
+                                @(Model.CancellationReviewedOn?.ToString("dd-MMM-yyyy hh:mm tt") ?? "-")
+                            </strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <div class="detail-note-box">
+                        <strong>Reason:</strong>
+                        @(Model.CancellationReason ?? "-")
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <div class="detail-note-box">
+                        <strong>Remarks:</strong>
+                        @(Model.CancellationRemarks ?? "-")
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 
     <div class="app-card">
         <div class="card-header">

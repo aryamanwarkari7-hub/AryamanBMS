@@ -156,6 +156,45 @@
 .accordion-card {
     margin-bottom: var(--space-lg);
 }
+.app-selectable-card {
+    cursor: pointer;
+}
+
+
+/* ==========================================
+   LEAVE MODAL CARD
+========================================== */
+
+.app-modal-card {
+    overflow: hidden;
+}
+
+    .app-modal-card .modal-header,
+    .app-modal-card .modal-footer {
+        border-color: var(--border-color);
+    }
+
+    .app-modal-card .modal-body {
+        background: var(--card-bg);
+    }
+
+    .app-modal-card .modal-footer {
+        background: var(--page-bg);
+    }
+
+.modal-content.app-card {
+    margin: 0;
+    border-radius: var(--radius-lg);
+}
+
+    .modal-content.app-card .modal-header {
+        border-bottom: 1px solid rgba(148, 163, 184, 0.24);
+    }
+
+    .modal-content.app-card .modal-footer {
+        border-top: 1px solid rgba(148, 163, 184, 0.24);
+        background: var(--card-bg);
+    }
 
 /* ==========================================
    CARD RESPONSIVENESS

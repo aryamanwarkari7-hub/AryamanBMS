@@ -468,6 +468,16 @@
 
                 @foreach (var item in Model.Items)
                 {
+                    var activeLeaveDays = item.LeaveDays?
+                        .Where(x => x.Status == "Active")
+                        .OrderBy(x => x.LeaveDate)
+                        .ToList() ?? new List<LeaveApplicationDayModel>();
+
+                    var cancellationRequestedDays = item.LeaveDays?
+                        .Where(x => x.Status == "CancellationRequested")
+                        .OrderBy(x => x.LeaveDate)
+                        .ToList() ?? new List<LeaveApplicationDayModel>();
+
                     @if (item.Status == "Approved" &&
                                 item.CancellationStatus != "Pending" &&
                                 item.CancellationStatus != "Approved" &&
@@ -480,7 +490,7 @@
                              aria-hidden="true">
 
                             <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content">
+                                <div class="modal-content app-card app-modal-card">
 
                                     <form asp-action="RequestCancellation"
                                           method="post">
@@ -510,6 +520,48 @@
                                                     @item.ApplicationNumber
                                                 </strong>
                                             </p>
+
+                                            @if (activeLeaveDays.Any())
+                                            {
+                                                <label class="form-label">
+                                                    Select Leave Days To Cancel
+                                                </label>
+
+                                                <div class="row g-2 mb-3">
+                                                    @foreach (var leaveDay in activeLeaveDays)
+                                                    {
+                                                        <div class="col-12">
+                                                            <label class="app-card app-selectable-card p-3 d-flex align-items-center gap-3 mb-0">
+                                                                <input type="checkbox"
+                                                                       name="leaveDayIds"
+                                                                       value="@leaveDay.Id"
+                                                                       class="form-check-input mt-0"
+                                                                       checked />
+
+                                                                <div class="flex-grow-1">
+                                                                    <div class="fw-semibold">
+                                                                        @leaveDay.LeaveDate.ToString("dd-MMM-yyyy")
+                                                                    </div>
+
+                                                                    <div class="text-muted small">
+                                                                        Days: @leaveDay.DayValue.ToString("0.##")
+                                                                        |
+                                                                        Paid: @leaveDay.PaidDays.ToString("0.##")
+                                                                        |
+                                                                        Unpaid: @leaveDay.UnpaidDays.ToString("0.##")
+                                                                    </div>
+                                                                </div>
+                                                            </label>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="app-alert-info mb-3">
+                                                    Day-wise records will be prepared when this request is submitted.
+                                                </div>
+                                            }
 
                                             <label class="form-label">
                                                 Cancellation Reason
@@ -555,7 +607,7 @@
                              aria-hidden="true">
 
                             <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content">
+                                <div class="modal-content app-card app-modal-card">
 
                                     <form asp-action="ApproveCancellation"
                                           method="post">
@@ -592,6 +644,46 @@
                                                     @(item.CancellationReason ?? "-")
                                                 </strong>
                                             </p>
+
+                                            @if (cancellationRequestedDays.Any())
+                                            {
+                                                <label class="form-label">
+                                                    Requested Cancellation Days
+                                                </label>
+
+                                                <div class="table-responsive mb-3">
+                                                    <table class="table table-sm align-middle">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Date</th>
+                                                                <th>Days</th>
+                                                                <th>Paid</th>
+                                                                <th>Unpaid</th>
+                                                            </tr>
+                                                        </thead>
+
+                                                        <tbody>
+                                                            @foreach (var leaveDay in cancellationRequestedDays)
+                                                            {
+                                                                <tr>
+                                                                    <td>
+                                                                        @leaveDay.LeaveDate.ToString("dd-MMM-yyyy")
+                                                                    </td>
+                                                                    <td>
+                                                                        @leaveDay.DayValue.ToString("0.##")
+                                                                    </td>
+                                                                    <td>
+                                                                        @leaveDay.PaidDays.ToString("0.##")
+                                                                    </td>
+                                                                    <td>
+                                                                        @leaveDay.UnpaidDays.ToString("0.##")
+                                                                    </td>
+                                                                </tr>
+                                                            }
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            }
 
                                             <label class="form-label">
                                                 Review Remarks
@@ -631,7 +723,7 @@
                              aria-hidden="true">
 
                             <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content">
+                                <div class="modal-content app-card app-modal-card">
 
                                     <form asp-action="RejectCancellation"
                                           method="post">
@@ -668,6 +760,46 @@
                                                     @(item.CancellationReason ?? "-")
                                                 </strong>
                                             </p>
+
+                                            @if (cancellationRequestedDays.Any())
+                                            {
+                                                <label class="form-label">
+                                                    Requested Cancellation Days
+                                                </label>
+
+                                                <div class="table-responsive mb-3">
+                                                    <table class="table table-sm align-middle">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Date</th>
+                                                                <th>Days</th>
+                                                                <th>Paid</th>
+                                                                <th>Unpaid</th>
+                                                            </tr>
+                                                        </thead>
+
+                                                        <tbody>
+                                                            @foreach (var leaveDay in cancellationRequestedDays)
+                                                            {
+                                                                <tr>
+                                                                    <td>
+                                                                        @leaveDay.LeaveDate.ToString("dd-MMM-yyyy")
+                                                                    </td>
+                                                                    <td>
+                                                                        @leaveDay.DayValue.ToString("0.##")
+                                                                    </td>
+                                                                    <td>
+                                                                        @leaveDay.PaidDays.ToString("0.##")
+                                                                    </td>
+                                                                    <td>
+                                                                        @leaveDay.UnpaidDays.ToString("0.##")
+                                                                    </td>
+                                                                </tr>
+                                                            }
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            }
 
                                             <label class="form-label">
                                                 Rejection Remarks

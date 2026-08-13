@@ -165,6 +165,8 @@ namespace AryamanBMS.Controllers
                     message: null,
                     isManual: false);
 
+                await PrepareBirthdayCelebrationAsync(user);
+
                 return await RedirectByRoleAsync(user);
             }
 
@@ -964,8 +966,48 @@ namespace AryamanBMS.Controllers
                 _logger.LogError(
                     ex,
                     "Admin login notification failed for user {UserId}.",
-                    loggedInUser.Id);
+                loggedInUser.Id);
             }
+        }
+
+        private async Task PrepareBirthdayCelebrationAsync(
+            ApplicationUserModel loggedInUser)
+        {
+            var employee =
+                await _employeeRepository.Employees
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x =>
+                        x.ApplicationUserId == loggedInUser.Id &&
+                        x.IsActive &&
+                        x.DateOfBirth.HasValue);
+
+            if (employee?.DateOfBirth == null ||
+                !IsBirthdayToday(employee.DateOfBirth.Value, DateTime.Today))
+            {
+                return;
+            }
+
+            TempData["BirthdayCelebrationName"] =
+                employee.FullName;
+
+            TempData["BirthdayCelebrationMessage"] =
+                $"Happy birthday, {employee.FullName}. Wishing you a wonderful day and a fantastic year ahead.";
+        }
+
+        private static bool IsBirthdayToday(
+            DateTime dateOfBirth,
+            DateTime today)
+        {
+            if (dateOfBirth.Month == 2 &&
+                dateOfBirth.Day == 29 &&
+                !DateTime.IsLeapYear(today.Year))
+            {
+                return today.Month == 2 &&
+                    today.Day == 28;
+            }
+
+            return dateOfBirth.Month == today.Month &&
+                dateOfBirth.Day == today.Day;
         }
 
         private async Task RecordLoginHistorySafeAsync(

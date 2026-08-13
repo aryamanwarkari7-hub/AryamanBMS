@@ -156,10 +156,12 @@ namespace AryamanBMS.Services.Background
                     .AsNoTracking()
                     .Where(x =>
                         x.IsActive &&
-                        x.DateOfBirth.HasValue &&
-                        x.DateOfBirth.Value.Month == today.Month &&
-                        x.DateOfBirth.Value.Day == today.Day)
+                        x.DateOfBirth.HasValue)
                     .ToListAsync(cancellationToken);
+
+            birthdayEmployees = birthdayEmployees
+                .Where(x => IsBirthdayToday(x.DateOfBirth!.Value, today))
+                .ToList();
 
             if (birthdayEmployees.Count == 0)
             {
@@ -179,9 +181,31 @@ namespace AryamanBMS.Services.Background
                 int referenceId =
                     (today.Year * 100000) + birthdayEmployee.Id;
 
+                if (!string.IsNullOrWhiteSpace(birthdayEmployee.ApplicationUserId) &&
+                    !await notificationService.ExistsAsync(
+                        birthdayEmployee.ApplicationUserId,
+                        "EmployeeBirthdaySelf",
+                        "EmployeeBirthday",
+                        referenceId))
+                {
+                    await notificationService.CreateAsync(
+                        birthdayEmployee.ApplicationUserId,
+                        "Happy Birthday",
+                        $"Happy birthday, {birthdayEmployee.FullName}. Wishing you a wonderful day and a fantastic year ahead.",
+                        "EmployeeBirthdaySelf",
+                        "EmployeeBirthday",
+                        referenceId,
+                        "/Calendar/Index?mine=true");
+                }
+
                 foreach (var recipient in recipients)
                 {
                     string userId = recipient.ApplicationUserId!;
+
+                    if (recipient.Id == birthdayEmployee.Id)
+                    {
+                        continue;
+                    }
 
                     if (await notificationService.ExistsAsync(
                         userId,
@@ -202,6 +226,22 @@ namespace AryamanBMS.Services.Background
                         "/Calendar/Index?mine=true");
                 }
             }
+        }
+
+        private static bool IsBirthdayToday(
+            DateTime dateOfBirth,
+            DateTime today)
+        {
+            if (dateOfBirth.Month == 2 &&
+                dateOfBirth.Day == 29 &&
+                !DateTime.IsLeapYear(today.Year))
+            {
+                return today.Month == 2 &&
+                    today.Day == 28;
+            }
+
+            return dateOfBirth.Month == today.Month &&
+                dateOfBirth.Day == today.Day;
         }
 
         private static async Task NotifyMissingCheckInAsync(
