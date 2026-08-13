@@ -1022,7 +1022,7 @@ namespace AryamanBMS.Controllers
             return View(salary);
         }
 
-        [Authorize(Roles = "Employee")]
+        [Authorize(Roles = "Employee,Admin,HR,Master")]
         public async Task<IActionResult> MyPayslip()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -1058,7 +1058,7 @@ namespace AryamanBMS.Controllers
                 new { id = salary.Id });
         }
 
-        [Authorize(Roles = "Employee")]
+        [Authorize(Roles = "Employee,Admin,HR,Master")]
         public async Task<IActionResult> MySalary()
         {
             var user = await _userManager.GetUserAsync(User);

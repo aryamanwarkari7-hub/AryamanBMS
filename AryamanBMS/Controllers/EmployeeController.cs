@@ -1918,8 +1918,33 @@ namespace AryamanBMS.Controllers
                         ))
                     .SumAsync(x => (decimal?)x.PaidDays) ?? 0m;
 
-            decimal paidLeaveBalance =
+            decimal pendingPaidLeaveRequested =
+                await _context.LeaveApplications
+                    .AsNoTracking()
+                    .Include(x => x.LeaveType)
+                    .Where(x =>
+                        x.EmployeeId == employee.Id &&
+                        x.Status == "Pending" &&
+                        x.FromDate.Date >= fyStart.Date &&
+                        x.FromDate.Date <= fyEnd.Date &&
+                        (
+                            x.LeaveType == null ||
+                            x.LeaveType.LeaveCode == null ||
+                            (
+                                x.LeaveType.LeaveCode != "COMP" &&
+                                x.LeaveType.LeaveCode != "BDL"
+                            )
+                        ))
+                    .SumAsync(x => (decimal?)x.NumberOfDays) ?? 0m;
+
+            decimal balanceBeforePending =
                 Math.Max(0, proratedPaidLeaveEntitlement - paidLeaveUsed);
+
+            decimal pendingPaidLeaveReserved =
+                Math.Min(pendingPaidLeaveRequested, balanceBeforePending);
+
+            decimal paidLeaveBalance =
+                Math.Max(0, balanceBeforePending - pendingPaidLeaveReserved);
 
             var model = new EmployeeMyDashboardViewModel
             {
@@ -1952,6 +1977,8 @@ namespace AryamanBMS.Controllers
                         x.FromDate < nextMonth),
 
                     AvailableBalance = paidLeaveBalance,
+
+                    PendingPaidLeaveReserved = pendingPaidLeaveReserved,
 
                     PendingCompOff = await _context.CompOffCredits.CountAsync(x =>
                         x.EmployeeId == employee.Id &&

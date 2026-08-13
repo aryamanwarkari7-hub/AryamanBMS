@@ -14,6 +14,7 @@
         public decimal MonthlyAccrual { get; set; }
         public decimal ProratedEntitlement { get; set; }
         public decimal PaidUsed { get; set; }
+        public decimal PendingPaidLeaveReserved { get; set; }
         public decimal PaidBalance { get; set; }
 
         public BirthdayLeaveBalanceViewModel BirthdayLeave { get; set; } = new();

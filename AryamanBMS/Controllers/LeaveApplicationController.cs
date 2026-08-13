@@ -1,6 +1,7 @@
 using AryamanBMS.Extensions;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
+using AryamanBMS.Services.Interface;
 using AryamanBMS.Services.Interfaces;
 using AryamanBMS.ViewModels;
 using ClosedXML.Excel;
@@ -25,6 +26,7 @@ namespace AryamanBMS.Controllers
         private readonly ICompOffCreditRepository _compOffCreditRepository;
         private readonly ICompOffUsageRepository _compOffUsageRepository;
         private readonly INotificationService _notificationService;
+        private readonly IWorkingDayService _workingDayService;
         private readonly ILogger<LeaveApplicationController> _logger;
         private const decimal AnnualPaidLeaveEntitlement = 18m;
         private const decimal MonthlyPaidLeaveAccrual = 1.5m;
@@ -41,6 +43,7 @@ namespace AryamanBMS.Controllers
               ICompOffCreditRepository compOffCreditRepository,
               ICompOffUsageRepository compOffUsageRepository,
               INotificationService notificationService,
+              IWorkingDayService workingDayService,
               ILogger<LeaveApplicationController> logger)
         {
             _leaveApplicationRepository = leaveApplicationRepository;
@@ -52,6 +55,7 @@ namespace AryamanBMS.Controllers
             _compOffCreditRepository = compOffCreditRepository;
             _compOffUsageRepository = compOffUsageRepository;
             _notificationService = notificationService;
+            _workingDayService = workingDayService;
             _logger = logger;
         }
 
@@ -262,7 +266,8 @@ namespace AryamanBMS.Controllers
             if (leaveApplication.IsHalfDay)
             {
                 leaveApplication.ToDate = leaveApplication.FromDate;
-                leaveApplication.NumberOfDays = 0.5m;
+                leaveApplication.NumberOfDays =
+                    await CalculateLeaveDaysAsync(leaveApplication);
 
                 if (!IsValidHalfDaySession(leaveApplication.HalfDaySession))
                 {
@@ -276,8 +281,7 @@ namespace AryamanBMS.Controllers
                 leaveApplication.HalfDaySession = null;
 
                 leaveApplication.NumberOfDays =
-                    (leaveApplication.ToDate.Date -
-                     leaveApplication.FromDate.Date).Days + 1;
+                    await CalculateLeaveDaysAsync(leaveApplication);
             }
 
             if (leaveApplication.FromDate > leaveApplication.ToDate)
@@ -291,7 +295,7 @@ namespace AryamanBMS.Controllers
             {
                 ModelState.AddModelError(
                     "",
-                    "Number of leave days must be greater than zero.");
+                    "Selected leave range does not contain any working leave day.");
 
                 var leaveType = await _leaveTypeRepository.LeaveTypes
                       .FirstOrDefaultAsync(x =>
@@ -565,6 +569,17 @@ namespace AryamanBMS.Controllers
 
             bool isBirthdayLeave = IsBirthdayLeave(leaveType);
 
+            leaveApplication.NumberOfDays =
+                await CalculateLeaveDaysAsync(leaveApplication);
+
+            if (leaveApplication.NumberOfDays <= 0)
+            {
+                TempData["Error"] =
+                    "Cannot approve leave because the selected range does not contain any working leave day.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
             var compOffAllocations =
                 new List<(CompOffCreditModel Credit, decimal DaysToUse)>();
 
@@ -617,12 +632,14 @@ namespace AryamanBMS.Controllers
                 }
             }
 
+            var leaveDates =
+                await GetLeaveWorkingDatesAsync(leaveApplication);
+
             bool attendanceConflict =
                 await _attendanceRepository.Attendances
                     .AnyAsync(a =>
                         a.EmployeeId == leaveApplication.EmployeeId &&
-                        a.AttendanceDate.Date >= leaveApplication.FromDate.Date &&
-                        a.AttendanceDate.Date <= leaveApplication.ToDate.Date &&
+                        leaveDates.Contains(a.AttendanceDate.Date) &&
                         !leaveApplication.IsHalfDay &&
                         (
                             a.Status == "P" ||
@@ -787,9 +804,7 @@ namespace AryamanBMS.Controllers
                 }
             }
 
-            for (var date = leaveApplication.FromDate.Date;
-                 date <= leaveApplication.ToDate.Date;
-                 date = date.AddDays(1))
+            foreach (var date in leaveDates)
             {
                 decimal leaveDayValue =
                     GetLeaveDayValue(leaveApplication, date);
@@ -1398,6 +1413,36 @@ namespace AryamanBMS.Controllers
                     x => x.EmployeeId,
                     x => x.PaidUsed);
 
+            var pendingPaidLeaves =
+                await _leaveApplicationRepository.LeaveApplications
+                    .AsNoTracking()
+                    .Include(x => x.LeaveType)
+                    .Where(x =>
+                        employeeIds.Contains(x.EmployeeId) &&
+                        x.Status == "Pending" &&
+                        x.FromDate.Date >= fyStart.Date &&
+                        x.FromDate.Date <= fyEnd.Date &&
+                        (
+                            x.LeaveType == null ||
+                            x.LeaveType.LeaveCode == null ||
+                            (
+                                x.LeaveType.LeaveCode != "COMP" &&
+                                x.LeaveType.LeaveCode != "BDL"
+                            )
+                        ))
+                    .GroupBy(x => x.EmployeeId)
+                    .Select(x => new
+                    {
+                        EmployeeId = x.Key,
+                        PendingRequested = x.Sum(l => l.NumberOfDays)
+                    })
+                    .ToListAsync();
+
+            var pendingMap =
+                pendingPaidLeaves.ToDictionary(
+                    x => x.EmployeeId,
+                    x => x.PendingRequested);
+
             var approvedBirthdayLeaves =
             await _leaveApplicationRepository.LeaveApplications
                 .AsNoTracking()
@@ -1434,6 +1479,17 @@ namespace AryamanBMS.Controllers
                             ? value
                             : 0m;
 
+                    decimal balanceBeforePending =
+                        Math.Max(0, entitlement - used);
+
+                    decimal pendingRequested =
+                        pendingMap.TryGetValue(employee.Id, out var pendingValue)
+                            ? pendingValue
+                            : 0m;
+
+                    decimal pendingReserved =
+                        Math.Min(pendingRequested, balanceBeforePending);
+
                     decimal birthdayUsed =birthdayUsedMap.TryGetValue(employee.Id, out var birthdayValue)
                                           ? birthdayValue
                                           : 0m;
@@ -1450,7 +1506,8 @@ namespace AryamanBMS.Controllers
                         MonthlyAccrual = MonthlyPaidLeaveAccrual,
                         ProratedEntitlement = entitlement,
                         PaidUsed = used,
-                        PaidBalance = Math.Max(0, entitlement - used),
+                        PendingPaidLeaveReserved = pendingReserved,
+                        PaidBalance = Math.Max(0, balanceBeforePending - pendingReserved),
                         BirthdayLeave = new BirthdayLeaveBalanceViewModel
                         {
                             Entitlement = 1m,
@@ -1550,6 +1607,20 @@ namespace AryamanBMS.Controllers
                     0m);
 
             ViewBag.SelectedYear = selectedYear;
+            int firstYear =
+                employee.JoiningDate.Month >= FinancialYearStartMonth
+                    ? employee.JoiningDate.Year
+                    : employee.JoiningDate.Year - 1;
+
+            int currentYear =
+                today.Month >= FinancialYearStartMonth
+                    ? today.Year
+                    : today.Year - 1;
+
+            ViewBag.YearOptions =
+                Enumerable.Range(firstYear, Math.Max(1, currentYear - firstYear + 1))
+                    .Reverse()
+                    .ToList();
 
             return View(snapshot);
         }
@@ -1950,6 +2021,48 @@ namespace AryamanBMS.Controllers
                     StringComparison.OrdinalIgnoreCase);
         }
 
+        private async Task<decimal> CalculateLeaveDaysAsync(
+            LeaveApplicationModel leaveApplication)
+        {
+            if (leaveApplication.FromDate.Date > leaveApplication.ToDate.Date)
+            {
+                return 0m;
+            }
+
+            if (leaveApplication.IsHalfDay)
+            {
+                return await _workingDayService.IsWorkingDayAsync(
+                    leaveApplication.FromDate.Date)
+                    ? 0.5m
+                    : 0m;
+            }
+
+            return (await GetLeaveWorkingDatesAsync(leaveApplication)).Count;
+        }
+
+        private async Task<List<DateTime>> GetLeaveWorkingDatesAsync(
+            LeaveApplicationModel leaveApplication)
+        {
+            var dates = new List<DateTime>();
+
+            if (leaveApplication.FromDate.Date > leaveApplication.ToDate.Date)
+            {
+                return dates;
+            }
+
+            for (var date = leaveApplication.FromDate.Date;
+                 date <= leaveApplication.ToDate.Date;
+                 date = date.AddDays(1))
+            {
+                if (await _workingDayService.IsWorkingDayAsync(date))
+                {
+                    dates.Add(date);
+                }
+            }
+
+            return dates;
+        }
+
         private static decimal GetLeaveDayValue(
             LeaveApplicationModel leaveApplication,
             DateTime date)
@@ -2190,14 +2303,56 @@ namespace AryamanBMS.Controllers
             DateTime joiningDate,
             DateTime financialYearStart)
         {
-            int monthsLate =
-                GetMonthsJoinedLate(joiningDate, financialYearStart);
+            return BuildPaidLeaveMonthlyCredits(
+                    joiningDate,
+                    financialYearStart)
+                .Sum(x => x.Credit);
+        }
 
-            decimal entitlement =
-                AnnualPaidLeaveEntitlement -
-                (monthsLate * MonthlyPaidLeaveAccrual);
+        private static List<PaidLeaveMonthlyCreditViewModel> BuildPaidLeaveMonthlyCredits(
+            DateTime joiningDate,
+            DateTime financialYearStart)
+        {
+            var credits = new List<PaidLeaveMonthlyCreditViewModel>();
 
-            return Math.Max(0, entitlement);
+            for (int monthIndex = 0; monthIndex < 12; monthIndex++)
+            {
+                var monthStart = financialYearStart.Date.AddMonths(monthIndex);
+                var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+                decimal credit;
+                string remarks;
+
+                if (joiningDate.Date > monthEnd)
+                {
+                    credit = 0m;
+                    remarks = "Before joining";
+                }
+                else if (joiningDate.Year == monthStart.Year &&
+                         joiningDate.Month == monthStart.Month)
+                {
+                    credit = joiningDate.Day > 15
+                        ? 1m
+                        : MonthlyPaidLeaveAccrual;
+
+                    remarks = joiningDate.Day > 15
+                        ? "Joined after 15th"
+                        : "Joined on/before 15th";
+                }
+                else
+                {
+                    credit = MonthlyPaidLeaveAccrual;
+                    remarks = "Full month";
+                }
+
+                credits.Add(new PaidLeaveMonthlyCreditViewModel
+                {
+                    MonthStart = monthStart,
+                    Credit = credit,
+                    Remarks = remarks
+                });
+            }
+
+            return credits;
         }
 
         private async Task<PaidLeaveBalanceSnapshotViewModel> GetPaidLeaveBalanceSnapshotAsync(
@@ -2209,10 +2364,13 @@ namespace AryamanBMS.Controllers
             DateTime fyStart = GetFinancialYearStart(referenceDate);
             DateTime fyEnd = GetFinancialYearEnd(referenceDate);
 
-            decimal proratedEntitlement =
-                GetProratedPaidLeaveEntitlement(
+            var monthlyCredits =
+                BuildPaidLeaveMonthlyCredits(
                     employee.JoiningDate,
                     fyStart);
+
+            decimal proratedEntitlement =
+                monthlyCredits.Sum(x => x.Credit);
 
             var approvedLeavesQuery = _leaveApplicationRepository.LeaveApplications
                .AsNoTracking()
@@ -2241,8 +2399,41 @@ namespace AryamanBMS.Controllers
                 await approvedLeavesQuery
                     .SumAsync(x => (decimal?)x.PaidDays) ?? 0m;
 
-            decimal paidLeaveBalance =
+            var pendingLeavesQuery = _leaveApplicationRepository.LeaveApplications
+                .AsNoTracking()
+                .Include(x => x.LeaveType)
+                .Where(x =>
+                    x.EmployeeId == employee.Id &&
+                    x.Status == "Pending" &&
+                    x.FromDate.Date >= fyStart.Date &&
+                    x.FromDate.Date <= fyEnd.Date &&
+                    (
+                        x.LeaveType == null ||
+                        x.LeaveType.LeaveCode == null ||
+                        (
+                            x.LeaveType.LeaveCode != "COMP" &&
+                            x.LeaveType.LeaveCode != "BDL"
+                        )
+                    ));
+
+            if (excludeLeaveApplicationId.HasValue)
+            {
+                pendingLeavesQuery = pendingLeavesQuery
+                    .Where(x => x.Id != excludeLeaveApplicationId.Value);
+            }
+
+            decimal pendingRequestedDays =
+                await pendingLeavesQuery
+                    .SumAsync(x => (decimal?)x.NumberOfDays) ?? 0m;
+
+            decimal balanceBeforePending =
                 Math.Max(0, proratedEntitlement - paidLeaveUsed);
+
+            decimal pendingPaidLeaveReserved =
+                Math.Min(pendingRequestedDays, balanceBeforePending);
+
+            decimal paidLeaveBalance =
+                Math.Max(0, balanceBeforePending - pendingPaidLeaveReserved);
 
             decimal paidDaysForRequest =
                 Math.Min(requestedDays, paidLeaveBalance);
@@ -2258,7 +2449,9 @@ namespace AryamanBMS.Controllers
                 MonthlyAccrual = MonthlyPaidLeaveAccrual,
                 ProratedEntitlement = proratedEntitlement,
                 PaidLeaveUsed = paidLeaveUsed,
+                PendingPaidLeaveReserved = pendingPaidLeaveReserved,
                 PaidLeaveBalance = paidLeaveBalance,
+                MonthlyCredits = monthlyCredits,
                 RequestedDays = requestedDays,
                 PaidDaysForRequest = paidDaysForRequest,
                 UnpaidDaysForRequest = unpaidDaysForRequest,

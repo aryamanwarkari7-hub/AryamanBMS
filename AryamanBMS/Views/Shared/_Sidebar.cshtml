@@ -97,11 +97,17 @@
             Context.Request.Query["mine"] == "true" ||
             currentController == "Employee" &&
             (currentAction == "MyDashboard" || currentAction == "Profile") ||
+            currentController == "Salary" &&
+            (currentAction == "MyPayslip" || currentAction == "MySalary" || currentAction == "Payslip") ||
             currentController == "ExpenseVoucher" &&
             Context.Request.Query["mine"] == "true" ||
             currentController == "Calendar" &&
             Context.Request.Query["mine"] == "true" ||
-            currentController == "EmployeeProject"
+            currentController == "EmployeeProject" ||
+            currentController == "Project" &&
+            isEmployeeOnly ||
+            currentController == "OfficeAsset" &&
+            currentAction == "MyAssets"
         );
 
 
@@ -309,21 +315,6 @@
                     <div class="menu-group-left">
                         <i class="bi bi-speedometer2"></i>
                         <span>DASHBOARD</span>
-                    </div>
-
-                </a>
-            }
-
-            @* Employee Dashboard (includes employees who manage projects) *@
-            else
-            {
-                <a asp-controller="Employee"
-                   asp-action="MyDashboard"
-                   class="menu-group-header dashboard-link @(currentController == "Employee" && currentAction == "MyDashboard" ? "active-menu" : "")">
-
-                    <div class="menu-group-left">
-                        <i class="bi bi-speedometer2"></i>
-                        <span>My Dashboard</span>
                     </div>
 
                 </a>
@@ -848,7 +839,7 @@
                                 </a>
                             }
 
-                            @if (isEmployeeOnly && !isMaster)
+                            @if (hasMyWorkspace && !isMaster)
                             {
                                 @* ==========================================
                                     EMPLOYEE SALARY PAYSLIP
@@ -885,7 +876,7 @@
                     {
                          @* ==========================================
                              HOLIDAYS
-                    ========================================== *@
+                         ========================================== *@
                         <a asp-controller="Holiday"
                            asp-action="Index"
                            class="submenu-item @(isHolidayActive ? "active-menu" : "")">
@@ -1572,6 +1563,20 @@
                        class="submenu-item @(currentController == "CompOffCredit" && Context.Request.Query["mine"] == "true" ? "active-menu" : "")">
                         <i class="bi bi-arrow-repeat"></i>
                         <span>My Comp Off</span>
+                    </a>
+
+                    <a asp-controller="Salary"
+                       asp-action="MyPayslip"
+                       class="submenu-item @(currentController == "Salary" && (currentAction == "MyPayslip" || currentAction == "Payslip") ? "active-menu" : "")">
+                        <i class="bi bi-receipt"></i>
+                        <span>My Payslip</span>
+                    </a>
+
+                    <a asp-controller="Salary"
+                       asp-action="MySalary"
+                       class="submenu-item @(currentController == "Salary" && currentAction == "MySalary" ? "active-menu" : "")">
+                        <i class="bi bi-cash-stack"></i>
+                        <span>My Salary</span>
                     </a>
 
                     <a asp-controller="ExpenseVoucher"

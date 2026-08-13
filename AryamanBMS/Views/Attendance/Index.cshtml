@@ -17,11 +17,13 @@
                 ? "Leave"
                 : Model.Status == "A"
                     ? "Absent"
-                    : Model.Status == "H"
-                        ? "Holiday"
-                        : Model.Status == "WO"
-                            ? "Week Off"
-                            : Model.Status;
+                    : Model.Status == "M"
+                        ? "Missing"
+                        : Model.Status == "H"
+                            ? "Holiday"
+                            : Model.Status == "WO"
+                                ? "Week Off"
+                                : Model.Status;
 
     string FormatTime(DateTime? value)
     {

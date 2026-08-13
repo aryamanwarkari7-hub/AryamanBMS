@@ -51,6 +51,8 @@
 
         public decimal AvailableBalance { get; set; }
 
+        public decimal PendingPaidLeaveReserved { get; set; }
+
         public int PendingCompOff { get; set; }
 
         public decimal AvailableCompOff { get; set; }

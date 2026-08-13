@@ -26,12 +26,15 @@
     int holidayCount = Model.Count(a => a.Status == "H");
     int weekOffCount = Model.Count(a => a.Status == "WO");
 
-    int markedCount =
-        Model.Select(a => a.AttendanceDate.Date)
-            .Distinct()
-            .Count();
+    int missingCount =
+        ViewBag.MissingDays is int missingDays
+            ? missingDays
+            : 0;
 
-    int missingCount = Math.Max(0, totalDays - markedCount);
+    decimal paidLeaveBalance =
+        ViewBag.PaidLeaveBalance is decimal balance
+            ? balance
+            : 0m;
 
     double totalWorkingHours = Model.Sum(a => a.WorkingHours);
 
@@ -180,6 +183,11 @@
     </div>
 
     <div class="stats-card">
+        <div class="stats-label">Paid Leave Balance</div>
+        <div class="stats-number">@paidLeaveBalance.ToString("0.##")</div>
+    </div>
+
+    <div class="stats-card">
         <div class="stats-label">Working Hours</div>
         <div class="stats-number">@totalWorkingHoursText</div>
     </div>
@@ -248,6 +256,10 @@
 
                                         case "OD":
                                             <span class="badge-info">On Duty</span>
+                                            break;
+
+                                        case "M":
+                                            <span class="badge-danger">Missing</span>
                                             break;
 
                                         default:

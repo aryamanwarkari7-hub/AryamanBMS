@@ -233,6 +233,12 @@
                                             </span>
                                             break;
 
+                                        case "M":
+                                            <span class="badge-danger">
+                                                Missing
+                                            </span>
+                                            break;
+
                                         case "L":
                                             <span class="badge-warning">
                                                 Leave
@@ -283,39 +289,46 @@
 
                                 <td>
 
-                                    <div class="table-actions justify-content-end">
+                                    @if (attendance.Id > 0)
+                                    {
+                                        <div class="table-actions justify-content-end">
 
-                                        <a asp-action="Details"
-                                           asp-route-id="@attendance.Id"
-                                           class="btn-app btn-primary-app btn-icon"
-                                           title="View attendance"
-                                           aria-label="View attendance">
+                                            <a asp-action="Details"
+                                               asp-route-id="@attendance.Id"
+                                               class="btn-app btn-primary-app btn-icon"
+                                               title="View attendance"
+                                               aria-label="View attendance">
 
-                                            <i class="bi bi-eye"></i>
+                                                <i class="bi bi-eye"></i>
 
-                                        </a>
+                                            </a>
 
-                                        <a asp-action="Edit"
-                                           asp-route-id="@attendance.Id"
-                                           class="btn-app btn-secondary-app btn-icon"
-                                           title="Edit attendance"
-                                           aria-label="Edit attendance">
+                                            <a asp-action="Edit"
+                                               asp-route-id="@attendance.Id"
+                                               class="btn-app btn-secondary-app btn-icon"
+                                               title="Edit attendance"
+                                               aria-label="Edit attendance">
 
-                                            <i class="bi bi-pencil"></i>
+                                                <i class="bi bi-pencil"></i>
 
-                                        </a>
+                                            </a>
 
-                                        <a asp-action="Delete"
-                                           asp-route-id="@attendance.Id"
-                                           class="btn-app btn-danger-app btn-icon"
-                                           title="Delete attendance"
-                                           aria-label="Delete attendance">
+                                            <a asp-action="Delete"
+                                               asp-route-id="@attendance.Id"
+                                               class="btn-app btn-danger-app btn-icon"
+                                               title="Delete attendance"
+                                               aria-label="Delete attendance">
 
-                                            <i class="bi bi-trash"></i>
+                                                <i class="bi bi-trash"></i>
 
-                                        </a>
+                                            </a>
 
-                                    </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span>-</span>
+                                    }
 
                                 </td>
 

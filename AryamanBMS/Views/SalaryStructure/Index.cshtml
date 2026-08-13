@@ -108,8 +108,8 @@
                             <th>Effective From</th>
                             <th>Effective To</th>
                             <th>Actual Salary</th>
-                            <th>Breakup</th>
-                            <th>Applicability</th>
+                            @* <th>Breakup</th>
+                            <th>Applicability</th> *@
                             <th>Status</th>
                             <th>Updated On</th>
                             <th class="text-end">Actions</th>
@@ -148,7 +148,7 @@
                                     </strong>
                                 </td>
 
-                                <td>
+                                @* <td>
                                     Basic @item.BasicSalary.ToString("N2")<br />
                                     HRA @item.HRA.ToString("N2")<br />
                                     Other @((item.DA + item.Conveyance + item.MedicalAllowance + item.EducationAllowance + item.SpecialAllowance + item.OtherAllowances).ToString("N2"))
@@ -161,7 +161,7 @@
                                         PT: @(item.IsPtApplicable ? "Yes" : "No") |
                                         TDS: @(item.IsTdsApplicable ? "Yes" : "No")
                                     </small>
-                                </td>
+                                </td> *@
 
                                 <td>
                                     @if (item.IsActive)
