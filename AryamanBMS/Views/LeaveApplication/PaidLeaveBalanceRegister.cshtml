@@ -114,6 +114,7 @@
                         <th>FY Period</th>
                         <th>Entitlement</th>
                         <th>Used Paid</th>
+                        <th>Pending Reserved</th>
                         <th>Balance</th>
                         <th>Birthday Leave</th>
                     </tr>
@@ -132,6 +133,7 @@
                                 <td>@item.FinancialYearLabel</td>
                                 <td>@item.ProratedEntitlement.ToString("0.##")</td>
                                 <td>@item.PaidUsed.ToString("0.##")</td>
+                                <td>@item.PendingPaidLeaveReserved.ToString("0.##")</td>
                                 <td>
                                     <strong>@item.PaidBalance.ToString("0.##")</strong>
                                 </td>
@@ -150,7 +152,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="8" class="text-center text-muted">
+                            <td colspan="9" class="text-center text-muted">
                                 No employees found.
                             </td>
                         </tr>

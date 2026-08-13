@@ -14,7 +14,11 @@
 
         public decimal PaidLeaveUsed { get; set; }
 
+        public decimal PendingPaidLeaveReserved { get; set; }
+
         public decimal PaidLeaveBalance { get; set; }
+
+        public List<PaidLeaveMonthlyCreditViewModel> MonthlyCredits { get; set; } = new();
 
         public decimal RequestedDays { get; set; }
 
@@ -26,5 +30,16 @@
 
         public string FinancialYearLabel =>
             $"{FinancialYearStart:dd-MMM-yyyy} to {FinancialYearEnd:dd-MMM-yyyy}";
+    }
+
+    public class PaidLeaveMonthlyCreditViewModel
+    {
+        public DateTime MonthStart { get; set; }
+
+        public string MonthLabel => MonthStart.ToString("MMM yyyy");
+
+        public decimal Credit { get; set; }
+
+        public string Remarks { get; set; } = string.Empty;
     }
 }

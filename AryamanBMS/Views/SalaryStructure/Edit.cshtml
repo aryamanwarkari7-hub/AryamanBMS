@@ -12,7 +12,7 @@
         </h1>
 
         <p class="module-subtitle">
-            Update employee salary amount and effective date
+            Update employee monthly actual salary from an effective date
         </p>
     </div>
 
@@ -40,8 +40,7 @@
 
             @Html.AntiForgeryToken()
 
-            <input type="hidden"
-                   asp-for="Id" />
+            <input type="hidden" asp-for="Id" />
 
             <div asp-validation-summary="ModelOnly"
                  class="text-danger mb-3"></div>
@@ -126,7 +125,7 @@
                           class="text-danger"></span>
                 </div>
 
-                <div class="form-group">
+                @* <div class="form-group">
                     <label class="form-label">Salary Breakup</label>
 
                     <button type="button"
@@ -187,7 +186,7 @@
                     <label asp-for="OtherAllowances" class="form-label">Other Allowances</label>
                     <input asp-for="OtherAllowances" type="number" step="0.01" min="0" class="app-input" />
                     <span asp-validation-for="OtherAllowances" class="text-danger"></span>
-                </div>
+                </div> *@
 
                 <div class="form-group">
                     <label asp-for="RevisionReason" class="form-label">Revision Reason</label>
@@ -195,7 +194,7 @@
                     <span asp-validation-for="RevisionReason" class="text-danger"></span>
                 </div>
 
-                <div class="form-check mt-4">
+                @* <div class="form-check mt-4">
                     <input asp-for="IsPfApplicable" class="form-check-input" />
                     <label asp-for="IsPfApplicable" class="form-check-label">PF Applicable</label>
                 </div>
@@ -213,7 +212,7 @@
                 <div class="form-check mt-4">
                     <input asp-for="IsTdsApplicable" class="form-check-input" />
                     <label asp-for="IsTdsApplicable" class="form-check-label">TDS Applicable</label>
-                </div>
+                </div> *@
 
                 <div class="form-check mt-4">
 
@@ -251,5 +250,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script src="~/js/salary-structure-breakup.js" asp-append-version="true"></script>
-}
+    @*     <script src="~/js/salary-structure-breakup.js" asp-append-version="true"></script>*@
+} 

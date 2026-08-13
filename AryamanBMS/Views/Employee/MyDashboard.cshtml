@@ -101,6 +101,16 @@
                 </div>
 
                 <div class="profile-info-row">
+                    <span><i class="bi bi-calendar2-check"></i> Paid Leave Balance</span>
+                    <strong>@Model.Leave.AvailableBalance.ToString("0.##")</strong>
+                </div>
+
+                <div class="profile-info-row">
+                    <span><i class="bi bi-hourglass-split"></i> Pending Approval</span>
+                    <strong>@Model.Leave.PendingPaidLeaveReserved.ToString("0.##")</strong>
+                </div>
+
+                <div class="profile-info-row">
                     <span><i class="bi bi-calendar-check"></i> Approved This Month</span>
                     <strong>@Model.Leave.ApprovedThisMonth</strong>
                 </div>

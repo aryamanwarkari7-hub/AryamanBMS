@@ -7,8 +7,11 @@
     {
         "P" or "Present" => "badge-success",
         "A" or "Absent" => "badge-danger",
+        "M" or "Missing" => "badge-danger",
         "L" or "Leave" => "badge-warning",
         "H" or "Holiday" => "badge-info",
+        "WO" or "WeekOff" or "Weekly Off" => "badge-secondary",
+        "OD" or "On Duty" => "badge-info",
         _ => "badge-secondary"
     };
 
@@ -16,8 +19,11 @@
     {
         "P" => "Present",
         "A" => "Absent",
+        "M" => "Missing",
         "L" => "Leave",
         "H" => "Holiday",
+        "WO" => "Week Off",
+        "OD" => "On Duty",
         _ => Model.Status
     };
 }

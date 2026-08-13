@@ -148,7 +148,7 @@
     </div>
 
     <div class="stats-card">
-        <div class="stats-label">Not Marked</div>
+        <div class="stats-label">Missing Attendance</div>
         <div class="stats-number">@Model.NotMarkedToday</div>
     </div>
 
@@ -226,7 +226,7 @@
                     : "heat-poor";
 
                     <div class="attendance-heatmap-day @heatClass"
-                         title="Day @day.Day | Present: @day.PresentCount | Leave: @day.LeaveCount | Absent: @day.AbsentCount | Not Marked: @day.NotMarkedCount">
+                         title="Day @day.Day | Present: @day.PresentCount | Leave: @day.LeaveCount | Absent: @day.AbsentCount | Missing: @day.NotMarkedCount">
                         <strong>@day.Day</strong>
                         <span>@day.PresentPercent.ToString("0")%</span>
                     </div>
@@ -246,13 +246,13 @@
 <div class="main-dashboard-layout">
     <div class="app-card dashboard-section-card">
         <div class="card-header">
-            <h5 class="card-title">Not Marked</h5>
+            <h5 class="card-title">Missing Attendance</h5>
         </div>
 
         <div class="card-body">
             @if (!Model.NotMarkedEmployees.Any())
             {
-                <div class="empty-state">All active employees are marked.</div>
+                <div class="empty-state">No missing attendance for the selected date.</div>
             }
             else
             {
@@ -368,7 +368,42 @@
                                     <small>@employee.EmployeeCode</small>
                                 </td>
 
-                                <td>@(record?.Status ?? "-")</td>
+                                <td>
+                                    @switch (record?.Status)
+                                    {
+                                        case "P":
+                                            <span class="badge-success">Present</span>
+                                            break;
+
+                                        case "A":
+                                            <span class="badge-danger">Absent</span>
+                                            break;
+
+                                        case "M":
+                                            <span class="badge-danger">Missing</span>
+                                            break;
+
+                                        case "L":
+                                            <span class="badge-warning">Leave</span>
+                                            break;
+
+                                        case "H":
+                                            <span class="badge-primary">Holiday</span>
+                                            break;
+
+                                        case "WO":
+                                            <span class="badge-secondary">Week Off</span>
+                                            break;
+
+                                        case "OD":
+                                            <span class="badge-info">On Duty</span>
+                                            break;
+
+                                        default:
+                                            <span>-</span>
+                                            break;
+                                    }
+                                </td>
                                 <td>@(record?.CheckInTime?.ToString("hh:mm tt") ?? "-")</td>
                                 <td>@(record?.CheckOutTime?.ToString("hh:mm tt") ?? "-")</td>
                                 <td>
@@ -425,6 +460,7 @@
 
                                 <th>P</th>
                                 <th>A</th>
+                                <th>M</th>
                                 <th>L</th>
                                 <th>H</th>
                                 <th>WO</th>
@@ -459,6 +495,10 @@
                                                     <span class="badge-danger">A</span>
                                                     break;
 
+                                                case "M":
+                                                    <span class="badge-danger">M</span>
+                                                    break;
+
                                                 case "L":
                                                     <span class="badge-warning">L</span>
                                                     break;
@@ -484,6 +524,7 @@
 
                                     <td><strong>@employee.PresentCount</strong></td>
                                     <td><strong>@employee.AbsentCount</strong></td>
+                                    <td><strong>@employee.MissingCount</strong></td>
                                     <td><strong>@employee.LeaveCount</strong></td>
                                     <td><strong>@employee.HolidayCount</strong></td>
                                     <td><strong>@employee.WeekOffCount</strong></td>

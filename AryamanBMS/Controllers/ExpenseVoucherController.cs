@@ -1160,6 +1160,14 @@ namespace AryamanBMS.Controllers
                 model.VendorGSTIN = null;
                 model.GSTRate = 0;
                 model.ITCEligible = false;
+                model.ITCStatus = "Not Applicable";
+                model.Gstr2BMatchStatus = "Not Applicable";
+                model.Gstr2BMatchedOn = null;
+                model.Gstr2BMatchedByUserId = null;
+                model.Gstr2BMismatchReason = null;
+                model.ITCClaimMonth = null;
+                model.ITCClaimYear = null;
+                model.InputGSTGLAccountCode = null;
             }
 
             if (isSmallOrNonGstExpense &&

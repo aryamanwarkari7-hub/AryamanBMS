@@ -75,7 +75,8 @@
             }
 
             if (itcEligibleInput) {
-                itcEligibleInput.disabled = !isRegistered;
+                itcEligibleInput.readOnly = !isRegistered;
+                itcEligibleInput.disabled = false;
                 if (!isRegistered) {
                     itcEligibleInput.checked = false;
                 }

@@ -16,11 +16,16 @@
     <div class="card-body">
         <form method="get" class="form-grid-3">
             <div class="form-group">
-                <label class="form-label">Financial Year Start</label>
-                <input type="number"
-                       name="year"
-                       value="@selectedYear"
-                       class="app-input" />
+                <label class="form-label">Financial Year</label>
+                <select name="year" class="app-select">
+                    @foreach (int optionYear in ViewBag.YearOptions)
+                    {
+                        <option value="@optionYear"
+                                selected="@(optionYear == selectedYear)">
+                            @optionYear-@((optionYear + 1).ToString()[2..])
+                        </option>
+                    }
+                </select>
             </div>
 
             <div class="form-group d-flex flex-row align-items-end gap-2">
@@ -65,6 +70,11 @@
             </div>
 
             <div class="stats-card">
+                <div class="stats-label">Pending Reserved</div>
+                <div class="stats-number">@Model.PendingPaidLeaveReserved.ToString("0.##")</div>
+            </div>
+
+            <div class="stats-card">
                 <div class="stats-label">Available Balance</div>
                 <div class="stats-number">@Model.PaidLeaveBalance.ToString("0.##")</div>
             </div>
@@ -92,5 +102,46 @@
 
         </div>
 
+    </div>
+</div>
+
+<div class="app-card table-card mt-3">
+    <div class="card-header">
+        <h5 class="card-title">Monthly Paid Leave Credit</h5>
+    </div>
+
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="app-table">
+                <thead>
+                    <tr>
+                        <th>Month</th>
+                        <th>Credit</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var credit in Model.MonthlyCredits)
+                    {
+                        <tr>
+                            <td>@credit.MonthLabel</td>
+                            <td>
+                                <strong>@credit.Credit.ToString("0.##")</strong>
+                            </td>
+                            <td>@credit.Remarks</td>
+                        </tr>
+                    }
+
+                    <tr>
+                        <td><strong>Total</strong></td>
+                        <td>
+                            <strong>@Model.MonthlyCredits.Sum(x => x.Credit).ToString("0.##")</strong>
+                        </td>
+                        <td>-</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
