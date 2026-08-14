@@ -35,6 +35,7 @@
     </div>
     <div class="module-header-actions">
         <a asp-action="Create"
+           asp-route-mine="@mine"
            class="btn-app btn-primary-app">
             <i class="bi bi-plus-lg"></i>
             @(isEmployeeOnly
@@ -139,6 +140,7 @@
                     </button>
 
                     <a asp-action="Index"
+                       asp-route-mine="@mine"
                        class="btn-app btn-secondary-app">
                         <i class="bi bi-arrow-clockwise"></i>
                         Reset
@@ -155,6 +157,7 @@
         <div class="module-header-actions justify-content-start mb-3">
 
             <a asp-action="Index"
+               asp-route-mine="@mine"
                asp-route-search="@search"
                asp-route-categoryId="@categoryId"
                asp-route-fromDate="@fromDate?.ToString("yyyy-MM-dd")"
@@ -166,6 +169,7 @@
             </a>
 
             <a asp-action="Index"
+               asp-route-mine="@mine"
                asp-route-search="@search"
                asp-route-categoryId="@categoryId"
                asp-route-status="Draft"
@@ -178,6 +182,7 @@
             </a>
 
             <a asp-action="Index"
+               asp-route-mine="@mine"
                asp-route-search="@search"
                asp-route-categoryId="@categoryId"
                asp-route-status="Submitted"
@@ -190,6 +195,7 @@
             </a>
 
             <a asp-action="Index"
+               asp-route-mine="@mine"
                asp-route-search="@search"
                asp-route-categoryId="@categoryId"
                asp-route-status="Approved"
@@ -202,6 +208,7 @@
             </a>
 
             <a asp-action="Index"
+               asp-route-mine="@mine"
                asp-route-search="@search"
                asp-route-categoryId="@categoryId"
                asp-route-status="Posted"
@@ -214,6 +221,7 @@
             </a>
 
             <a asp-action="Index"
+               asp-route-mine="@mine"
                asp-route-search="@search"
                asp-route-categoryId="@categoryId"
                asp-route-status="Rejected"
@@ -249,7 +257,7 @@
                     {
                         <tr>
                             <td>
-                                <a href="@Url.Action("Details", new { id = voucher.ExpenseVoucherId })">
+                                <a href="@Url.Action("Details", new { id = voucher.ExpenseVoucherId, mine })">
                                     <strong>@voucher.VoucherNumber</strong>
                                 </a>
                             </td>
@@ -302,13 +310,13 @@
                                 <div class="table-actions">
                                     @if (voucher.Status == "Draft")
                                     {
-                                            <a href="@Url.Action("Details", new { id = voucher.ExpenseVoucherId })"
+                                            <a href="@Url.Action("Details", new { id = voucher.ExpenseVoucherId, mine })"
                                                class="btn-app btn-icon btn-primary-app"
                                                title="Details">
                                                 <i class="bi bi-eye"></i>
                                             </a>
 
-                                            <a href="@Url.Action("Edit", new { id = voucher.ExpenseVoucherId })"
+                                            <a href="@Url.Action("Edit", new { id = voucher.ExpenseVoucherId, mine })"
                                                class="btn-app btn-icon btn-secondary-app"
                                                title="Edit">
                                                 <i class="bi bi-pencil"></i>
@@ -322,7 +330,7 @@
                                                 </button>
                                             </form>
 
-                                            <a href="@Url.Action("Delete", new { id = voucher.ExpenseVoucherId })"
+                                            <a href="@Url.Action("Delete", new { id = voucher.ExpenseVoucherId, mine })"
                                                class="btn-app btn-icon btn-danger-app"
                                                title="Delete Voucher">
                                                 <i class="bi bi-trash"></i>
@@ -331,7 +339,7 @@
                                     else if (voucher.Status == "Submitted" &&
                                              (User.IsInRole("Admin") || User.IsInRole("Finance")))
                                     {
-                                            <a href="@Url.Action("Details", new { id = voucher.ExpenseVoucherId })"
+                                            <a href="@Url.Action("Details", new { id = voucher.ExpenseVoucherId, mine })"
                                                class="btn-app btn-icon btn-primary-app"
                                                title="Details">
                                                 <i class="bi bi-eye"></i>
@@ -347,7 +355,7 @@
                                     else if (voucher.Status == "Approved" &&
                                              (User.IsInRole("Admin") || User.IsInRole("Finance")))
                                     {
-                                            <a href="@Url.Action("Details", new { id = voucher.ExpenseVoucherId })"
+                                            <a href="@Url.Action("Details", new { id = voucher.ExpenseVoucherId, mine })"
                                                class="btn-app btn-icon btn-primary-app"
                                                title="Details">
                                                 <i class="bi bi-eye"></i>
@@ -362,7 +370,7 @@
                                     }
                                     else
                                     {
-                                            <a href="@Url.Action("Details", new { id = voucher.ExpenseVoucherId })"
+                                            <a href="@Url.Action("Details", new { id = voucher.ExpenseVoucherId, mine })"
                                                class="btn-app btn-icon btn-primary-app"
                                                title="Details">
                                                 <i class="bi bi-eye"></i>

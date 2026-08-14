@@ -8,8 +8,7 @@
     }
 
     const message =
-        data.dataset.message ||
-        "Happy birthday. Wishing you a wonderful day.";
+        data.dataset.message || "Happy birthday. Wishing you a wonderful day.";
 
     function createConfetti(container) {
         const colors = [
@@ -18,31 +17,25 @@
             "#f59e0b",
             "#22c55e",
             "#8b5cf6",
-            "#ef4444"
+            "#ef4444",
         ];
 
-        for (let index = 0; index < 86; index++) {
+        for (let index = 0; index < 96; index++) {
             const piece = document.createElement("span");
-            const angle = -112 + Math.random() * 224;
-            const distance = 170 + Math.random() * 430;
-            const delay = Math.random() * 0.72;
-            const size = 5 + Math.random() * 12;
-            const type = index % 5 === 0
-                ? "spark"
-                : index % 4 === 0
-                    ? "ribbon"
-                    : "paper";
+            const angle = -84 + Math.random() * 150;
+            const distance = 140 + Math.random() * 360;
+            const delay = Math.random() * 0.58;
+            const size = 8 + Math.random() * 16;
+            const type =
+                index % 3 === 0 ? "ribbon" : index % 3 === 1 ? "strip" : "paper";
 
             piece.className = `birthday-confetti birthday-confetti-${type}`;
             piece.style.setProperty("--angle", `${angle}deg`);
             piece.style.setProperty("--distance", `${distance}px`);
             piece.style.setProperty("--delay", `${delay}s`);
             piece.style.setProperty("--size", `${size}px`);
-            piece.style.setProperty(
-                "--spin",
-                `${360 + Math.random() * 760}deg`);
-            piece.style.backgroundColor =
-                colors[index % colors.length];
+            piece.style.setProperty("--spin", `${360 + Math.random() * 760}deg`);
+            piece.style.backgroundColor = colors[index % colors.length];
 
             container.appendChild(piece);
         }
@@ -96,14 +89,40 @@
                     <div class="birthday-ring birthday-ring-two"></div>
                     <div class="birthday-confetti-burst"></div>
                     <div class="birthday-light-beam"></div>
-                    <div class="birthday-party-cone">
-                        <div class="birthday-popper-mouth">
-                            <span class="birthday-streamer birthday-streamer-one"></span>
-                            <span class="birthday-streamer birthday-streamer-two"></span>
-                            <span class="birthday-streamer birthday-streamer-three"></span>
-                        </div>
-                        <span></span>
-                    </div>
+                    <!-- Birthday celebration popper -->
+                    <div class="flat-popper-container">
+
+    <!-- POP FLASH -->
+    <div class="popper-flash"></div>
+
+    <!-- CONE -->
+    <div class="flat-cone-wrapper">
+        <div class="flat-cone-rim"></div>
+        <div class="flat-cone-body"></div>
+    </div>
+
+    <!-- CONFETTI BURST -->
+    <div class="popper-burst">
+
+        <span class="popper-ribbon ribbon-red"></span>
+        <span class="popper-ribbon ribbon-orange"></span>
+        <span class="popper-ribbon ribbon-purple"></span>
+        <span class="popper-ribbon ribbon-blue"></span>
+
+        <span class="popper-strip strip-one"></span>
+        <span class="popper-strip strip-two"></span>
+        <span class="popper-strip strip-three"></span>
+
+        <span class="popper-dot dot-one"></span>
+        <span class="popper-dot dot-two"></span>
+        <span class="popper-dot dot-three"></span>
+        <span class="popper-dot dot-four"></span>
+        <span class="popper-dot dot-five"></span>
+        <span class="popper-dot dot-six"></span>
+
+    </div>
+
+</div>
                 </div>
 
                 <div class="birthday-celebration-content">
@@ -116,19 +135,18 @@
             </div>
         `;
 
-        overlay
-            .querySelector(".birthday-celebration-content p")
-            .textContent = message;
+        overlay.querySelector(".birthday-celebration-content p").textContent =
+            message;
 
-        createConfetti(
-            overlay.querySelector(".birthday-confetti-burst"));
+        createConfetti(overlay.querySelector(".birthday-confetti-burst"));
 
-        createBalloons(
-            overlay.querySelector(".birthday-balloon-field"));
+        createBalloons(overlay.querySelector(".birthday-balloon-field"));
 
         overlay.addEventListener("click", function (event) {
-            if (event.target === overlay ||
-                event.target.closest(".birthday-celebration-close")) {
+            if (
+                event.target === overlay ||
+                event.target.closest(".birthday-celebration-close")
+            ) {
                 closeOverlay(overlay);
             }
         });

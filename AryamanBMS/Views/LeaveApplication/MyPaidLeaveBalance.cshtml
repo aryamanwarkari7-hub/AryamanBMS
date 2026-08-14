@@ -49,8 +49,14 @@
     <div class="card-body">
 
         <div class="stats-card leave-balance-fy-card mb-3">
-            <div class="stats-label">FY Period</div>
-            <div class="stats-number">@Model.FinancialYearLabel</div>
+            <div class="leave-balance-fy-icon">
+                <i class="bi bi-calendar-range"></i>
+            </div>
+
+            <div>
+                <div class="stats-label">Financial Year Period</div>
+                <div class="stats-number">@Model.FinancialYearLabel</div>
+            </div>
         </div>
 
         <div class="card-header px-0">
@@ -74,7 +80,7 @@
             </div>
 
             <div class="stats-card">
-                <div class="stats-label">Total Annual Leave Pool</div>
+                <div class="stats-label">Total Annual Leave</div>
                 <div class="stats-number">
                     @((Model.ProratedEntitlement + Model.CarryForwardDays).ToString("0.##"))
                 </div>

@@ -15,7 +15,8 @@
     </div>
 
     <div class="module-header-actions">
-        <a asp-action="Index" class="btn-app btn-secondary-app">
+        <a asp-action="Index"
+           asp-route-mine="@(Context.Request.Query["mine"] == "true" ? "true" : null)" class="btn-app btn-secondary-app">
             <i class="bi bi-arrow-left"></i>
             Back 
         </a>
@@ -25,22 +26,77 @@
 <div class="app-card form-card">
     @if (paidLeaveSnapshot != null)
     {
-        <div class="app-alert-info">
-            <strong>Paid Leave Balance:</strong>
-            FY @paidLeaveSnapshot.FinancialYearLabel |
-            Entitlement: @paidLeaveSnapshot.ProratedEntitlement.ToString("0.##") |
-            Used: @paidLeaveSnapshot.PaidLeaveUsed.ToString("0.##") |
-            Balance: @paidLeaveSnapshot.PaidLeaveBalance.ToString("0.##")
-            <br />
-            <strong>Birthday Leave:</strong>
-            Available:
-            @paidLeaveSnapshot.BirthdayLeave.Available.ToString("0.##")
-            of
-            @paidLeaveSnapshot.BirthdayLeave.Entitlement.ToString("0.##")
+        <div class="leave-apply-summary">
+            <div class="leave-apply-summary-heading">
+                <div class="leave-apply-summary-icon">
+                    <i class="bi bi-calendar2-check"></i>
+                </div>
+
+                <div>
+                    <div class="leave-apply-summary-title">
+                        Paid Leave Balance
+                    </div>
+                    <div class="leave-apply-summary-period">
+                        FY @paidLeaveSnapshot.FinancialYearLabel
+                    </div>
+                </div>
+            </div>
+
+            <div class="leave-apply-summary-grid">
+                <div>
+                    <span>Earned This FY</span>
+                    <strong>@paidLeaveSnapshot.ProratedEntitlement.ToString("0.##")</strong>
+                </div>
+
+                <div>
+                    <span>Carry Forward</span>
+                    <strong>@paidLeaveSnapshot.CarryForwardDays.ToString("0.##")</strong>
+                </div>
+
+                <div>
+                    <span>Total Leave Pool</span>
+                    <strong>
+                        @((paidLeaveSnapshot.ProratedEntitlement + paidLeaveSnapshot.CarryForwardDays).ToString("0.##"))
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Available</span>
+                    <strong>@paidLeaveSnapshot.PaidLeaveBalance.ToString("0.##")</strong>
+                </div>
+
+                <div>
+                    <span>Used</span>
+                    <strong>@paidLeaveSnapshot.PaidLeaveUsed.ToString("0.##")</strong>
+                </div>
+
+                <div>
+                    <span>Pending Approvals</span>
+                    <strong>@paidLeaveSnapshot.PendingPaidLeaveReserved.ToString("0.##")</strong>
+                </div>
+
+                <div>
+                    <span>Birthday Leave</span>
+                    <strong>
+                        @paidLeaveSnapshot.BirthdayLeave.Available.ToString("0.##")
+                        /
+                        @paidLeaveSnapshot.BirthdayLeave.Entitlement.ToString("0.##")
+                    </strong>
+                </div>
+            </div>
         </div>
 
-        <div class="app-alert-warning mt-2" id="leaveSplitPreview">
-            Select leave dates to preview paid/unpaid split.
+        <div class="leave-split-preview is-empty" id="leaveSplitPreview">
+            <div class="leave-split-preview-icon">
+                <i class="bi bi-calculator"></i>
+            </div>
+
+            <div>
+                <strong>Paid / unpaid preview</strong>
+                <span id="leaveSplitPreviewText">
+                    Select leave type and dates to preview the split.
+                </span>
+            </div>
         </div>
     }
     <div class="card-header">
@@ -168,6 +224,7 @@
                 </button>
 
                 <a asp-action="Index"
+                   asp-route-mine="@(Context.Request.Query["mine"] == "true" ? "true" : null)"
                    class="btn-app btn-secondary-app">
                     Cancel
                 </a>
@@ -199,14 +256,80 @@
 
             function setSplitPreview(days) {
                 let preview = document.getElementById('leaveSplitPreview');
+                const previewText = document.getElementById('leaveSplitPreviewText');
 
                 if (!preview) {
                     return;
                 }
 
+                function updatePreview(message, state) {
+                    preview.classList.remove('is-empty', 'is-success', 'is-warning');
+                    preview.classList.add(state);
+
+                    if (previewText) {
+                        previewText.textContent = message;
+                    } else {
+                        preview.textContent = message;
+                    }
+                }
+
+                function renderSplitPreview(paidDays, unpaidDays, note, state) {
+                    preview.classList.remove('is-empty', 'is-success', 'is-warning');
+                    preview.classList.add(state);
+
+                    if (!previewText) {
+                        preview.textContent =
+                            `${paidDays} paid day(s), ${unpaidDays} unpaid day(s).`;
+                        return;
+                    }
+
+                    const values = document.createElement('div');
+                    values.className = 'leave-split-preview-values';
+
+                    const paidChip = document.createElement('span');
+                    paidChip.className = 'leave-split-chip leave-split-chip-paid';
+
+                    const paidValue = document.createElement('strong');
+                    paidValue.textContent = paidDays;
+
+                    const paidLabel = document.createElement('small');
+                    paidLabel.textContent = 'Paid day(s)';
+
+                    paidChip.appendChild(paidValue);
+                    paidChip.appendChild(paidLabel);
+
+                    const unpaidChip = document.createElement('span');
+                    unpaidChip.className =
+                        unpaidDays > 0
+                            ? 'leave-split-chip leave-split-chip-unpaid has-unpaid'
+                            : 'leave-split-chip leave-split-chip-unpaid';
+
+                    const unpaidValue = document.createElement('strong');
+                    unpaidValue.textContent = unpaidDays;
+
+                    const unpaidLabel = document.createElement('small');
+                    unpaidLabel.textContent = 'Unpaid day(s)';
+
+                    unpaidChip.appendChild(unpaidValue);
+                    unpaidChip.appendChild(unpaidLabel);
+
+                    values.appendChild(paidChip);
+                    values.appendChild(unpaidChip);
+
+                    previewText.replaceChildren(values);
+
+                    if (note) {
+                        const noteElement = document.createElement('span');
+                        noteElement.className = 'leave-split-preview-note';
+                        noteElement.textContent = note;
+                        previewText.appendChild(noteElement);
+                    }
+                }
+
                 if (!days || days <= 0) {
-                    preview.textContent =
-                        'Select leave dates to preview paid/unpaid split.';
+                    updatePreview(
+                        'Select leave type and dates to preview the split.',
+                        'is-empty');
                     return;
                 }
 
@@ -221,10 +344,11 @@
             const paidDays = Math.min(days, availableBirthdayLeaves);
             const unpaidDays = Math.max(0, days - paidDays);
 
-            preview.textContent =
-                `Birthday Leave: ${paidDays} paid day(s), ` +
-                `${unpaidDays} unpaid day(s). ` +
-                `Regular 18-day balance is unaffected.`;
+            renderSplitPreview(
+                paidDays,
+                unpaidDays,
+                'Birthday leave does not reduce regular paid leave balance.',
+                unpaidDays > 0 ? 'is-warning' : 'is-success');
 
             return;
         }
@@ -232,8 +356,11 @@
                 const paidDays = Math.min(days, availablePaidLeaves);
                 const unpaidDays = Math.max(0, days - paidDays);
 
-                preview.textContent =
-                    `Estimated split: ${paidDays} paid day(s), ${unpaidDays} unpaid day(s).`;
+                renderSplitPreview(
+                    paidDays,
+                    unpaidDays,
+                    '',
+                    unpaidDays > 0 ? 'is-warning' : 'is-success');
             }
 
             function updateEstimatedDays() {

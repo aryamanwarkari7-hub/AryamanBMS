@@ -166,6 +166,7 @@ namespace AryamanBMS.Controllers
                     isManual: false);
 
                 await PrepareBirthdayCelebrationAsync(user);
+                await SetEmployeeLoginWelcomeMessageAsync(user);
 
                 return await RedirectByRoleAsync(user);
             }
@@ -409,7 +410,7 @@ namespace AryamanBMS.Controllers
                 await System.IO.File.WriteAllBytesAsync(croppedFullPath, bytes);
 
                 user.ProfilePhotoPath =
-                    $"/uploads/profile-photos/{croppedFileName}";
+                    BuildProfilePhotoUrl(croppedFileName);
 
                 var croppedResult = await _userManager.UpdateAsync(user);
 
@@ -458,11 +459,7 @@ namespace AryamanBMS.Controllers
             if (!TryGetAllowedImageType(
                 uploadedBytes,
                 out string detectedExtension,
-                out string detectedContentType) ||
-                !string.Equals(
-                    profilePhoto.ContentType,
-                    detectedContentType,
-                    StringComparison.OrdinalIgnoreCase))
+                out _))
             {
                 TempData["Error"] =
                     "Uploaded profile photo content is not valid.";
@@ -489,7 +486,7 @@ namespace AryamanBMS.Controllers
                 fullPath,
                 uploadedBytes);
 
-            user.ProfilePhotoPath = $"/uploads/profile-photos/{fileName}";
+            user.ProfilePhotoPath = BuildProfilePhotoUrl(fileName);
 
             var result = await _userManager.UpdateAsync(user);
 
@@ -552,6 +549,11 @@ namespace AryamanBMS.Controllers
             }
 
             return false;
+        }
+
+        private static string BuildProfilePhotoUrl(string fileName)
+        {
+            return $"/uploads/profile-photos/{fileName}?v={DateTime.UtcNow.Ticks}";
         }
 
         private static void DeleteExistingProfilePhotoFiles(
@@ -764,6 +766,39 @@ namespace AryamanBMS.Controllers
             }
 
             return RedirectToAction("Index", "Dashboard");
+        }
+
+        private async Task SetEmployeeLoginWelcomeMessageAsync(
+            ApplicationUserModel user)
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+
+            if (!roles.Contains("Employee") ||
+                roles.Contains("Admin") ||
+                roles.Contains("HR") ||
+                roles.Contains("Master"))
+            {
+                return;
+            }
+
+            var employee = await _employeeRepository.Employees
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.ApplicationUserId == user.Id);
+
+            string displayName =
+                employee?.FullName ??
+                user.FullName ??
+                user.UserName ??
+                "Employee";
+
+            TempData["EmployeeWelcomeName"] = displayName;
+            TempData["EmployeeWelcomeMessage"] =
+                "Welcome back to your workspace.";
+
+            if (!string.IsNullOrWhiteSpace(user.ProfilePhotoPath))
+            {
+                TempData["EmployeeWelcomePhoto"] = user.ProfilePhotoPath;
+            }
         }
 
         private static readonly HashSet<string> AllowedActivityStatuses =

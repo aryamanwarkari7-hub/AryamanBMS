@@ -62,12 +62,24 @@ namespace AryamanBMS.Repositories
 
         public async Task<bool> HasApprovedLeaveTodayAsync(int employeeId)
         {
-            return await _context.LeaveApplications
-                .AnyAsync(l =>
+            var today = DateTime.Today;
+
+            var leaveApplications = await _context.LeaveApplications
+                .Include(x => x.LeaveDays)
+                .Where(l =>
                     l.EmployeeId == employeeId &&
                     l.Status == "Approved" &&
-                    l.FromDate.Date <= DateTime.Today &&
-                    l.ToDate.Date >= DateTime.Today);
+                    l.FromDate.Date <= today &&
+                    l.ToDate.Date >= today)
+                .ToListAsync();
+
+            return leaveApplications.Any(l =>
+                l.LeaveDays.Any()
+                    ? l.LeaveDays.Any(d =>
+                        d.LeaveDate.Date == today &&
+                        d.Status != "Cancelled")
+                    : l.FromDate.Date <= today &&
+                      l.ToDate.Date >= today);
         }
     }
 }

@@ -1,7 +1,13 @@
 ﻿@model IEnumerable<AryamanBMS.Models.ProjectModel>
 
 @{
-    ViewData["Title"] = "Projects";
+    bool isEmployeeOnly =
+    User.IsInRole("Employee") &&
+    !User.IsInRole("Admin") &&
+    !User.IsInRole("HR") &&
+    !User.IsInRole("Master");
+
+    ViewData["Title"] = isEmployeeOnly ? "My Projects" : "Projects";
 
     string searchText = ViewBag.SearchText as string ?? "";
     string status = ViewBag.Status as string ?? "";
@@ -17,8 +23,12 @@
 <div class="module-header">
 
     <div>
-        <h1 class="module-title">Projects</h1>
-        <p class="module-subtitle">Manage project records</p>
+        <h1 class="module-title">@(isEmployeeOnly ? "My Projects" : "Projects")</h1>
+        <p class="module-subtitle">
+            @(isEmployeeOnly
+                        ? "Projects assigned to or managed by you"
+                        : "Manage project records")
+        </p>
     </div>
 
     @if (User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("Master"))
@@ -37,7 +47,7 @@
 <div class="app-card table-card">
 
     <div class="card-header">
-        <h5 class="card-title">Project List</h5>
+        <h5 class="card-title">@(isEmployeeOnly ? "My Project List" : "Project List")</h5>
     </div>
 
     <div class="app-card mb-3">

@@ -1251,11 +1251,15 @@ namespace AryamanBMS.Controllers
                         x.EmployeeId ==
                             leaveApplication.EmployeeId &&
                         cancellationDates.Contains(x.AttendanceDate.Date) &&
-                        x.Status == "L" &&
                         x.Remarks != null &&
                         x.Remarks.Contains(
                             leaveApplication.ApplicationNumber))
                     .ToListAsync();
+
+            attendanceRecords = attendanceRecords
+                .Where(x =>
+                    IsAttendanceStatus(x.Status, "L", "Leave"))
+                .ToList();
 
             foreach (var attendance in attendanceRecords)
             {

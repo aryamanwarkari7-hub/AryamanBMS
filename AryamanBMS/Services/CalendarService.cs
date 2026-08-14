@@ -110,6 +110,7 @@ namespace AryamanBMS.Services
             var leaves = await _context.LeaveApplications
                 .AsNoTracking()
                 .Include(x => x.LeaveType)
+                .Include(x => x.LeaveDays)
                 .Where(x =>
                     x.EmployeeId == employeeId &&
                     x.FromDate.Date <= end.Date &&
@@ -142,7 +143,9 @@ namespace AryamanBMS.Services
                 ? leave.ToDate.Date
                 : end.Date;
 
-            for (var date = rangeStart; date <= rangeEnd; date = date.AddDays(1))
+            var leaveDates = GetCalendarLeaveDates(leave, rangeStart, rangeEnd);
+
+            foreach (var date in leaveDates)
             {
                 if (!await _workingDayService.IsWorkingDayAsync(date))
                 {
@@ -164,6 +167,39 @@ namespace AryamanBMS.Services
                     Url = $"/LeaveApplication/Details/{leave.Id}"
                 });
             }
+        }
+
+        private static List<DateTime> GetCalendarLeaveDates(
+            LeaveApplicationModel leave,
+            DateTime rangeStart,
+            DateTime rangeEnd)
+        {
+            if (leave.LeaveDays.Any())
+            {
+                return leave.LeaveDays
+                    .Where(x =>
+                        !string.Equals(
+                            x.Status,
+                            "Cancelled",
+                            StringComparison.OrdinalIgnoreCase) &&
+                        x.LeaveDate.Date >= rangeStart.Date &&
+                        x.LeaveDate.Date <= rangeEnd.Date)
+                    .Select(x => x.LeaveDate.Date)
+                    .Distinct()
+                    .OrderBy(x => x)
+                    .ToList();
+            }
+
+            var dates = new List<DateTime>();
+
+            for (var date = rangeStart.Date;
+                 date <= rangeEnd.Date;
+                 date = date.AddDays(1))
+            {
+                dates.Add(date);
+            }
+
+            return dates;
         }
 
         private async Task AddEmployeeTasksAsync(
@@ -245,6 +281,7 @@ namespace AryamanBMS.Services
                 .AsNoTracking()
                 .Include(x => x.Employee)
                 .Include(x => x.LeaveType)
+                .Include(x => x.LeaveDays)
                 .Where(x =>
                     x.FromDate.Date <= end.Date &&
                     x.ToDate.Date >= start.Date)
