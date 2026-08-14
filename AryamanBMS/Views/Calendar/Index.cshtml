@@ -1,21 +1,24 @@
 ﻿@{
-    ViewData["Title"] = "Calendar";
+    bool isMyCalendar = Context.Request.Query["mine"] == "true";
+    ViewData["Title"] = isMyCalendar ? "My Calendar" : "Calendar";
 }
 
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet" />
 
 <div class="module-header">
     <div>
-        <h1 class="module-title">Calendar</h1>
+        <h1 class="module-title">@(isMyCalendar ? "My Calendar" : "Calendar")</h1>
         <p class="module-subtitle">
-            Leaves, task deadlines, and scheduled meetings in one view.
+            @(isMyCalendar
+                        ? "Your leave, holidays,attendance, task deadlines, and scheduled meetings in one view."
+                        : "Leaves, task deadlines, and scheduled meetings in one view.")
         </p>
     </div>
 
     <div class="module-header-meta">
         <span class="module-meta-pill info">
             <i class="bi bi-calendar3"></i>
-            My Schedule
+            @(isMyCalendar ? "My Schedule" : "Work Schedule")
         </span>
     </div>
 </div>

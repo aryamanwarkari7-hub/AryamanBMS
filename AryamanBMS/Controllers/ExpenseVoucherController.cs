@@ -278,7 +278,7 @@ namespace AryamanBMS.Controllers
             });
         }
 
-        public async Task<IActionResult> Create()
+        public async Task<IActionResult> Create(bool mine = false)
         {
             var model = new ExpenseVoucherModel
             {
@@ -292,7 +292,9 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(ExpenseVoucherModel model)
+        public async Task<IActionResult> Create(
+            ExpenseVoucherModel model,
+            bool mine = false)
         {
             ModelState.Remove(
                 nameof(model.VoucherNumber));
@@ -370,7 +372,10 @@ namespace AryamanBMS.Controllers
             TempData["Success"] =
                 $"Expense Voucher '{model.VoucherNumber}' created successfully.";
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Index), new
+            {
+                mine
+            });
         }
 
         #region Edit

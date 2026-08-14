@@ -155,11 +155,13 @@ namespace AryamanBMS.Controllers
                     ? employee.LastWorkingDate.Value.Date
                     : monthEnd;
 
+            DateTime attendanceCountEnd = eligibleEnd;
+
             if (selectedYear == today.Year &&
                 selectedMonth == today.Month &&
-                today < eligibleEnd)
+                today < attendanceCountEnd)
             {
-                eligibleEnd = today;
+                attendanceCountEnd = today;
             }
 
             var markedDates = attendanceRecords
@@ -180,6 +182,11 @@ namespace AryamanBMS.Controllers
                 {
                     if (await _workingDayService.IsWorkingDayAsync(date))
                     {
+                        if (date > attendanceCountEnd.Date)
+                        {
+                            continue;
+                        }
+
                         expectedAttendanceDays++;
 
                         if (!markedDates.Contains(date))
@@ -276,12 +283,9 @@ namespace AryamanBMS.Controllers
                     model.AttendanceDate.Date);
 
             bool approvedLeaveExists =
-               await _leaveApplicationRepository.LeaveApplications
-               .AnyAsync(l =>
-               l.EmployeeId == model.EmployeeId &&
-               l.Status == "Approved" &&
-               l.FromDate.Date <= model.AttendanceDate.Date &&
-               l.ToDate.Date >= model.AttendanceDate.Date);
+                await HasApprovedLeaveOnDateAsync(
+                    model.EmployeeId,
+                    model.AttendanceDate.Date);
 
             if (approvedLeaveExists && model.Status != "L")
             {
@@ -1293,6 +1297,29 @@ namespace AryamanBMS.Controllers
             }
 
             return null;
+        }
+
+        private async Task<bool> HasApprovedLeaveOnDateAsync(
+            int employeeId,
+            DateTime date)
+        {
+            var leaveApplications =
+                await _leaveApplicationRepository.LeaveApplications
+                    .Include(x => x.LeaveDays)
+                    .Where(l =>
+                        l.EmployeeId == employeeId &&
+                        l.Status == "Approved" &&
+                        l.FromDate.Date <= date.Date &&
+                        l.ToDate.Date >= date.Date)
+                    .ToListAsync();
+
+            return leaveApplications.Any(l =>
+                l.LeaveDays.Any()
+                    ? l.LeaveDays.Any(d =>
+                        d.LeaveDate.Date == date.Date &&
+                        d.Status != "Cancelled")
+                    : l.FromDate.Date <= date.Date &&
+                      l.ToDate.Date >= date.Date);
         }
 
         private bool IsWeeklyOff(DateTime date)

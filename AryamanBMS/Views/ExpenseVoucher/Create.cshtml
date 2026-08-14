@@ -36,6 +36,7 @@
 
     <div class="module-header-actions">
         <a asp-action="Index"
+           asp-route-mine="@(Context.Request.Query["mine"] == "true" ? "true" : null)"
            class="btn-app btn-secondary-app">
             <i class="bi bi-arrow-left"></i>
             Back
@@ -44,7 +45,10 @@
 
 </div>
 
-<form method="post" id="expenseForm">
+<form asp-action="Create"
+      asp-route-mine="@(Context.Request.Query["mine"] == "true" ? "true" : null)"
+      method="post"
+      id="expenseForm">
 
 <div class="app-card form-card">
 
@@ -499,7 +503,9 @@
                                 : "Update Voucher")
             </button>
 
-            <a asp-action="Index" class="btn-app btn-secondary-app">
+            <a asp-action="Index"
+   asp-route-mine="@(Context.Request.Query["mine"] == "true" ? "true" : null)"
+   class="btn-app btn-secondary-app">
                 Cancel
             </a>
 

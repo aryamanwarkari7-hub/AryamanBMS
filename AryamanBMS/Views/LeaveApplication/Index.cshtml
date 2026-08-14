@@ -9,6 +9,7 @@
         ViewBag.Status as string ?? "All";
 
     bool isAdminOrHr = User.IsInRole("Admin") || User.IsInRole("HR");
+    bool isMineView = Context.Request.Query["mine"] == "true";
 }
 
 <div class="module-header">
@@ -24,6 +25,7 @@
     </div>
 
     <a asp-action="Create"
+       asp-route-mine="@(Context.Request.Query["mine"] == "true" ? "true" : null)"
        class="btn-app btn-primary-app">
 
         <i class="bi bi-plus-lg"></i>
@@ -46,8 +48,12 @@
 
     <div class="card-body">
 
-        <form asp-action="Index"
-              method="get">
+        <form asp-action="Index" method="get">
+
+            @if (isMineView)
+            {
+                <input type="hidden" name="mine" value="true" />
+            }
 
             <div class="filter-form-row">
 
@@ -122,6 +128,7 @@
                     </button>
 
                     <a asp-action="Index"
+                       asp-route-mine="@(isMineView ? "true" : null)"
                        class="btn-app btn-secondary-app">
                         <i class="bi bi-arrow-counterclockwise"></i>
                         Reset

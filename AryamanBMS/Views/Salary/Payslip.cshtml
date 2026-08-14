@@ -1,13 +1,13 @@
 ﻿@model AryamanBMS.Models.SalaryRecordModel
 
 @{
-    ViewData["Title"] = "Payslip";
     bool isAdminOrHr = User.IsInRole("Admin") || User.IsInRole("HR");
+    ViewData["Title"] = isAdminOrHr ? "Payslip" : "My Payslip";
 }
 
 <div class="module-header">
     <div>
-        <h1 class="module-title">Payslip</h1>
+        <h1 class="module-title">@(isAdminOrHr ? "Payslip" : "My Payslip")</h1>
         <p class="module-subtitle">
             Salary slip for @Model.Month/@Model.Year
         </p>

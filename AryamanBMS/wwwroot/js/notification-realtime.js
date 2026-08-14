@@ -155,6 +155,11 @@
         return iconMap[type] || "bi-info-circle";
     }
 
+    function isBirthdayNotification(type) {
+        return type === "EmployeeBirthday" ||
+            type === "EmployeeBirthdaySelf";
+    }
+
     function prependNotification(notification) {
         const list = document.querySelector(".notification-list");
 
@@ -169,13 +174,18 @@
         }
 
         const item = document.createElement("a");
-        item.className = "notification-item notification-unread notification-live-new";
         const notificationId = getValue(notification, "id", "Id", "");
         const notificationType = getValue(
             notification,
             "notificationType",
             "NotificationType",
             "");
+        item.className =
+            `notification-item notification-unread notification-live-new${
+                isBirthdayNotification(notificationType)
+                    ? " notification-birthday"
+                    : ""
+            }`;
 
         item.href = appUrl(`Notification/Open/${notificationId}`);
 
@@ -237,7 +247,7 @@
             "");
 
         toast.className =
-            notificationType === "EmployeeBirthdaySelf"
+            isBirthdayNotification(notificationType)
                 ? "notification-toast notification-toast-birthday"
                 : "notification-toast";
         toast.innerHTML = `

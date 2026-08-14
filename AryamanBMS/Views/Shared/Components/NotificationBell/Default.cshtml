@@ -74,6 +74,10 @@
                     asp-action="Open"
                     asp-route-id="@notification.Id"
                     class="notification-item
+                           @(notification.NotificationType == "EmployeeBirthday" ||
+                             notification.NotificationType == "EmployeeBirthdaySelf"
+                               ? "notification-birthday"
+                               : "")
                            @(notification.IsRead
                                ? ""
                                : "notification-unread")">
@@ -124,6 +128,14 @@
 
                                 case "LeaveCancellationRejected":
                                     <i class="bi bi-calendar2-check"></i>
+                                    break;
+
+                                case "EmployeeBirthday":
+                                    <i class="bi bi-balloon"></i>
+                                    break;
+
+                                case "EmployeeBirthdaySelf":
+                                    <i class="bi bi-balloon-heart"></i>
                                     break;
 
                                 case "CompOffRequested":

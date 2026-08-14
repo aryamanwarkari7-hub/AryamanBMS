@@ -24,7 +24,7 @@
     </div>
 
     <div class="module-header-actions">
-        <a asp-controller="Account"
+        <a asp-controller="Employee"
            asp-action="Profile"
            class="btn-app btn-secondary-app">
             <i class="bi bi-person"></i>
@@ -42,22 +42,22 @@
 
 <div class="dashboard-grid">
     <div class="stats-card">
-        <div class="stats-label">Today Attendance</div>
+        <div class="stats-label">Today's' Attendance Status</div>
         <div class="stats-number">@Model.Attendance.Status</div>
     </div>
 
     <div class="stats-card">
-        <div class="stats-label">Working Hours</div>
+        <div class="stats-label">Today's Working Hours</div>
         <div class="stats-number">@workingHoursText</div>
     </div>
 
     <div class="stats-card">
-        <div class="stats-label">Paid Leave Balance</div>
+        <div class="stats-label">Annual Paid Leave Balance</div>
         <div class="stats-number">@Model.Leave.AvailableBalance.ToString("0.##")</div>
     </div>
 
     <div class="stats-card">
-        <div class="stats-label">Open Tasks</div>
+        <div class="stats-label">Open Project Tasks</div>
         <div class="stats-number">@Model.AssignedTasks.Count(x => x.Status != "Completed")</div>
     </div>
 </div>
@@ -71,17 +71,17 @@
         <div class="card-body">
             <div class="profile-stack">
                 <div class="profile-info-row">
-                    <span><i class="bi bi-box-arrow-in-right"></i> Check In</span>
+                    <span><i class="bi bi-box-arrow-in-right"></i> Check In Time</span>
                     <strong>@(Model.Attendance.CheckInTime?.ToString("hh:mm tt") ?? "-")</strong>
                 </div>
 
                 <div class="profile-info-row">
-                    <span><i class="bi bi-box-arrow-right"></i> Check Out</span>
+                    <span><i class="bi bi-box-arrow-right"></i> Check Out Time</span>
                     <strong>@(Model.Attendance.CheckOutTime?.ToString("hh:mm tt") ?? "-")</strong>
                 </div>
 
                 <div class="profile-info-row">
-                    <span><i class="bi bi-hourglass-split"></i> Hours</span>
+                    <span><i class="bi bi-hourglass-split"></i> Total Working Hours</span>
                     <strong>@workingHoursText</strong>
                 </div>
             </div>
@@ -101,7 +101,7 @@
                 </div>
 
                 <div class="profile-info-row">
-                    <span><i class="bi bi-calendar2-check"></i> Paid Leave Balance</span>
+                    <span><i class="bi bi-calendar2-check"></i> Annual Paid Leave Balance</span>
                     <strong>@Model.Leave.AvailableBalance.ToString("0.##")</strong>
                 </div>
 
@@ -131,14 +131,14 @@
         <div class="card-body">
             <div class="profile-stack">
                 <div class="profile-info-row">
-                    <span><i class="bi bi-calendar3"></i> Period</span>
+                    <span><i class="bi bi-calendar3"></i> Monthly Period</span>
                     <strong>
                         @(Model.Salary.Month.HasValue ? $"{Model.Salary.Month:00}/{Model.Salary.Year}" : "-")
                     </strong>
                 </div>
 
                 <div class="profile-info-row">
-                    <span><i class="bi bi-cash-stack"></i> Net Salary</span>
+                    <span><i class="bi bi-cash-stack"></i> Salary after Deductions</span>
                     <strong>₹@Model.Salary.NetSalary.ToString("N0")</strong>
                 </div>
 
@@ -148,7 +148,7 @@
                 </div>
 
                 <div class="profile-info-row">
-                    <span><i class="bi bi-receipt"></i> Payslip</span>
+                    <span><i class="bi bi-receipt"></i> Payslip Status</span>
                     <strong>@(Model.Salary.IsPayslipReleased ? "Released" : "Not Released")</strong>
                 </div>
             </div>
@@ -171,8 +171,8 @@
             {
                 foreach (var task in Model.AssignedTasks)
                 {
-                    <a asp-controller="ProjectTask"
-                       asp-action="Details"
+                    <a asp-controller="EmployeeProject"
+                       asp-action="TaskDetails"
                        asp-route-id="@task.TaskId"
                        class="dashboard-list-link">
                         <span>
