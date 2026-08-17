@@ -1,10 +1,9 @@
 .leave-balance-fy-card {
     width: 100%;
-    min-height: 112px;
+    min-height: 96px;
     display: flex;
-    flex-direction:column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: var(--space-md);
     padding: var(--space-lg);
     border: 1px solid rgba(32, 114, 175, 0.26);
@@ -41,7 +40,7 @@
 .leave-balance-fy-card .stats-label {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     margin-bottom: 8px;
     padding: 0 10px 8px;
     border-bottom: 2px solid var(--primary-color);
@@ -80,6 +79,21 @@
         font-weight: var(--fw-bold);
         color: var(--text-primary);
     }
+
+.leave-balance-filter-form {
+    display: grid;
+    grid-template-columns: minmax(220px, 500px) auto;
+    gap: var(--space-md);
+    align-items: end;
+}
+
+.leave-balance-filter-form .form-group {
+    min-width: 0;
+}
+
+.leave-balance-filter-form .app-select {
+    width: 100%;
+}
 
 .leave-apply-summary {
     display: grid;
@@ -286,12 +300,33 @@
     }
 }
 
+@media (max-width: 768px) {
+    .leave-balance-filter-form {
+        grid-template-columns: 1fr;
+    }
+
+    .leave-balance-filter-form .form-group.d-flex {
+        align-items: stretch !important;
+        flex-wrap: wrap;
+    }
+
+    .leave-balance-filter-form .btn-app {
+        flex: 1 1 150px;
+        justify-content: center;
+    }
+
+    .leave-balance-fy-card {
+        align-items: flex-start;
+    }
+}
+
 @media (max-width: 576px) {
     .leave-balance-card-grid {
         grid-template-columns: 1fr;
     }
 
     .leave-balance-fy-card {
+        flex-direction: column;
         align-items: flex-start;
         padding: var(--space-md);
     }
@@ -300,6 +335,10 @@
         width: 44px;
         height: 44px;
         font-size: 18px;
+    }
+
+    .leave-balance-fy-card .stats-number {
+        font-size: 1.35rem;
     }
 
     .leave-apply-summary-grid {
