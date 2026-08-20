@@ -2044,12 +2044,12 @@ namespace AryamanBMS.Controllers
                 x.Status == "Pending");
 
             model.CompOff.ApprovedAvailableCredits = compOffCredits.Count(x =>
-                x.Status == "Approved" &&
+                x.Status == "Available" &&
                 x.ExpiryDate >= today &&
                 x.CreditDays > x.UsedDays);
 
             model.CompOff.ExpiringSoon = compOffCredits.Count(x =>
-                x.Status == "Approved" &&
+                x.Status == "Available" &&
                 x.ExpiryDate >= today &&
                 x.ExpiryDate <= compOffExpiryEnd &&
                 x.CreditDays > x.UsedDays);
@@ -2142,7 +2142,7 @@ namespace AryamanBMS.Controllers
 
             model.ExpiringCompOffCredits = compOffCredits
                 .Where(x =>
-                    x.Status == "Approved" &&
+                    x.Status == "Available" &&
                     x.ExpiryDate >= today &&
                     x.ExpiryDate <= compOffExpiryEnd &&
                     x.CreditDays > x.UsedDays)
