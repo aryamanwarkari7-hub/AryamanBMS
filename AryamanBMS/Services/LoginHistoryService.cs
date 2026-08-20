@@ -1,19 +1,22 @@
-﻿using AryamanBMS.Data;
-using AryamanBMS.Models;
+﻿using AryamanBMS.Models;
+using AryamanBMS.Repositories.Implementations;
+using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
-using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 
 namespace AryamanBMS.Services
 {
     public class LoginHistoryService : ILoginHistoryService
     {
-        private readonly ApplicationDbContext _context;
+        private readonly ILoginHistoryRepository _loginHistoryRepository;
 
         public LoginHistoryService(
-            ApplicationDbContext context)
+            ILoginHistoryRepository loginHistoryRepository)
         {
-            _context = context;
+            _loginHistoryRepository = loginHistoryRepository;
         }
+
+        #region Recording
 
         public async Task RecordAsync(
             string attemptedUserName,
@@ -22,48 +25,88 @@ namespace AryamanBMS.Services
             string? userId = null,
             string? failureReason = null,
             string? ipAddress = null,
-            string? userAgent = null)
+            string? userAgent = null,
+            string? deviceId = null)
         {
+            var trimmedUserName =
+                attemptedUserName?.Trim() ?? string.Empty;
+
+            var trimmedEventType =
+                eventType?.Trim() ?? string.Empty;
+
             var history = new LoginHistoryModel
             {
                 UserId = string.IsNullOrWhiteSpace(userId)
-        ? null
-        : userId,
+                    ? null
+                    : userId,
 
                 AttemptedUserName =
-        string.IsNullOrWhiteSpace(attemptedUserName)
-            ? "Unknown"
-            : attemptedUserName.Trim()[..Math.Min(attemptedUserName.Trim().Length, 256)],
+                    string.IsNullOrWhiteSpace(trimmedUserName)
+                        ? "Unknown"
+                        : trimmedUserName[
+                            ..Math.Min(
+                                trimmedUserName.Length,
+                                256)],
 
                 EventType =
-        string.IsNullOrWhiteSpace(eventType)
-            ? "Unknown"
-            : eventType.Trim()[..Math.Min(eventType.Trim().Length, 50)],
+                    string.IsNullOrWhiteSpace(trimmedEventType)
+                        ? "Unknown"
+                        : trimmedEventType[
+                            ..Math.Min(
+                                trimmedEventType.Length,
+                                50)],
 
                 IsSuccessful = isSuccessful,
 
                 FailureReason =
-        string.IsNullOrWhiteSpace(failureReason)
-            ? null
-            : failureReason.Trim()[..Math.Min(failureReason.Trim().Length, 250)],
+                    string.IsNullOrWhiteSpace(failureReason)
+                        ? null
+                        : failureReason.Trim()[
+                            ..Math.Min(
+                                failureReason.Trim().Length,
+                                250)],
 
                 IpAddress =
-        string.IsNullOrWhiteSpace(ipAddress)
-            ? null
-            : ipAddress.Trim()[..Math.Min(ipAddress.Trim().Length, 45)],
+                    string.IsNullOrWhiteSpace(ipAddress)
+                        ? null
+                        : ipAddress.Trim()[
+                            ..Math.Min(
+                                ipAddress.Trim().Length,
+                                45)],
 
                 UserAgent =
-        string.IsNullOrWhiteSpace(userAgent)
-            ? null
-            : userAgent.Trim()[..Math.Min(userAgent.Trim().Length, 500)],
+                    string.IsNullOrWhiteSpace(userAgent)
+                        ? null
+                        : userAgent.Trim()[
+                            ..Math.Min(
+                                userAgent.Trim().Length,
+                                500)],
+                DeviceId =
+                   string.IsNullOrWhiteSpace(deviceId)
+                       ? null
+                       : deviceId.Trim()[..Math.Min(deviceId.Trim().Length, 100)],
 
                 OccurredOn = DateTime.Now
             };
 
-            _context.TableLoginHistory.Add(history);
-
-            await _context.SaveChangesAsync();
+            await _loginHistoryRepository
+                .AddAsync(history);
         }
+
+        #endregion
+
+        #region Login Checks
+
+        public async Task<bool> HasSuccessfulLoginTodayAsync(
+            string userId)
+        {
+            return await _loginHistoryRepository
+                .HasSuccessfulLoginTodayAsync(userId);
+        }
+
+        #endregion
+
+        #region History Queries
 
         public async Task<List<LoginHistoryModel>> GetRecentAsync(
             int count = 100)
@@ -78,27 +121,47 @@ namespace AryamanBMS.Services
                 count = 500;
             }
 
-            return await _context.TableLoginHistory
-                .AsNoTracking()
-                .Include(x => x.User)
-                .OrderByDescending(x => x.OccurredOn)
-                .Take(count)
-                .ToListAsync();
+            return await _loginHistoryRepository
+                .GetRecentAsync(count);
         }
 
-        public async Task<bool> HasSuccessfulLoginTodayAsync(string userId)
+        public async Task<List<int>> GetAvailableYearsAsync()
         {
-            DateTime today = DateTime.Today;
-            DateTime tomorrow = today.AddDays(1);
-
-            return await _context.TableLoginHistory
-                .AsNoTracking()
-                .AnyAsync(x =>
-                    x.UserId == userId &&
-                    x.EventType == "Login" &&
-                    x.IsSuccessful &&
-                    x.OccurredOn >= today &&
-                    x.OccurredOn < tomorrow);
+            return await _loginHistoryRepository
+                .GetAvailableYearsAsync();
         }
+
+        public async Task<(List<LoginHistoryModel> Records, int TotalRecords)>
+            SearchAsync(
+                string? searchText,
+                string? eventType,
+                string? result,
+                int? month,
+                int? year,
+                int page,
+                int pageSize)
+        {
+            if (page < 1)
+            {
+                page = 1;
+            }
+
+            if (pageSize <= 0)
+            {
+                pageSize = 15;
+            }
+
+            return await _loginHistoryRepository
+                .SearchAsync(
+                    searchText,
+                    eventType,
+                    result,
+                    month,
+                    year,
+                    page,
+                    pageSize);
+        }
+
+        #endregion
     }
 }

@@ -54,6 +54,8 @@ namespace AryamanBMS.Data
         public DbSet<CompOffCreditModel> CompOffCredits { get; set; }
         public DbSet<CompOffUsageModel> CompOffUsages { get; set; }
 
+        public DbSet<OffDayWorkRequestModel> OffDayWorkRequests { get; set; }
+
         // =============================
         // SALARY
         // =============================

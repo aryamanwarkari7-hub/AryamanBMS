@@ -55,11 +55,16 @@
 
                     </select>
 
+                    <span asp-validation-for="EmployeeId"
+                          class="validation-message">
+                    </span>
+
                 </div>
 
                 <div class="form-group">
 
-                    <label class="form-label">
+                    <label asp-for="AttendanceDate"
+                           class="form-label">
                         Attendance Date
                     </label>
 
@@ -67,16 +72,76 @@
                            type="date"
                            class="app-input" />
 
+                    <span asp-validation-for="AttendanceDate"
+                          class="validation-message">
+                    </span>
+
                 </div>
 
                 <div class="form-group">
 
                     <label class="form-label">
+                        Attendance Type
+                    </label>
+
+                    <select asp-for="IsOffDayWork"
+                            class="app-select"
+                            id="attendanceType">
+
+                        <option value="false">
+                            Normal Attendance
+                        </option>
+
+                        <option value="true">
+                            Off-Day Work
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <div class="form-group"
+                     id="offDayTypeGroup"
+                     style="display:none;">
+
+                    <label asp-for="OffDayType"
+                           class="form-label">
+                        Off-Day Type
+                    </label>
+
+                    <select asp-for="OffDayType"
+                            class="app-select">
+
+                        <option value="">
+                            Select Off-Day Type
+                        </option>
+
+                        <option value="WO">
+                            Weekly Off
+                        </option>
+
+                        <option value="H">
+                            Holiday
+                        </option>
+
+                    </select>
+
+                    <span asp-validation-for="OffDayType"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="Status"
+                           class="form-label">
                         Status
                     </label>
 
                     <select asp-for="Status"
-                            class="app-select">
+                            class="app-select"
+                            id="attendanceStatus">
 
                         <option value="P">Present</option>
                         <option value="A">Absent</option>
@@ -99,23 +164,69 @@
                     <select asp-for="AttendanceValue"
                             class="app-select">
 
-                        <option value="1">Full Day</option>
-                        <option value="0.5">Half Day</option>
+                        <option value="1">
+                            Full Day
+                        </option>
+
+                        <option value="0.5">
+                            Half Day
+                        </option>
 
                     </select>
 
                 </div>
 
+            </div>
+
+            <div id="offDayTimeGroup"
+                 class="form-grid-2 mt-3"
+                 style="display:none;">
+
                 <div class="form-group">
 
-                    <label class="form-label">
-                        Remarks
+                    <label asp-for="CheckInTime"
+                           class="form-label">
+                        Check In Time
                     </label>
 
-                    <input asp-for="Remarks"
+                    <input asp-for="CheckInTime"
+                           type="datetime-local"
                            class="app-input" />
 
+                    <span asp-validation-for="CheckInTime"
+                          class="validation-message">
+                    </span>
+
                 </div>
+
+                <div class="form-group">
+
+                    <label asp-for="CheckOutTime"
+                           class="form-label">
+                        Check Out Time
+                    </label>
+
+                    <input asp-for="CheckOutTime"
+                           type="datetime-local"
+                           class="app-input" />
+
+                    <span asp-validation-for="CheckOutTime"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+            </div>
+
+            <div class="form-group mt-3">
+
+                <label asp-for="Remarks"
+                       class="form-label">
+                    Remarks
+                </label>
+
+                <input asp-for="Remarks"
+                       class="app-input" />
 
             </div>
 
@@ -124,6 +235,7 @@
                 <button type="submit"
                         class="btn-app btn-primary-app">
 
+                    <i class="bi bi-check-circle"></i>
                     Save Attendance
 
                 </button>
@@ -146,4 +258,36 @@
 @section Scripts
 {
     <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+
+            const attendanceType =
+                document.getElementById("attendanceType");
+
+            const offDayTypeGroup =
+                document.getElementById("offDayTypeGroup");
+
+            const offDayTimeGroup =
+                document.getElementById("offDayTimeGroup");
+
+            function updateOffDayFields() {
+
+                const isOffDayWork =
+                    attendanceType.value === "true";
+
+                offDayTypeGroup.style.display =
+                    isOffDayWork ? "" : "none";
+
+                offDayTimeGroup.style.display =
+                    isOffDayWork ? "" : "none";
+            }
+
+            attendanceType.addEventListener(
+                "change",
+                updateOffDayFields);
+
+            updateOffDayFields();
+        });
+    </script>
 }

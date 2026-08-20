@@ -11,7 +11,7 @@
         </h1>
 
         <p class="module-subtitle">
-            Request Comp Off for work completed on a holiday or week off
+            Request Comp Off for approved work completed on a Holiday or Weekly Off.
         </p>
     </div>
 
@@ -51,19 +51,33 @@
 
                     <label asp-for="WorkedDate"
                            class="form-label">
+                        Worked Date
                     </label>
 
-                    <input asp-for="WorkedDate"
-                           type="date"
-                           class="app-input"
-                           max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                    <select asp-for="WorkedDate"
+                            class="app-select">
+
+                        @foreach (var attendance in ViewBag.EligibleAttendances)
+                        {
+                            <option value="@attendance.AttendanceDate.ToString("yyyy-MM-dd")">
+                                @attendance.AttendanceDate.ToString("dd-MMM-yyyy")
+                                -
+                                @(attendance.OffDayType == "H"
+                                    ? "Holiday"
+                                    : "Weekly Off")
+                                -
+                                @attendance.WorkingHours.ToString("0.##") hrs
+                            </option>
+                        }
+
+                    </select>
 
                     <span asp-validation-for="WorkedDate"
                           class="text-danger">
                     </span>
 
                     <small class="text-muted">
-                        Attendance must exist as Present or On Duty.
+                        Only completed Holiday and Weekly Off work is shown.
                     </small>
 
                 </div>
@@ -90,6 +104,80 @@
                     <span asp-validation-for="CreditDays"
                           class="text-danger">
                     </span>
+
+                </div>
+
+                <div class="col-12">
+
+                    <div class="app-card mt-2">
+
+                        <div class="card-header">
+                            <h5 class="card-title">
+                                Worked Attendance
+                            </h5>
+                        </div>
+
+                        <div class="card-body">
+
+                            <div class="profile-stack">
+
+                                <div class="profile-info-row">
+                                    <span>
+                                        <i class="bi bi-calendar"></i>
+                                        Off-Day Type
+                                    </span>
+
+                                    <strong id="offDayTypeDisplay">
+                                        @(Model.OffDayType == "H"
+                                            ? "Holiday"
+                                            : Model.OffDayType == "WO"
+                                                ? "Weekly Off"
+                                                : "-")
+                                    </strong>
+                                </div>
+
+                                <div class="profile-info-row">
+                                    <span>
+                                        <i class="bi bi-box-arrow-in-right"></i>
+                                        Check In
+                                    </span>
+
+                                    <strong id="checkInDisplay">
+                                        @(Model.CheckInTime.HasValue
+                                            ? Model.CheckInTime.Value.ToString("hh:mm tt")
+                                            : "-")
+                                    </strong>
+                                </div>
+
+                                <div class="profile-info-row">
+                                    <span>
+                                        <i class="bi bi-box-arrow-right"></i>
+                                        Check Out
+                                    </span>
+
+                                    <strong id="checkOutDisplay">
+                                        @(Model.CheckOutTime.HasValue
+                                            ? Model.CheckOutTime.Value.ToString("hh:mm tt")
+                                            : "-")
+                                    </strong>
+                                </div>
+
+                                <div class="profile-info-row">
+                                    <span>
+                                        <i class="bi bi-hourglass-split"></i>
+                                        Working Hours
+                                    </span>
+
+                                    <strong id="workingHoursDisplay">
+                                        @Model.WorkingHours.ToString("0.##") hrs
+                                    </strong>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
 
                 </div>
 
@@ -142,4 +230,87 @@
 @section Scripts
 {
     <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        const eligibleAttendances = @Html.Raw(
+                                    System.Text.Json.JsonSerializer.Serialize(
+                                            ((IEnumerable<AryamanBMS.Models.AttendanceModel>)
+                                                    ViewBag.EligibleAttendances)
+                                                    .Select(x => new
+                                    {
+                                                            date = x.AttendanceDate.ToString("yyyy-MM-dd"),
+
+                                                            offDayType = x.OffDayType,
+
+                                                            checkIn = x.CheckInTime.HasValue
+                    ? x.CheckInTime.Value.ToString("hh:mm tt")
+                    : "-",
+
+                                                            checkOut = x.CheckOutTime.HasValue
+                    ? x.CheckOutTime.Value.ToString("hh:mm tt")
+                    : "-",
+
+                                                            workingHours = x.WorkingHours
+                                    })
+                    )
+                    );
+
+        const workedDateSelect =
+            document.getElementById("WorkedDate");
+
+        const offDayTypeDisplay =
+            document.getElementById("offDayTypeDisplay");
+
+        const checkInDisplay =
+            document.getElementById("checkInDisplay");
+
+        const checkOutDisplay =
+            document.getElementById("checkOutDisplay");
+
+        const workingHoursDisplay =
+            document.getElementById("workingHoursDisplay");
+
+        function updateAttendanceDetails() {
+
+            const selectedDate =
+                workedDateSelect.value;
+
+            const attendance =
+                eligibleAttendances.find(
+                    x => x.date === selectedDate
+                );
+
+            if (!attendance) {
+                offDayTypeDisplay.textContent = "-";
+                checkInDisplay.textContent = "-";
+                checkOutDisplay.textContent = "-";
+                workingHoursDisplay.textContent = "-";
+                return;
+            }
+
+            offDayTypeDisplay.textContent =
+                attendance.offDayType === "H"
+                    ? "Holiday"
+                    : attendance.offDayType === "WO"
+                        ? "Weekly Off"
+                        : "-";
+
+            checkInDisplay.textContent =
+                attendance.checkIn;
+
+            checkOutDisplay.textContent =
+                attendance.checkOut;
+
+            workingHoursDisplay.textContent =
+                Number(attendance.workingHours)
+                    .toFixed(2) + " hrs";
+        }
+
+        workedDateSelect.addEventListener(
+            "change",
+            updateAttendanceDetails
+        );
+
+        updateAttendanceDetails();
+    </script>
 }

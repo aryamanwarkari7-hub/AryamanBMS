@@ -1,0 +1,183 @@
+﻿@model IEnumerable<AryamanBMS.Models.OffDayWorkRequestModel>
+
+@{
+    ViewData["Title"] = "Off-Day Work Requests";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">
+            Off-Day Work Requests
+        </h1>
+
+        <p class="module-subtitle">
+            Review and manage Holiday and Weekly Off work requests
+        </p>
+    </div>
+
+</div>
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+
+        <h5 class="card-title">
+            Requests
+        </h5>
+
+        <span class="text-muted">
+            @Model.Count() requests
+        </span>
+
+    </div>
+
+    <div class="card-body">
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                No off-day work requests found.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+
+                <table class="app-table">
+
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Work Date</th>
+                            <th>Off-Day Type</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            <th>Requested On</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var request in Model)
+                        {
+                            string statusClass =
+                                request.Status switch
+                                {
+                                    "Approved" => "badge-success",
+                                    "Rejected" => "badge-danger",
+                                    _ => "badge-warning"
+                                };
+
+                            <tr>
+
+                                <td>
+                                    <strong>
+                                        @(request.Employee?.FullName ?? "-")
+                                    </strong>
+
+                                    @if (!string.IsNullOrWhiteSpace(
+                                        request.Employee?.EmployeeCode))
+                                    {
+                                        <div class="text-muted small">
+                                            @request.Employee.EmployeeCode
+                                        </div>
+                                    }
+                                </td>
+
+                                <td>
+                                    @request.WorkDate.ToString("dd-MMM-yyyy")
+                                </td>
+
+                                <td>
+                                    @(request.OffDayType == "WeeklyOff"
+                                        ? "Weekly Off"
+                                        : request.OffDayType)
+                                </td>
+
+                                <td>
+                                    @(string.IsNullOrWhiteSpace(request.Reason)
+                                        ? "-"
+                                        : request.Reason)
+                                </td>
+
+                                <td>
+                                    <span class="@statusClass">
+                                        @request.Status
+                                    </span>
+                                </td>
+
+                                <td>
+                                    @request.RequestedOn.ToString(
+                                        "dd-MMM-yyyy hh:mm tt")
+                                </td>
+
+                                <td>
+
+                                    @if (request.Status == "Pending")
+                                    {
+                                        <div class="d-flex gap-2">
+
+                                            <form asp-action="Approve"
+                                                  method="post">
+
+                                                @Html.AntiForgeryToken()
+
+                                                <input type="hidden"
+                                                       name="id"
+                                                       value="@request.Id" />
+
+                                                <button type="submit"
+                                                        class="btn-app btn-primary-app">
+
+                                                    <i class="bi bi-check-circle"></i>
+                                                    Approve
+
+                                                </button>
+
+                                            </form>
+
+                                            <form asp-action="Reject"
+                                                  method="post">
+
+                                                @Html.AntiForgeryToken()
+
+                                                <input type="hidden"
+                                                       name="id"
+                                                       value="@request.Id" />
+
+                                                <button type="submit"
+                                                        class="btn-app btn-danger-app">
+
+                                                    <i class="bi bi-x-circle"></i>
+                                                    Reject
+
+                                                </button>
+
+                                            </form>
+
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">
+                                            No action
+                                        </span>
+                                    }
+
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+    </div>
+
+</div>

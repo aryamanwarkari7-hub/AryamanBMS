@@ -97,6 +97,9 @@ builder.Services.AddScoped<ICompOffCreditRepository, CompOffCreditRepository>();
 
 builder.Services.AddScoped<ICompOffUsageRepository, CompOffUsageRepository>();
 
+builder.Services.AddScoped<IOffDayWorkRequestRepository,
+    OffDayWorkRequestRepository>();
+
 // Salary repositories
 builder.Services.AddScoped<ISalaryRecordRepository, SalaryRecordRepository>();
 
@@ -117,6 +120,12 @@ builder.Services.AddScoped<IProjectMeetingRepository, ProjectMeetingRepository>(
 
 // Risk repositories
 builder.Services.AddScoped<IProjectRiskRepository, ProjectRiskRepository>();
+
+// Login History
+builder.Services.AddScoped<ILoginHistoryRepository, LoginHistoryRepository>();
+
+// Password Change History
+builder.Services.AddScoped<IPasswordChangeLogRepository,PasswordChangeLogRepository>();
 
 // Accounts, documents, billing, compliance, and asset repositories
 builder.Services.AddScoped<IClientRepository, ClientRepository>();
@@ -191,6 +200,9 @@ builder.Services.AddHostedService<HrNotificationReminderBackgroundService>();
 
 // Login history service
 builder.Services.AddScoped<ILoginHistoryService,LoginHistoryService>();
+
+// Password Change servic
+builder.Services.AddScoped<IPasswordChangeLogService,PasswordChangeLogService>();
 
 // PDF DOCUMENT GENERATION
 QuestPDF.Settings.License = LicenseType.Evaluation;

@@ -125,15 +125,24 @@
             }
             else if (Model.CheckOutTime == null && Model.Status != "L")
             {
-                <form asp-action="CheckOut" method="post">
+                <form asp-action="CheckOut"
+                      method="post"
+                      onsubmit="return confirm('Are you sure you want to check out now? Your checkout time will be recorded as the current time.');">
+
                     @Html.AntiForgeryToken()
 
                     <div class="attendance-action-compact">
-                        <button type="submit" class="btn-app btn-danger-app">
+
+                        <button type="submit"
+                                class="btn-app btn-danger-app">
+
                             <i class="bi bi-box-arrow-right"></i>
                             Check Out Time
+
                         </button>
+
                     </div>
+
                 </form>
             }
             else

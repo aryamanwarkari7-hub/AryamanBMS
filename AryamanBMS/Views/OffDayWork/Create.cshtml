@@ -1,0 +1,137 @@
+﻿@model AryamanBMS.Models.OffDayWorkRequestModel
+
+@{
+    ViewData["Title"] = "Request Off-Day Work";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Request Off-Day Work</h1>
+        <p class="module-subtitle">
+            Request permission to work on a Holiday or Weekly Off
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+        <a asp-action="Index"
+           class="btn-app btn-secondary-app">
+            <i class="bi bi-arrow-left"></i>
+            My Requests
+        </a>
+    </div>
+</div>
+
+<div class="app-card">
+
+    <div class="card-body">
+
+        <form asp-action="Create"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <div asp-validation-summary="ModelOnly"
+                 class="validation-message mb-3">
+            </div>
+
+            <div class="form-grid-2">
+
+                <div class="form-group">
+
+                    <label asp-for="WorkDate"
+                           class="form-label">
+                        Work Date
+                    </label>
+
+                    <input asp-for="WorkDate"
+                           type="date"
+                           class="app-input"
+                           required />
+
+                    <span asp-validation-for="WorkDate"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label asp-for="OffDayType"
+                           class="form-label">
+                        Off-Day Type
+                    </label>
+
+                    <select asp-for="OffDayType"
+                            class="app-select"
+                            required>
+
+                        <option value="">
+                            Select Off-Day Type
+                        </option>
+
+                        <option value="WeeklyOff">
+                            Weekly Off
+                        </option>
+
+                        <option value="Holiday">
+                            Holiday
+                        </option>
+
+                    </select>
+
+                    <span asp-validation-for="OffDayType"
+                          class="validation-message">
+                    </span>
+
+                </div>
+
+            </div>
+
+            <div class="form-group mt-3">
+
+                <label asp-for="Reason"
+                       class="form-label">
+                    Reason
+                </label>
+
+                <textarea asp-for="Reason"
+                          class="app-textarea"
+                          rows="4"
+                          placeholder="Enter the reason for working on this off-day."
+                          required></textarea>
+
+                <span asp-validation-for="Reason"
+                      class="validation-message">
+                </span>
+
+            </div>
+
+            <div class="mt-4">
+
+                <button type="submit"
+                        class="btn-app btn-primary-app">
+
+                    <i class="bi bi-send"></i>
+                    Submit Request
+
+                </button>
+
+                <a asp-action="Index"
+                   class="btn-app btn-secondary-app">
+
+                    Cancel
+
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

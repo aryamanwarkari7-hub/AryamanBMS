@@ -85,6 +85,8 @@
     </div>
 
     <div class="detail-grid-2">
+
+        <!-- Attendance Information -->
         <div class="app-card">
             <div class="card-header">
                 <h5 class="card-title">Attendance Information</h5>
@@ -92,6 +94,7 @@
 
             <div class="card-body">
                 <div class="detail-info-list">
+
                     <div class="detail-info-row">
                         <span class="detail-info-label">Employee Code</span>
                         <strong class="detail-info-value">
@@ -116,7 +119,9 @@
                     <div class="detail-info-row">
                         <span class="detail-info-label">Status</span>
                         <strong class="detail-info-value">
-                            <span class="@statusClass">@statusText</span>
+                            <span class="@statusClass">
+                                @statusText
+                            </span>
                         </strong>
                     </div>
 
@@ -126,17 +131,46 @@
                             @Model.AttendanceValue.ToString("0.##")
                         </strong>
                     </div>
+
                 </div>
             </div>
         </div>
 
+
+        <!-- Time & Record Information -->
         <div class="app-card">
             <div class="card-header">
-                <h5 class="card-title">Record Information</h5>
+                <h5 class="card-title">Time & Record Information</h5>
             </div>
 
             <div class="card-body">
                 <div class="detail-info-list">
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Check In</span>
+                        <strong class="detail-info-value">
+                            @(Model.CheckInTime.HasValue
+                                ? Model.CheckInTime.Value.ToString("hh:mm tt")
+                                : "-")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Check Out</span>
+                        <strong class="detail-info-value">
+                            @(Model.CheckOutTime.HasValue
+                                ? Model.CheckOutTime.Value.ToString("hh:mm tt")
+                                : "-")
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Working Hours</span>
+                        <strong class="detail-info-value">
+                            @Model.WorkingHours.ToString("0.00") hrs
+                        </strong>
+                    </div>
+
                     <div class="detail-info-row">
                         <span class="detail-info-label">Created On</span>
                         <strong class="detail-info-value">
@@ -150,9 +184,11 @@
                             @(Model.Remarks ?? "-")
                         </strong>
                     </div>
+
                 </div>
             </div>
         </div>
+
     </div>
 
 </div>
