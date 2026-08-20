@@ -894,6 +894,7 @@ namespace AryamanBMS.Controllers
                 CanManageProject =
                  User.IsInRole("Admin") ||
                  User.IsInRole("HR") ||
+                 User.IsInRole("Master") ||
                  (
                      currentEmployee != null &&
                      project.ProjectManagerId == currentEmployee.Id

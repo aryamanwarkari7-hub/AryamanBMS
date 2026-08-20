@@ -4,6 +4,8 @@
     var employee = Model.Employee;
     ViewData["Title"] = "Employee Details";
 
+    var isMaster = User.IsInRole("Master");
+
     string employeeStatusClass = employee.IsActive ? "badge-success" : "badge-danger";
     string employeeStatusText = employee.IsActive ? "Active" : "Inactive";
 
@@ -23,15 +25,14 @@
     </div>
 
     <div class="module-header-actions">
-        <a asp-action="Edit"
-           asp-route-id="@employee.Id"
-           class="btn-app btn-primary-app">
+        @if(!isMaster){
+        <a asp-action="Edit" asp-route-id="@employee.Id" class="btn-app btn-primary-app">
             <i class="bi bi-pencil"></i>
             Edit Employee
         </a>
+        }
 
-        <a asp-action="Index"
-           class="btn-app btn-secondary-app">
+        <a asp-action="Index" class="btn-app btn-secondary-app">
             <i class="bi bi-arrow-left"></i>
             Back
         </a>
@@ -214,7 +215,8 @@
                     <div class="detail-info-row">
                         <span class="detail-info-label">Local Address</span>
                         <strong class="detail-info-value">
-                            @FullAddress(employee.LocalAddress, employee.LocalCity, employee.LocalState, employee.LocalPinCode)
+                            @FullAddress(employee.LocalAddress, employee.LocalCity, employee.LocalState,
+                            employee.LocalPinCode)
                         </strong>
                     </div>
                 </div>
@@ -281,12 +283,13 @@
                                     <td>@document.DocumentType</td>
                                     <td>@document.OriginalFileName</td>
                                     <td class="text-center">
-                                        <a asp-action="DownloadDocument"
-                                           asp-route-id="@document.Id"
-                                           class="btn-app btn-primary-app btn-icon"
-                                           title="Download">
-                                            <i class="bi bi-download"></i>
-                                        </a>
+                                        @if (!isMaster)
+                                        {
+                                            <a asp-action="DownloadDocument" asp-route-id="@document.Id"
+                                               class="btn-app btn-primary-app btn-icon" title="Download">
+                                                <i class="bi bi-download"></i>
+                                            </a>
+                                        }
                                     </td>
                                 </tr>
                             }
@@ -325,12 +328,13 @@
                                     <td>@document.DocumentType</td>
                                     <td>@document.OriginalFileName</td>
                                     <td class="text-center">
-                                        <a asp-action="DownloadDocument"
-                                           asp-route-id="@document.Id"
-                                           class="btn-app btn-primary-app btn-icon"
-                                           title="Download">
-                                            <i class="bi bi-download"></i>
-                                        </a>
+                                        @if (!isMaster)
+                                        {
+                                            <a asp-action="DownloadDocument" asp-route-id="@document.Id"
+                                               class="btn-app btn-primary-app btn-icon" title="Download">
+                                                <i class="bi bi-download"></i>
+                                            </a>
+                                        }
                                     </td>
                                 </tr>
                             }
@@ -407,8 +411,8 @@
                                             @(employment.LastSalary.HasValue
                                                                                 ? $"₹{employment.LastSalary.Value:N2}"
                                                                                 : "-")
-                                </strong>
-                            </div>
+                                        </strong>
+                                    </div>
 
                                     <div class="detail-info-row">
                                         <span class="detail-info-label">Reason For Leaving</span>
@@ -420,7 +424,8 @@
                                     <div class="detail-info-row">
                                         <span class="detail-info-label">HR Contact</span>
                                         <strong class="detail-info-value">
-                                            @FullAddress(employment.HRContactName, employment.HRContactEmail, employment.HRContactNumber)
+                                            @FullAddress(employment.HRContactName, employment.HRContactEmail,
+                                    employment.HRContactNumber)
                                         </strong>
                                     </div>
 
@@ -428,29 +433,30 @@
                                         <span class="detail-info-label">Documents</span>
                                         <span class="detail-info-value">
                                             <span class="detail-action-bar justify-content-end">
-                                        @if (experienceLetter != null)
+                                                @if (!isMaster)
                                                 {
-                                                    <a asp-action="DownloadDocument"
-                                                       asp-route-id="@experienceLetter.Id"
-                                                       class="btn-app btn-outline-app">
-                                                        <i class="bi bi-download"></i>
-                                                        Experience Letter
-                                                    </a>
-                                                }
+                                                    @if (experienceLetter != null)
+                                                    {
+                                                        <a asp-action="DownloadDocument" asp-route-id="@experienceLetter.Id"
+                                                           class="btn-app btn-outline-app">
+                                                            <i class="bi bi-download"></i>
+                                                            Experience Letter
+                                                        </a>
+                                                    }
 
-                                                @if (relievingLetter != null)
-                                                {
-                                                    <a asp-action="DownloadDocument"
-                                                       asp-route-id="@relievingLetter.Id"
-                                                       class="btn-app btn-outline-app">
-                                                        <i class="bi bi-download"></i>
-                                                        Relieving Letter
-                                                    </a>
-                                                }
+                                                    @if (relievingLetter != null)
+                                                    {
+                                                        <a asp-action="DownloadDocument" asp-route-id="@relievingLetter.Id"
+                                                           class="btn-app btn-outline-app">
+                                                            <i class="bi bi-download"></i>
+                                                            Relieving Letter
+                                                        </a>
+                                                    }
 
-                                                @if (experienceLetter == null && relievingLetter == null)
-                                                {
-                                                    <span>-</span>
+                                                    @if (experienceLetter == null && relievingLetter == null)
+                                                    {
+                                                        <span>-</span>
+                                                    }
                                                 }
                                             </span>
                                         </span>
@@ -543,12 +549,14 @@
                                             <div class="detail-action-bar">
                                                 @foreach (var document in academic.Documents)
                                                 {
-                                                    <a asp-action="DownloadDocument"
-                                                       asp-route-id="@document.Id"
-                                                       class="btn-app btn-outline-app">
-                                                        <i class="bi bi-download"></i>
-                                                        @document.OriginalFileName
-                                                    </a>
+                                                    @if (!isMaster)
+                                                    {
+                                                        <a asp-action="DownloadDocument" asp-route-id="@document.Id"
+                                                           class="btn-app btn-outline-app">
+                                                            <i class="bi bi-download"></i>
+                                                            @document.OriginalFileName
+                                                        </a>
+                                                    }
                                                 }
                                             </div>
                                         }

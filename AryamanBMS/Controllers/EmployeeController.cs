@@ -57,7 +57,7 @@ namespace AryamanBMS.Controllers
             _employeePreviousEmploymentRepository = employeePreviousEmploymentRepository;
         }
 
-        [Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> Index(
            string? searchText,
            string statusFilter = "All",
@@ -1385,7 +1385,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin,HR")]
+        [Authorize(Roles = "Admin,HR,Master")]    
         public async Task<IActionResult> Details(int id)
         {
             var employee =

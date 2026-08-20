@@ -26,6 +26,8 @@
         "OD" => "On Duty",
         _ => Model.Status
     };
+
+    bool isMaster = User.IsInRole("Master");
 }
 
 <div class="module-header">
@@ -37,15 +39,15 @@
     </div>
 
     <div class="module-header-actions">
-        <a asp-action="Edit"
-           asp-route-id="@Model.Id"
-           class="btn-app btn-primary-app">
-            <i class="bi bi-pencil"></i>
-            Edit
-        </a>
+        @if (!isMaster)
+        {
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-app btn-primary-app">
+                <i class="bi bi-pencil"></i>
+                Edit
+            </a>
+        }
 
-        <a asp-action="Register"
-           class="btn-app btn-secondary-app">
+        <a asp-action="Register" class="btn-app btn-secondary-app">
             <i class="bi bi-arrow-left"></i>
             Back
         </a>

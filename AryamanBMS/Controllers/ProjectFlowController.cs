@@ -517,7 +517,7 @@ namespace AryamanBMS.Controllers
 
         private async Task<bool> CanManageProjectAsync(int projectId)
         {
-            if (User.IsInRole("Admin") || User.IsInRole("HR"))
+            if (User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("Master"))
             {
                 return true;
             }

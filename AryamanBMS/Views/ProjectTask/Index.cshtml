@@ -253,7 +253,7 @@
                                         <i class="bi bi-activity"></i>
                                     </a>
 
-                                        @if (User.IsInRole("Admin") || User.IsInRole("HR"))
+                                       @if (User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("Master"))
                                         {
                                             <a asp-action="Delete"
                                                asp-route-id="@task.Id"

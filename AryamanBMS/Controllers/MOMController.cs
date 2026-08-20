@@ -102,6 +102,11 @@ namespace AryamanBMS.Controllers
             ViewBag.Status = status;
             ViewBag.SearchText = searchText;
 
+            ViewBag.CanManageProject =    
+                User.IsInRole("Admin") ||
+                User.IsInRole("HR") ||
+                User.IsInRole("Master");
+
             return View(data);
         }
 
@@ -1036,6 +1041,14 @@ namespace AryamanBMS.Controllers
 
         private async Task<bool> CanEditMeetingAsync(ProjectMeetingModel meeting)
         {
+
+            if (User.IsInRole("Admin") ||
+                User.IsInRole("HR") ||
+                User.IsInRole("Master"))
+            {
+                return true;
+            }
+
             int? currentEmployeeId =
                 await _projectAccessService.GetCurrentEmployeeIdAsync(User);
 

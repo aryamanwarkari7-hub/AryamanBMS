@@ -1,37 +1,43 @@
 ﻿@model PagedListViewModel<LeaveApplicationModel>
 
 @{
-    ViewData["Title"] = User.IsInRole("Admin") || User.IsInRole("HR")
-    ? "Leave Applications"
-    : "My Leave Applications";
+    bool isAdminOrHr = User.IsInRole("Admin") || User.IsInRole("HR");
+    bool isMaster = User.IsInRole("Master");
+    bool isMineView = Context.Request.Query["mine"] == "true";
+
+    bool isManagementView =
+        !isMineView && (isAdminOrHr || isMaster);
+
+    ViewData["Title"] = isManagementView
+        ? "Leave Applications"
+        : "My Leave Applications";
 
     string selectedStatus =
         ViewBag.Status as string ?? "All";
-
-    bool isAdminOrHr = User.IsInRole("Admin") || User.IsInRole("HR");
-    bool isMineView = Context.Request.Query["mine"] == "true";
 }
 
 <div class="module-header">
 
     <div>
         <h1 class="module-title">
-            @(isAdminOrHr ? "Leave Applications" : "My Leave Applications")
+            @(isManagementView ? "Leave Applications" : "My Leave Applications")
         </h1>
 
         <p class="module-subtitle">
-            @(isAdminOrHr ? "Manage employee leave requests" : "View and manage your leave requests")
+            @(isManagementView ? "Manage employee leave requests" : "View and manage your leave requests")
         </p>
     </div>
 
-    <a asp-action="Create"
-       asp-route-mine="@(Context.Request.Query["mine"] == "true" ? "true" : null)"
-       class="btn-app btn-primary-app">
+    @if (!isMaster || isMineView)
+    {
+        <a asp-action="Create" asp-route-mine="@(Context.Request.Query["mine"] == "true" ? "true" : null)"
+           class="btn-app btn-primary-app">
 
-        <i class="bi bi-plus-lg"></i>
-        Apply Leave
+            <i class="bi bi-plus-lg"></i>
+            Apply Leave
 
-    </a>
+        </a>
+    }
 
 </div>
 
@@ -57,78 +63,66 @@
 
             <div class="filter-form-row">
 
-                <input type="text"
-                       name="searchText"
-                       value="@ViewBag.SearchText"
-                       class="app-input flex-grow-1"
-                       placeholder="@(isAdminOrHr ? "Application no, employee or leave type" : "Application no or leave type")"
+                <input type="text" name="searchText" value="@ViewBag.SearchText" class="app-input flex-grow-1"
+                       placeholder="@(isManagementView ? "Application no, employee or leave type" : "Application no or leave type")"
                        autocomplete="off" />
 
-                <select name="status"
-                        class="app-select">
+                <select name="status" class="app-select">
 
-                    <option value="All"
-                            selected="@(selectedStatus == "All"
-                                            ? "selected"
-                                            : null)">
+                    <option value="All" selected="@(selectedStatus == "All"
+                                                                        ? "selected"
+                                                                        : null)">
                         All Statuses
                     </option>
 
-                    <option value="Pending"
-                            selected="@(selectedStatus == "Pending"
-                                            ? "selected"
-                                            : null)">
+                    <option value="Pending" selected="@(selectedStatus == "Pending"
+                                                                        ? "selected"
+                                                                        : null)">
                         Pending
                     </option>
 
-                    <option value="Approved"
-                            selected="@(selectedStatus == "Approved"
-                                            ? "selected"
-                                            : null)">
+                    <option value="Approved" selected="@(selectedStatus == "Approved"
+                                                                        ? "selected"
+                                                                        : null)">
                         Approved
                     </option>
 
-                    <option value="Rejected"
-                            selected="@(selectedStatus == "Rejected"
-                                            ? "selected"
-                                            : null)">
+                    <option value="Rejected" selected="@(selectedStatus == "Rejected"
+                                                                        ? "selected"
+                                                                        : null)">
                         Rejected
                     </option>
 
-                    <option value="Cancelled"
-                            selected="@(selectedStatus == "Cancelled"
-                                            ? "selected"
-                                            : null)">
+                    <option value="Cancelled" selected="@(selectedStatus == "Cancelled"
+                                                                        ? "selected"
+                                                                        : null)">
                         Cancelled
                     </option>
 
                 </select>
 
-                <select name="sortBy"
-                        class="app-select">
+                <select name="sortBy" class="app-select">
                     <option value="AppliedOn" selected="@(ViewBag.SortBy == "AppliedOn")">Applied On</option>
-                    <option value="ApplicationNumber" selected="@(ViewBag.SortBy == "ApplicationNumber")">Application No</option>
+                    <option value="ApplicationNumber" selected="@(ViewBag.SortBy == "ApplicationNumber")">Application No
+                    </option>
                     <option value="Employee" selected="@(ViewBag.SortBy == "Employee")">Employee</option>
                     <option value="LeaveType" selected="@(ViewBag.SortBy == "LeaveType")">Leave Type</option>
                     <option value="FromDate" selected="@(ViewBag.SortBy == "FromDate")">From Date</option>
                     <option value="Status" selected="@(ViewBag.SortBy == "Status")">Status</option>
                 </select>
 
-                <select name="sortOrder"
-                        class="app-select">
+                <select name="sortOrder" class="app-select">
                     <option value="desc" selected="@(ViewBag.SortOrder == "desc")">Descending</option>
                     <option value="asc" selected="@(ViewBag.SortOrder == "asc")">Ascending</option>
                 </select>
 
                 <div class="filter-form-actions">
-                    <button type="submit"
-                            class="btn-app btn-primary-app">
+                    <button type="submit" class="btn-app btn-primary-app">
                         <i class="bi bi-search"></i>
                         Search
                     </button>
 
-                    <a asp-action="Index"
-                       asp-route-mine="@(isMineView ? "true" : null)"
+                    <a asp-action="Index" asp-route-mine="@(isMineView ? "true" : null)"
                        class="btn-app btn-secondary-app">
                         <i class="bi bi-arrow-counterclockwise"></i>
                         Reset
@@ -148,7 +142,7 @@
     <div class="card-header">
 
         <h5 class="card-title">
-            @(isAdminOrHr ? "Leave Application List" : "My Leave History")
+            @(isManagementView ? "Leave Application List" : "My Leave History")
         </h5>
 
     </div>
@@ -177,7 +171,7 @@
                         <tr>
                             <th>#</th>
                             <th>Application No</th>
-                            @if (isAdminOrHr)
+                            @if (isManagementView)
                             {
                                 <th>Employee</th>
                             }
@@ -196,7 +190,9 @@
 
                     <tbody>
 
-                        @{ int serialNumber = ((Model.Pagination.CurrentPage - 1) * Model.Pagination.PageSize) + 1; }
+                        @{
+                            int serialNumber = ((Model.Pagination.CurrentPage - 1) * Model.Pagination.PageSize) + 1;
+                        }
                         @foreach (var item in Model.Items)
                         {
                             <tr>
@@ -208,7 +204,7 @@
                                     </strong>
                                 </td>
 
-                                @if (isAdminOrHr)
+                                @if (isManagementView)
                                 {
                                     <td>
                                         @(item.Employee?.FullName ?? "-")
@@ -336,25 +332,19 @@
 
                                     <div class="table-actions justify-content-end">
 
-                                        <a asp-action="Details"
-                                           asp-route-id="@item.Id"
-                                           class="btn-app btn-primary-app btn-icon"
-                                           title="View details"
-                                           aria-label="View leave details">
+                                        <a asp-action="Details" asp-route-id="@item.Id" class="btn-app btn-primary-app btn-icon"
+                                           title="View details" aria-label="View leave details">
 
                                             <i class="bi bi-eye"></i>
 
                                         </a>
-                                        @if (!isAdminOrHr &&  item.Status == "Approved" &&
+                                        @if (!isManagementView && item.Status == "Approved" &&
                                                               item.CancellationStatus != "Pending" &&
                                                               item.CancellationStatus != "Approved")
                                         {
-                                            <button type="button"
-                                                    class="btn-app btn-secondary-app btn-icon"
-                                                    title="Request cancellation"
-                                                    title="Request cancellation"
-                                                    aria-label="Request cancellation"
-                                                    data-bs-toggle="modal"
+                                            <button type="button" class="btn-app btn-secondary-app btn-icon"
+                                                    title="Request cancellation" title="Request cancellation"
+                                                    aria-label="Request cancellation" data-bs-toggle="modal"
                                                     data-bs-target="#requestCancellationModal-@item.Id">
 
                                                 <i class="bi bi-arrow-counterclockwise"></i>
@@ -362,23 +352,17 @@
                                             </button>
                                         }
 
-                                        @if (item.Status == "Pending")
+                                        @if (item.Status == "Pending" && (!isMaster || isMineView))
                                         {
                                             @if (isAdminOrHr)
                                             {
-                                                <form asp-action="Approve"
-                                                      method="post"
-                                                      class="d-inline">
+                                                <form asp-action="Approve" method="post" class="d-inline">
 
                                                     @Html.AntiForgeryToken()
 
-                                                    <input type="hidden"
-                                                           name="id"
-                                                           value="@item.Id" />
+                                                    <input type="hidden" name="id" value="@item.Id" />
 
-                                                    <button type="submit"
-                                                            class="btn-app btn-success-app btn-icon"
-                                                            title="Approve"
+                                                    <button type="submit" class="btn-app btn-success-app btn-icon" title="Approve"
                                                             aria-label="Approve leave"
                                                             onclick="return confirm('Approve this leave application?');">
 
@@ -388,19 +372,13 @@
 
                                                 </form>
 
-                                                <form asp-action="Reject"
-                                                      method="post"
-                                                      class="d-inline">
+                                                <form asp-action="Reject" method="post" class="d-inline">
 
                                                     @Html.AntiForgeryToken()
 
-                                                    <input type="hidden"
-                                                           name="id"
-                                                           value="@item.Id" />
+                                                    <input type="hidden" name="id" value="@item.Id" />
 
-                                                    <button type="submit"
-                                                            class="btn-app btn-danger-app btn-icon"
-                                                            title="Reject"
+                                                    <button type="submit" class="btn-app btn-danger-app btn-icon" title="Reject"
                                                             aria-label="Reject leave"
                                                             onclick="return confirm('Reject this leave application?');">
 
@@ -411,19 +389,13 @@
                                                 </form>
                                             }
 
-                                            <form asp-action="Cancel"
-                                                  method="post"
-                                                  class="d-inline">
+                                            <form asp-action="Cancel" method="post" class="d-inline">
 
                                                 @Html.AntiForgeryToken()
 
-                                                <input type="hidden"
-                                                       name="id"
-                                                       value="@item.Id" />
+                                                <input type="hidden" name="id" value="@item.Id" />
 
-                                                <button type="submit"
-                                                        class="btn-app btn-secondary-app btn-icon"
-                                                        title="Cancel"
+                                                <button type="submit" class="btn-app btn-secondary-app btn-icon" title="Cancel"
                                                         aria-label="Cancel leave"
                                                         onclick="return confirm('Cancel this leave application?');">
 
@@ -434,26 +406,20 @@
                                             </form>
                                         }
 
-                                        @if ((isAdminOrHr) &&
-                                                                        item.Status == "Approved" &&
-                                                                        item.CancellationStatus == "Pending")
+                                        @if (isAdminOrHr && 
+                                             item.Status == "Approved" &&
+                                             item.CancellationStatus == "Pending")
                                         {
-                                            <button type="button"
-                                                    class="btn-app btn-success-app btn-icon"
-                                                    title="Approve cancellation"
-                                                    aria-label="Approve cancellation"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#approveCancellationModal-@item.Id">
+                                            <button type="button" class="btn-app btn-success-app btn-icon"
+                                                    title="Approve cancellation" aria-label="Approve cancellation"
+                                                    data-bs-toggle="modal" data-bs-target="#approveCancellationModal-@item.Id">
 
                                                 <i class="bi bi-check-circle"></i>
 
                                             </button>
 
-                                            <button type="button"
-                                                    class="btn-app btn-danger-app btn-icon"
-                                                    title="Reject cancellation"
-                                                    aria-label="Reject cancellation"
-                                                    data-bs-toggle="modal"
+                                            <button type="button" class="btn-app btn-danger-app btn-icon"
+                                                    title="Reject cancellation" aria-label="Reject cancellation" data-bs-toggle="modal"
                                                     data-bs-target="#rejectCancellationModal-@item.Id">
 
                                                 <i class="bi bi-x-circle"></i>
@@ -485,37 +451,28 @@
                         .OrderBy(x => x.LeaveDate)
                         .ToList() ?? new List<LeaveApplicationDayModel>();
 
-                    @if (item.Status == "Approved" &&
-                                item.CancellationStatus != "Pending" &&
-                                item.CancellationStatus != "Approved" &&
-                                !User.IsInRole("Admin") &&
-                                !User.IsInRole("HR"))
+                    @if (!isManagementView &&
+                       item.Status == "Approved" &&
+                       item.CancellationStatus != "Pending" &&
+                       item.CancellationStatus != "Approved")
                     {
-                        <div class="modal fade"
-                             id="requestCancellationModal-@item.Id"
-                             tabindex="-1"
-                             aria-hidden="true">
+                        <div class="modal fade" id="requestCancellationModal-@item.Id" tabindex="-1" aria-hidden="true">
 
                             <div class="modal-dialog modal-dialog-centered">
                                 <div class="modal-content app-card app-modal-card">
 
-                                    <form asp-action="RequestCancellation"
-                                          method="post">
+                                    <form asp-action="RequestCancellation" method="post">
 
                                         @Html.AntiForgeryToken()
 
-                                        <input type="hidden"
-                                               name="id"
-                                               value="@item.Id" />
+                                        <input type="hidden" name="id" value="@item.Id" />
 
                                         <div class="modal-header">
                                             <h5 class="modal-title">
                                                 Request Leave Cancellation
                                             </h5>
 
-                                            <button type="button"
-                                                    class="btn-close"
-                                                    data-bs-dismiss="modal">
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal">
                                             </button>
                                         </div>
 
@@ -538,12 +495,10 @@
                                                     @foreach (var leaveDay in activeLeaveDays)
                                                     {
                                                         <div class="col-12">
-                                                            <label class="app-card app-selectable-card p-3 d-flex align-items-center gap-3 mb-0">
-                                                                <input type="checkbox"
-                                                                       name="leaveDayIds"
-                                                                       value="@leaveDay.Id"
-                                                                       class="form-check-input mt-0"
-                                                                       checked />
+                                                            <label
+                                                                class="app-card app-selectable-card p-3 d-flex align-items-center gap-3 mb-0">
+                                                                <input type="checkbox" name="leaveDayIds" value="@leaveDay.Id"
+                                                                       class="form-check-input mt-0" checked />
 
                                                                 <div class="flex-grow-1">
                                                                     <div class="fw-semibold">
@@ -574,24 +529,18 @@
                                                 Cancellation Reason
                                             </label>
 
-                                            <textarea name="cancellationReason"
-                                          class="app-input"
-                                          rows="4"
-                                          maxlength="500"
-                                          required></textarea>
+                                            <textarea name="cancellationReason" class="app-input" rows="4" maxlength="500"
+                                                      required></textarea>
 
                                         </div>
 
                                         <div class="modal-footer">
 
-                                            <button type="button"
-                                                    class="btn-app btn-secondary-app"
-                                                    data-bs-dismiss="modal">
+                                            <button type="button" class="btn-app btn-secondary-app" data-bs-dismiss="modal">
                                                 Close
                                             </button>
 
-                                            <button type="submit"
-                                                    class="btn-app btn-primary-app">
+                                            <button type="submit" class="btn-app btn-primary-app">
                                                 Submit Request
                                             </button>
 
@@ -608,31 +557,23 @@
                                 item.Status == "Approved" &&
                                 item.CancellationStatus == "Pending")
                     {
-                        <div class="modal fade"
-                             id="approveCancellationModal-@item.Id"
-                             tabindex="-1"
-                             aria-hidden="true">
+                        <div class="modal fade" id="approveCancellationModal-@item.Id" tabindex="-1" aria-hidden="true">
 
                             <div class="modal-dialog modal-dialog-centered">
                                 <div class="modal-content app-card app-modal-card">
 
-                                    <form asp-action="ApproveCancellation"
-                                          method="post">
+                                    <form asp-action="ApproveCancellation" method="post">
 
                                         @Html.AntiForgeryToken()
 
-                                        <input type="hidden"
-                                               name="id"
-                                               value="@item.Id" />
+                                        <input type="hidden" name="id" value="@item.Id" />
 
                                         <div class="modal-header">
                                             <h5 class="modal-title">
                                                 Approve Cancellation
                                             </h5>
 
-                                            <button type="button"
-                                                    class="btn-close"
-                                                    data-bs-dismiss="modal">
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal">
                                             </button>
                                         </div>
 
@@ -696,23 +637,18 @@
                                                 Review Remarks
                                             </label>
 
-                                            <textarea name="cancellationRemarks"
-                                          class="app-input"
-                                          rows="3"
-                                          maxlength="500"></textarea>
+                                            <textarea name="cancellationRemarks" class="app-input" rows="3"
+                                                      maxlength="500"></textarea>
 
                                         </div>
 
                                         <div class="modal-footer">
 
-                                            <button type="button"
-                                                    class="btn-app btn-secondary-app"
-                                                    data-bs-dismiss="modal">
+                                            <button type="button" class="btn-app btn-secondary-app" data-bs-dismiss="modal">
                                                 Close
                                             </button>
 
-                                            <button type="submit"
-                                                    class="btn-app btn-success-app">
+                                            <button type="submit" class="btn-app btn-success-app">
                                                 Approve Cancellation
                                             </button>
 
@@ -724,31 +660,23 @@
                             </div>
                         </div>
 
-                        <div class="modal fade"
-                             id="rejectCancellationModal-@item.Id"
-                             tabindex="-1"
-                             aria-hidden="true">
+                        <div class="modal fade" id="rejectCancellationModal-@item.Id" tabindex="-1" aria-hidden="true">
 
                             <div class="modal-dialog modal-dialog-centered">
                                 <div class="modal-content app-card app-modal-card">
 
-                                    <form asp-action="RejectCancellation"
-                                          method="post">
+                                    <form asp-action="RejectCancellation" method="post">
 
                                         @Html.AntiForgeryToken()
 
-                                        <input type="hidden"
-                                               name="id"
-                                               value="@item.Id" />
+                                        <input type="hidden" name="id" value="@item.Id" />
 
                                         <div class="modal-header">
                                             <h5 class="modal-title">
                                                 Reject Cancellation
                                             </h5>
 
-                                            <button type="button"
-                                                    class="btn-close"
-                                                    data-bs-dismiss="modal">
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal">
                                             </button>
                                         </div>
 
@@ -812,24 +740,18 @@
                                                 Rejection Remarks
                                             </label>
 
-                                            <textarea name="cancellationRemarks"
-                                          class="app-input"
-                                          rows="3"
-                                          maxlength="500"
-                                          required></textarea>
+                                            <textarea name="cancellationRemarks" class="app-input" rows="3" maxlength="500"
+                                                      required></textarea>
 
                                         </div>
 
                                         <div class="modal-footer">
 
-                                            <button type="button"
-                                                    class="btn-app btn-secondary-app"
-                                                    data-bs-dismiss="modal">
+                                            <button type="button" class="btn-app btn-secondary-app" data-bs-dismiss="modal">
                                                 Close
                                             </button>
 
-                                            <button type="submit"
-                                                    class="btn-app btn-danger-app">
+                                            <button type="submit" class="btn-app btn-danger-app">
                                                 Reject Cancellation
                                             </button>
 
@@ -846,8 +768,7 @@
             </div>
         }
 
-        <partial name="_Pagination"
-                 model="Model.Pagination" />
+        <partial name="_Pagination" model="Model.Pagination" />
 
     </div>
 

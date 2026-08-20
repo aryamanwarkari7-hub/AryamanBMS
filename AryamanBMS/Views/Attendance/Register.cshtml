@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = "Attendance Register";
+
+    bool isMaster = User.IsInRole("Master");
 }
 
 <div class="module-header">
@@ -18,40 +20,40 @@
 
     <div class="d-flex flex-wrap gap-2">
 
-        <a asp-action="Create"
-           class="btn-app btn-primary-app">
+        @if (!isMaster)
+        {
+            <a asp-action="Create" class="btn-app btn-primary-app">
 
-            <i class="bi bi-plus-circle"></i>
-            Add Attendance
+                <i class="bi bi-plus-circle"></i>
+                Add Attendance
 
-        </a>
+            </a>
+        }
 
-        <a asp-action="Dashboard"
-           class="btn-app btn-secondary-app">
+        <a asp-action="Dashboard" class="btn-app btn-secondary-app">
 
             <i class="bi bi-grid"></i>
             Dashboard
 
         </a>
 
-        <a asp-action="Summary"
-           class="btn-app btn-secondary-app">
+        <a asp-action="Summary" class="btn-app btn-secondary-app">
 
             <i class="bi bi-bar-chart"></i>
             Attendance Summary
 
         </a>
 
-        <a asp-action="ExportExcel"
-           asp-route-searchText="@ViewBag.SearchText"
-           asp-route-fromDate="@ViewBag.FromDate"
-           asp-route-toDate="@ViewBag.ToDate"
-           class="btn-app btn-success-app">
+        @if (!isMaster)
+        {
+            <a asp-action="ExportExcel" asp-route-searchText="@ViewBag.SearchText" asp-route-fromDate="@ViewBag.FromDate"
+               asp-route-toDate="@ViewBag.ToDate" class="btn-app btn-success-app">
 
-            <i class="bi bi-file-earmark-excel"></i>
-            Export Excel
+                <i class="bi bi-file-earmark-excel"></i>
+                Export Excel
 
-        </a>
+            </a>
+        }
 
     </div>
 
@@ -61,8 +63,7 @@
 
     <div class="card-body">
 
-        <form asp-action="Register"
-              method="get">
+        <form asp-action="Register" method="get">
 
             <div class="filter-form-row">
 
@@ -71,12 +72,8 @@
                         Employee
                     </label>
 
-                    <input type="text"
-                           name="searchText"
-                           value="@ViewBag.SearchText"
-                           class="app-input w-100"
-                           placeholder="Employee Code / Name / Mobile / Email"
-                           autocomplete="off" />
+                    <input type="text" name="searchText" value="@ViewBag.SearchText" class="app-input w-100"
+                           placeholder="Employee Code / Name / Mobile / Email" autocomplete="off" />
                 </div>
 
                 <div>
@@ -84,10 +81,7 @@
                         From
                     </label>
 
-                    <input type="date"
-                           name="fromDate"
-                           value="@ViewBag.FromDate"
-                           class="app-input" />
+                    <input type="date" name="fromDate" value="@ViewBag.FromDate" class="app-input" />
                 </div>
 
                 <div>
@@ -95,10 +89,7 @@
                         To
                     </label>
 
-                    <input type="date"
-                           name="toDate"
-                           value="@ViewBag.ToDate"
-                           class="app-input" />
+                    <input type="date" name="toDate" value="@ViewBag.ToDate" class="app-input" />
                 </div>
 
                 <div>
@@ -107,7 +98,8 @@
                         <option value="AttendanceDate" selected="@(ViewBag.SortBy == "AttendanceDate")">Date</option>
                         <option value="Employee" selected="@(ViewBag.SortBy == "Employee")">Employee</option>
                         <option value="Status" selected="@(ViewBag.SortBy == "Status")">Status</option>
-                        <option value="AttendanceValue" selected="@(ViewBag.SortBy == "AttendanceValue")">Day Value</option>
+                        <option value="AttendanceValue" selected="@(ViewBag.SortBy == "AttendanceValue")">Day Value
+                        </option>
                     </select>
                 </div>
 
@@ -120,16 +112,14 @@
                 </div>
 
                 <div class="filter-form-actions">
-                    <button type="submit"
-                            class="btn-app btn-primary-app">
+                    <button type="submit" class="btn-app btn-primary-app">
 
                         <i class="bi bi-search"></i>
                         Search
 
                     </button>
 
-                    <a asp-action="Register"
-                       class="btn-app btn-secondary-app">
+                    <a asp-action="Register" class="btn-app btn-secondary-app">
 
                         <i class="bi bi-arrow-counterclockwise"></i>
                         Reset
@@ -193,7 +183,9 @@
 
                     <tbody>
 
-                        @{ int serialNumber = ((Model.Pagination.CurrentPage - 1) * Model.Pagination.PageSize) + 1; }
+                        @{
+                            int serialNumber = ((Model.Pagination.CurrentPage - 1) * Model.Pagination.PageSize) + 1;
+                        }
                         @foreach (var attendance in Model.Items)
                         {
                             <tr>
@@ -279,11 +271,12 @@
                                 </td>
 
                                 <td>
-                                    <span title="Check In: @(attendance.CheckInTime.HasValue
-                                                ? attendance.CheckInTime.Value.ToString("hh:mm tt")
-                                            : "-") | Check Out: @(attendance.CheckOutTime.HasValue
-                                                ? attendance.CheckOutTime.Value.ToString("hh:mm tt")
-                                            : "-")">
+                                    <span
+                                        title="Check In: @(attendance.CheckInTime.HasValue
+                                                                                                                                                                                                                    ? attendance.CheckInTime.Value.ToString("hh:mm tt")
+                                                                                                                                                                                                : "-") | Check Out: @(attendance.CheckOutTime.HasValue
+                                                                                                                                                                                                                    ? attendance.CheckOutTime.Value.ToString("hh:mm tt")
+                                                                                                                                                                                                : "-")">
                                         @attendance.WorkingHours.ToString("0.00") hrs
                                     </span>
                                 </td>
@@ -298,51 +291,46 @@
                                     {
                                         <div class="table-actions justify-content-end">
 
-                                            <a asp-action="Details"
-                                               asp-route-id="@attendance.Id"
-                                               class="btn-app btn-primary-app btn-icon"
-                                               title="View attendance"
+                                            <a asp-action="Details" asp-route-id="@attendance.Id"
+                                               class="btn-app btn-primary-app btn-icon" title="View attendance"
                                                aria-label="View attendance">
 
                                                 <i class="bi bi-eye"></i>
 
                                             </a>
 
-                                            <a asp-action="Edit"
-                                               asp-route-id="@attendance.Id"
-                                               class="btn-app btn-secondary-app btn-icon"
-                                               title="Edit attendance"
-                                               aria-label="Edit attendance">
+                                            @if (!isMaster)
+                                            {
+                                                <a asp-action="Edit" asp-route-id="@attendance.Id"
+                                                   class="btn-app btn-secondary-app btn-icon" title="Edit attendance"
+                                                   aria-label="Edit attendance">
 
-                                                <i class="bi bi-pencil"></i>
+                                                    <i class="bi bi-pencil"></i>
 
-                                            </a>
+                                                </a>
 
-                                            <a asp-action="Delete"
-                                               asp-route-id="@attendance.Id"
-                                               class="btn-app btn-danger-app btn-icon"
-                                               title="Delete attendance"
-                                               aria-label="Delete attendance">
+                                            
+                                                <a asp-action="Delete" asp-route-id="@attendance.Id"
+                                                   class="btn-app btn-danger-app btn-icon" title="Delete attendance"
+                                                   aria-label="Delete attendance">
 
-                                                <i class="bi bi-trash"></i>
+                                                    <i class="bi bi-trash"></i>
 
-                                            </a>
+                                                </a>
+                                            }
 
                                         </div>
                                     }
                                     else
                                     {
-                                        @if (attendance.Status == "M")
+                                        @if (attendance.Status == "M" && !isMaster)
                                         {
                                             <div class="table-actions justify-content-end">
 
-                                                <a asp-action="Create"
-                                                   asp-route-employeeId="@attendance.EmployeeId"
+                                                <a asp-action="Create" asp-route-employeeId="@attendance.EmployeeId"
                                                    asp-route-attendanceDate="@attendance.AttendanceDate.ToString("yyyy-MM-dd")"
-                                                   asp-route-status="A"
-                                                   class="btn-app btn-primary-app btn-icon"
-                                                   title="Mark attendance"
-                                                   aria-label="Mark attendance">
+                                                   asp-route-status="A" class="btn-app btn-primary-app btn-icon"
+                                                   title="Mark attendance" aria-label="Mark attendance">
 
                                                     <i class="bi bi-plus-circle"></i>
 
@@ -369,8 +357,7 @@
             </div>
         }
 
-        <partial name="_Pagination"
-                 model="Model.Pagination" />
+        <partial name="_Pagination" model="Model.Pagination" />
 
     </div>
 

@@ -2,6 +2,9 @@
 
 @{
     ViewData["Title"] = "Saturday Switcher";
+
+    bool isMaster = User.IsInRole("Master");
+
     string selectedStatus = ViewBag.Status as string ?? "All";
     string sortBy = ViewBag.SortBy as string ?? "OverrideDate";
     string sortOrder = ViewBag.SortOrder as string ?? "asc";
@@ -21,10 +24,13 @@
             Export Excel
         </a>
 
-        <a asp-action="Create" class="btn-app btn-primary-app">
-            <i class="bi bi-calendar2-plus"></i>
-            Add Schedule Change
-        </a>
+        @if (!isMaster)
+        {
+            <a asp-action="Create" class="btn-app btn-primary-app">
+                <i class="bi bi-calendar2-plus"></i>
+                Add Schedule Change
+            </a>
+        }
     </div>
 </div>
 
@@ -76,120 +82,122 @@
     </div>
     <div class="card-body">
 
-    @if (!Model.Any())
-    {
-        <div class="card-body">
-            <div class="app-alert-info">
-                No Saturday schedule changes have been created.
+        @if (!Model.Any())
+        {
+            <div class="card-body">
+                <div class="app-alert-info">
+                    No Saturday schedule changes have been created.
+                </div>
             </div>
-        </div>
-    }
-    else
-    {
-        <div class="table-responsive">
-            <table class="table app-table">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Date</th>
-                        <th>Day</th>
-                        <th>Schedule</th>
-                        <th>Reason</th>
-                        <th>Status</th>
-                        <th class="text-center">Actions</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @{ int serialNumber = 1; }
-                    @foreach (var item in Model)
-                    {
-                        var scheduleText =
-                        item.OverrideType == "Working Day"
-                        ? "Working Saturday"
-                        : item.OverrideType;
-
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table app-table">
+                    <thead>
                         <tr>
-                            <td>@serialNumber</td>
-                            <td>
-                                @item.OverrideDate.ToString("dd-MMM-yyyy")
-                            </td>
-
-                            <td>
-                                @item.OverrideDate.ToString("dddd")
-                            </td>
-
-                            <td>
-                                @if (item.OverrideType == "Working Day")
-                                {
-                                    <span class="status-badge status-approved">
-                                        <i class="bi bi-check-circle"></i>
-                                        @scheduleText
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="status-badge status-rejected">
-                                        <i class="bi bi-calendar-x"></i>
-                                        @scheduleText
-                                    </span>
-                                }
-                        </td>
-
-                        <td>
-                            @(string.IsNullOrWhiteSpace(item.Reason)
-                                                    ? "-"
-                                                    : item.Reason)
-                    </td>
-
-                            <td>
-                        @if (item.IsActive)
-                                {
-                                    <span class="badge-success status-badge status-approved">
-                                        Active
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="badge-danger status-badge status-cancelled">
-                                        Inactive
-                                    </span>
-                                }
-                            </td>
-
-                            <td class="text-center">
-                                <div class="table-actions">
-                                <a asp-action="Edit"
-                                   asp-route-id="@item.Id"
-                                   class="btn-app btn-secondary-app btn-icon"
-                                   title="Edit schedule change">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-
-                                @if (item.IsActive)
-                                {
-                                    <form asp-action="Deactivate"
-                                          asp-route-id="@item.Id"
-                                          method="post"
-                                          class="d-inline"
-                                          onsubmit="return confirm('Deactivate this schedule change?');">
-                                        @Html.AntiForgeryToken()
-
-                                        <button type="submit"
-                                                class="btn-app btn-danger-app btn-icon"
-                                                title="Deactivate schedule change">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
-                                }
-                                    </div>
-                            </td>
+                            <th>#</th>
+                            <th>Date</th>
+                            <th>Day</th>
+                            <th>Schedule</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            @if (!isMaster)
+                            {
+                                <th class="text-center">Actions</th>
+                            }
                         </tr>
-                        serialNumber++;
-                    }
-                </tbody>
-            </table>
-        </div>
-    }
+                    </thead>
+
+                    <tbody>
+                        @{
+                            int serialNumber = 1;
+                        }
+                        @foreach (var item in Model)
+                        {
+                            var scheduleText =
+                            item.OverrideType == "Working Day"
+                            ? "Working Saturday"
+                            : item.OverrideType;
+
+                            <tr>
+                                <td>@serialNumber</td>
+                                <td>
+                                    @item.OverrideDate.ToString("dd-MMM-yyyy")
+                                </td>
+
+                                <td>
+                                    @item.OverrideDate.ToString("dddd")
+                                </td>
+
+                                <td>
+                                    @if (item.OverrideType == "Working Day")
+                                    {
+                                        <span class="status-badge status-approved">
+                                            <i class="bi bi-check-circle"></i>
+                                            @scheduleText
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-badge status-rejected">
+                                            <i class="bi bi-calendar-x"></i>
+                                            @scheduleText
+                                        </span>
+                                    }
+                                </td>
+
+                                <td>
+                                    @(string.IsNullOrWhiteSpace(item.Reason)
+                                                            ? "-"
+                                                            : item.Reason)
+                                </td>
+
+                                <td>
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge-success status-badge status-approved">
+                                            Active
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-danger status-badge status-cancelled">
+                                            Inactive
+                                        </span>
+                                    }
+                                </td>
+
+                                @if (!isMaster)
+                                {
+                                    <td class="text-center">
+                                        <div class="table-actions">
+                                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn-app btn-secondary-app btn-icon"
+                                               title="Edit schedule change">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+
+                                            @if (item.IsActive)
+                                            {
+                                                <form asp-action="Deactivate" asp-route-id="@item.Id" method="post" class="d-inline"
+                                                      onsubmit="return confirm('Deactivate this schedule change?');">
+                                                    @Html.AntiForgeryToken()
+
+                                                    <button type="submit" class="btn-app btn-danger-app btn-icon"
+                                                            title="Deactivate schedule change">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </td>
+                                }
+                            </tr>
+                            serialNumber++;
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
     </div>
 </div>

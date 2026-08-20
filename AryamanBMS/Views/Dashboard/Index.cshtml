@@ -3,6 +3,8 @@
 @{
     ViewData["Title"] = "Dashboard";
 
+    var isMaster = User.IsInRole("Master");
+
     string P(decimal value) =>
         value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
 

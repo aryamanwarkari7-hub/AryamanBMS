@@ -1,5 +1,9 @@
 ﻿@model PagedListViewModel<EmployeeModel>
 
+@{
+    var isMaster = User.IsInRole("Master");
+}
+
 <div class="module-header">
 
     <div>
@@ -8,19 +12,18 @@
     </div>
 
     <div class="d-flex flex-row gap-2">
-         <a asp-action="Create"
-            class="btn-app btn-primary-app">
-             <i class="bi bi-plus-lg"></i>
-             Add Employee
-         </a>
-         
-         <a asp-action="Export"
-            class="btn-app btn-success-app">
-         
-             <i class="bi bi-file-earmark-excel"></i>
-             Export
-         
-         </a>
+        @if (!isMaster)
+        {
+            <a asp-action="Create" class="btn-app btn-primary-app">
+                <i class="bi bi-plus-lg"></i>
+                Add Employee
+            </a>
+
+            <a asp-action="Export" class="btn-app btn-success-app">
+                <i class="bi bi-file-earmark-excel"></i>
+                Export
+            </a>
+        }
     </div>
 
 </div>
@@ -34,20 +37,14 @@
 
         <div class="card-body">
 
-            <form asp-action="Index"
-                  method="get">
+            <form asp-action="Index" method="get">
 
                 <div class="filter-form-row">
 
-                    <input type="text"
-                           name="searchText"
-                           value="@ViewBag.SearchText"
-
-                           class="app-input flex-grow-1"
+                    <input type="text" name="searchText" value="@ViewBag.SearchText" class="app-input flex-grow-1"
                            placeholder="Search by code, name, mobile or email" />
 
-                    <select name="statusFilter"
-                            class="app-select">
+                    <select name="statusFilter" class="app-select">
 
                         @if ((string)ViewBag.StatusFilter == "Active")
                         {
@@ -109,14 +106,12 @@
                     </select>
 
                     <div class="filter-form-actions">
-                        <button type="submit"
-                                class="btn-app btn-primary-app">
+                        <button type="submit" class="btn-app btn-primary-app">
                             <i class="bi bi-search"></i>
                             Search
                         </button>
 
-                        <a asp-action="Index"
-                           class="btn-app btn-secondary-app">
+                        <a asp-action="Index" class="btn-app btn-secondary-app">
                             Reset
                         </a>
                     </div>
@@ -219,23 +214,23 @@
                                 <td>
                                     <div class="table-actions">
 
-                                        <a asp-action="Details"
-                                           asp-route-id="@employee.Id"
+                                        <a asp-action="Details" asp-route-id="@employee.Id"
                                            class="btn-app btn-primary-app btn-icon">
                                             <i class="bi bi-eye"></i>
                                         </a>
 
-                                        <a asp-action="Edit"
-                                           asp-route-id="@employee.Id"
-                                           class="btn-app btn-secondary-app btn-icon">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
+                                        @if (!isMaster)
+                                        {
+                                            <a asp-action="Edit" asp-route-id="@employee.Id"
+                                               class="btn-app btn-secondary-app btn-icon">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
 
-                                        <a asp-action="Delete"
-                                           asp-route-id="@employee.Id"
-                                           class="btn-app btn-danger-app btn-icon">
-                                            <i class="bi bi-trash"></i>
-                                        </a>
+                                            <a asp-action="Delete" asp-route-id="@employee.Id"
+                                               class="btn-app btn-danger-app btn-icon">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        }
 
                                     </div>
                                 </td>
@@ -249,8 +244,7 @@
             }
         </div>
 
-        <partial name="_Pagination"
-                 model="Model.Pagination" />
+        <partial name="_Pagination" model="Model.Pagination" />
 
     </div>
 
