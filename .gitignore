@@ -330,6 +330,7 @@ secrets.json
 # =========================================================
 
 DatabaseBackups/
+*.sql
 *.dump
 *.bak
 
@@ -339,12 +340,14 @@ DatabaseBackups/
 
 AryamanBMS/App_Data/*
 !AryamanBMS/App_Data/.gitkeep
+AryamanBMS/wwwroot/uploads/
 
 # =========================================================
 # Public Generated HR Documents
 # =========================================================
 
 AryamanBMS/wwwroot/documents/letters/
+
 
 # =========================================================
 # Local Archives / Temporary Project Copies
