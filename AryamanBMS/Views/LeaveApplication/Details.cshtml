@@ -32,6 +32,18 @@
             _ => "badge-secondary"
         };
     }
+
+    bool isCompOff =
+    string.Equals(
+        Model.LeaveType?.LeaveCode,
+        "COMP",
+        StringComparison.OrdinalIgnoreCase);
+
+    bool isBirthdayLeave =
+        string.Equals(
+            Model.LeaveType?.LeaveCode,
+            "BDL",
+            StringComparison.OrdinalIgnoreCase);
 }
 
 <div class="module-header">
@@ -211,12 +223,53 @@
 
                     @if (paidLeaveSnapshot != null)
                     {
-                        <div class="app-alert-info mt-3">
-                            <strong>Approval Split:</strong>
-                            FY @paidLeaveSnapshot.FinancialYearLabel |
-                            Available: @paidLeaveSnapshot.PaidLeaveBalance.ToString("0.##") |
-                            Paid: @paidLeaveSnapshot.PaidDaysForRequest.ToString("0.##") |
-                            Unpaid: @paidLeaveSnapshot.UnpaidDaysForRequest.ToString("0.##")
+                        <div class="leave-split-preview is-success mt-3">
+                            <div class="leave-split-preview-icon">
+                                <i class="bi bi-calculator"></i>
+                            </div>
+
+                            <div>
+                                <strong>Paid / unpaid split</strong>
+
+                                <div class="leave-split-preview-values">
+
+                                    <span class="leave-split-chip leave-split-chip-paid">
+                                        <strong>
+                                            @Model.PaidDays.ToString("0.##")
+                                        </strong>
+                                        <small>Paid day(s)</small>
+                                    </span>
+
+                                    <span class="leave-split-chip leave-split-chip-unpaid">
+                                        <strong>
+                                            @Model.UnpaidDays.ToString("0.##")
+                                        </strong>
+                                        <small>Unpaid day(s)</small>
+                                    </span>
+
+                                </div>
+
+                                @if (isCompOff)
+                                {
+                                    <span class="leave-split-preview-note">
+                                        Comp Off is paid leave and does not reduce the regular paid leave balance.
+                                    </span>
+                                }
+                                else if (isBirthdayLeave)
+                                {
+                                    <span class="leave-split-preview-note">
+                                        Birthday leave does not reduce regular paid leave balance.
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="leave-split-preview-note">
+                                        FY @paidLeaveSnapshot.FinancialYearLabel
+                                        · Available before this request:
+                                        @paidLeaveSnapshot.PaidLeaveBalance.ToString("0.##") day(s)
+                                    </span>
+                                }
+                            </div>
                         </div>
                     }
 

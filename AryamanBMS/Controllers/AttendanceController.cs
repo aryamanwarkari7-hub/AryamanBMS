@@ -322,24 +322,44 @@ namespace AryamanBMS.Controllers
                         "Select Holiday or Weekly Off.");
                 }
 
-                var actualCalendarStatus =
-                    await GetCalendarStatusAsync(
-                        model.AttendanceDate.Date);
+                var dayStatus =
+    await _workingDayService.GetDayStatusAsync(
+        model.AttendanceDate.Date);
 
-                if (actualCalendarStatus != "H" &&
-                    actualCalendarStatus != "WO")
+                bool isHoliday =
+                    string.Equals(
+                        dayStatus,
+                        "Holiday",
+                        StringComparison.OrdinalIgnoreCase);
+
+                bool isWeeklyOff =
+                    string.Equals(
+                        dayStatus,
+                        "WeeklyOff",
+                        StringComparison.OrdinalIgnoreCase);
+
+                if (!isHoliday && !isWeeklyOff)
                 {
                     ModelState.AddModelError(
                         "OffDayType",
                         "The selected date is not a Holiday or Weekly Off.");
                 }
-                else if (actualCalendarStatus != model.OffDayType)
+                else
                 {
-                    ModelState.AddModelError(
-                        "OffDayType",
-                        actualCalendarStatus == "H"
-                            ? "The selected date is a Holiday. Select Holiday as the Off-Day Type."
-                            : "The selected date is a Weekly Off. Select Weekly Off as the Off-Day Type.");
+                    string expectedOffDayType =
+                        isHoliday ? "H" : "WO";
+
+                    if (!string.Equals(
+                            model.OffDayType,
+                            expectedOffDayType,
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        ModelState.AddModelError(
+                            "OffDayType",
+                            isHoliday
+                                ? "The selected date is a Holiday. Select Holiday as the Off-Day Type."
+                                : "The selected date is a Weekly Off. Select Weekly Off as the Off-Day Type.");
+                    }
                 }
 
                 if (!model.CheckInTime.HasValue)
