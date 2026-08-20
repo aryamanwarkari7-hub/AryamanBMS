@@ -1,12 +1,13 @@
-﻿using AryamanBMS.Models;
+﻿using AryamanBMS.Data;
+using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
 using AryamanBMS.ViewModels;
+using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using AryamanBMS.Data;
 
 namespace AryamanBMS.Controllers
 {
@@ -21,6 +22,11 @@ namespace AryamanBMS.Controllers
         private readonly INotificationService _notificationService;
         private readonly ILogger<AccountController> _logger;
         private readonly ILoginHistoryService _loginHistoryService;
+
+        private const string DeviceIdCookieName = "AryamanBMS.DeviceId";
+
+        private const int DeviceIdCookieDays = 365;
+        private readonly IPasswordChangeLogService _passwordChangeLogService;
         private readonly ApplicationDbContext _context;
 
         public AccountController(
@@ -32,6 +38,7 @@ namespace AryamanBMS.Controllers
             INotificationService notificationService,
             ILogger<AccountController> logger,
             ILoginHistoryService loginHistoryService,
+            IPasswordChangeLogService passwordChangeLogService,
             ApplicationDbContext context)
         {
             _signInManager = signInManager;
@@ -42,6 +49,7 @@ namespace AryamanBMS.Controllers
             _notificationService = notificationService;
             _logger = logger;
             _loginHistoryService = loginHistoryService;
+            _passwordChangeLogService = passwordChangeLogService;
             _context = context;
         }
 
@@ -716,10 +724,18 @@ namespace AryamanBMS.Controllers
 
             if (result.Succeeded)
             {
-                // 3. Clear any lockout restrictions if the user was locked out due to prior failed log-ins
+                // Clear any lockout restrictions caused by previous failed logins.
                 await _userManager.ResetAccessFailedCountAsync(user);
 
-                TempData["Success"] = "Your password has been successfully reset. Please log in with your new credentials.";
+                // Record the password reset event.
+                await LogPasswordChangeAsync(
+                    user,
+                    null,
+                    "PasswordReset");
+
+                TempData["Success"] =
+                    "Your password has been successfully reset. Please log in with your new credentials.";
+
                 return RedirectToAction(nameof(Login));
             }
 
@@ -1045,6 +1061,35 @@ namespace AryamanBMS.Controllers
                 dateOfBirth.Day == today.Day;
         }
 
+        private string GetOrCreateDeviceId()
+        {
+            if (Request.Cookies.TryGetValue(
+                DeviceIdCookieName,
+                out string? existingDeviceId) &&
+                !string.IsNullOrWhiteSpace(existingDeviceId))
+            {
+                return existingDeviceId;
+            }
+
+            string deviceId =
+                $"DEV-{Guid.NewGuid():N}";
+
+            Response.Cookies.Append(
+                DeviceIdCookieName,
+                deviceId,
+                new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = Request.IsHttps,
+                    SameSite = SameSiteMode.Lax,
+                    Expires = DateTimeOffset.UtcNow
+                        .AddDays(DeviceIdCookieDays),
+                    IsEssential = true
+                });
+
+            return deviceId;
+        }
+
         private async Task RecordLoginHistorySafeAsync(
             string attemptedUserName,
             string eventType,
@@ -1063,19 +1108,22 @@ namespace AryamanBMS.Controllers
                 string userAgent =
                     Request.Headers.UserAgent.ToString();
 
+                string deviceId = GetOrCreateDeviceId();
+
                 if (userAgent.Length > 500)
                 {
                     userAgent = userAgent[..500];
                 }
 
                 await _loginHistoryService.RecordAsync(
-                    attemptedUserName: attemptedUserName,
-                    eventType: eventType,
-                    isSuccessful: isSuccessful,
-                    userId: userId,
-                    failureReason: failureReason,
-                    ipAddress: ipAddress,
-                    userAgent: userAgent);
+     attemptedUserName: attemptedUserName,
+     eventType: eventType,
+     isSuccessful: isSuccessful,
+     userId: userId,
+     failureReason: failureReason,
+     ipAddress: ipAddress,
+     userAgent: userAgent,
+     deviceId: deviceId);
             }
             catch (Exception ex)
             {
@@ -1091,20 +1139,15 @@ namespace AryamanBMS.Controllers
     ApplicationUserModel? changedByUser,
     string changeType)
         {
-            _context.PasswordChangeLogs.Add(new PasswordChangeLogModel
-            {
-                UserId = targetUser.Id,
-                UserName = targetUser.UserName,
-                Email = targetUser.Email,
-                ChangedByUserId = changedByUser?.Id,
-                ChangedByUserName = changedByUser?.UserName,
-                ChangeType = changeType,
-                ChangedOn = DateTime.Now,
-                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
-                UserAgent = Request.Headers.UserAgent.ToString()
-            });
-
-            await _context.SaveChangesAsync();
+            await _passwordChangeLogService.RecordAsync(
+                userId: targetUser.Id,
+                userName: targetUser.UserName,
+                email: targetUser.Email,
+                changedByUserId: changedByUser?.Id,
+                changedByUserName: changedByUser?.UserName,
+                changeType: changeType,
+                ipAddress: HttpContext.Connection.RemoteIpAddress?.ToString(),
+                userAgent: Request.Headers.UserAgent.ToString());
         }
 
         #endregion

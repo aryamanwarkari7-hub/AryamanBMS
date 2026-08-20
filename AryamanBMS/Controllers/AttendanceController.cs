@@ -1,6 +1,7 @@
-using AryamanBMS.Extensions;
 using AryamanBMS.Data;
+using AryamanBMS.Extensions;
 using AryamanBMS.Models;
+using AryamanBMS.Repositories.Implementations;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interface;
 using AryamanBMS.Services.Interfaces;
@@ -22,6 +23,8 @@ namespace AryamanBMS.Controllers
         private readonly IEmployeeRepository _employeeRepository;
         private readonly UserManager<ApplicationUserModel> _userManager;
         private readonly ILeaveApplicationRepository _leaveApplicationRepository;
+
+        private readonly IOffDayWorkRequestRepository    _offDayWorkRequestRepository;
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
         private readonly INotificationService _notificationService;
@@ -36,6 +39,7 @@ namespace AryamanBMS.Controllers
     IAttendanceRepository attendanceRepository,
     IEmployeeRepository employeeRepository,
     ILeaveApplicationRepository leaveApplicationRepository,
+    IOffDayWorkRequestRepository offDayWorkRequestRepository,
     UserManager<ApplicationUserModel> userManager,
     ISalaryAttendanceSummaryService salaryAttendanceSummaryService,
     ApplicationDbContext context,
@@ -46,6 +50,7 @@ namespace AryamanBMS.Controllers
             _attendanceRepository = attendanceRepository;
             _employeeRepository = employeeRepository;
             _leaveApplicationRepository = leaveApplicationRepository;
+            _offDayWorkRequestRepository =  offDayWorkRequestRepository;
             _userManager = userManager;
             _salaryAttendanceSummaryService = salaryAttendanceSummaryService;
             _context = context;
@@ -244,9 +249,9 @@ namespace AryamanBMS.Controllers
 
         [Authorize(Roles = "Admin,HR,Master")]
         public IActionResult Create(
-            int? employeeId,
-            DateTime? attendanceDate,
-            string? status)
+    int? employeeId,
+    DateTime? attendanceDate,
+    string? status)
         {
             ViewBag.Employees = _employeeRepository.Employees
                 .Where(e => e.IsActive)
@@ -260,7 +265,10 @@ namespace AryamanBMS.Controllers
                 Status = string.IsNullOrWhiteSpace(status)
                     ? "P"
                     : status.Trim(),
-                AttendanceValue = 1m
+                AttendanceValue = 1m,
+
+                IsOffDayWork = false,
+                OffDayType = null
             };
 
             return View(model);
@@ -270,7 +278,7 @@ namespace AryamanBMS.Controllers
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> Create(
-            AttendanceModel model)
+    AttendanceModel model)
         {
             model.AttendanceValue =
                 NormalizeAttendanceValue(model.AttendanceValue);
@@ -301,6 +309,72 @@ namespace AryamanBMS.Controllers
                     "Attendance already exists for selected employee and date.");
             }
 
+            /*
+             * Off-Day Work validation
+             */
+            if (model.IsOffDayWork)
+            {
+                if (model.OffDayType != "H" &&
+                    model.OffDayType != "WO")
+                {
+                    ModelState.AddModelError(
+                        "OffDayType",
+                        "Select Holiday or Weekly Off.");
+                }
+
+                var actualCalendarStatus =
+                    await GetCalendarStatusAsync(
+                        model.AttendanceDate.Date);
+
+                if (actualCalendarStatus != "H" &&
+                    actualCalendarStatus != "WO")
+                {
+                    ModelState.AddModelError(
+                        "OffDayType",
+                        "The selected date is not a Holiday or Weekly Off.");
+                }
+                else if (actualCalendarStatus != model.OffDayType)
+                {
+                    ModelState.AddModelError(
+                        "OffDayType",
+                        actualCalendarStatus == "H"
+                            ? "The selected date is a Holiday. Select Holiday as the Off-Day Type."
+                            : "The selected date is a Weekly Off. Select Weekly Off as the Off-Day Type.");
+                }
+
+                if (!model.CheckInTime.HasValue)
+                {
+                    ModelState.AddModelError(
+                        "CheckInTime",
+                        "Check-in time is required for off-day work.");
+                }
+
+                if (!model.CheckOutTime.HasValue)
+                {
+                    ModelState.AddModelError(
+                        "CheckOutTime",
+                        "Check-out time is required for off-day work.");
+                }
+
+                if (model.CheckInTime.HasValue &&
+                    model.CheckOutTime.HasValue &&
+                    model.CheckOutTime <= model.CheckInTime)
+                {
+                    ModelState.AddModelError(
+                        "CheckOutTime",
+                        "Check-out time must be later than check-in time.");
+                }
+
+                model.Status = "P";
+                model.AttendanceValue = 1m;
+            }
+            else
+            {
+                model.OffDayType = null;
+                model.CheckInTime = null;
+                model.CheckOutTime = null;
+            }
+
             if (ModelState.IsValid)
             {
                 model.CreatedOn = DateTime.Now;
@@ -317,7 +391,9 @@ namespace AryamanBMS.Controllers
                     "ManualAttendanceCreated");
 
                 TempData["Success"] =
-                    "Attendance created successfully.";
+                    model.IsOffDayWork
+                        ? "Off-day work attendance registered successfully."
+                        : "Attendance created successfully.";
 
                 return RedirectToAction(nameof(Register));
             }
@@ -364,16 +440,29 @@ namespace AryamanBMS.Controllers
 
             var calendarStatus = await GetCalendarStatusAsync(DateTime.Today);
 
-            if (calendarStatus == "H")
-            {
-                TempData["Error"] = "Today is configured as an office holiday. Attendance is not required.";
-                return RedirectToAction(nameof(Index));
-            }
+            bool isOffDay =
+              calendarStatus == "H" ||
+              calendarStatus == "WO";
 
-            if (calendarStatus == "WO")
+            if (isOffDay)
             {
-                TempData["Error"] = "Today is configured as a weekly off. Attendance is not required.";
-                return RedirectToAction(nameof(Index));
+                var approvedOffDayRequest =
+                    await _offDayWorkRequestRepository.Requests
+                        .AsNoTracking()
+                        .AnyAsync(x =>
+                            x.EmployeeId == employee.Id &&
+                            x.WorkDate.Date == DateTime.Today &&
+                            x.Status == "Approved");
+
+                if (!approvedOffDayRequest)
+                {
+                    TempData["Error"] =
+                        calendarStatus == "H"
+                            ? "Today is a Holiday. Attendance cannot be marked without approved off-day work permission."
+                            : "Today is a Weekly Off. Attendance cannot be marked without approved off-day work permission.";
+
+                    return RedirectToAction(nameof(Index));
+                }
             }
 
             var approvedLeaveToday =
@@ -432,6 +521,8 @@ namespace AryamanBMS.Controllers
                 AttendanceValue = 1m,
                 CheckInTime = DateTime.Now,
                 LocationType = locationType,
+                IsOffDayWork = isOffDay,
+                OffDayType = isOffDay ? calendarStatus : null,
                 CreatedOn = DateTime.Now
             };
 
@@ -464,16 +555,29 @@ namespace AryamanBMS.Controllers
 
             var calendarStatus = await GetCalendarStatusAsync(DateTime.Today);
 
-            if (calendarStatus == "H")
-            {
-                TempData["Error"] = "Today is configured as an office holiday. Check-out is not required.";
-                return RedirectToAction(nameof(Index));
-            }
+            bool isOffDay =
+    calendarStatus == "H" ||
+    calendarStatus == "WO";
 
-            if (calendarStatus == "WO")
+            if (isOffDay)
             {
-                TempData["Error"] = "Today is configured as a weekly off. Check-out is not required.";
-                return RedirectToAction(nameof(Index));
+                var approvedOffDayRequest =
+                    await _offDayWorkRequestRepository.Requests
+                        .AsNoTracking()
+                        .AnyAsync(x =>
+                            x.EmployeeId == employee.Id &&
+                            x.WorkDate.Date == DateTime.Today &&
+                            x.Status == "Approved");
+
+                if (!approvedOffDayRequest)
+                {
+                    TempData["Error"] =
+                        calendarStatus == "H"
+                            ? "Today is a Holiday. Check-out is not available without approved off-day work permission."
+                            : "Today is a Weekly Off. Check-out is not available without approved off-day work permission.";
+
+                    return RedirectToAction(nameof(Index));
+                }
             }
 
             var approvedLeaveToday =
@@ -741,11 +845,23 @@ namespace AryamanBMS.Controllers
 
             var attendance =
                 await _attendanceRepository
-                .GetByIdAsync(model.Id);
+                    .GetByIdAsync(model.Id);
 
             if (attendance == null)
             {
                 return NotFound();
+            }
+
+            // Validate check-in / check-out sequence.
+            if (model.CheckInTime.HasValue &&
+                model.CheckOutTime.HasValue &&
+                model.CheckOutTime.Value < model.CheckInTime.Value)
+            {
+                ModelState.AddModelError(
+                    "CheckOutTime",
+                    "Check Out Time cannot be earlier than Check In Time.");
+
+                return View(model);
             }
 
             attendance.AttendanceDate =
@@ -757,15 +873,22 @@ namespace AryamanBMS.Controllers
             attendance.AttendanceValue =
                 NormalizeAttendanceValue(model.AttendanceValue);
 
+            attendance.CheckInTime =
+                model.CheckInTime;
+
+            attendance.CheckOutTime =
+                model.CheckOutTime;
+
             attendance.Remarks =
                 model.Remarks;
 
             bool duplicateExists =
-              await _attendanceRepository.Attendances
-              .AnyAsync(a =>
-              a.EmployeeId == attendance.EmployeeId &&
-              a.AttendanceDate.Date == model.AttendanceDate.Date &&
-              a.Id != model.Id);
+                await _attendanceRepository.Attendances
+                    .AnyAsync(a =>
+                        a.EmployeeId == attendance.EmployeeId &&
+                        a.AttendanceDate.Date ==
+                            model.AttendanceDate.Date &&
+                        a.Id != model.Id);
 
             if (duplicateExists)
             {

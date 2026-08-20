@@ -3,7 +3,9 @@
 @{
     ViewData["Title"] = "Apply Leave";
     var paidLeaveSnapshot =
-        ViewBag.PaidLeaveSnapshot as AryamanBMS.ViewModels.PaidLeaveBalanceSnapshotViewModel;
+           ViewBag.PaidLeaveSnapshot as AryamanBMS.ViewModels.PaidLeaveBalanceSnapshotViewModel;
+    var availableCompOffDays =
+           Convert.ToDecimal(ViewBag.AvailableCompOffDays ?? 0m);
 }
 
 
@@ -83,7 +85,45 @@
                         @paidLeaveSnapshot.BirthdayLeave.Entitlement.ToString("0.##")
                     </strong>
                 </div>
+
+                
             </div>
+        </div>
+
+        <div class="comp-off-apply-summary">
+
+            <div class="comp-off-apply-summary-heading">
+
+                <div class="comp-off-apply-summary-icon">
+                    <i class="bi bi-calendar2-plus"></i>
+                </div>
+
+                <div>
+                    <div class="comp-off-apply-summary-title">
+                        Comp Off
+                    </div>
+
+                    <div class="comp-off-apply-summary-subtitle">
+                        Available balance for compensatory leave
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="comp-off-apply-summary-value">
+
+                <span>Available</span>
+
+                <strong>
+                    @availableCompOffDays.ToString("0.##")
+                </strong>
+
+                <small>
+                    day@(availableCompOffDays == 1 ? "" : "s")
+                </small>
+
+            </div>
+
         </div>
 
         <div class="leave-split-preview is-empty" id="leaveSplitPreview">

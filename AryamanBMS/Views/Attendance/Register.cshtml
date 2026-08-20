@@ -279,8 +279,13 @@
                                 </td>
 
                                 <td>
-                                    @attendance.WorkingHours.ToString("0.00")
-                                    hrs
+                                    <span title="Check In: @(attendance.CheckInTime.HasValue
+                                                ? attendance.CheckInTime.Value.ToString("hh:mm tt")
+                                            : "-") | Check Out: @(attendance.CheckOutTime.HasValue
+                                                ? attendance.CheckOutTime.Value.ToString("hh:mm tt")
+                                            : "-")">
+                                        @attendance.WorkingHours.ToString("0.00") hrs
+                                    </span>
                                 </td>
 
                                 <td>

@@ -739,3 +739,29 @@
         line-height: 1.12;
     }
 }
+
+
+/* ==========================================
+   LOGIN HISTORY
+========================================== */
+
+.login-user-agent-cell {
+    max-width: 300px;
+    min-width: 250px;
+}
+
+.login-user-agent,
+.login-device-id {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.login-user-agent {
+    max-width: 260px;
+}
+
+.login-device-id {
+    max-width: 120px;
+}

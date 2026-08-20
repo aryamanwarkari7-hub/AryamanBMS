@@ -20,12 +20,19 @@ namespace AryamanBMS.Models
 
         public string? LocationType { get; set; }
 
+        // Off-Day work access
+        public bool IsOffDayWork { get; set; } = false;
+
+        public string? OffDayType { get; set; }
+
+
         public string? Remarks { get; set; }
 
         public DateTime CreatedOn { get; set; }
 
         public EmployeeModel? Employee { get; set; }
 
+        
         [NotMapped]
         public double WorkingHours
         {

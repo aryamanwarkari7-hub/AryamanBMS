@@ -300,6 +300,72 @@
     }
 }
 
+
+/* Comp Off balance summary */
+.comp-off-apply-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-top: 12px;
+    padding: 16px 18px;
+    border: 1px solid #d9e5f2;
+    border-radius: 12px;
+    background: #f8fbff;
+}
+
+.comp-off-apply-summary-heading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.comp-off-apply-summary-icon {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: #e8f3ff;
+    font-size: 20px;
+}
+
+.comp-off-apply-summary-title {
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.comp-off-apply-summary-subtitle {
+    margin-top: 2px;
+    font-size: 12px;
+    color: #64748b;
+}
+
+.comp-off-apply-summary-value {
+    min-width: 130px;
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-end;
+    gap: 6px;
+    text-align: right;
+}
+
+    .comp-off-apply-summary-value span {
+        font-size: 12px;
+        color: #64748b;
+    }
+
+    .comp-off-apply-summary-value strong {
+        font-size: 24px;
+        font-weight: 700;
+    }
+
+    .comp-off-apply-summary-value small {
+        font-size: 12px;
+        color: #64748b;
+    }
+
 @media (max-width: 768px) {
     .leave-balance-filter-form {
         grid-template-columns: 1fr;

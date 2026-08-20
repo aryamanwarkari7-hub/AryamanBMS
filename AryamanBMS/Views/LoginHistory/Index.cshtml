@@ -19,6 +19,7 @@
         <form method="get"
               class="row g-3 align-items-end">
 
+            <!-- Search -->
             <div class="col-md-3">
                 <label class="form-label">
                     Search
@@ -31,6 +32,7 @@
                        placeholder="Username, employee or IP address" />
             </div>
 
+            <!-- Event -->
             <div class="col-md-2">
                 <label class="form-label">
                     Event Type
@@ -41,8 +43,8 @@
 
                     <option value="">All events</option>
 
-                    <option value="LoginSuccess"
-                            selected="@(Model.EventType == "LoginSuccess")">
+                    <option value="Login"
+                            selected="@(Model.EventType == "Login")">
                         Successful Login
                     </option>
 
@@ -69,6 +71,7 @@
                 </select>
             </div>
 
+            <!-- Result -->
             <div class="col-md-2">
                 <label class="form-label">
                     Result
@@ -92,6 +95,7 @@
                 </select>
             </div>
 
+            <!-- Month -->
             <div class="col-md-2">
                 <label class="form-label">
                     Month
@@ -99,9 +103,9 @@
 
                 <select name="month"
                         class="form-select">
-            
+
                     <option value="">All months</option>
-            
+
                     @for (int monthNumber = 1;
                           monthNumber <= 12;
                           monthNumber++)
@@ -111,38 +115,41 @@
                                 .CurrentCulture
                                 .DateTimeFormat
                                 .GetMonthName(monthNumber);
-            
+
                         <option value="@monthNumber"
                                 selected="@(Model.Month == monthNumber)">
                             @monthName
                         </option>
                     }
-            
+
                 </select>
-</div>
+            </div>
 
-<div class="col-md-2">
-    <label class="form-label">
-        Year
-    </label>
+            <!-- Year -->
+            <div class="col-md-2">
+                <label class="form-label">
+                    Year
+                </label>
 
-    <select name="year"
-            class="form-select">
+                <select name="year"
+                        class="form-select">
 
-        <option value="">All years</option>
+                    <option value="">All years</option>
 
-        @foreach (var availableYear in Model.AvailableYears)
-        {
-            <option value="@availableYear"
-                    selected="@(Model.Year == availableYear)">
-                @availableYear
-            </option>
-        }
+                    @foreach (var availableYear in Model.AvailableYears)
+                    {
+                        <option value="@availableYear"
+                                selected="@(Model.Year == availableYear)">
+                            @availableYear
+                        </option>
+                    }
 
-    </select>
-</div>
+                </select>
+            </div>
 
+            <!-- Actions -->
             <div class="col-md-3">
+
                 <button type="submit"
                         class="btn-app btn-primary-app">
                     <i class="bi bi-search"></i>
@@ -153,6 +160,7 @@
                    class="btn-app btn-secondary-app">
                     Reset
                 </a>
+
             </div>
 
         </form>
@@ -163,6 +171,7 @@
 <div class="app-card table-card">
 
     <div class="card-header">
+
         <h5 class="card-title">
             Login Records
         </h5>
@@ -170,6 +179,7 @@
         <span class="text-muted">
             @Model.TotalRecords records
         </span>
+
     </div>
 
     <div class="card-body">
@@ -177,7 +187,13 @@
         @if (!Model.Records.Any())
         {
             <div class="empty-state">
-                No login history found.
+
+                <i class="bi bi-shield-lock"></i>
+
+                <p class="mb-0">
+                    No login history found.
+                </p>
+
             </div>
         }
         else
@@ -189,10 +205,12 @@
                     <thead>
                         <tr>
                             <th>Date & Time</th>
-                            <th>Username</th>
+                            <th>User</th>
                             <th>Event</th>
                             <th>Result</th>
                             <th>IP Address</th>
+                            <th>Device ID</th>
+                            <th>Browser</th>
                             <th>Failure Reason</th>
                         </tr>
                     </thead>
@@ -202,12 +220,16 @@
                         @foreach (var record in Model.Records)
                         {
                             <tr>
+
+                                <!-- Date -->
                                 <td>
                                     @record.OccurredOn.ToString(
-                                        "dd-MM-yyyy hh:mm tt")
+                                        "dd-MMM-yyyy hh:mm tt")
                                 </td>
 
+                                <!-- User -->
                                 <td>
+
                                     <strong>
                                         @record.AttemptedUserName
                                     </strong>
@@ -219,13 +241,56 @@
                                             @record.User.FullName
                                         </div>
                                     }
+
                                 </td>
 
+                                <!-- Event -->
                                 <td>
-                                    @record.EventType
+
+                                    @switch (record.EventType)
+                                    {
+                                        case "Login":
+                                            <span class="badge-primary">
+                                                Login
+                                            </span>
+                                            break;
+
+                                        case "InvalidPassword":
+                                            <span class="badge-warning">
+                                                Invalid Password
+                                            </span>
+                                            break;
+
+                                        case "UnknownUser":
+                                            <span class="badge-danger">
+                                                Unknown User
+                                            </span>
+                                            break;
+
+                                        case "InactiveAccount":
+                                            <span class="badge-warning">
+                                                Inactive Account
+                                            </span>
+                                            break;
+
+                                        case "AccountLocked":
+                                            <span class="badge-danger">
+                                                Account Locked
+                                            </span>
+                                            break;
+
+                                        default:
+                                            <span class="badge-secondary">
+                                                @record.EventType
+                                            </span>
+                                            break;
+                                    }
+
                                 </td>
 
+                                <!-- Result -->
                                 <td>
+
                                     @if (record.IsSuccessful)
                                     {
                                         <span class="badge-success">
@@ -238,15 +303,83 @@
                                             Failed
                                         </span>
                                     }
+
                                 </td>
 
+                                <!-- IP -->
                                 <td>
-                                    @(record.IpAddress ?? "-")
+                                    <span class="text-nowrap">
+                                        @(record.IpAddress ?? "-")
+                                    </span>
                                 </td>
 
+                                <!-- Device Id -->
+                                <td>
+                                    <span class="login-device-id"
+                                          title="@record.DeviceId">
+                                        @(record.DeviceId ?? "-")
+                                    </span>
+                                </td>
+
+                                <!-- User Agent -->
+                                <td>
+                                    @{
+                                        string browser = "Unknown Browser";
+                                        string operatingSystem = "Unknown OS";
+
+                                        if (!string.IsNullOrWhiteSpace(record.UserAgent))
+                                        {
+                                            string ua = record.UserAgent;
+
+                                            if (ua.Contains("Edg/", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                browser = "Edge";
+                                            }
+                                            else if (ua.Contains("Chrome/", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                browser = "Chrome";
+                                            }
+                                            else if (ua.Contains("Firefox/", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                browser = "Firefox";
+                                            }
+                                            else if (ua.Contains("Safari/", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                browser = "Safari";
+                                            }
+
+                                            if (ua.Contains("Windows", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                operatingSystem = "Windows";
+                                            }
+                                            else if (ua.Contains("Android", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                operatingSystem = "Android";
+                                            }
+                                            else if (ua.Contains("iPhone", StringComparison.OrdinalIgnoreCase) ||
+                                                     ua.Contains("iPad", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                operatingSystem = "iOS";
+                                            }
+                                            else if (ua.Contains("Mac OS X", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                operatingSystem = "macOS";
+                                            }
+                                            else if (ua.Contains("Linux", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                operatingSystem = "Linux";
+                                            }
+                                        }
+                                    }
+
+                                    <span>@browser on @operatingSystem</span>
+                                </td>
+
+                                <!-- Failure -->
                                 <td>
                                     @(record.FailureReason ?? "-")
                                 </td>
+
                             </tr>
                         }
 
@@ -256,14 +389,17 @@
 
             </div>
 
+            <!-- Pagination -->
             @if (Model.TotalPages > 1)
             {
-                <nav class="mt-3">
+                <nav class="mt-3"
+                     aria-label="Login history pagination">
+
                     <ul class="pagination justify-content-center">
 
                         @for (int i = 1;
-                             i <= Model.TotalPages;
-                             i++)
+                              i <= Model.TotalPages;
+                              i++)
                         {
                             <li class="page-item
                                 @(i == Model.CurrentPage
@@ -285,10 +421,12 @@
                         }
 
                     </ul>
+
                 </nav>
             }
 
         }
 
     </div>
+
 </div>

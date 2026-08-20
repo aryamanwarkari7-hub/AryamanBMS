@@ -1,0 +1,132 @@
+﻿@model IEnumerable<AryamanBMS.Models.OffDayWorkRequestModel>
+
+@{
+    ViewData["Title"] = "Off-Day Work Requests";
+}
+
+<div class="module-header">
+
+    <div>
+        <h1 class="module-title">
+            Off-Day Work Requests
+        </h1>
+
+        <p class="module-subtitle">
+            View your requests to work on Holidays and Weekly Offs
+        </p>
+    </div>
+
+    <div class="module-header-actions">
+
+        <a asp-action="Create"
+           class="btn-app btn-primary-app">
+
+            <i class="bi bi-plus-circle"></i>
+            Request Off-Day Work
+
+        </a>
+
+    </div>
+
+</div>
+
+<div class="app-card table-card">
+
+    <div class="card-header">
+
+        <h5 class="card-title">
+            My Requests
+        </h5>
+
+        <span class="text-muted">
+            @Model.Count() requests
+        </span>
+
+    </div>
+
+    <div class="card-body">
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                You have not submitted any off-day work requests.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+
+                <table class="app-table">
+
+                    <thead>
+                        <tr>
+                            <th>Work Date</th>
+                            <th>Off-Day Type</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            <th>Submitted On</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var request in Model)
+                        {
+                            string statusClass =
+                                request.Status switch
+                                {
+                                    "Approved" => "badge-success",
+                                    "Rejected" => "badge-danger",
+                                    _ => "badge-warning"
+                                };
+
+                            <tr>
+
+                                <td>
+                                    @request.WorkDate.ToString("dd-MMM-yyyy")
+                                </td>
+
+                                <td>
+                                    @(request.OffDayType == "WeeklyOff"
+                                        ? "Weekly Off"
+                                        : request.OffDayType)
+                                </td>
+
+                                <td>
+                                    @(string.IsNullOrWhiteSpace(request.Reason)
+                                        ? "-"
+                                        : request.Reason)
+                                </td>
+
+                                <td>
+                                    <span class="@statusClass">
+                                        @request.Status
+                                    </span>
+                                </td>
+
+                                <td>
+                                    @request.RequestedOn.ToString(
+                                        "dd-MMM-yyyy hh:mm tt")
+                                </td>
+
+                                <td>
+                                    @(string.IsNullOrWhiteSpace(
+                                        request.ApprovalRemarks)
+                                        ? "-"
+                                        : request.ApprovalRemarks)
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+    </div>
+
+</div>

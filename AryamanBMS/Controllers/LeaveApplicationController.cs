@@ -238,6 +238,20 @@ namespace AryamanBMS.Controllers
                             employee,
                             DateTime.Today,
                             0m);
+
+                    var availableCompOffDays =
+                        await _compOffCreditRepository.CompOffCredits
+                            .AsNoTracking()
+                            .Where(x =>
+                                x.EmployeeId == employee.Id &&
+                                x.Status == "Available" &&
+                                x.ExpiryDate.Date >= DateTime.Today &&
+                                x.CreditDays > x.UsedDays)
+                            .SumAsync(x => (decimal?)(x.CreditDays - x.UsedDays))
+                        ?? 0m;
+
+                    ViewBag.AvailableCompOffDays =
+                        availableCompOffDays;
                 }
             }
 

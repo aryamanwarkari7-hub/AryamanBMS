@@ -29,6 +29,9 @@ namespace AryamanBMS.Models
         [StringLength(500)]
         public string? UserAgent { get; set; }
 
+        [StringLength(100)]
+        public string? DeviceId { get; set; }
+
         public DateTime OccurredOn { get; set; } = DateTime.Now;
 
         [ForeignKey(nameof(UserId))]

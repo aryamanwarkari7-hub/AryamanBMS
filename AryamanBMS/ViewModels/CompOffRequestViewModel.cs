@@ -14,6 +14,14 @@ namespace AryamanBMS.ViewModels
         [Display(Name = "Credit Days")]
         public decimal CreditDays { get; set; } = 1.0m;
 
+        public string? OffDayType { get; set; }
+
+        public DateTime? CheckInTime { get; set; }
+
+        public DateTime? CheckOutTime { get; set; }
+
+        public double WorkingHours { get; set; }
+
         [Required]
         [StringLength(500)]
         public string Remarks { get; set; } = string.Empty;

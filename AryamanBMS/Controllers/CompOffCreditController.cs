@@ -59,20 +59,7 @@ namespace AryamanBMS.Controllers
                 logger;
         }
 
-        [HttpGet]
-        [ActionName("Request")]
-        public async Task<IActionResult> RequestCompOff()
-        {
-            await UpdateExpiredCreditsAsync();
-
-            var model = new CompOffRequestViewModel
-            {
-                WorkedDate = DateTime.Today,
-                CreditDays = 1.0m
-            };
-
-            return View(model);
-        }
+        
 
         [HttpGet]
         public async Task<IActionResult> Index(bool mine = false)
@@ -123,6 +110,90 @@ namespace AryamanBMS.Controllers
                     .ToListAsync();
 
             return View(requests);
+        }
+
+        [HttpGet]
+        [ActionName("Request")]
+        public async Task<IActionResult> RequestCompOff()
+        {
+            await UpdateExpiredCreditsAsync();
+
+            var user =
+                await _userManager.GetUserAsync(User);
+
+            if (user == null)
+            {
+                return Challenge();
+            }
+
+            var employee =
+                await _employeeRepository.Employees
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x =>
+                        x.ApplicationUserId == user.Id);
+
+            if (employee == null)
+            {
+                TempData["Error"] =
+                    "No employee record is mapped to this user.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            var eligibleAttendances =
+    await _attendanceRepository.Attendances
+        .AsNoTracking()
+        .Where(x =>
+            x.EmployeeId == employee.Id &&
+            x.IsOffDayWork &&
+            (x.OffDayType == "H" ||
+             x.OffDayType == "WO") &&
+            x.CheckInTime.HasValue &&
+            x.CheckOutTime.HasValue &&
+            !_compOffCreditRepository.CompOffCredits
+                .Any(c => c.AttendanceId == x.Id))
+        .OrderByDescending(x => x.AttendanceDate)
+        .ToListAsync();
+
+            eligibleAttendances =
+                eligibleAttendances
+                    .Where(x => x.WorkingHours > 0)
+                    .ToList();
+
+            if (!eligibleAttendances.Any())
+            {
+                TempData["Error"] =
+                    "No eligible off-day work attendance is available for Comp Off.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            var selectedAttendance = eligibleAttendances.First();
+
+            var model = new CompOffRequestViewModel
+            {
+                WorkedDate =
+                    selectedAttendance.AttendanceDate.Date,
+
+                OffDayType =
+                    selectedAttendance.OffDayType,
+
+                CheckInTime =
+                    selectedAttendance.CheckInTime,
+
+                CheckOutTime =
+                    selectedAttendance.CheckOutTime,
+
+                WorkingHours =
+                    selectedAttendance.WorkingHours,
+
+                CreditDays = 1.0m
+            };
+
+            ViewBag.EligibleAttendances =
+                eligibleAttendances;
+
+            return View(model);
         }
 
         [HttpPost]
@@ -195,21 +266,39 @@ namespace AryamanBMS.Controllers
                         nameof(model.WorkedDate),
                         "Attendance was not found for the selected worked date.");
                 }
-                else if (!IsWorkingAttendanceStatus(
-                             attendance.Status))
+                else if (!attendance.IsOffDayWork)
                 {
                     ModelState.AddModelError(
                         nameof(model.WorkedDate),
-                        "Comp Off can be requested only for Present or On Duty attendance.");
+                        "Comp Off can be requested only for approved off-day work.");
+                }
+                else if (attendance.OffDayType != "H" && attendance.OffDayType != "WO")
+                {
+                    ModelState.AddModelError(
+                        nameof(model.WorkedDate),
+                        "The attendance is not marked as a valid Holiday or Weekly Off work record.");
+                }
+                else if (!attendance.CheckInTime.HasValue ||
+                         !attendance.CheckOutTime.HasValue)
+                {
+                    ModelState.AddModelError(
+                        nameof(model.WorkedDate),
+                        "Both check-in and check-out must be recorded before requesting Comp Off.");
+                }
+                else if (attendance.WorkingHours <= 0)
+                {
+                    ModelState.AddModelError(
+                        nameof(model.WorkedDate),
+                        "Valid working hours are required before requesting Comp Off.");
                 }
 
                 bool duplicateExists =
-                    await _compOffCreditRepository
-                        .CompOffCredits
-                        .AnyAsync(x =>
-                            x.EmployeeId == employee.Id &&
-                            x.WorkedDate.Date ==
-                                model.WorkedDate.Date);
+                     attendance != null &&
+                     await _compOffCreditRepository
+                         .CompOffCredits
+                         .AnyAsync(x =>
+                             x.EmployeeId == employee.Id &&
+                             x.AttendanceId == attendance.Id);
 
                 if (duplicateExists)
                 {
