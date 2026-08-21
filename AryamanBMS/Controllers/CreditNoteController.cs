@@ -7,7 +7,7 @@ using System.Security.Claims;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Master")]
     public class CreditNoteController : Controller
     {
         #region Actions

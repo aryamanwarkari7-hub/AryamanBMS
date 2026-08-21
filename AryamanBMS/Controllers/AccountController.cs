@@ -133,7 +133,7 @@ namespace AryamanBMS.Controllers
                 return View(model);
             }
 
-            var result =  await _signInManager.CheckPasswordSignInAsync(
+            var result = await _signInManager.CheckPasswordSignInAsync(
                           user,
                           model.Password,
                           lockoutOnFailure: true);
@@ -754,9 +754,10 @@ namespace AryamanBMS.Controllers
         {
             var roles = await _userManager.GetRolesAsync(user);
 
-            if (roles.Contains("Employee") &&
-                !roles.Contains("Admin") &&
-                !roles.Contains("HR"))
+            if (!roles.Contains("Admin") &&
+                (roles.Contains("Employee") ||
+                 roles.Contains("HR") ||
+                 roles.Contains("Master")))
             {
                 var employee = await _employeeRepository.Employees
                     .AsNoTracking()

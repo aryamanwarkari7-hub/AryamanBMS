@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Master")]
     public class PurchaseReportController : Controller
     {
         #region Actions

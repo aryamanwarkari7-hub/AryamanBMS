@@ -105,7 +105,7 @@
 
                                         </a>
 
-                                        @if (User.IsInRole("Admin"))
+                                       @if (User.IsInRole("Admin") || User.IsInRole("Master"))
                                         {
                                             <a asp-action="Edit"
                                                asp-route-id="@item.ProposalTemplateId"
@@ -128,7 +128,7 @@
                                         </a>
 
                                         @if (!item.IsActive &&
-                                                                        User.IsInRole("Admin"))
+                                         (User.IsInRole("Admin") || User.IsInRole("Master")))
                                         {
                                             <form asp-action="Activate"
                                                   asp-route-id="@item.ProposalTemplateId"

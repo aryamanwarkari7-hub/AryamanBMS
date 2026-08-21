@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Master")]
     public class CompanyProfileController : Controller
     {
         #region Actions

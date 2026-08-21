@@ -32,7 +32,23 @@ namespace AryamanBMS.Models
 
         public EmployeeModel? Employee { get; set; }
 
-        
+        // Late checkout correction request
+        public DateTime? RequestedCheckOutTime { get; set; }
+
+        public string? LateCheckoutReason { get; set; }
+
+        public DateTime? LateCheckoutRequestedOn { get; set; }
+
+        public string? LateCheckoutRequestStatus { get; set; }
+        // Pending | Approved | Rejected
+
+        public DateTime? LateCheckoutResolvedOn { get; set; }
+
+        public string? LateCheckoutResolvedByUserId { get; set; }
+
+        public string? LateCheckoutResolutionNote { get; set; }
+
+
         [NotMapped]
         public double WorkingHours
         {

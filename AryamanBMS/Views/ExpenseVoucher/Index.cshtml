@@ -12,8 +12,9 @@
     bool mine = ViewBag.Mine is true;
 
     bool isFinanceUser =
-        User.IsInRole("Admin") ||
-        User.IsInRole("Finance");
+    User.IsInRole("Admin") ||
+    User.IsInRole("Finance") ||
+    User.IsInRole("Master");
 
     bool isEmployeeOnly =
         User.IsInRole("Employee") &&
@@ -337,7 +338,7 @@
                                             </a>
                                     }
                                     else if (voucher.Status == "Submitted" &&
-                                             (User.IsInRole("Admin") || User.IsInRole("Finance")))
+                                             (User.IsInRole("Admin") || User.IsInRole("Master") || User.IsInRole("Finance")))
                                     {
                                             <a href="@Url.Action("Details", new { id = voucher.ExpenseVoucherId, mine })"
                                                class="btn-app btn-icon btn-primary-app"
@@ -353,7 +354,7 @@
                                             </form>
                                     }
                                     else if (voucher.Status == "Approved" &&
-                                             (User.IsInRole("Admin") || User.IsInRole("Finance")))
+                                             (User.IsInRole("Admin") || User.IsInRole("Master") || User.IsInRole("Finance")))
                                     {
                                             <a href="@Url.Action("Details", new { id = voucher.ExpenseVoucherId, mine })"
                                                class="btn-app btn-icon btn-primary-app"

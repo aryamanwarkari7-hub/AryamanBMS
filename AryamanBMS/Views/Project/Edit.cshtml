@@ -2,6 +2,12 @@
 
 @{
     ViewData["Title"] = "Edit Project";
+
+    var scopeDocuments = ViewBag.ScopeDocuments as List<ProjectScopeDocumentModel>
+    ?? new List<ProjectScopeDocumentModel>();
+
+    bool canManageScopeDocuments =
+        ViewBag.CanManageScopeDocuments is bool allowed && allowed;
 }
 
 <div class="module-header">
@@ -10,21 +16,19 @@
         <p class="module-subtitle">Update project information</p>
     </div>
 
-    <a asp-action="Details"
-       asp-route-id="@Model.Id"
-       class="btn-app btn-secondary-app">
+    <a asp-action="Details" asp-route-id="@Model.Id" class="btn-app btn-secondary-app">
         Back
     </a>
 </div>
 
-<form asp-action="Edit" method="post">
+<form asp-action="Edit" method="post" enctype="multipart/form-data">
     @Html.AntiForgeryToken()
 
     <input type="hidden" asp-for="Id" />
     <input type="hidden" asp-for="CreatedOn" />
 
     <div asp-validation-summary="ModelOnly" class="validation-message"></div>
-    <
+
     <div class="app-card">
         <div class="card-header">
             <h5 class="card-title">Basic Information</h5>
@@ -63,14 +67,11 @@
                         Client
                     </label>
 
-                    <select asp-for="ClientId"
-                            asp-items="ViewBag.Clients"
-                            class="app-select">
+                    <select asp-for="ClientId" asp-items="ViewBag.Clients" class="app-select">
                         <option value="">Select Client</option>
                     </select>
 
-                    <span asp-validation-for="ClientId"
-                          class="validation-message"></span>
+                    <span asp-validation-for="ClientId" class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
@@ -152,37 +153,137 @@
 
     <div class="app-card">
         <div class="card-header">
-            <h5 class="card-title">Project Description</h5>
+            <h5 class="card-title">Project Description & Scope</h5>
         </div>
 
         <div class="card-body">
-            <div class="form-group">
+
+            <div class="form-group mb-4">
                 <label asp-for="BusinessObjective"></label>
-                <textarea asp-for="BusinessObjective" class="app-textarea"></textarea>
+                <textarea asp-for="BusinessObjective" class="app-textarea" rows="4"></textarea>
             </div>
 
-            <div class="form-group">
-                <label asp-for="Scope"></label>
-                <textarea asp-for="Scope" class="app-textarea"></textarea>
+            <div class="form-grid-2">
+
+                <div class="form-group">
+                    <label asp-for="Scope">Project Scope Summary</label>
+
+                    <textarea asp-for="Scope" class="app-textarea" rows="8"
+                              placeholder="Enter a concise project scope summary."></textarea>
+
+                    <small class="text-muted">
+                        Use this field for the short scope summary. Upload formal scope documents beside it.
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Scope Documents</label>
+
+                    @if (canManageScopeDocuments)
+                    {
+                        <input type="hidden" name="projectId" value="@Model.Id" />
+
+                        <input type="file" name="scopeDocument" class="app-input" accept=".pdf,.doc,.docx,.xlsx" />
+
+                        <small class="text-muted d-block mt-2">
+                            PDF, DOC, DOCX, or XLSX. Maximum file size: 20 MB.
+                        </small>
+
+                        <button type="submit" formaction="@Url.Action("UploadScopeDocument", "Project")" formmethod="post"
+                                class="btn-app btn-primary-app mt-3">
+                            <i class="bi bi-upload"></i>
+                            Upload Scope Document
+                        </button>
+
+                        <small class="text-muted d-block mt-2">
+                            Upload saves only the selected document. Use <strong>Save Project</strong> below for text
+                            changes.
+                        </small>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info mb-0">
+                            <i class="bi bi-lock me-1"></i>
+                            You can view scope documents but cannot upload or replace them.
+                        </div>
+                    }
+                </div>
+
             </div>
+
+            <div class="mt-4">
+                <label class="form-label">Uploaded Scope Documents</label>
+
+                @if (scopeDocuments.Any())
+                {
+                    <div class="border rounded">
+
+                        @foreach (var document in scopeDocuments)
+                        {
+                            <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                                <div>
+                                    <i class="bi bi-file-earmark-text me-1"></i>
+                                    <strong>@document.OriginalFileName</strong>
+
+                                    <div class="small text-muted mt-1">
+                                        Uploaded @document.UploadedOn.ToString("dd-MMM-yyyy hh:mm tt")
+                                        · @Math.Ceiling(document.FileSize / 1024d) KB
+                                    </div>
+                                </div>
+
+                                <div class="d-flex align-items-center gap-2">
+
+                                    <span class="badge-success">Stored Securely</span>
+
+                                    @if (canManageScopeDocuments)
+                                    {
+                                        <button type="submit" name="documentId" value="@document.Id"
+                                                formaction="@Url.Action("RemoveScopeDocument", "Project")" formmethod="post"
+                                                class="btn-app btn-danger-app btn-icon" title="Remove scope document"
+                                                aria-label="Remove scope document"
+                                                onclick="return confirm('Remove this scope document from the active list?');">
+
+                                            <i class="bi bi-trash"></i>
+
+                                        </button>
+
+                                        <a asp-action="DownloadScopeDocument" asp-route-id="@document.Id"
+                                           class="btn-app btn-primary-app btn-icon" title="Download scope document"
+                                           aria-label="Download scope document">
+
+                                            <i class="bi bi-download"></i>
+
+                                        </a>
+                                    }
+
+                                </div>
+                            </div>
+                        }
+
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        No scope documents uploaded yet.
+                    </div>
+                }
+            </div>
+
         </div>
     </div>
 
-        <div class="app-card">
-            <div class="card-body">
-                <button type="submit"
-                        class="btn-app btn-primary-app">
-                    Save Project
-                </button>
+    <div class="app-card">
+        <div class="card-body">
+            <button type="submit" class="btn-app btn-primary-app">
+                Save Project
+            </button>
 
-                <a asp-action="Details"
-                   asp-route-id="@Model.Id"
-                   class="btn-app btn-secondary-app">
-                    Back
-                </a>
-            </div>
+            <a asp-action="Details" asp-route-id="@Model.Id" class="btn-app btn-secondary-app">
+                Back
+            </a>
         </div>
-</>
+    </div>
 </form>
 
 @section Scripts {

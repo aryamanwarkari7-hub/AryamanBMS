@@ -24,7 +24,7 @@ namespace AryamanBMS.Controllers
         private readonly UserManager<ApplicationUserModel> _userManager;
         private readonly ILeaveApplicationRepository _leaveApplicationRepository;
 
-        private readonly IOffDayWorkRequestRepository    _offDayWorkRequestRepository;
+        private readonly IOffDayWorkRequestRepository _offDayWorkRequestRepository;
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
         private readonly INotificationService _notificationService;
@@ -50,7 +50,7 @@ namespace AryamanBMS.Controllers
             _attendanceRepository = attendanceRepository;
             _employeeRepository = employeeRepository;
             _leaveApplicationRepository = leaveApplicationRepository;
-            _offDayWorkRequestRepository =  offDayWorkRequestRepository;
+            _offDayWorkRequestRepository = offDayWorkRequestRepository;
             _userManager = userManager;
             _salaryAttendanceSummaryService = salaryAttendanceSummaryService;
             _context = context;
@@ -574,9 +574,7 @@ namespace AryamanBMS.Controllers
 
             var calendarStatus = await GetCalendarStatusAsync(DateTime.Today);
 
-            bool isOffDay =
-    calendarStatus == "H" ||
-    calendarStatus == "WO";
+            bool isOffDay = calendarStatus == "H" || calendarStatus == "WO";
 
             if (isOffDay)
             {
@@ -636,6 +634,96 @@ namespace AryamanBMS.Controllers
             await _attendanceRepository.SaveAsync();
 
             TempData["Success"] = "Check Out successful.";
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RequestLateCheckoutCorrection(
+    TimeSpan? requestedCheckOutTime,
+    string? lateCheckoutReason)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var employee = await _employeeRepository.Employees
+                .FirstOrDefaultAsync(e => e.ApplicationUserId == user.Id);
+
+            if (employee == null)
+            {
+                TempData["Error"] = "Employee mapping not found.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (!requestedCheckOutTime.HasValue)
+            {
+                TempData["Error"] = "Please enter the time you actually left.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var reason = lateCheckoutReason?.Trim();
+
+            if (string.IsNullOrWhiteSpace(reason))
+            {
+                TempData["Error"] = "Please provide a reason for the checkout correction request.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (reason.Length > 1000)
+            {
+                TempData["Error"] = "The correction reason cannot exceed 1000 characters.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var attendance = await _attendanceRepository.Attendances
+                .FirstOrDefaultAsync(a =>
+                    a.EmployeeId == employee.Id &&
+                    a.AttendanceDate.Date == DateTime.Today);
+
+            if (attendance == null || attendance.CheckOutTime == null)
+            {
+                TempData["Error"] = "Check out first before requesting a checkout-time correction.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var requestedTime = attendance.AttendanceDate.Date
+                .Add(requestedCheckOutTime.Value);
+
+            if (attendance.CheckInTime.HasValue &&
+                requestedTime <= attendance.CheckInTime.Value)
+            {
+                TempData["Error"] = "Requested checkout time must be after your check-in time.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (requestedTime > attendance.CheckOutTime.Value)
+            {
+                TempData["Error"] = "Requested checkout time cannot be later than the recorded checkout time.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (attendance.LateCheckoutRequestStatus == "Pending")
+            {
+                TempData["Error"] = "Your checkout-time correction request is already pending.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            attendance.RequestedCheckOutTime = requestedTime;
+            attendance.LateCheckoutReason = reason;
+            attendance.LateCheckoutRequestedOn = DateTime.Now;
+            attendance.LateCheckoutRequestStatus = "Pending";
+            attendance.LateCheckoutResolvedOn = null;
+            attendance.LateCheckoutResolvedByUserId = null;
+            attendance.LateCheckoutResolutionNote = null;
+
+            await _attendanceRepository.SaveAsync();
+
+            TempData["Success"] =
+                "Checkout correction request submitted. Admin/HR will review it.";
 
             return RedirectToAction(nameof(Index));
         }
@@ -854,8 +942,11 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,HR,Master")]
-        public async Task<IActionResult> Edit(AttendanceModel model)
+        [Authorize(Roles = "Admin,HR")]
+        public async Task<IActionResult> Edit(
+    AttendanceModel model,
+    string? lateCheckoutDecision,
+    string? lateCheckoutResolutionNote)
         {
             if (!ModelState.IsValid)
             {
@@ -883,24 +974,6 @@ namespace AryamanBMS.Controllers
                 return View(model);
             }
 
-            attendance.AttendanceDate =
-                model.AttendanceDate;
-
-            attendance.Status =
-                model.Status;
-
-            attendance.AttendanceValue =
-                NormalizeAttendanceValue(model.AttendanceValue);
-
-            attendance.CheckInTime =
-                model.CheckInTime;
-
-            attendance.CheckOutTime =
-                model.CheckOutTime;
-
-            attendance.Remarks =
-                model.Remarks;
-
             bool duplicateExists =
                 await _attendanceRepository.Attendances
                     .AnyAsync(a =>
@@ -918,11 +991,41 @@ namespace AryamanBMS.Controllers
                 return View(model);
             }
 
-            await _attendanceRepository
-                .UpdateAsync(attendance);
+            if (!string.IsNullOrWhiteSpace(lateCheckoutDecision) &&
+                lateCheckoutDecision != "Pending" &&
+                lateCheckoutDecision != "Approved" &&
+                lateCheckoutDecision != "Rejected")
+            {
+                ModelState.AddModelError(
+                    "",
+                    "Invalid checkout correction decision.");
 
-            await _attendanceRepository
-                .SaveAsync();
+                return View(model);
+            }
+
+            if (attendance.LateCheckoutRequestStatus == "Pending" &&
+                (lateCheckoutDecision == "Approved" ||
+                 lateCheckoutDecision == "Rejected"))
+            {
+                var currentUser = await _userManager.GetUserAsync(User);
+
+                attendance.LateCheckoutRequestStatus = lateCheckoutDecision;
+                attendance.LateCheckoutResolvedOn = DateTime.Now;
+                attendance.LateCheckoutResolvedByUserId = currentUser?.Id;
+                attendance.LateCheckoutResolutionNote =
+                    lateCheckoutResolutionNote?.Trim();
+            }
+
+            attendance.AttendanceDate = model.AttendanceDate;
+            attendance.Status = model.Status;
+            attendance.AttendanceValue =
+                NormalizeAttendanceValue(model.AttendanceValue);
+            attendance.CheckInTime = model.CheckInTime;
+            attendance.CheckOutTime = model.CheckOutTime;
+            attendance.Remarks = model.Remarks;
+
+            await _attendanceRepository.UpdateAsync(attendance);
+            await _attendanceRepository.SaveAsync();
 
             await NotifyAttendanceChangedAsync(
                 attendance.EmployeeId,
@@ -932,8 +1035,11 @@ namespace AryamanBMS.Controllers
                 "Attendance Updated",
                 "ManualAttendanceUpdated");
 
-            TempData["Success"] =
-                "Attendance updated successfully.";
+            TempData["Success"] = attendance.LateCheckoutRequestStatus == "Approved"
+                ? "Attendance updated and checkout correction approved."
+                : attendance.LateCheckoutRequestStatus == "Rejected"
+                    ? "Attendance updated and checkout correction rejected."
+                    : "Attendance updated successfully.";
 
             return RedirectToAction(nameof(Register));
         }

@@ -18,7 +18,7 @@ namespace AryamanBMS.Controllers
     /// GST Management Controller
     /// Handles GST calculations, snapshots, compliance tracking, and configuration
     /// </summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin, Master")]
     public class GstController : Controller
     {
         private readonly IGstCalculationService _calculationService;
@@ -1401,7 +1401,7 @@ namespace AryamanBMS.Controllers
                 new { month, year });
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Master")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ReopenSnapshot(
