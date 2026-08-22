@@ -426,6 +426,10 @@ namespace AryamanBMS.Controllers
             existingInvoice.DueDate =  model.DueDate;
             existingInvoice.BillingAddress =  model.BillingAddress;
             existingInvoice.GSTNo = model.GSTNo;
+            existingInvoice.TaxTreatment = model.TaxTreatment;
+            existingInvoice.CustomerCountryName =  model.CustomerCountryName;
+            existingInvoice.CustomerCountryIso2Code = model.CustomerCountryIso2Code;
+            existingInvoice.LutReference =model.LutReference;
             existingInvoice.IsInterState = model.IsInterState;
             existingInvoice.SupplierStateCode = model.SupplierStateCode;
             existingInvoice.CustomerStateCode = model.CustomerStateCode;
@@ -1285,43 +1289,121 @@ namespace AryamanBMS.Controllers
         }
 
         private async Task AssignGstStateDecisionAsync(
-            InvoiceModel model)
+    InvoiceModel model)
         {
-            if (string.Equals(
-                    model.InvoiceType,
-                    "Proforma Invoice",
-                    StringComparison.OrdinalIgnoreCase))
+            var client =
+                await _context.Clients
+                    .AsNoTracking()
+                    .Include(x => x.Country)
+                    .FirstOrDefaultAsync(x =>
+                        x.ClientId == model.ClientId);
+
+            if (client == null)
             {
-                model.SupplierStateCode = null;
-                model.CustomerStateCode = null;
-                model.PlaceOfSupplyStateCode = null;
-                model.IsInterState = false;
-                model.IsGstStateOverride = false;
-                model.GstStateOverrideReason = null;
+                ModelState.AddModelError(
+                    nameof(model.ClientId),
+                    "Select a valid client.");
 
                 return;
             }
 
-            var gstConfiguration =
+            if (client.Country == null)
+            {
+                ModelState.AddModelError(
+                    nameof(model.ClientId),
+                    "The selected client does not have a valid country.");
+
+                return;
+            }
+
+            bool isExportUnderLut =
+                !string.Equals(
+                    client.Country.Iso2Code,
+                    "IN",
+                    StringComparison.OrdinalIgnoreCase);
+
+            // Historical invoice snapshot.
+            model.CustomerCountryName =
+                client.Country.CountryName;
+
+            model.CustomerCountryIso2Code =
+                client.Country.Iso2Code;
+
+            model.TaxTreatment = isExportUnderLut
+                ? "ExportUnderLUT"
+                : "Domestic";
+
+            model.LutReference = null;
+
+            bool isProforma =
+                string.Equals(
+                    model.InvoiceType,
+                    "Proforma Invoice",
+                    StringComparison.OrdinalIgnoreCase);
+
+
+            if (isProforma)
+            {
+                ClearGstStateDecision(model);
+
+                if (isExportUnderLut)
+                {
+                    model.GSTNo = null;
+                }
+
+                return;
+            }
+
+            if (isExportUnderLut)
+            {
+                var gstConfiguration =
+                    await _context.GstConfigurations
+                        .AsNoTracking()
+                        .Where(x => x.IsActive)
+                        .OrderByDescending(x => x.UpdatedOn)
+                        .FirstOrDefaultAsync();
+
+                bool hasValidLut =
+                    !string.IsNullOrWhiteSpace(
+                        gstConfiguration?.LutReference) &&
+                    gstConfiguration.LutValidFrom.HasValue &&
+                    gstConfiguration.LutValidTo.HasValue &&
+                    model.InvoiceDate.Date >=
+                        gstConfiguration.LutValidFrom.Value.Date &&
+                    model.InvoiceDate.Date <=
+                        gstConfiguration.LutValidTo.Value.Date;
+
+                if (!hasValidLut)
+                {
+                    ModelState.AddModelError(
+                        nameof(model.InvoiceDate),
+                        "A valid LUT must exist for the invoice date before issuing an export invoice.");
+                }
+
+                model.LutReference =
+                    gstConfiguration?.LutReference;
+
+                model.GSTNo = null;
+
+                ClearGstStateDecision(model);
+
+                return;
+            }
+
+            var configuration =
                 await _context.GstConfigurations
                     .AsNoTracking()
                     .Where(x => x.IsActive)
                     .OrderByDescending(x => x.UpdatedOn)
                     .FirstOrDefaultAsync();
 
-            var client =
-                await _context.Clients
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(x =>
-                        x.ClientId == model.ClientId);
-
             string? supplierStateCode =
                 ExtractStateCodeFromGstin(
-                    gstConfiguration?.CompanyGstin);
+                    configuration?.CompanyGstin);
 
             string? customerStateCode =
                 ExtractStateCodeFromGstin(model.GSTNo) ??
-                ExtractStateCodeFromGstin(client?.GSTNumber);
+                ExtractStateCodeFromGstin(client.GSTNumber);
 
             string? placeOfSupplyStateCode =
                 NormalizeStateCode(
@@ -1357,6 +1439,17 @@ namespace AryamanBMS.Controllers
                 model.IsInterState =
                     supplierStateCode != placeOfSupplyStateCode;
             }
+        }
+
+        private static void ClearGstStateDecision(
+    InvoiceModel model)
+        {
+            model.SupplierStateCode = null;
+            model.CustomerStateCode = null;
+            model.PlaceOfSupplyStateCode = null;
+            model.IsInterState = false;
+            model.IsGstStateOverride = false;
+            model.GstStateOverrideReason = null;
         }
 
         private static string? ExtractStateCodeFromGstin(
@@ -1445,11 +1538,20 @@ namespace AryamanBMS.Controllers
                     : "Tax Invoice";
 
             bool isProforma =
-                model.InvoiceType ==
-                "Proforma Invoice";
+                   model.InvoiceType ==
+                   "Proforma Invoice";
+
+            bool isExportUnderLut =
+                string.Equals(
+                    model.TaxTreatment,
+                    "ExportUnderLUT",
+                    StringComparison.OrdinalIgnoreCase);
+
+            bool isZeroRated =
+                isProforma || isExportUnderLut;
 
             model.InvoiceDetails ??=
-                new List<InvoiceDetailsModel>();
+                            new List<InvoiceDetailsModel>();
 
             model.InvoiceDetails =
                 model.InvoiceDetails
@@ -1485,7 +1587,7 @@ namespace AryamanBMS.Controllers
                         item.Qty * item.Rate,
                         2);
 
-                if (isProforma)
+                if (isZeroRated)
                 {
                     item.GSTPercent = 0;
                     item.GSTAmount = 0;
@@ -1570,7 +1672,7 @@ namespace AryamanBMS.Controllers
                         0,
                         lineAmount - allocatedDiscount);
 
-                item.GSTAmount = isProforma
+                item.GSTAmount = isZeroRated
                     ? 0
                     : Math.Round(
                         taxableAfterDiscount *
@@ -1580,7 +1682,7 @@ namespace AryamanBMS.Controllers
                 gstTotal += item.GSTAmount;
             }
 
-            model.GSTAmount = isProforma
+            model.GSTAmount = isZeroRated
                     ? 0
                     : Math.Round(
                         gstTotal,

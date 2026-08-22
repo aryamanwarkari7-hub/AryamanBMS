@@ -8,15 +8,38 @@
         }
 
         function updateClientGstDetails() {
-            var selectedOption = $("#ClientId").find("option:selected");
-            var gstNo = selectedOption.data("gst") || "";
-            var billingAddress = selectedOption.data("address") || "";
-            var stateCode = selectedOption.data("state-code") || "";
+            var selectedOption =
+                $("#ClientId").find("option:selected");
 
-            $("#CustomerStateCode").val(stateCode);
-            $("#PlaceOfSupplyStateCode").val(stateCode);
-            $("#GSTNo").val(gstNo);
+            var isExport = isExportUnderLut();
+            var gstNo = selectedOption.data("gst") || "";
+            var billingAddress =
+                selectedOption.data("address") || "";
+            var stateCode =
+                selectedOption.data("state-code") || "";
+
+            $("#CustomerStateCode").val(
+                isExport ? "" : stateCode);
+
+            $("#PlaceOfSupplyStateCode").val(
+                isExport ? "" : stateCode);
+
+            $("#GSTNo").val(
+                isExport ? "" : gstNo);
+
             $("#BillingAddress").val(billingAddress);
+        }
+
+        function isExportUnderLut() {
+            var selectedOption =
+                $("#ClientId").find("option:selected");
+
+            return selectedOption.data("tax-treatment") ===
+                "ExportUnderLUT";
+        }
+
+        function isZeroRated() {
+            return isProforma() || isExportUnderLut();
         }
 
         function filterBillingMilestones() {
@@ -71,12 +94,21 @@
 
         function updateInvoiceTypeUI() {
             var proforma = isProforma();
+            var exportUnderLut = isExportUnderLut();
+            var zeroRated = isZeroRated();
 
             $(".gst-section").toggle(!proforma);
-            $(".gst-column").toggle(!proforma);
-            $(".gst-summary-row").toggle(!proforma);
+            $(".gst-only-section").toggle(!zeroRated);
+            $(".gst-column").toggle(!zeroRated);
+            $(".gst-summary-row").toggle(!zeroRated);
 
-            if (proforma) {
+            $("#exportLutInvoiceNotice").toggleClass(
+                "d-none",
+                !exportUnderLut);
+
+            $(".gst").prop("disabled", zeroRated);
+
+            if (zeroRated) {
                 $("#IsInterState").prop("checked", false);
                 $(".gst").val("0");
                 $(".gstAmount").val("0.00");
@@ -84,7 +116,8 @@
             }
             else {
                 $(".gst").each(function () {
-                    var currentValue = parseFloat($(this).val()) || 0;
+                    var currentValue =
+                        parseFloat($(this).val()) || 0;
 
                     if (currentValue === 0) {
                         $(this).val("18");
@@ -96,7 +129,7 @@
         }
 
         function buildRow(index) {
-            var defaultGst = isProforma() ? 0 : 18;
+            var defaultGst = isZeroRated() ? 0 : 18;
 
             return `
                 <tr>
@@ -185,19 +218,19 @@
         function calculateTotals() {
             var subTotal = 0;
             var gstTotal = 0;
-            var proforma = isProforma();
+            var zeroRated = isZeroRated();
             var rows = [];
 
             itemTable.find("tbody tr").each(function () {
                 var row = $(this);
                 var qty = parseFloat(row.find(".qty").val()) || 0;
                 var rate = parseFloat(row.find(".rate").val()) || 0;
-                var gstPercent = proforma
+                var gstPercent = zeroRated
                     ? 0
                     : parseFloat(row.find(".gst").val()) || 0;
                 var taxableAmount = qty * rate;
 
-                if (proforma) {
+                if (zeroRated) {
                     row.find(".gst").val("0");
                 }
 
@@ -249,7 +282,7 @@
                     0,
                     item.taxableAmount - allocatedDiscount);
 
-                var gstAmount = proforma
+                var gstAmount = zeroRated
                     ? 0
                     : taxableAfterDiscount * item.gstPercent / 100;
 
@@ -260,10 +293,11 @@
             var grandTotal =
                 subTotal -
                 discount +
-                (proforma ? 0 : gstTotal);
+                (zeroRated ? 0 : gstTotal);
 
             $("#SubTotal").val(subTotal.toFixed(2));
-            $("#GSTAmount").val(proforma ? "0.00" : gstTotal.toFixed(2));
+            $("#GSTAmount").val(
+                zeroRated ? "0.00" : gstTotal.toFixed(2));
             $("#GrandTotal").val(grandTotal.toFixed(2));
         }
 
@@ -299,7 +333,10 @@
         }
 
         $("#InvoiceType").on("change", updateInvoiceTypeUI);
-        $("#ClientId").on("change", updateClientGstDetails);
+        $("#ClientId").on("change", function () {
+            updateClientGstDetails();
+            updateInvoiceTypeUI();
+        });
 
         $("#PurchaseWorkOrderId").on("change", function () {
             filterBillingMilestones();

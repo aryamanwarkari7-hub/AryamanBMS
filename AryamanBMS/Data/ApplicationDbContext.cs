@@ -30,6 +30,8 @@ namespace AryamanBMS.Data
         // EMPLOYEE
         // =============================
         public DbSet<EmployeeModel> Employees { get; set; }
+
+        public DbSet<CountryModel> Countries { get; set; }
         public DbSet<StateModel> States { get; set; }
         public DbSet<CityModel> Cities { get; set; }
         public DbSet<PincodeModel> Pincodes { get; set; }
@@ -200,6 +202,7 @@ namespace AryamanBMS.Data
         // =============================
         public DbSet<GstMonthlySnapshotModel> GstMonthlySnapshots { get; set; }
         public DbSet<GstConfigurationModel> GstConfigurations { get; set; }
+        public DbSet<GstLutDocumentModel> GstLutDocuments { get; set; }
         public DbSet<GstReturnModel> GstReturns { get; set; }
         public DbSet<GstChallanModel> GstChallans { get; set; }
         public DbSet<GstItcRecordModel> GstItcRecords { get; set; }
@@ -290,6 +293,21 @@ namespace AryamanBMS.Data
             // Employee
             modelBuilder.Entity<EmployeeModel>()
                 .ToTable("TableEmployee");
+
+            modelBuilder.Entity<CountryModel>()
+                .ToTable("TableCountry");
+
+            modelBuilder.Entity<CountryModel>()
+                .HasIndex(x => x.Iso2Code)
+                .IsUnique();
+
+            modelBuilder.Entity<CountryModel>()
+                .HasIndex(x => x.Iso3Code)
+                .IsUnique();
+
+            modelBuilder.Entity<CountryModel>()
+                .HasIndex(x => x.CountryName)
+                .IsUnique();
 
             modelBuilder.Entity<StateModel>()
             .ToTable("TableState");
@@ -792,13 +810,24 @@ namespace AryamanBMS.Data
             // ACCOUNTS
 
             // Accounts & Finance
-            modelBuilder.Entity<ClientModel>().ToTable("tableclientmaster");
+            modelBuilder.Entity<ClientModel>()
+               .ToTable("tableclientmaster");
+
             modelBuilder.Entity<ClientModel>()
                 .HasIndex(x => x.ClientCode)
                 .IsUnique();
 
+            modelBuilder.Entity<ClientModel>()
+               .HasOne(x => x.Country)
+               .WithMany()
+               .HasForeignKey(x => x.CountryId)
+               .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ClientModel>()
+                .HasIndex(x => x.CountryId);
+
             modelBuilder.Entity<ClientCommunicationModel>()
-    .ToTable("tableclientcommunications");
+                .ToTable("tableclientcommunications");
 
             modelBuilder.Entity<ClientCommunicationModel>()
                 .HasOne(x => x.Client)
@@ -1126,6 +1155,20 @@ namespace AryamanBMS.Data
             modelBuilder.Entity<GstConfigurationModel>().ToTable("tablegstconfiguration");
             modelBuilder.Entity<GstConfigurationModel>()
                 .HasIndex(x => x.IsActive);
+
+            modelBuilder.Entity<GstLutDocumentModel>(entity =>
+            {
+                entity.ToTable("TableGstLutDocument");
+
+                entity.HasKey(x => x.GstLutDocumentId);
+
+                entity.HasIndex(x => new { x.GstConfigurationId, x.IsActive });
+
+                entity.HasOne(x => x.GstConfiguration)
+                    .WithMany()
+                    .HasForeignKey(x => x.GstConfigurationId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
 
             modelBuilder.Entity<GstReturnModel>().ToTable("tablegstreturn");
             modelBuilder.Entity<GstReturnModel>()

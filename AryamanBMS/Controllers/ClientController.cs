@@ -5,6 +5,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using Microsoft.EntityFrameworkCore;
+
+using AryamanBMS.Utilities.Helpers;
 
 namespace AryamanBMS.Controllers
 {
@@ -103,6 +106,10 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> Create(ClientViewModel vm)
         {
 
+            var country = await GetValidatedCountryAsync(vm.Client);
+
+            ApplyCountryTaxTreatment(vm.Client, country);
+
             NormalizeClientGstDetails(vm.Client);
             ValidateClientGstDetails(vm.Client);
 
@@ -112,9 +119,9 @@ namespace AryamanBMS.Controllers
                 return View(vm);
             }
 
-            vm.Client.ClientCode  = await GenerateClientCodeAsync();
-            vm.Client.CreatedOn   = DateTime.Now;
-            vm.Client.IsActive    = true;
+            vm.Client.ClientCode = await GenerateClientCodeAsync();
+            vm.Client.CreatedOn = DateTime.Now;
+            vm.Client.IsActive = true;
 
             await _repository.AddAsync(vm.Client);
             await _repository.SaveAsync();
@@ -148,6 +155,10 @@ namespace AryamanBMS.Controllers
         {
             if (id != vm.Client.ClientId) return NotFound();
 
+            var country = await GetValidatedCountryAsync(vm.Client);
+
+            ApplyCountryTaxTreatment(vm.Client, country);
+
             NormalizeClientGstDetails(vm.Client);
             ValidateClientGstDetails(vm.Client);
 
@@ -160,13 +171,15 @@ namespace AryamanBMS.Controllers
             var existing = await _repository.GetByIdAsync(id);
             if (existing == null) return NotFound();
 
-            existing.ClientName     = vm.Client.ClientName;
-            existing.ContactPerson  = vm.Client.ContactPerson;
-            existing.Phone          = vm.Client.Phone;
-            existing.Email          = vm.Client.Email;
-            existing.Address        = vm.Client.Address;
-            existing.City           = vm.Client.City;
-            existing.State          = vm.Client.State;
+            existing.ClientName = vm.Client.ClientName;
+            existing.ContactPerson = vm.Client.ContactPerson;
+            existing.Phone = vm.Client.Phone;
+            existing.Email = vm.Client.Email;
+            existing.Address = vm.Client.Address;
+            existing.CountryId = vm.Client.CountryId;
+            existing.TaxTreatment = vm.Client.TaxTreatment;
+            existing.City = vm.Client.City;
+            existing.State = vm.Client.State;
             existing.StateCode = vm.Client.StateCode;
             existing.RegistrationType = vm.Client.RegistrationType;
             existing.PlaceOfSupply = vm.Client.PlaceOfSupply;
@@ -174,11 +187,11 @@ namespace AryamanBMS.Controllers
             existing.CreditPeriod = vm.Client.CreditPeriod;
             existing.PaymentTerms = vm.Client.PaymentTerms;
             existing.BillingAddress = vm.Client.BillingAddress;
-            existing.GSTNumber      = vm.Client.GSTNumber;
-            existing.PANNumber      = vm.Client.PANNumber;
-            existing.ClientType     = vm.Client.ClientType;
-            existing.Remarks        = vm.Client.Remarks;
-            existing.IsActive       = vm.Client.IsActive;
+            existing.GSTNumber = vm.Client.GSTNumber;
+            existing.PANNumber = vm.Client.PANNumber;
+            existing.ClientType = vm.Client.ClientType;
+            existing.Remarks = vm.Client.Remarks;
+            existing.IsActive = vm.Client.IsActive;
 
             await _repository.UpdateAsync(existing);
             await _repository.SaveAsync();
@@ -242,8 +255,8 @@ namespace AryamanBMS.Controllers
             var client = await _repository.GetByIdAsync(id);
             if (client == null) return NotFound();
 
-            client.IsActive   = !client.IsActive;
-            client.UpdatedOn  = DateTime.Now;
+            client.IsActive = !client.IsActive;
+            client.UpdatedOn = DateTime.Now;
 
             await _repository.UpdateAsync(client);
             await _repository.SaveAsync();
@@ -285,13 +298,74 @@ namespace AryamanBMS.Controllers
 
         #region Helpers
 
-        private static readonly Regex GstinRegex =
-    new(@"^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$",
-        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        
 
         private static readonly Regex PanRegex =
             new(@"^[A-Z]{5}[0-9]{4}[A-Z]$",
                 RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+
+        private async Task<CountryModel?> GetValidatedCountryAsync(
+    ClientModel client)
+        {
+            if (!client.CountryId.HasValue)
+            {
+                ModelState.AddModelError(
+                    "Client.CountryId",
+                    "Country is required.");
+
+                return null;
+            }
+
+            var country =
+                await _locationRepository.Countries
+                    .FirstOrDefaultAsync(x =>
+                        x.Id == client.CountryId.Value &&
+                        x.IsActive);
+
+            if (country == null)
+            {
+                ModelState.AddModelError(
+                    "Client.CountryId",
+                    "Select a valid active country.");
+            }
+
+            return country;
+        }
+
+        private static void ApplyCountryTaxTreatment(
+    ClientModel client,
+    CountryModel? country)
+        {
+            if (country == null)
+            {
+                return;
+            }
+
+            bool isIndia = string.Equals(
+                country.Iso2Code,
+                "IN",
+                StringComparison.OrdinalIgnoreCase);
+
+            if (isIndia)
+            {
+                client.TaxTreatment = "Domestic";
+
+                return;
+            }
+
+            client.TaxTreatment = "ExportUnderLUT";
+
+            // Indian tax identity and state fields cannot apply
+            // to a foreign export client.
+            client.GSTNumber = null;
+            client.PANNumber = null;
+            client.State = null;
+            client.StateCode = null;
+            client.PlaceOfSupply = null;
+            client.PlaceOfSupplyStateCode = null;
+            client.RegistrationType = "Not Applicable";
+        }
 
         private void NormalizeClientGstDetails(ClientModel client)
         {
@@ -360,11 +434,11 @@ namespace AryamanBMS.Controllers
             }
 
             if (!string.IsNullOrWhiteSpace(client.GSTNumber) &&
-                !GstinRegex.IsMatch(client.GSTNumber))
+                !GstinValidator.IsValid(client.GSTNumber))
             {
                 ModelState.AddModelError(
                     "Client.GSTNumber",
-                    "Enter a valid 15-character GSTIN.");
+                    "Enter a valid GSTIN with a valid checksum.");
             }
 
             if (!string.IsNullOrWhiteSpace(client.PANNumber) &&
@@ -429,8 +503,13 @@ namespace AryamanBMS.Controllers
             return $"CLT-{(lastNumber + 1):D4}";
         }
 
+
+
         private async Task LoadLocationDropdownsAsync()
         {
+            ViewBag.Countries =
+                await _locationRepository.GetActiveCountriesAsync();
+
             ViewBag.States =
                 await _locationRepository.GetActiveStatesAsync();
         }

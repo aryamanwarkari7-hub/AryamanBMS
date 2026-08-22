@@ -15,6 +15,9 @@ namespace AryamanBMS.Repositories
             _context = context;
         }
 
+        public IQueryable<CountryModel> Countries =>
+    _context.Countries.AsNoTracking();
+
         public IQueryable<StateModel> States =>
             _context.States.AsNoTracking();
 
@@ -27,6 +30,16 @@ namespace AryamanBMS.Repositories
             _context.Pincodes
                 .Include(x => x.City)
                 .AsNoTracking();
+
+        public async Task<List<CountryModel>> GetActiveCountriesAsync()
+        {
+            return await _context.Countries
+                .AsNoTracking()
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.SortOrder)
+                .ThenBy(x => x.CountryName)
+                .ToListAsync();
+        }
 
         public async Task<List<StateModel>>
             GetActiveStatesAsync()

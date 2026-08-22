@@ -15,15 +15,12 @@
 
     <div class="module-header-actions">
 
-        <a asp-action="Details"
-           asp-route-id="@Model.Client.ClientId"
-           class="btn-app btn-secondary-app">
+        <a asp-action="Details" asp-route-id="@Model.Client.ClientId" class="btn-app btn-secondary-app">
             <i class="bi bi-eye"></i>
             Details
         </a>
 
-        <a asp-action="Index"
-           class="btn-app btn-secondary-app">
+        <a asp-action="Index" class="btn-app btn-secondary-app">
             <i class="bi bi-arrow-left"></i>
             Back
         </a>
@@ -32,9 +29,7 @@
 
 </div>
 
-<form asp-action="Edit"
-      asp-route-id="@Model.Client.ClientId"
-      method="post">
+<form asp-action="Edit" asp-route-id="@Model.Client.ClientId" method="post">
 
     @Html.AntiForgeryToken()
 
@@ -42,8 +37,7 @@
     <input asp-for="Client.ClientCode" type="hidden" />
     <input asp-for="Client.CreatedOn" type="hidden" />
 
-    <div asp-validation-summary="ModelOnly"
-         class="app-alert-danger">
+    <div asp-validation-summary="ModelOnly" class="app-alert-danger">
     </div>
 
     <div class="app-card">
@@ -58,45 +52,36 @@
 
                 <div class="form-group">
                     <label class="form-label">Client Code</label>
-                    <input asp-for="Client.ClientCode"
-                           class="app-input"
-                           disabled />
+                    <input asp-for="Client.ClientCode" class="app-input" disabled />
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="Client.IsActive"
-                           class="form-label">
+                    <label asp-for="Client.IsActive" class="form-label">
                         Status
                     </label>
 
-                    <select asp-for="Client.IsActive"
-                            class="app-select">
+                    <select asp-for="Client.IsActive" class="app-select">
                         <option value="true">Active</option>
                         <option value="false">Inactive</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="Client.ClientName"
-                           class="form-label">
+                    <label asp-for="Client.ClientName" class="form-label">
                         Client Name
                     </label>
 
-                    <input asp-for="Client.ClientName"
-                           class="app-input" />
+                    <input asp-for="Client.ClientName" class="app-input" />
 
-                    <span asp-validation-for="Client.ClientName"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Client.ClientName" class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="Client.ClientType"
-                           class="form-label">
+                    <label asp-for="Client.ClientType" class="form-label">
                         Client Type
                     </label>
 
-                    <select asp-for="Client.ClientType"
-                            class="app-select">
+                    <select asp-for="Client.ClientType" class="app-select">
                         <option value="">Select Type</option>
                         <option value="Private">Private</option>
                         <option value="Government">Government</option>
@@ -104,8 +89,26 @@
                         <option value="Individual">Individual</option>
                     </select>
 
-                    <span asp-validation-for="Client.ClientType"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Client.ClientType" class="validation-message"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Client.CountryId" class="form-label">
+                        Country
+                    </label>
+
+                    <select asp-for="Client.CountryId" id="countryDropdown" class="app-select">
+                        <option value="">Select Country</option>
+
+                        @foreach (var country in ViewBag.Countries)
+                        {
+                            <option value="@country.Id" data-iso2="@country.Iso2Code">
+                                @country.CountryName (@country.Iso2Code)
+                            </option>
+                        }
+                    </select>
+
+                    <span asp-validation-for="Client.CountryId" class="validation-message"></span>
                 </div>
 
             </div>
@@ -125,42 +128,33 @@
             <div class="form-grid-2">
 
                 <div class="form-group">
-                    <label asp-for="Client.ContactPerson"
-                           class="form-label">
+                    <label asp-for="Client.ContactPerson" class="form-label">
                         Contact Person
                     </label>
 
-                    <input asp-for="Client.ContactPerson"
-                           class="app-input" />
+                    <input asp-for="Client.ContactPerson" class="app-input" />
 
-                    <span asp-validation-for="Client.ContactPerson"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Client.ContactPerson" class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="Client.Phone"
-                           class="form-label">
+                    <label asp-for="Client.Phone" class="form-label">
                         Phone
                     </label>
 
-                    <input asp-for="Client.Phone"
-                           class="app-input" />
+                    <input asp-for="Client.Phone" class="app-input" />
 
-                    <span asp-validation-for="Client.Phone"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Client.Phone" class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="Client.Email"
-                           class="form-label">
+                    <label asp-for="Client.Email" class="form-label">
                         Email
                     </label>
 
-                    <input asp-for="Client.Email"
-                           class="app-input" />
+                    <input asp-for="Client.Email" class="app-input" />
 
-                    <span asp-validation-for="Client.Email"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Client.Email" class="validation-message"></span>
                 </div>
 
             </div>
@@ -169,7 +163,24 @@
 
     </div>
 
-    <div class="app-card">
+    <div id="taxStatusCard" class="app-card d-none">
+        <div class="card-header">
+            <h5 class="card-title">Tax Status</h5>
+        </div>
+        <div class="card-body">
+           <div id="exportLutNotice"
+                class="app-alert-info d-none">
+               <strong>Export under LUT</strong>
+               <div>
+                   This client is outside India. Indian GST details are not applicable,
+                   and tax invoices will be created without GST.
+               </div>
+           </div>
+       </div>
+    </div>
+
+
+    <div class="app-card india-only">
 
         <div class="card-header">
             <h5 class="card-title">Tax Information</h5>
@@ -180,16 +191,13 @@
             <div class="form-grid-2">
 
                 <div class="form-group">
-                    <label asp-for="Client.GSTNumber"
-                           class="form-label">
+                    <label asp-for="Client.GSTNumber" class="form-label">
                         GST Number
                     </label>
 
-                    <input asp-for="Client.GSTNumber"
-                           class="app-input" />
+                    <input asp-for="Client.GSTNumber" class="app-input" />
 
-                    <span asp-validation-for="Client.GSTNumber"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Client.GSTNumber" class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
@@ -204,8 +212,7 @@
                         <option value="SEZ">SEZ</option>
                     </select>
 
-                    <span asp-validation-for="Client.RegistrationType"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Client.RegistrationType" class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
@@ -213,36 +220,29 @@
                         State Code
                     </label>
 
-                    <select asp-for="Client.StateCode"
-                            id="stateCodeDropdown"
-                            class="app-select">
+                    <select asp-for="Client.StateCode" id="stateCodeDropdown" class="app-select">
                         <option value="">Select State Code</option>
 
                         @foreach (var state in ViewBag.States)
                         {
-                            <option value="@state.StateCode"
-                                    data-state-name="@state.StateName"
+                            <option value="@state.StateCode" data-state-name="@state.StateName"
                                     selected="@(Model.Client.StateCode == state.StateCode)">
                                 @state.StateCode - @state.StateName
                             </option>
                         }
                     </select>
 
-                    <span asp-validation-for="Client.StateCode"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Client.StateCode" class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="Client.PANNumber"
-                           class="form-label">
+                    <label asp-for="Client.PANNumber" class="form-label">
                         PAN Number
                     </label>
 
-                    <input asp-for="Client.PANNumber"
-                           class="app-input" />
+                    <input asp-for="Client.PANNumber" class="app-input" />
 
-                    <span asp-validation-for="Client.PANNumber"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Client.PANNumber" class="validation-message"></span>
                 </div>
 
             </div>
@@ -250,6 +250,8 @@
         </div>
 
     </div>
+
+
 
     <div class="app-card">
 
@@ -261,15 +263,12 @@
 
             <div class="form-grid-2">
 
-                <div class="form-group">
-                    <label asp-for="Client.State"
-                           class="form-label">
+                <div class="form-group india-only">
+                    <label asp-for="Client.State" class="form-label">
                         State
                     </label>
 
-                    <select asp-for="Client.State"
-                            id="stateDropdown"
-                            class="app-select">
+                    <select asp-for="Client.State" id="stateDropdown" class="app-select">
 
                         <option value="">Select State</option>
 
@@ -277,16 +276,13 @@
                         {
                             if (state.StateName == Model.Client.State)
                             {
-                                <option value="@state.StateName"
-                                        data-state-id="@state.Id"
-                                        selected>
+                                <option value="@state.StateName" data-state-id="@state.Id" selected>
                                     @state.StateName
                                 </option>
                             }
                             else
                             {
-                                <option value="@state.StateName"
-                                        data-state-id="@state.Id">
+                                <option value="@state.StateName" data-state-id="@state.Id">
                                     @state.StateName
                                 </option>
                             }
@@ -294,80 +290,67 @@
 
                     </select>
 
-                    <span asp-validation-for="Client.State"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Client.State" class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="Client.City"
-                           class="form-label">
+                    <label asp-for="Client.City" class="form-label">
                         City
                     </label>
 
-                    <select asp-for="Client.City"
-                            id="cityDropdown"
-                            class="app-select"
+                    <select asp-for="Client.City" id="cityDropdown" class="app-select"
                             data-current-city="@(Model.Client.City ?? "")"
-                            data-cities-url="@Url.Action("GetCities", "Location")"
-                            disabled>
+                            data-cities-url="@Url.Action("GetCities", "Location")" disabled>
 
                         <option value="">Select City</option>
 
                     </select>
 
-                    <span asp-validation-for="Client.City"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Client.City" class="validation-message"></span>
                 </div>
 
             </div>
 
             <div class="form-grid-2 mt-3">
-                <div class="form-group">
+                <div class="form-group india-only">
                     <label asp-for="Client.PlaceOfSupply" class="form-label">
                         Place of Supply
                     </label>
 
-                    <select asp-for="Client.PlaceOfSupply"
-                            id="placeOfSupplyDropdown"
-                            class="app-select">
+                    <select asp-for="Client.PlaceOfSupply" id="placeOfSupplyDropdown" class="app-select">
                         <option value="">Select Place of Supply</option>
 
                         @foreach (var state in ViewBag.States)
                         {
-                            <option value="@state.StateName"
-                                    data-state-code="@state.StateCode"
+                            <option value="@state.StateName" data-state-code="@state.StateCode"
                                     selected="@(Model.Client.PlaceOfSupply == state.StateName)">
                                 @state.StateName
                             </option>
                         }
                     </select>
 
-                    <span asp-validation-for="Client.PlaceOfSupply"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Client.PlaceOfSupply" class="validation-message"></span>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group india-only">
                     <label asp-for="Client.PlaceOfSupplyStateCode" class="form-label">
                         Place of Supply State Code
                     </label>
 
-                    <select asp-for="Client.PlaceOfSupplyStateCode"
-                            id="placeOfSupplyStateCodeDropdown"
+                    <select asp-for="Client.PlaceOfSupplyStateCode" id="placeOfSupplyStateCodeDropdown"
                             class="app-select">
                         <option value="">Select State Code</option>
 
                         @foreach (var state in ViewBag.States)
                         {
-                            <option value="@state.StateCode"
-                                    data-state-name="@state.StateName"
+                            <option value="@state.StateCode" data-state-name="@state.StateName"
                                     selected="@(Model.Client.PlaceOfSupplyStateCode == state.StateCode)">
                                 @state.StateCode - @state.StateName
                             </option>
                         }
                     </select>
 
-                    <span asp-validation-for="Client.PlaceOfSupplyStateCode"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Client.PlaceOfSupplyStateCode" class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
@@ -375,13 +358,9 @@
                         Credit Period
                     </label>
 
-                    <input asp-for="Client.CreditPeriod"
-                           type="number"
-                           min="0"
-                           class="app-input" />
+                    <input asp-for="Client.CreditPeriod" type="number" min="0" class="app-input" />
 
-                    <span asp-validation-for="Client.CreditPeriod"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Client.CreditPeriod" class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
@@ -391,8 +370,7 @@
 
                     <input asp-for="Client.PaymentTerms" class="app-input" />
 
-                    <span asp-validation-for="Client.PaymentTerms"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Client.PaymentTerms" class="validation-message"></span>
                 </div>
             </div>
 
@@ -401,37 +379,29 @@
                     Billing Address
                 </label>
 
-                <textarea asp-for="Client.BillingAddress"
-                          class="app-textarea"></textarea>
+                <textarea asp-for="Client.BillingAddress" class="app-textarea"></textarea>
 
-                <span asp-validation-for="Client.BillingAddress"
-                      class="validation-message"></span>
+                <span asp-validation-for="Client.BillingAddress" class="validation-message"></span>
             </div>
 
             <div class="form-group mt-3">
-                <label asp-for="Client.Address"
-                       class="form-label">
+                <label asp-for="Client.Address" class="form-label">
                     Address
                 </label>
 
-                <textarea asp-for="Client.Address"
-                          class="app-textarea"></textarea>
+                <textarea asp-for="Client.Address" class="app-textarea"></textarea>
 
-                <span asp-validation-for="Client.Address"
-                      class="validation-message"></span>
+                <span asp-validation-for="Client.Address" class="validation-message"></span>
             </div>
 
             <div class="form-group mt-3">
-                <label asp-for="Client.Remarks"
-                       class="form-label">
+                <label asp-for="Client.Remarks" class="form-label">
                     Remarks
                 </label>
 
-                <textarea asp-for="Client.Remarks"
-                          class="app-textarea"></textarea>
+                <textarea asp-for="Client.Remarks" class="app-textarea"></textarea>
 
-                <span asp-validation-for="Client.Remarks"
-                      class="validation-message"></span>
+                <span asp-validation-for="Client.Remarks" class="validation-message"></span>
             </div>
 
         </div>
@@ -442,15 +412,12 @@
 
         <div class="card-body">
 
-            <button type="submit"
-                    class="btn-app btn-primary-app">
+            <button type="submit" class="btn-app btn-primary-app">
                 <i class="bi bi-check-circle"></i>
                 Update Client
             </button>
 
-            <a asp-action="Details"
-               asp-route-id="@Model.Client.ClientId"
-               class="btn-app btn-secondary-app">
+            <a asp-action="Details" asp-route-id="@Model.Client.ClientId" class="btn-app btn-secondary-app">
                 Cancel
             </a>
 
@@ -467,38 +434,87 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const stateDropdown = document.getElementById("stateDropdown");
-            const stateCodeDropdown = document.getElementById("stateCodeDropdown");
-            const placeOfSupplyDropdown = document.getElementById("placeOfSupplyDropdown");
-            const placeOfSupplyStateCodeDropdown = document.getElementById("placeOfSupplyStateCodeDropdown");
 
-            if (stateDropdown && stateCodeDropdown) {
-                stateDropdown.addEventListener("change", function () {
-                    const selectedOption = stateDropdown.options[stateDropdown.selectedIndex];
-                    const selectedStateName = selectedOption?.value || "";
+            const countryDropdown = document.getElementById("countryDropdown");
+            const indiaOnlySections = document.querySelectorAll(".india-only");
+            const exportLutNotice = document.getElementById("exportLutNotice");
+            const taxStatusCard = document.getElementById("taxStatusCard");
 
-                    const matchingCodeOption = Array.from(stateCodeDropdown.options)
-                        .find(option => option.getAttribute("data-state-name") === selectedStateName);
+            function updateCountryTaxFields() {
+                if (!countryDropdown) {
+                    return;
+                }
 
-                    if (matchingCodeOption) {
-                        stateCodeDropdown.value = matchingCodeOption.value;
-                    }
+                const selectedOption =
+                    countryDropdown.options[countryDropdown.selectedIndex];
 
-                    if (placeOfSupplyDropdown && !placeOfSupplyDropdown.value) {
-                        placeOfSupplyDropdown.value = selectedStateName;
-                        placeOfSupplyDropdown.dispatchEvent(new Event("change"));
-                    }
+                const hasCountry = Boolean(countryDropdown.value);
+                const isIndia =
+                    selectedOption?.getAttribute("data-iso2") === "IN";
+
+                const isForeignClient = hasCountry && !isIndia;
+
+                indiaOnlySections.forEach(function(section) {
+                    section.classList.toggle("d-none", isForeignClient);
+
+                    section.querySelectorAll("input, select, textarea")
+                        .forEach(function(field) {
+                            field.disabled = isForeignClient;
+                        });
                 });
+
+                if (taxStatusCard) {
+                    taxStatusCard.classList.toggle(
+                        "d-none",
+                        !isForeignClient);
+                }
+
+                if (exportLutNotice) {
+                    exportLutNotice.classList.toggle("d-none",!isForeignClient);
+                }
             }
 
-            if (placeOfSupplyDropdown && placeOfSupplyStateCodeDropdown) {
-                placeOfSupplyDropdown.addEventListener("change", function () {
-                    const selectedOption = placeOfSupplyDropdown.options[placeOfSupplyDropdown.selectedIndex];
-                    const selectedStateCode = selectedOption?.getAttribute("data-state-code") || "";
+            if (countryDropdown) {
+                countryDropdown.addEventListener(
+                    "change",
+                    updateCountryTaxFields);
 
-                    placeOfSupplyStateCodeDropdown.value = selectedStateCode;
-                });
+                updateCountryTaxFields();
             }
+
+
+        const stateDropdown = document.getElementById("stateDropdown");
+        const stateCodeDropdown = document.getElementById("stateCodeDropdown");
+        const placeOfSupplyDropdown = document.getElementById("placeOfSupplyDropdown");
+        const placeOfSupplyStateCodeDropdown = document.getElementById("placeOfSupplyStateCodeDropdown");
+
+        if (stateDropdown && stateCodeDropdown) {
+        stateDropdown.addEventListener("change", function () {
+        const selectedOption = stateDropdown.options[stateDropdown.selectedIndex];
+        const selectedStateName = selectedOption?.value || "";
+
+        const matchingCodeOption = Array.from(stateCodeDropdown.options)
+        .find(option => option.getAttribute("data-state-name") === selectedStateName);
+
+        if (matchingCodeOption) {
+        stateCodeDropdown.value = matchingCodeOption.value;
+        }
+
+        if (placeOfSupplyDropdown && !placeOfSupplyDropdown.value) {
+        placeOfSupplyDropdown.value = selectedStateName;
+        placeOfSupplyDropdown.dispatchEvent(new Event("change"));
+        }
+        });
+        }
+
+        if (placeOfSupplyDropdown && placeOfSupplyStateCodeDropdown) {
+        placeOfSupplyDropdown.addEventListener("change", function () {
+        const selectedOption = placeOfSupplyDropdown.options[placeOfSupplyDropdown.selectedIndex];
+        const selectedStateCode = selectedOption?.getAttribute("data-state-code") || "";
+
+        placeOfSupplyStateCodeDropdown.value = selectedStateCode;
+        });
+        }
         });
     </script>
 }

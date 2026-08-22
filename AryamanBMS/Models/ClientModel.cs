@@ -31,8 +31,19 @@ namespace AryamanBMS.Models
         [StringLength(500)]
         public string? Address { get; set; }
 
+        public int? CountryId { get; set; }
+
+        [ForeignKey(nameof(CountryId))]
+        [ValidateNever]
+        public CountryModel? Country { get; set; }
+
+        [StringLength(30)]
+        public string TaxTreatment { get; set; } = "Domestic";
+
         [StringLength(100)]
         public string? City { get; set; }
+
+        
 
         [StringLength(100)]
         public string? State { get; set; }

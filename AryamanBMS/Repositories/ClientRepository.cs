@@ -15,7 +15,9 @@ namespace AryamanBMS.Repositories
         }
 
         private IQueryable<ClientModel> Clients =>
-            _context.Clients.AsQueryable();
+         _context.Clients
+        .Include(x => x.Country)
+        .AsQueryable();
 
         public async Task<List<ClientModel>> GetAllAsync()
         {

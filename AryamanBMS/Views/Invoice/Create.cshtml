@@ -37,6 +37,15 @@
 
         <div class="card-body">
 
+            <div id="exportLutInvoiceNotice"
+                 class="app-alert-info d-none mb-3">
+                <strong>Export under LUT</strong>
+                <div>
+                    GST is zero-rated for this foreign client. A valid company LUT
+                    will be checked when the invoice is saved.
+                </div>
+            </div>
+
             <div asp-validation-summary="ModelOnly"
                  class="validation-message">
             </div>
@@ -87,6 +96,7 @@
                         @foreach (var client in ViewBag.Clients)
                         {
                             <option value="@client.ClientId"
+                                    data-tax-treatment="@client.TaxTreatment"
                                     data-gst="@client.GSTNumber"
                                     data-address="@client.Address"
                                     data-state-code="@(client.GSTNumber?.Length >= 2 ? client.GSTNumber.Substring(0, 2) : "")">
@@ -181,7 +191,7 @@
                           class="validation-message"></span>
                 </div>
 
-                <div class="form-group gst-section">
+                <div class="form-group gst-section gst-only-section">
                     <label asp-for="GSTNo"
                            class="form-label">
                         GST No
@@ -210,7 +220,7 @@
 
                 
 
-                <div class="form-group gst-section">
+                <div class="form-group gst-section gst-only-section">
                     <div class="form-check">
 
                         <input asp-for="IsInterState"

@@ -1534,17 +1534,14 @@ namespace AryamanBMS.Controllers
 
         private async Task<string?> GetCalendarStatusAsync(DateTime date)
         {
-            if (await IsOfficeHolidayAsync(date))
-            {
-                return "H";
-            }
+            var dayStatus = await _workingDayService.GetDayStatusAsync(date);
 
-            if (IsWeeklyOff(date))
+            return dayStatus switch
             {
-                return "WO";
-            }
-
-            return null;
+                "Holiday" => "H",
+                "WeeklyOff" => "WO",
+                _ => null
+            };
         }
 
         private async Task<bool> HasApprovedLeaveOnDateAsync(
@@ -1568,66 +1565,6 @@ namespace AryamanBMS.Controllers
                         d.Status != "Cancelled")
                     : l.FromDate.Date <= date.Date &&
                       l.ToDate.Date >= date.Date);
-        }
-
-        private bool IsWeeklyOff(DateTime date)
-        {
-            var configuredDays =
-                _configuration
-                    .GetSection("Attendance:WeeklyOffDays")
-                    .Get<string[]>()
-                ?? Array.Empty<string>();
-
-            if (configuredDays.Any(day =>
-                Enum.TryParse(day, true, out DayOfWeek weeklyOffDay) &&
-                date.DayOfWeek == weeklyOffDay))
-            {
-                return true;
-            }
-
-            // Apply the configured alternate-Saturday working pattern.
-            if (date.DayOfWeek == DayOfWeek.Saturday)
-            {
-                var saturdayNumber = ((date.Day - 1) / 7) + 1;
-
-                var workingSaturdays =
-                    _configuration
-                        .GetSection("Attendance:WorkingSaturdayNumbers")
-                        .Get<int[]>()
-                    ?? new[] { 1, 3, 5 };
-
-                return !workingSaturdays.Contains(saturdayNumber);
-            }
-
-            return false;
-        }
-
-        private async Task<bool> IsOfficeHolidayAsync(DateTime date)
-        {
-            var configuredHolidays =
-                _configuration
-                    .GetSection("Attendance:OfficeHolidays")
-                    .Get<string[]>();
-
-            if (configuredHolidays == null)
-            {
-                return false;
-            }
-
-            foreach (var configuredHoliday in configuredHolidays)
-            {
-                if (DateTime.TryParse(configuredHoliday, out var holiday) &&
-                    holiday.Date == date.Date)
-                {
-                    return true;
-                }
-            }
-
-            return await _context.Holidays
-                .AsNoTracking()
-                .AnyAsync(x =>
-                    x.IsActive &&
-                    x.HolidayDate.Date == date.Date);
         }
 
         private static decimal NormalizeAttendanceValue(decimal value)
