@@ -29,6 +29,15 @@ namespace AryamanBMS.Models
         [Column(TypeName = "decimal(5,2)")]
         public decimal IgstRate { get; set; }
 
+        [StringLength(100)]
+        public string? LutReference { get; set; }
+
+        [DataType(DataType.Date)]
+        public DateTime? LutValidFrom { get; set; }
+
+        [DataType(DataType.Date)]
+        public DateTime? LutValidTo { get; set; }
+
         public bool IsActive { get; set; } = true;
 
         [StringLength(450)]

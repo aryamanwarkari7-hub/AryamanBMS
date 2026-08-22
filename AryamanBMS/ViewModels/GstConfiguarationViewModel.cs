@@ -30,6 +30,15 @@ namespace AryamanBMS.ViewModels
         [StringLength(50)]
         public string RegisteredState { get; set; } = "MH";
 
+        [StringLength(100)]
+        public string? LutReference { get; set; }
+
+        [DataType(DataType.Date)]
+        public DateTime? LutValidFrom { get; set; }
+
+        [DataType(DataType.Date)]
+        public DateTime? LutValidTo { get; set; }
+
         public bool IsActive { get; set; } = true;
 
         public string? UpdatedByUserId { get; set; }

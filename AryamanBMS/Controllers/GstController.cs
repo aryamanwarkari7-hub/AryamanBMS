@@ -1,3 +1,4 @@
+using AryamanBMS.Data;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
@@ -11,6 +12,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+
+using AryamanBMS.Utilities.Helpers;
 
 namespace AryamanBMS.Controllers
 {
@@ -32,6 +36,7 @@ namespace AryamanBMS.Controllers
         private readonly UserManager<ApplicationUserModel> _userManager;
         private readonly ILogger<GstController> _logger;
         private readonly INotificationService _notificationService;
+        private readonly ApplicationDbContext _context;
 
         private const string DocumentFolder = "GstDocuments";
 
@@ -51,7 +56,8 @@ namespace AryamanBMS.Controllers
            IFileStorageService fileStorageService,
            UserManager<ApplicationUserModel> userManager,
            ILogger<GstController> logger,
-           INotificationService notificationService)
+           INotificationService notificationService,
+           ApplicationDbContext context)
         {
             _calculationService = calculationService;
             _dashboardService = dashboardService;
@@ -64,6 +70,7 @@ namespace AryamanBMS.Controllers
             _userManager = userManager;
             _logger = logger;
             _notificationService = notificationService;
+            _context = context;
         }
 
         #region Index - Landing Page
@@ -362,10 +369,23 @@ namespace AryamanBMS.Controllers
                         CgstRate = configuration.CgstRate,
                         SgstRate = configuration.SgstRate,
                         IgstRate = configuration.IgstRate,
+                        LutReference = configuration.LutReference,
+                        LutValidFrom = configuration.LutValidFrom,
+                        LutValidTo = configuration.LutValidTo,
                         IsActive = configuration.IsActive,
                         UpdatedByUserId = configuration.UpdatedByUserId,
                         LastUpdatedOn = configuration.UpdatedOn
                     };
+
+                ViewBag.LutDocuments = configuration == null
+    ? new List<GstLutDocumentModel>()
+    : await _context.GstLutDocuments
+        .AsNoTracking()
+        .Where(x =>
+            x.GstConfigurationId == configuration.GstConfigurationId &&
+            x.IsActive)
+        .OrderByDescending(x => x.UploadedOn)
+        .ToListAsync();
 
                 return View(model);
             }
@@ -488,6 +508,218 @@ namespace AryamanBMS.Controllers
                 TempData["Error"] = $"Error updating company details: {ex.Message}";
                 return RedirectToAction(nameof(Configuration));
             }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateLut(
+    string? lutReference,
+    DateTime? lutValidFrom,
+    DateTime? lutValidTo)
+        {
+            lutReference = string.IsNullOrWhiteSpace(lutReference)
+                ? null
+                : lutReference.Trim().ToUpperInvariant();
+
+            bool hasAnyLutValue =
+                !string.IsNullOrWhiteSpace(lutReference) ||
+                lutValidFrom.HasValue ||
+                lutValidTo.HasValue;
+
+            if (hasAnyLutValue &&
+                (string.IsNullOrWhiteSpace(lutReference) ||
+                 !lutValidFrom.HasValue ||
+                 !lutValidTo.HasValue))
+            {
+                TempData["Error"] =
+                    "LUT reference, valid-from date, and valid-to date are all required.";
+
+                return RedirectToAction(nameof(Configuration));
+            }
+
+            if (lutReference?.Length > 100)
+            {
+                TempData["Error"] =
+                    "LUT reference cannot exceed 100 characters.";
+
+                return RedirectToAction(nameof(Configuration));
+            }
+
+            if (lutValidFrom.HasValue &&
+                lutValidTo.HasValue &&
+                lutValidFrom.Value.Date > lutValidTo.Value.Date)
+            {
+                TempData["Error"] =
+                    "LUT valid-to date cannot be before the valid-from date.";
+
+                return RedirectToAction(nameof(Configuration));
+            }
+
+            var configuration =
+                await GetOrCreateConfigurationAsync();
+
+            configuration.LutReference = lutReference;
+            configuration.LutValidFrom = lutValidFrom?.Date;
+            configuration.LutValidTo = lutValidTo?.Date;
+            configuration.UpdatedByUserId = _userManager.GetUserId(User);
+
+            await _configurationRepository.SaveActiveAsync(configuration);
+
+            TempData["Success"] = hasAnyLutValue
+                ? "LUT details updated successfully."
+                : "LUT details cleared successfully.";
+
+            return RedirectToAction(nameof(Configuration));
+        }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UploadLutDocument(
+    IFormFile? lutDocument,
+    string? lutReference,
+    DateTime? lutValidFrom,
+    DateTime? lutValidTo)
+        {
+            if (lutDocument == null || lutDocument.Length == 0)
+            {
+                TempData["Error"] = "Please select a LUT document to upload.";
+                return RedirectToAction(nameof(Configuration));
+            }
+
+            string extension = Path.GetExtension(lutDocument.FileName)
+                .ToLowerInvariant();
+
+            if (extension != ".pdf")
+            {
+                TempData["Error"] = "Only PDF LUT documents are allowed.";
+                return RedirectToAction(nameof(Configuration));
+            }
+
+            lutReference = string.IsNullOrWhiteSpace(lutReference)
+                ? null
+                : lutReference.Trim().ToUpperInvariant();
+
+            if (string.IsNullOrWhiteSpace(lutReference) ||
+                !lutValidFrom.HasValue ||
+                !lutValidTo.HasValue)
+            {
+                TempData["Error"] =
+                    "LUT reference, valid-from date, and valid-to date are required with the uploaded document.";
+
+                return RedirectToAction(nameof(Configuration));
+            }
+
+            if (lutReference.Length > 100)
+            {
+                TempData["Error"] = "LUT reference cannot exceed 100 characters.";
+                return RedirectToAction(nameof(Configuration));
+            }
+
+            if (lutValidFrom.Value.Date > lutValidTo.Value.Date)
+            {
+                TempData["Error"] =
+                    "LUT valid-to date cannot be before the valid-from date.";
+
+                return RedirectToAction(nameof(Configuration));
+            }
+
+            var upload = await _fileStorageService.UploadAsync(
+                lutDocument,
+                "GstLutDocuments");
+
+            if (!upload.Success)
+            {
+                TempData["Error"] = upload.ErrorMessage;
+                return RedirectToAction(nameof(Configuration));
+            }
+
+            try
+            {
+                var configuration = await GetOrCreateConfigurationAsync();
+
+                configuration.LutReference = lutReference;
+                configuration.LutValidFrom = lutValidFrom.Value.Date;
+                configuration.LutValidTo = lutValidTo.Value.Date;
+                configuration.UpdatedByUserId = _userManager.GetUserId(User);
+
+                await _configurationRepository.SaveActiveAsync(configuration);
+
+                var activeDocuments = await _context.GstLutDocuments
+                    .Where(x =>
+                        x.GstConfigurationId == configuration.GstConfigurationId &&
+                        x.IsActive)
+                    .ToListAsync();
+
+                foreach (var document in activeDocuments)
+                {
+                    document.IsActive = false;
+                }
+
+                var lutRecord = new GstLutDocumentModel
+                {
+                    GstConfigurationId = configuration.GstConfigurationId,
+                    LutReference = lutReference,
+                    LutValidFrom = lutValidFrom.Value.Date,
+                    LutValidTo = lutValidTo.Value.Date,
+                    OriginalFileName = upload.OriginalFileName,
+                    StoredFileName = upload.StoredFileName,
+                    ContentType = upload.ContentType,
+                    FileSize = upload.FileSize,
+                    UploadedOn = DateTime.Now,
+                    UploadedByUserId = _userManager.GetUserId(User),
+                    IsActive = true
+                };
+
+                _context.GstLutDocuments.Add(lutRecord);
+                await _context.SaveChangesAsync();
+
+                TempData["Success"] =
+                    "LUT document uploaded and activated successfully.";
+            }
+            catch (Exception ex)
+            {
+                await _fileStorageService.DeleteAsync(upload.RelativePath);
+
+                _logger.LogError(ex, "Error uploading LUT document");
+
+                TempData["Error"] =
+                    "The LUT document could not be saved. Please try again.";
+            }
+
+            return RedirectToAction(nameof(Configuration));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DownloadLutDocument(int id)
+        {
+            var document = await _context.GstLutDocuments
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.GstLutDocumentId == id &&
+                    x.IsActive);
+
+            if (document == null)
+            {
+                TempData["Error"] = "The requested LUT document was not found.";
+                return RedirectToAction(nameof(Configuration));
+            }
+
+            var fileBytes = await _fileStorageService.DownloadAsync(
+                $"GstLutDocuments/{document.StoredFileName}");
+
+            if (fileBytes == null)
+            {
+                TempData["Error"] =
+                    "The LUT document file could not be found in secure storage.";
+
+                return RedirectToAction(nameof(Configuration));
+            }
+
+            return File(
+                fileBytes,
+                document.ContentType,
+                document.OriginalFileName);
         }
 
         #endregion
@@ -1132,9 +1364,7 @@ namespace AryamanBMS.Controllers
 
         private bool IsValidGstin(string gstin)
         {
-            return Regex.IsMatch(
-                gstin,
-                @"^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$");
+            return GstinValidator.IsValid(gstin);
         }
 
         private bool IsValidRegisteredState(string stateCode)

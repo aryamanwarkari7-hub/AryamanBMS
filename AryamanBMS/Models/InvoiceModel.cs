@@ -33,6 +33,18 @@ namespace AryamanBMS.Models
 
         public string? GSTNo { get; set; }
 
+        [StringLength(30)]
+        public string TaxTreatment { get; set; } = "Domestic";
+
+        [StringLength(150)]
+        public string? CustomerCountryName { get; set; }
+
+        [StringLength(2)]
+        public string? CustomerCountryIso2Code { get; set; }
+
+        [StringLength(100)]
+        public string? LutReference { get; set; }
+
         public bool IsInterState { get; set; }
 
         [StringLength(2)]

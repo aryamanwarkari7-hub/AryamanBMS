@@ -17,6 +17,9 @@
     };
 
     bool isProforma = Model.InvoiceType == "Proforma Invoice";
+    bool isExportUnderLut = Model.TaxTreatment == "ExportUnderLUT";
+
+    bool hideGstColumns = isProforma || isExportUnderLut;
     bool hasDocx = ViewBag.CurrentDocx is bool docx && docx;
     bool hasPdf = ViewBag.CurrentPdf is bool pdf && pdf;
 
@@ -225,7 +228,39 @@
 
             <div class="card-body">
                 <div class="detail-info-list">
-                    @if (!isProforma)
+                    @if (isExportUnderLut)
+                    {
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Tax Treatment</span>
+                            <strong class="detail-info-value">
+                                <span class="badge-info">Export under LUT</span>
+                            </strong>
+                        </div>
+
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Customer Country</span>
+                            <strong class="detail-info-value">
+                                @(Model.CustomerCountryName ?? "-")
+                                (@(Model.CustomerCountryIso2Code ?? "-"))
+                            </strong>
+                        </div>
+
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">LUT Reference</span>
+                            <strong class="detail-info-value">
+                                @(Model.LutReference ?? "-")
+                            </strong>
+                        </div>
+
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Export Declaration</span>
+                            <strong class="detail-info-value">
+                                Supply meant for export under Letter of Undertaking
+                                without payment of integrated tax.
+                            </strong>
+                        </div>
+                    }
+                    else if (!isProforma)
                     {
                         <div class="detail-info-row">
                             <span class="detail-info-label">GST No</span>
@@ -238,7 +273,10 @@
                             <span class="detail-info-label">Tax Type</span>
                             <strong class="detail-info-value">@taxType</strong>
                         </div>
+                    }
 
+                    @if (!isProforma)
+                    {
                         <div class="detail-info-row">
                             <span class="detail-info-label">SAC Code</span>
                             <strong class="detail-info-value">
@@ -282,7 +320,7 @@
                             <th>Unit</th>
                             <th class="text-end">Rate</th>
 
-                            @if (!isProforma)
+                            @if (!hideGstColumns)
                             {
                                 <th class="text-end">GST %</th>
                                 <th class="text-end">GST Amount</th>
@@ -309,7 +347,7 @@
                                     <td>@item.Unit</td>
                                     <td class="text-end">@item.Rate.ToString("N2")</td>
 
-                                    @if (!isProforma)
+                                    @if (!hideGstColumns)
                                     {
                                         <td class="text-end">@item.GSTPercent.ToString("N2")</td>
                                         <td class="text-end">@item.GSTAmount.ToString("N2")</td>
@@ -324,7 +362,7 @@
                         else
                         {
                             <tr>
-                                <td colspan="@(isProforma ? 7 : 9)" class="empty-state">
+                                <td colspan="@(hideGstColumns ? 7 : 9)" class="empty-state">
                                     No invoice items found.
                                 </td>
                             </tr>
@@ -357,7 +395,7 @@
                         </strong>
                     </div>
 
-                    @if (!isProforma)
+                    @if (!hideGstColumns)
                     {
                         if (Model.IsInterState)
                         {

@@ -58,6 +58,11 @@ namespace AryamanBMS.Repositories
                 existing.CgstRate = configuration.CgstRate;
                 existing.SgstRate = configuration.SgstRate;
                 existing.IgstRate = configuration.IgstRate;
+
+                existing.LutReference = configuration.LutReference;
+                existing.LutValidFrom = configuration.LutValidFrom;
+                existing.LutValidTo = configuration.LutValidTo;
+
                 existing.IsActive = true;
                 existing.UpdatedByUserId = configuration.UpdatedByUserId;
                 existing.UpdatedOn = configuration.UpdatedOn;

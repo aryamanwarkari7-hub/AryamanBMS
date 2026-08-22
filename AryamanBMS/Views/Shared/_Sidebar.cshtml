@@ -1108,9 +1108,15 @@ currentController == "LeaveApplication" ||
                                  id="complianceDocumentsSubMenu" data-bs-parent="#financeSubAccordion">
 
                                 <a asp-controller="Gst" asp-action="Index"
-                                   class="submenu-item nested-item @(currentController == "Gst" ? "active-menu" : "")">
+                                   class="submenu-item nested-item @(currentController == "Gst" && currentAction != "Configuration" ? "active-menu" : "")">
                                     <i class="bi bi-calculator"></i>
                                     <span>GST</span>
+                                </a>
+
+                                <a asp-controller="Gst" asp-action="Configuration"
+                                   class="submenu-item nested-item @(currentController == "Gst" && currentAction == "Configuration" ? "active-menu" : "")">
+                                    <i class="bi bi-gear"></i>
+                                    <span>GST Configuration</span>
                                 </a>
 
                                 <div class="submenu-nested">
