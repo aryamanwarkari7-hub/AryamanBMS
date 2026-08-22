@@ -1,0 +1,21 @@
+﻿/*.document-upload-wrapper {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+    .document-upload-wrapper input[type="file"] {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    .document-upload-wrapper .document-upload-delete {
+        display: none;
+        width: 54px;
+        height: 54px;
+        margin: 0;
+        flex: none;
+    }
+*/

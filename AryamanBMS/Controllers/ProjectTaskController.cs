@@ -168,6 +168,7 @@ namespace AryamanBMS.Controllers
 
             bool canManageProject =
                 User.IsInRole("Admin") ||
+                User.IsInRole("Master") ||
                 User.IsInRole("HR");
 
             if (!canManageProject)
@@ -213,6 +214,7 @@ namespace AryamanBMS.Controllers
 
                 bool canManage =
                     User.IsInRole("Admin") ||
+                    User.IsInRole("Master") ||
                     User.IsInRole("HR") ||
                     (employeeId.HasValue &&
                      await _projectRepository.Projects.AnyAsync(p =>
@@ -246,6 +248,7 @@ namespace AryamanBMS.Controllers
             bool canManage =
                 User.IsInRole("Admin") ||
                 User.IsInRole("HR") ||
+                User.IsInRole("Master") ||
                 (employeeId.HasValue &&
                  await _projectRepository.Projects.AnyAsync(p =>
                      p.Id == model.ProjectId &&
@@ -399,6 +402,7 @@ namespace AryamanBMS.Controllers
             bool canManage =
                 User.IsInRole("Admin") ||
                 User.IsInRole("HR") ||
+                User.IsInRole("Master") ||
                 (employeeId.HasValue &&
                  await _projectRepository.Projects.AnyAsync(p =>
                      p.Id == task.ProjectId &&
@@ -426,6 +430,7 @@ namespace AryamanBMS.Controllers
             bool canManage =
                 User.IsInRole("Admin") ||
                 User.IsInRole("HR") ||
+                User.IsInRole("Master") ||
                 (employeeId.HasValue &&
                  await _projectRepository.Projects.AnyAsync(p =>
                      p.Id == model.ProjectId &&
@@ -651,6 +656,7 @@ namespace AryamanBMS.Controllers
             bool canManage =
                 User.IsInRole("Admin") ||
                 User.IsInRole("HR") ||
+                User.IsInRole("Master") ||
                 (employeeId.HasValue &&
                  await _projectRepository.Projects.AnyAsync(p =>
                      p.Id == task.ProjectId &&
@@ -681,6 +687,7 @@ namespace AryamanBMS.Controllers
             bool canManage =
                 User.IsInRole("Admin") ||
                 User.IsInRole("HR") ||
+                User.IsInRole("Master") ||
                 (employeeId.HasValue &&
                  await _projectRepository.Projects.AnyAsync(p =>
                      p.Id == task.ProjectId &&
@@ -714,6 +721,7 @@ namespace AryamanBMS.Controllers
             bool canManage =
                 User.IsInRole("Admin") ||
                 User.IsInRole("HR") ||
+                User.IsInRole("Master") ||
                 (employeeId.HasValue &&
                  await _projectRepository.Projects.AnyAsync(p =>
                      p.Id == projectId&&

@@ -552,7 +552,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,HR,Master")]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Approve(int id)
         {
             var leaveApplication =
@@ -904,7 +904,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin,HR,Master")]
+        [Authorize(Roles = "Admin,HR")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Reject(int id)
         {
@@ -987,10 +987,7 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            if (User.IsInRole("Employee") &&
-               !User.IsInRole("Admin") &&
-               !User.IsInRole("HR") &&
-               !User.IsInRole("Master"))
+            if (!User.IsInRole("Admin") && !User.IsInRole("HR"))
             {
                 var user = await _userManager.GetUserAsync(User);
 
@@ -1043,9 +1040,7 @@ namespace AryamanBMS.Controllers
             }
 
             // Employee can request cancellation only for their own leave
-            if (!User.IsInRole("Admin") &&
-                !User.IsInRole("HR") &&
-                !User.IsInRole("Master"))
+            if (!User.IsInRole("Admin") && !User.IsInRole("HR"))
             {
                 var user = await _userManager.GetUserAsync(User);
 
@@ -1172,7 +1167,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,HR,Master")]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> ApproveCancellation(
     int id,
     string? cancellationRemarks)
@@ -1364,7 +1359,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,HR,Master")]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> RejectCancellation(
     int id,
     string? cancellationRemarks)
@@ -1701,7 +1696,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,HR,Master")]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> UpdatePaidLeaveCarryForward(
     int employeeId,
     int year,

@@ -4,6 +4,8 @@
 
 @{
     ViewData["Title"] = "Project Workspace";
+
+    bool isMaster = User.IsInRole("Master");
 }
 
 <div class="module-header">
@@ -38,7 +40,7 @@
             Tasks
         </a>
 
-        @if (Model.CanManageProject)
+        @if (Model.CanManageProject && isMaster)
         {
             <a asp-controller="ProjectMember"
                asp-action="AllMembers"

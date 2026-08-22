@@ -903,7 +903,7 @@
                                 <input asp-for="PreviousEmployments[i].ExperienceLetter"
                                        type="file"
                                        accept=".pdf,application/pdf"
-                                       class="form-control" />
+                                       class="form-control document-pdf-input" />
 
                                 <span asp-validation-for="PreviousEmployments[i].ExperienceLetter"
                                       class="validation-message"></span>
@@ -913,9 +913,9 @@
                                 <label class="form-label">Relieving Letter</label>
 
                                 <input asp-for="PreviousEmployments[i].RelievingLetter"
-                                       type="file"
-                                       accept=".pdf,application/pdf"
-                                       class="form-control" />
+       type="file"
+       accept=".pdf,application/pdf"
+       class="form-control document-pdf-input" />
 
                                 <span asp-validation-for="PreviousEmployments[i].RelievingLetter"
                                       class="validation-message"></span>

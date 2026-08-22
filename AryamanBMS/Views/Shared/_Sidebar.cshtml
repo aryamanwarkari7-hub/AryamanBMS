@@ -530,6 +530,16 @@
                     </div>
                     }
 
+                    @if (isMaster)
+{
+    <a asp-controller="Employee"
+       asp-action="Index"
+       class="submenu-item @(currentController == "Employee" && currentAction == "Index" ? "active-menu" : "")">
+        <i class="bi bi-people-fill"></i>
+        <span>Employees</span>
+    </a>
+}
+
                     @* ==========================================
                         LEAVE
                     ========================================== *@

@@ -1,6 +1,8 @@
 ﻿@model List<AryamanBMS.ViewModels.EmployeePaidLeaveBalanceViewModel>
 
 @{
+    bool isMaster = User.IsInRole("Master");
+
     ViewData["Title"] = "Paid Leave Balance Register";
     int selectedYear = ViewBag.SelectedYear;
     string? searchText = ViewBag.SearchText;
@@ -43,19 +45,12 @@
         <form method="get" class="form-grid-3">
             <div class="form-group">
                 <label class="form-label">Financial Year Start</label>
-                <input type="number"
-                       name="year"
-                       value="@selectedYear"
-                       class="app-input" />
+                <input type="number" name="year" value="@selectedYear" class="app-input" />
             </div>
 
             <div class="form-group">
                 <label class="form-label">Search Employee</label>
-                <input type="text"
-                       name="searchText"
-                       value="@searchText"
-                       class="app-input"
-                       placeholder="Code or name" />
+                <input type="text" name="searchText" value="@searchText" class="app-input" placeholder="Code or name" />
             </div>
 
             <div class="form-group d-flex flex-row align-items-end gap-2">
@@ -64,8 +59,7 @@
                     Apply
                 </button>
 
-                <a asp-action="PaidLeaveBalanceRegister"
-                   asp-controller="LeaveApplication"
+                <a asp-action="PaidLeaveBalanceRegister" asp-controller="LeaveApplication"
                    class="btn-app btn-secondary-app">
                     <i class="bi bi-arrow-counterclockwise"></i>
                     Reset
@@ -134,29 +128,29 @@
                                 <td>@item.FinancialYearLabel</td>
                                 <td>@item.ProratedEntitlement.ToString("0.##")</td>
                                 <td>
-                                    <form asp-action="UpdatePaidLeaveCarryForward"
-                                          asp-controller="LeaveApplication"
-                                          method="post"
-                                          class="d-flex gap-2 align-items-center">
-                                        @Html.AntiForgeryToken()
+                                    @if (isMaster)
+                                    {
+                                        @item.CarryForwardDays.ToString("0.##")
+                                    }
+                                    else
+                                    {
+                                        <form asp-action="UpdatePaidLeaveCarryForward" asp-controller="LeaveApplication"
+                                              method="post" class="d-flex gap-2 align-items-center">
+                                            @Html.AntiForgeryToken()
 
-                                        <input type="hidden" name="employeeId" value="@item.EmployeeId" />
-                                        <input type="hidden" name="year" value="@selectedYear" />
+                                            <input type="hidden" name="employeeId" value="@item.EmployeeId" />
+                                            <input type="hidden" name="year" value="@selectedYear" />
 
-                                        <input type="number"
-                                               name="carryForwardDays"
-                                               value="@item.CarryForwardDays.ToString("0.##")"
-                                               min="0"
-                                               step="0.5"
-                                               class="app-input"
-                                               style="max-width: 90px;" />
+                                            <input type="number" name="carryForwardDays"
+                                                   value="@item.CarryForwardDays.ToString("0.##")" min="0" step="0.5" class="app-input"
+                                                   style="max-width: 90px;" />
 
-                                        <button type="submit"
-                                                class="btn-app btn-secondary-app btn-icon"
-                                                title="Update carry forward">
-                                            <i class="bi bi-check-lg"></i>
-                                        </button>
-                                    </form>
+                                            <button type="submit" class="btn-app btn-secondary-app btn-icon"
+                                                    title="Update carry forward">
+                                                <i class="bi bi-check-lg"></i>
+                                            </button>
+                                        </form>
+                                    }
                                 </td>
                                 <td>@item.PaidUsed.ToString("0.##")</td>
                                 <td>@item.PendingPaidLeaveReserved.ToString("0.##")</td>

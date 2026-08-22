@@ -57,6 +57,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,HR")]
         public IActionResult Create()
         {
             return View();
@@ -64,7 +65,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,HR,Master")]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Create(
             LeaveTypeModel leaveType)
         {
@@ -112,6 +113,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Edit(int id)
         {
             var leaveType =
@@ -127,7 +129,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,HR,Master")]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Edit(
             LeaveTypeModel leaveType)
         {
@@ -164,6 +166,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Delete(int id)
         {
             var leaveType =
@@ -179,7 +182,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,HR,Master")]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var leaveType = await _leaveTypeRepository.GetByIdAsync(id);

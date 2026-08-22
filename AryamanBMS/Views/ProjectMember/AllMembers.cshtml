@@ -37,7 +37,7 @@
                         @selectedProject.ProjectCode - @selectedProject.ProjectName
                     </span>
                 }
-                else if (User.IsInRole("Admin") || User.IsInRole("HR"))
+                else if (User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("Master"))
                 {
                     <span>
                         View employee assignments across all projects

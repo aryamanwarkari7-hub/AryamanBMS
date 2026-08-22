@@ -368,7 +368,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,HR,Master")]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Approve(int id)
         {
             var compOffCredit =
@@ -432,7 +432,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,HR,Master")]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Reject(int id)
         {
             var compOffCredit =

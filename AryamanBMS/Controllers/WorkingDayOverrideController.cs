@@ -135,6 +135,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,HR")]
         public IActionResult Create()
         {
             return View(new WorkingDayOverrideModel
@@ -145,6 +146,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin,HR")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
             WorkingDayOverrideModel model)
@@ -191,6 +193,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Edit(int id)
         {
             var model =
@@ -206,6 +209,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin,HR")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id,
@@ -267,6 +271,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin,HR")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Deactivate(int id)
         {

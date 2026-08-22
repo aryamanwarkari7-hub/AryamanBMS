@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = "Leave Types";
+
+    var isMaster = User.IsInRole("Master");
 }
 <div class="module-header">
 
@@ -15,28 +17,27 @@
         </p>
     </div>
 
-    <a asp-action="Create"
-       class="btn-app btn-primary-app">
+    @if (!isMaster)
+    {
+        <a asp-action="Create" class="btn-app btn-primary-app">
 
-        <i class="bi bi-plus-lg"></i>
-        Add Leave Type
+            <i class="bi bi-plus-lg"></i>
+            Add Leave Type
 
-    </a>
+        </a>
+    }
 
 </div>
 
 <div class="app-card">
-    
+
     <div class="card-body">
-        
+
         <form asp-action="Index" method="get" class="filter-form-row">
 
             <div class="form-group">
                 <label class="form-label">Search</label>
-                <input type="text"
-                       name="searchText"
-                       value="@ViewBag.SearchText"
-                       class="app-input"
+                <input type="text" name="searchText" value="@ViewBag.SearchText" class="app-input"
                        placeholder="Leave code or name" />
             </div>
 
@@ -78,93 +79,96 @@
     <div class="card-body">
 
         <div class="app-alert-info mb-3">
-            Leave types are categories only. Paid leave eligibility is calculated from the annual 18-day financial-year pool.
+            Leave types are categories only. Paid leave eligibility is calculated from the annual 18-day financial-year
+            pool.
         </div>
 
         <div class="table-responsive">
 
-        <table class="app-table" id="leaveTypeTable">
+            <table class="app-table" id="leaveTypeTable">
 
-            <thead>
+                <thead>
 
-                <tr>
-                    <th>Code</th>
-                    <th>Name</th>
-                    
-                    <th>Carry Forward</th>
-                    
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-
-            </thead>
-
-            <tbody>
-
-                @foreach (var item in Model)
-                {
                     <tr>
+                        <th>Code</th>
+                        <th>Name</th>
 
-                        <td>@item.LeaveCode</td>
+                        <th>Carry Forward</th>
 
-                        <td>@item.LeaveName</td>
-
-                        
-
-                        <td>
-                            @(item.IsCarryForward ? "Yes" : "No")
-                        </td>
-
-                        
-
-                        <td>
-
-                            @if (item.IsActive)
-                            {
-                                <span class="badge-success">
-                                    Active
-                                </span>
-                            }
-                            else
-                            {
-                                <span class="badge-danger">
-                                    Inactive
-                                </span>
-                            }
-
-                        </td>
-
-                        <td>
-
-                            <div class="table-actions">
-
-                                <a asp-action="Edit"
-                                   asp-route-id="@item.Id"
-                                   class="btn-app btn-secondary-app btn-icon">
-
-                                    <i class="bi bi-pencil"></i>
-
-                                </a>
-
-                                <a asp-action="Delete"
-                                   asp-route-id="@item.Id"
-                                   class="btn-app btn-danger-app btn-icon"
-                                   title="Deactivate">
-
-                                    <i class="bi bi-trash"></i>
-
-                                </a>
-
-                            </div>
-
-                        </td>
-
+                        <th>Status</th>
+                        @if (!isMaster)
+                        {
+                            <th>Actions</th>
+                        }
                     </tr>
-                }
 
-            </tbody>
+                </thead>
 
-        </table>
+                <tbody>
+
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+
+                            <td>@item.LeaveCode</td>
+
+                            <td>@item.LeaveName</td>
+
+                        
+
+                            <td>
+                                @(item.IsCarryForward ? "Yes" : "No")
+                            </td>
+
+                        
+
+                            <td>
+
+                                @if (item.IsActive)
+                                {
+                                    <span class="badge-success">
+                                        Active
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge-danger">
+                                        Inactive
+                                    </span>
+                                }
+
+                            </td>
+
+                            @if (!isMaster)
+                            {
+                                <td>
+
+                                    <div class="table-actions">
+
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn-app btn-secondary-app btn-icon">
+
+                                            <i class="bi bi-pencil"></i>
+
+                                        </a>
+
+                                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn-app btn-danger-app btn-icon"
+                                           title="Deactivate">
+
+                                            <i class="bi bi-trash"></i>
+
+                                        </a>
+
+                                    </div>
+
+                                </td>
+                            }
+
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
 
         </div>
 

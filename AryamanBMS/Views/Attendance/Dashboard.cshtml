@@ -3,6 +3,9 @@
 @using System.Globalization
 
 @{
+
+    bool isMaster = User.IsInRole("Master");
+
     ViewData["Title"] = "Attendance Dashboard";
 
     bool isDailyView = ViewBag.IsDailyView == true;
@@ -25,10 +28,13 @@
     </div>
 
     <div class="module-header-actions">
-        <a asp-action="Create" class="btn-app btn-primary-app">
-            <i class="bi bi-plus-circle"></i>
-            Add Attendance
-        </a>
+        @if (!isMaster)
+        {
+            <a asp-action="Create" class="btn-app btn-primary-app">
+                <i class="bi bi-plus-circle"></i>
+                Add Attendance
+            </a>
+        }
 
         <a asp-action="Register" class="btn-app btn-secondary-app">
             <i class="bi bi-table"></i>
@@ -258,9 +264,7 @@
             {
                 foreach (var item in Model.NotMarkedEmployees)
                 {
-                    <a asp-controller="Employee"
-                       asp-action="Details"
-                       asp-route-id="@item.EmployeeId"
+                    <a asp-controller="Employee" asp-action="Details" asp-route-id="@item.EmployeeId"
                        class="dashboard-list-link">
                         <span>
                             <strong>@item.EmployeeName</strong>
@@ -287,9 +291,7 @@
             {
                 foreach (var item in Model.OnLeaveEmployees)
                 {
-                    <a asp-controller="Employee"
-                       asp-action="Details"
-                       asp-route-id="@item.EmployeeId"
+                    <a asp-controller="Employee" asp-action="Details" asp-route-id="@item.EmployeeId"
                        class="dashboard-list-link">
                         <span>
                             <strong>@item.EmployeeName</strong>
@@ -316,9 +318,7 @@
             {
                 foreach (var item in Model.MissingCheckoutEmployees)
                 {
-                    <a asp-controller="Employee"
-                       asp-action="Details"
-                       asp-route-id="@item.EmployeeId"
+                    <a asp-controller="Employee" asp-action="Details" asp-route-id="@item.EmployeeId"
                        class="dashboard-list-link">
                         <span>
                             <strong>@item.EmployeeName</strong>

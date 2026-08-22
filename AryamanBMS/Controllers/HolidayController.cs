@@ -117,6 +117,7 @@ namespace AryamanBMS.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin,HR")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ImportExcel(IFormFile file, int year)
         {
