@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Master")]
     public class PfController : Controller
     {
         #region Actions

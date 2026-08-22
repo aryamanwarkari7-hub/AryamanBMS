@@ -125,6 +125,11 @@ namespace AryamanBMS.Controllers
             ViewBag.OwnerId = ownerId;
             ViewBag.SearchText = searchText;
 
+            ViewBag.CanManageProject =
+               User.IsInRole("Admin") ||
+               User.IsInRole("HR") ||
+               User.IsInRole("Master");
+
             return View(data);
         }
 

@@ -177,6 +177,7 @@
                             <th>Location</th>
                             <th>Working Hours</th>
                             <th>Remarks</th>
+                            <th>Checkout Correction</th>
                             <th class="text-end">Actions</th>
                         </tr>
                     </thead>
@@ -273,16 +274,45 @@
                                 <td>
                                     <span
                                         title="Check In: @(attendance.CheckInTime.HasValue
-                                                                                                                                                                                                                    ? attendance.CheckInTime.Value.ToString("hh:mm tt")
-                                                                                                                                                                                                : "-") | Check Out: @(attendance.CheckOutTime.HasValue
-                                                                                                                                                                                                                    ? attendance.CheckOutTime.Value.ToString("hh:mm tt")
-                                                                                                                                                                                                : "-")">
+                                                                                                                                                                                                                                                                                                                                            ? attendance.CheckInTime.Value.ToString("hh:mm tt")
+                                                                                                                                                                                                                                                                                                            : "-") | Check Out: @(attendance.CheckOutTime.HasValue
+                                                                                                                                                                                                                                                                                                                                            ? attendance.CheckOutTime.Value.ToString("hh:mm tt")
+                                                                                                                                                                                                                                                                                                            : "-")">
                                         @attendance.WorkingHours.ToString("0.00") hrs
                                     </span>
                                 </td>
 
                                 <td>
                                     @(attendance.Remarks ?? "-")
+                                </td>
+
+                                <td>
+                                    @if (attendance.LateCheckoutRequestStatus == "Pending")
+                                    {
+                                        <div>
+                                            <span class="badge-warning">Pending</span>
+
+                                            <div class="small mt-1">
+                                                Requested: <strong>@attendance.RequestedCheckOutTime?.ToString("hh:mm tt")</strong>
+                                            </div>
+
+                                            <div class="small text-muted">
+                                                @attendance.LateCheckoutReason
+                                            </div>
+                                        </div>
+                                    }
+                                    else if (attendance.LateCheckoutRequestStatus == "Approved")
+                                    {
+                                        <span class="badge-success">Approved</span>
+                                    }
+                                    else if (attendance.LateCheckoutRequestStatus == "Rejected")
+                                    {
+                                        <span class="badge-danger">Rejected</span>
+                                    }
+                                    else
+                                    {
+                                        <span>-</span>
+                                    }
                                 </td>
 
                                 <td>
@@ -302,11 +332,15 @@
                                             @if (!isMaster)
                                             {
                                                 <a asp-action="Edit" asp-route-id="@attendance.Id"
-                                                   class="btn-app btn-secondary-app btn-icon" title="Edit attendance"
-                                                   aria-label="Edit attendance">
+                                                   class="btn-app btn-secondary-app btn-icon" title="@(attendance.LateCheckoutRequestStatus == "Pending"
+                                                       ? "Review checkout correction"
+                                                       : "Edit attendance")" aria-label="@(attendance.LateCheckoutRequestStatus == "Pending"
+                                                       ? "Review checkout correction"
+                                                       : "Edit attendance")">
 
-                                                    <i class="bi bi-pencil"></i>
-
+                                                    <i class="bi @(attendance.LateCheckoutRequestStatus == "Pending"
+                                                               ? "bi-clipboard-check"
+                                                               : "bi-pencil")"></i>
                                                 </a>
 
                                             

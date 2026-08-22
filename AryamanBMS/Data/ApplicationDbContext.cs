@@ -74,7 +74,7 @@ namespace AryamanBMS.Data
         // =============================
         public DbSet<LetterModel> Letters { get; set; }
 
-         // =============================
+        // =============================
         // LOGIN HISTORY
         // =============================
         public DbSet<LoginHistoryModel> TableLoginHistory { get; set; }
@@ -96,7 +96,9 @@ namespace AryamanBMS.Data
         public DbSet<ProjectFlowModel> ProjectFlows { get; set; }
         public DbSet<ProjectTaskProgressModel> ProjectTaskProgresses { get; set; }
         public DbSet<ProjectTimelineModel> ProjectTimelines { get; set; }
-        public DbSet<ProjectCommunicationModel>ProjectCommunications{ get; set; }
+        public DbSet<ProjectCommunicationModel> ProjectCommunications { get; set; }
+
+        public DbSet<ProjectScopeDocumentModel> ProjectScopeDocuments { get; set; }
 
         // Meetings
         public DbSet<ProjectMeetingModel> ProjectMeetings { get; set; }
@@ -128,13 +130,13 @@ namespace AryamanBMS.Data
 
         public DbSet<ClientCommunicationModel> ClientCommunications { get; set; }
 
-         // =============================
+        // =============================
         // PROPOSAL
         // =============================
         public DbSet<ProposalModel> Proposals { get; set; }
-        public DbSet<ProposalTemplateModel>ProposalTemplates
+        public DbSet<ProposalTemplateModel> ProposalTemplates
         { get; set; }
-        public DbSet<ProposalDocumentVersionModel>ProposalDocumentVersions { get; set; }
+        public DbSet<ProposalDocumentVersionModel> ProposalDocumentVersions { get; set; }
 
         public DbSet<ProposalAuditModel> ProposalAudits { get; set; }
 
@@ -238,7 +240,7 @@ namespace AryamanBMS.Data
         public DbSet<PtMonthlySnapshotModel> PtMonthlySnapshots { get; set; }
         public DbSet<PtChallanModel> PtChallans { get; set; }
         public DbSet<PtDocumentModel> PtDocuments { get; set; }
-        
+
         // =============================
         // NOTICES
         // =============================        
@@ -267,7 +269,7 @@ namespace AryamanBMS.Data
         // =============================
         public DbSet<WorkingDayOverrideModel> WorkingDayOverrides { get; set; }
 
-       
+
 
 
         // =============================
@@ -573,6 +575,35 @@ namespace AryamanBMS.Data
                 .WithMany(e => e.ManagedProjects)
                 .HasForeignKey(p => p.ProjectManagerId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ProjectScopeDocumentModel>(entity =>
+{
+    entity.ToTable("TableProjectScopeDocument");
+
+    entity.HasKey(x => x.Id);
+
+    entity.Property(x => x.OriginalFileName)
+        .HasMaxLength(255)
+        .IsRequired();
+
+    entity.Property(x => x.StoredFileName)
+        .HasMaxLength(255)
+        .IsRequired();
+
+    entity.Property(x => x.ContentType)
+        .HasMaxLength(100)
+        .IsRequired();
+
+    entity.Property(x => x.UploadedByUserId)
+        .HasMaxLength(450);
+
+    entity.HasIndex(x => new { x.ProjectId, x.IsActive });
+
+    entity.HasOne(x => x.Project)
+        .WithMany()
+        .HasForeignKey(x => x.ProjectId)
+        .OnDelete(DeleteBehavior.Cascade);
+});
 
             // Project Timeline
             modelBuilder.Entity<ProjectTimelineModel>(entity =>
@@ -934,7 +965,7 @@ namespace AryamanBMS.Data
                 .WithOne(x => x.Invoice)
                 .HasForeignKey(x => x.InvoiceId)
                 .OnDelete(DeleteBehavior.Cascade);
-            
+
 
             modelBuilder.Entity<InvoiceDetailsModel>().ToTable("tableinvoicedetails");
 

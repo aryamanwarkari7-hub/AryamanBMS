@@ -183,7 +183,7 @@ namespace AryamanBMS.Controllers
             return View(vouchers);
         }
 
-        public async Task<IActionResult> ExportExcel (
+        public async Task<IActionResult> ExportExcel(
             string? status,
             int? categoryId,
             string? search,
@@ -464,20 +464,20 @@ namespace AryamanBMS.Controllers
                 return View(model);
             }
 
-            existing.ExpenseCategoryId =     model.ExpenseCategoryId;
+            existing.ExpenseCategoryId = model.ExpenseCategoryId;
 
-            existing.VoucherDate =  model.VoucherDate;
+            existing.VoucherDate = model.VoucherDate;
 
-            existing.Description =  model.Description;
+            existing.Description = model.Description;
             existing.BusinessPurpose = model.BusinessPurpose;
             existing.BeneficiaryName = model.BeneficiaryName;
             existing.SupportingReference = model.SupportingReference;
 
             existing.Amount = model.Amount;
 
-            existing.GSTRate =  model.GSTRate;
+            existing.GSTRate = model.GSTRate;
 
-            existing.IsInterState =model.IsInterState;
+            existing.IsInterState = model.IsInterState;
             existing.CompanyStateCode = model.CompanyStateCode;
             existing.VendorStateCode = model.VendorStateCode;
             existing.PlaceOfSupplyStateCode = model.PlaceOfSupplyStateCode;
@@ -601,7 +601,7 @@ namespace AryamanBMS.Controllers
             if (!IsFinanceUser())
             {
                 return Forbid();
-            } 
+            }
             var voucher = await _voucherRepository.GetByIdAsync(id);
 
             if (voucher == null)
@@ -615,7 +615,7 @@ namespace AryamanBMS.Controllers
 
             var userId = GetCurrentUserId();
 
-            bool approved = await _voucherRepository.ApproveAsync(id,userId);
+            bool approved = await _voucherRepository.ApproveAsync(id, userId);
 
             if (!approved)
             {
@@ -721,7 +721,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Reject(int id,string rejectionReason)
+        public async Task<IActionResult> Reject(int id, string rejectionReason)
         {
             if (!IsFinanceUser())
                 return Forbid();
@@ -974,7 +974,9 @@ namespace AryamanBMS.Controllers
         #region Helpers
         private bool IsFinanceUser()
         {
-            return User.IsInRole("Admin") || User.IsInRole("Finance");
+            return User.IsInRole("Admin") ||
+                   User.IsInRole("Finance") ||
+                   User.IsInRole("Master");
         }
 
         private bool CanAccessVoucher(ExpenseVoucherModel voucher)
@@ -1026,7 +1028,7 @@ namespace AryamanBMS.Controllers
             int fyStart = today.Month >= 4 ? today.Year : today.Year - 1;
             int fyEnd = fyStart + 1;
             return $"{fyStart}-{fyEnd.ToString().Substring(2)}";
-        }    
+        }
 
         private string GetCurrentUserId()
         {

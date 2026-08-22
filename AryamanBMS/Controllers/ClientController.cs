@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Master")]
     public class ClientController : Controller
     {
         private readonly IClientRepository _repository;

@@ -12,7 +12,7 @@ using DocumentFormat.OpenXml.Spreadsheet;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Master")]
     public class InvoiceController : Controller
     {
         private readonly IInvoiceRepository _invoiceRepository;

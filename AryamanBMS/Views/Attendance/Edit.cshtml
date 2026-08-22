@@ -24,8 +24,7 @@
             <input asp-for="Id" type="hidden" />
             <input asp-for="EmployeeId" type="hidden" />
 
-            <div asp-validation-summary="ModelOnly"
-                 class="validation-message mb-3">
+            <div asp-validation-summary="ModelOnly" class="validation-message mb-3">
             </div>
 
             <div class="form-grid-2">
@@ -36,9 +35,7 @@
                         Employee Code
                     </label>
 
-                    <input class="app-input"
-                           value="@Model.Employee?.EmployeeCode"
-                           readonly />
+                    <input class="app-input" value="@Model.Employee?.EmployeeCode" readonly />
 
                 </div>
 
@@ -48,38 +45,30 @@
                         Employee Name
                     </label>
 
-                    <input class="app-input"
-                           value="@Model.Employee?.FullName"
-                           readonly />
+                    <input class="app-input" value="@Model.Employee?.FullName" readonly />
 
                 </div>
 
                 <div class="form-group">
 
-                    <label asp-for="AttendanceDate"
-                           class="form-label">
+                    <label asp-for="AttendanceDate" class="form-label">
                         Attendance Date
                     </label>
 
-                    <input asp-for="AttendanceDate"
-                           type="date"
-                           class="app-input" />
+                    <input asp-for="AttendanceDate" type="date" class="app-input" />
 
-                    <span asp-validation-for="AttendanceDate"
-                          class="validation-message">
+                    <span asp-validation-for="AttendanceDate" class="validation-message">
                     </span>
 
                 </div>
 
                 <div class="form-group">
 
-                    <label asp-for="Status"
-                           class="form-label">
+                    <label asp-for="Status" class="form-label">
                         Attendance Status
                     </label>
 
-                    <select asp-for="Status"
-                            class="app-select">
+                    <select asp-for="Status" class="app-select">
 
                         <option value="">Select Status</option>
                         <option value="P">Present</option>
@@ -91,63 +80,51 @@
 
                     </select>
 
-                    <span asp-validation-for="Status"
-                          class="validation-message">
+                    <span asp-validation-for="Status" class="validation-message">
                     </span>
 
                 </div>
 
                 <div class="form-group">
 
-                    <label asp-for="AttendanceValue"
-                           class="form-label">
+                    <label asp-for="AttendanceValue" class="form-label">
                         Day Value
                     </label>
 
-                    <select asp-for="AttendanceValue"
-                            class="app-select">
+                    <select asp-for="AttendanceValue" class="app-select">
 
                         <option value="1">Full Day</option>
                         <option value="0.5">Half Day</option>
 
                     </select>
 
-                    <span asp-validation-for="AttendanceValue"
-                          class="validation-message">
+                    <span asp-validation-for="AttendanceValue" class="validation-message">
                     </span>
 
                 </div>
 
                 <div class="form-group">
 
-                    <label asp-for="CheckInTime"
-                           class="form-label">
+                    <label asp-for="CheckInTime" class="form-label">
                         Check In Time
                     </label>
 
-                    <input asp-for="CheckInTime"
-                           type="datetime-local"
-                           class="app-input" />
+                    <input asp-for="CheckInTime" type="datetime-local" class="app-input" />
 
-                    <span asp-validation-for="CheckInTime"
-                          class="validation-message">
+                    <span asp-validation-for="CheckInTime" class="validation-message">
                     </span>
 
                 </div>
 
                 <div class="form-group">
 
-                    <label asp-for="CheckOutTime"
-                           class="form-label">
+                    <label asp-for="CheckOutTime" class="form-label">
                         Check Out Time
                     </label>
 
-                    <input asp-for="CheckOutTime"
-                           type="datetime-local"
-                           class="app-input" />
+                    <input asp-for="CheckOutTime" type="datetime-local" class="app-input" />
 
-                    <span asp-validation-for="CheckOutTime"
-                          class="validation-message">
+                    <span asp-validation-for="CheckOutTime" class="validation-message">
                     </span>
 
                     <small class="text-muted">
@@ -158,47 +135,149 @@
 
             </div>
 
-            <div class="form-group mt-3">
+            @if (Model.LateCheckoutRequestStatus == "Pending")
+            {
+                <div class="alert alert-warning mt-3 mb-0">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <i class="bi bi-clock-history fs-5"></i>
+                        <strong>Pending Checkout-Time Correction Request</strong>
+                    </div>
 
-                <label asp-for="Remarks"
-                       class="form-label">
-                    Remarks
-                </label>
+                    <div class="alert alert-info mt-3 mb-3">
+                        <strong><i class="bi bi-exclamation-circle me-1"></i>Actions required before approval</strong>
 
-                <textarea asp-for="Remarks"
-                          class="app-textarea"
-                          rows="4">
+                        <ol class="mb-0 mt-2"
+                            style="list-style-type: decimal !important; list-style-position: inside !important; padding-left: 0;">
+                            <li>Click <strong>Use Requested Time</strong>, or enter the verified official checkout time
+                                above.</li>
+                                <li>From the <strong>Review Decision</strong> dropdown below, select <strong>Approve and save
+                                    official checkout time</strong> or <strong>Reject request</strong>.
+                                </li>
+                                <li>
+                                    Click <strong>Complete Review</strong> below.
+                                </li>
+                            </ol>
+                        </div>
+
+                        <div class="form-grid-2">
+
+                            <div class="form-group">
+                                <label class="form-label">Recorded Checkout Time</label>
+
+                                <input class="app-input" value="@Model.CheckOutTime?.ToString("dd-MMM-yyyy hh:mm tt")"
+                                       readonly />
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Employee Requested Time</label>
+
+                                <input class="app-input" value="@Model.RequestedCheckOutTime?.ToString("dd-MMM-yyyy hh:mm tt")"
+                                       readonly />
+
+                                <button type="button" id="useRequestedCheckoutTime" class="btn-app btn-primary-app mt-2"
+                                        data-requested-time="@Model.RequestedCheckOutTime?.ToString("yyyy-MM-ddTHH:mm")">
+                                    <i class="bi bi-arrow-up-right-circle"></i>
+                                    Use Requested Time
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                        <div class="form-group mt-3">
+                            <label class="form-label">Employee’s Reason</label>
+
+                            <textarea class="app-textarea" rows="3" readonly>@Model.LateCheckoutReason</textarea>
+                        </div>
+
+                        <div class="form-grid-2 mt-3">
+
+                            <div class="form-group">
+                                <label for="lateCheckoutDecision" class="form-label">
+                                    Review Decision
+                                </label>
+
+                                <select id="lateCheckoutDecision" name="lateCheckoutDecision" class="app-select">
+
+                                    <option value="Pending">Keep Pending</option>
+                                    <option value="Approved">Approve and save official checkout time</option>
+                                    <option value="Rejected">Reject request</option>
+
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="lateCheckoutResolutionNote" class="form-label">
+                                    Review Note <span class="text-muted">(optional)</span>
+                                </label>
+
+                                <textarea id="lateCheckoutResolutionNote" name="lateCheckoutResolutionNote" class="app-textarea"
+                                          rows="3" maxlength="1000"
+                                          placeholder="Example: Checkout corrected after manager verification."></textarea>
+                            </div>
+
+                        </div>
+
+                    
+                    </div>
+                }
+
+                <div class="form-group mt-3">
+
+                    <label asp-for="Remarks" class="form-label">
+                        Remarks
+                    </label>
+
+                    <textarea asp-for="Remarks" class="app-textarea" rows="4">
                 </textarea>
 
-            </div>
+                </div>
 
-            <div class="mt-4">
+                <div class="mt-4">
 
-                <button type="submit"
-                        class="btn-app btn-primary-app">
+                    <button type="submit" class="btn-app btn-primary-app">
 
-                    <i class="bi bi-check-circle"></i>
-                    Update Attendance
+                        @if (Model.LateCheckoutRequestStatus == "Pending")
+                        {
+                            <i class="bi bi-clipboard-check"></i>
+                            <span>Complete Review</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-check-circle"></i>
+                            <span>Update Attendance</span>
+                        }
 
-                </button>
+                    </button>
 
-                <a asp-action="Register"
-                   class="btn-app btn-secondary-app">
+                    <a asp-action="Register" class="btn-app btn-secondary-app">
 
-                    <i class="bi bi-arrow-left"></i>
-                    Back
+                        <i class="bi bi-arrow-left"></i>
+                        Back
 
-                </a>
+                    </a>
 
-            </div>
+                </div>
 
-        </form>
+            </form>
+
+        </div>
 
     </div>
 
-</div>
+    @section Scripts
+    {
+        <partial name="_ValidationScriptsPartial" />
 
-@section Scripts
-{
-    <partial name="_ValidationScriptsPartial" />
-}
+        <script>
+            document.getElementById("useRequestedCheckoutTime")?.addEventListener("click", function () {
+                const requestedTime = this.dataset.requestedTime;
+                const checkOutInput = document.getElementById("CheckOutTime");
+
+                if (requestedTime && checkOutInput) {
+                    checkOutInput.value = requestedTime;
+                    checkOutInput.focus();
+                }
+            });
+        </script>
+    }

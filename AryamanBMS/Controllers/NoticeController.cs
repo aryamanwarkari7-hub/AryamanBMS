@@ -8,7 +8,7 @@ using System.Text;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Master")]
     public class NoticeController : Controller
     {
         private readonly INoticeRepository _noticeRepository;

@@ -102,9 +102,7 @@
             }
             else if (Model == null || (Model.Status == "P" && Model.CheckInTime == null))
             {
-                <form asp-action="CheckIn"
-                      method="post"
-                      class="attendance-action-form">
+                <form asp-action="CheckIn" method="post" class="attendance-action-form">
 
                     @Html.AntiForgeryToken()
 
@@ -112,7 +110,7 @@
                         <label class="form-label">Work Location</label>
                         <select name="locationType" class="app-select" required>
                             <option value="">Select Work Location</option>
-                            <option value="Office">Office</option>
+                            <option value="Office" selected>Office</option>
                             <option value="Site">Site</option>
                         </select>
                     </div>
@@ -125,16 +123,14 @@
             }
             else if (Model.CheckOutTime == null && Model.Status != "L")
             {
-                <form asp-action="CheckOut"
-                      method="post"
+                <form asp-action="CheckOut" method="post"
                       onsubmit="return confirm('Are you sure you want to check out now? Your checkout time will be recorded as the current time.');">
 
                     @Html.AntiForgeryToken()
 
                     <div class="attendance-action-compact">
 
-                        <button type="submit"
-                                class="btn-app btn-danger-app">
+                        <button type="submit" class="btn-app btn-danger-app">
 
                             <i class="bi bi-box-arrow-right"></i>
                             Check Out Time
@@ -150,6 +146,29 @@
                 <div class="empty-state">
                     Attendance completed for today.
                 </div>
+
+                @if (Model?.CheckOutTime != null && Model.Status != "L")
+                {
+                    @if (Model.LateCheckoutRequestStatus == "Pending")
+                    {
+                        <div class="alert alert-warning mt-3 mb-0">
+                            <i class="bi bi-clock-history me-1"></i>
+                            Checkout correction request pending for
+                            <strong>@Model.RequestedCheckOutTime?.ToString("hh:mm tt")</strong>.
+                            Admin/HR will review it.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center mt-3">
+                            <button type="button" class="btn btn-link text-decoration-none" data-bs-toggle="modal"
+                                    data-bs-target="#lateCheckoutCorrectionModal">
+                                <i class="bi bi-pencil-square"></i>
+                                Left earlier? Request checkout-time correction
+                            </button>
+                        </div>
+                    }
+                }
             }
 
             <div class="attendance-inline-actions">
@@ -164,9 +183,7 @@
                         </span>
                     </a>
 
-                    <a asp-controller="LeaveApplication"
-                       asp-action="Create"
-                       asp-route-mine="true"
+                    <a asp-controller="LeaveApplication" asp-action="Create" asp-route-mine="true"
                        class="attendance-quick-link">
                         <i class="bi bi-calendar-plus"></i>
                         <span>
@@ -175,9 +192,7 @@
                         </span>
                     </a>
 
-                    <a asp-controller="LeaveApplication"
-                       asp-action="Index"
-                       asp-route-mine="true"
+                    <a asp-controller="LeaveApplication" asp-action="Index" asp-route-mine="true"
                        class="attendance-quick-link">
                         <i class="bi bi-calendar-event"></i>
                         <span>
@@ -267,6 +282,87 @@
     </div>
 
 </div>
+
+@if (Model?.CheckOutTime != null &&
+     Model.Status != "L" &&
+     Model.LateCheckoutRequestStatus != "Pending")
+{
+    <div class="modal fade" id="lateCheckoutCorrectionModal"
+         tabindex="-1"
+         aria-labelledby="lateCheckoutCorrectionModalLabel"
+         aria-hidden="true">
+
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <form asp-action="RequestLateCheckoutCorrection" method="post">
+
+                    @Html.AntiForgeryToken()
+
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="lateCheckoutCorrectionModalLabel">
+                            Request Checkout-Time Correction
+                        </h5>
+
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <p class="text-muted small">
+                            Recorded checkout:
+                            <strong>@Model.CheckOutTime.Value.ToString("hh:mm tt")</strong>.
+                            Your request will be reviewed by Admin/HR before the official time is changed.
+                        </p>
+
+                        <div class="mb-3">
+                            <label for="requestedCheckOutTime" class="form-label">
+                                Time you actually left
+                            </label>
+
+                            <input type="time"
+                                   id="requestedCheckOutTime"
+                                   name="requestedCheckOutTime"
+                                   class="form-control"
+                                   max="@Model.CheckOutTime.Value.ToString("HH:mm")"
+                                   required />
+                        </div>
+
+                        <div class="mb-0">
+                            <label for="lateCheckoutReason" class="form-label">
+                                Reason
+                            </label>
+
+                            <textarea id="lateCheckoutReason"
+                                      name="lateCheckoutReason"
+                                      class="form-control"
+                                      rows="3"
+                                      maxlength="1000"
+                                      placeholder="Example: I left at 6:00 PM but forgot to check out until later."
+                                      required></textarea>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button"
+                                class="btn btn-secondary"
+                                data-bs-dismiss="modal">
+                            Cancel
+                        </button>
+
+                        <button type="submit" class="btn-app btn-primary-app">
+                            Submit Request
+                        </button>
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+    </div>
+}
 
 @* <div class="app-card dashboard-section-card">
     <div class="card-header">

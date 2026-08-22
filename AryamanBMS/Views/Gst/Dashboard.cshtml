@@ -796,7 +796,8 @@
         </div>
     </div>
 
-    @if (Model.SnapshotStatus == "Locked" && User.IsInRole("Admin"))
+    @if (Model.SnapshotStatus == "Locked" &&
+     (User.IsInRole("Admin") || User.IsInRole("Master")))
     {
         <div class="app-card">
             <div class="card-header">

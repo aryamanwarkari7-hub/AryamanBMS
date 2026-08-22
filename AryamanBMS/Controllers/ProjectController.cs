@@ -7,10 +7,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
+using AryamanBMS.Data;
+using Microsoft.AspNetCore.Http;
+
 namespace AryamanBMS.Controllers
 {
     [Authorize]
-    
+
     public class ProjectController : Controller
     {
         #region Actions
@@ -23,6 +26,9 @@ namespace AryamanBMS.Controllers
         private readonly IProjectMeetingRepository _projectMeetingRepository;
         private readonly IProjectFlowRepository _projectFlowRepository;
         private readonly IClientRepository _clientRepository;
+
+        private readonly ApplicationDbContext _context;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
         private readonly IProjectTimelineService _projectTimelineService;
         private readonly IProjectAccessService _projectAccessService;
@@ -37,7 +43,9 @@ namespace AryamanBMS.Controllers
            IProjectFlowRepository projectFlowRepository,
            IClientRepository clientRepository,
            IProjectTimelineService projectTimelineService,
-           IProjectAccessService projectAccessService)
+           IProjectAccessService projectAccessService,
+           ApplicationDbContext context,
+           IWebHostEnvironment webHostEnvironment)
         {
             _projectRepository = projectRepository;
             _employeeRepository = employeeRepository;
@@ -50,6 +58,8 @@ namespace AryamanBMS.Controllers
             _projectTimelineService = projectTimelineService;
             _projectAccessService = projectAccessService;
             _clientRepository = clientRepository;
+            _context = context;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         public async Task<IActionResult> Index(
@@ -515,7 +525,7 @@ namespace AryamanBMS.Controllers
                 return Forbid();
             }
 
-            var currentEmployee =   await _employeeRepository.Employees
+            var currentEmployee = await _employeeRepository.Employees
             .FirstOrDefaultAsync(e =>
             e.ApplicationUser != null &&
             e.ApplicationUser.UserName == User.Identity!.Name);
@@ -953,14 +963,14 @@ namespace AryamanBMS.Controllers
                 CurrentFlowStatus =
                     currentFlow?.StageStatus ?? "-",
 
-                
+
             };
 
             return View(viewModel);
         }
 
         [HttpGet]
-        
+
         public async Task<IActionResult> Edit(int id)
         {
             var project =
@@ -968,6 +978,13 @@ namespace AryamanBMS.Controllers
 
             if (project == null)
                 return NotFound();
+
+            if (!await CanManageProjectScopeAsync(project))
+            {
+                return Forbid();
+            }
+
+            await LoadScopeDocumentViewDataAsync(project);
 
             await LoadEmployeesAsync();
             await LoadClientsAsync();
@@ -977,10 +994,21 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        
         public async Task<IActionResult> Edit(ProjectModel model)
         {
 
+
+            var existing = await _projectRepository.GetByIdAsync(model.Id);
+
+            if (existing == null)
+            {
+                return NotFound();
+            }
+
+            if (!await CanManageProjectScopeAsync(existing))
+            {
+                return Forbid();
+            }
             model.ProjectCode =
                 model.ProjectCode?.Trim().ToUpper()
                 ?? string.Empty;
@@ -1006,14 +1034,11 @@ namespace AryamanBMS.Controllers
             if (!ModelState.IsValid)
             {
                 await LoadEmployeesAsync();
+                await LoadClientsAsync();
+                await LoadScopeDocumentViewDataAsync(existing);
+
                 return View(model);
             }
-
-            var existing =
-                await _projectRepository.GetByIdAsync(model.Id);
-
-            if (existing == null)
-                return NotFound();
 
             string previousStatus =
                  existing.Status ?? string.Empty;
@@ -1032,7 +1057,7 @@ namespace AryamanBMS.Controllers
             existing.ProjectType = model.ProjectType;
             existing.ClientName = model.ClientName;
             existing.ClientId = model.ClientId;
-            
+
             existing.BusinessObjective = model.BusinessObjective;
             existing.Scope = model.Scope;
             existing.StartDate = model.StartDate;
@@ -1056,6 +1081,7 @@ namespace AryamanBMS.Controllers
 
                     await LoadEmployeesAsync();
                     await LoadClientsAsync();
+                    await LoadScopeDocumentViewDataAsync(existing);
 
                     return View(model);
                 }
@@ -1277,6 +1303,207 @@ namespace AryamanBMS.Controllers
             return RedirectToAction(nameof(Details), new { id = existing.Id });
         }
 
+        #region Project Scope Document Upload
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UploadScopeDocument(
+    int projectId,
+    IFormFile? scopeDocument)
+        {
+            var project = await _projectRepository.GetByIdAsync(projectId);
+
+            if (project == null)
+            {
+                return NotFound();
+            }
+
+            if (!await CanManageProjectScopeAsync(project))
+            {
+                return Forbid();
+            }
+
+            if (scopeDocument == null || scopeDocument.Length == 0)
+            {
+                TempData["Error"] = "Please select a scope document to upload.";
+                return RedirectToAction(nameof(Edit), new { id = projectId });
+            }
+
+            const long maxFileSize = 20 * 1024 * 1024; // 20 MB
+
+            if (scopeDocument.Length > maxFileSize)
+            {
+                TempData["Error"] = "Scope document must not exceed 20 MB.";
+                return RedirectToAction(nameof(Edit), new { id = projectId });
+            }
+
+            var allowedFiles = new Dictionary<string, string>(
+                StringComparer.OrdinalIgnoreCase)
+            {
+                [".pdf"] = "application/pdf",
+                [".doc"] = "application/msword",
+                [".docx"] =
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                [".xlsx"] =
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            };
+
+            string extension = Path.GetExtension(scopeDocument.FileName);
+
+            if (string.IsNullOrWhiteSpace(extension) ||
+                !allowedFiles.TryGetValue(extension, out string? contentType))
+            {
+                TempData["Error"] =
+                    "Only PDF, DOC, DOCX, and XLSX scope documents are allowed.";
+
+                return RedirectToAction(nameof(Edit), new { id = projectId });
+            }
+
+            string folderPath = Path.Combine(
+                _webHostEnvironment.ContentRootPath,
+                "App_Data",
+                "ProjectScopeDocuments",
+                project.Id.ToString());
+
+            Directory.CreateDirectory(folderPath);
+
+            string storedFileName =
+                $"{Guid.NewGuid():N}{extension.ToLowerInvariant()}";
+
+            string physicalFilePath =
+                Path.Combine(folderPath, storedFileName);
+
+            await using (var fileStream = new FileStream(
+                physicalFilePath,
+                FileMode.CreateNew,
+                FileAccess.Write))
+            {
+                await scopeDocument.CopyToAsync(fileStream);
+            }
+
+            var document = new ProjectScopeDocumentModel
+            {
+                ProjectId = project.Id,
+                OriginalFileName = Path.GetFileName(scopeDocument.FileName),
+                StoredFileName = storedFileName,
+                ContentType = contentType,
+                FileSize = scopeDocument.Length,
+                UploadedOn = DateTime.Now,
+                UploadedByUserId =
+                    User.FindFirst(
+                        System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+                IsActive = true
+            };
+
+            _context.ProjectScopeDocuments.Add(document);
+            await _context.SaveChangesAsync();
+
+            await _projectTimelineService.AddEventAsync(
+                projectId: project.Id,
+                eventType: "ScopeDocumentUploaded",
+                eventTitle: "Project scope document uploaded",
+                eventDescription:
+                    $"{document.OriginalFileName} was uploaded as a scope document.",
+                relatedEntityType: "ProjectScopeDocument",
+                relatedEntityId: document.Id);
+
+            TempData["Success"] = "Scope document uploaded successfully.";
+
+            return RedirectToAction(nameof(Edit), new { id = projectId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveScopeDocument(int documentId)
+        {
+            var document = await _context.ProjectScopeDocuments
+                .FirstOrDefaultAsync(x => x.Id == documentId && x.IsActive);
+
+            if (document == null)
+            {
+                return NotFound();
+            }
+
+            var project = await _projectRepository.GetByIdAsync(document.ProjectId);
+
+            if (project == null)
+            {
+                return NotFound();
+            }
+
+            if (!await CanManageProjectScopeAsync(project))
+            {
+                return Forbid();
+            }
+
+            document.IsActive = false;
+
+            await _context.SaveChangesAsync();
+
+            await _projectTimelineService.AddEventAsync(
+                projectId: project.Id,
+                eventType: "ScopeDocumentRemoved",
+                eventTitle: "Project scope document removed",
+                eventDescription:
+                    $"{document.OriginalFileName} was removed from active scope documents.",
+                relatedEntityType: "ProjectScopeDocument",
+                relatedEntityId: document.Id);
+
+            TempData["Success"] =
+                "Scope document removed. It is retained securely for audit history.";
+
+            return RedirectToAction(nameof(Edit), new { id = project.Id });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DownloadScopeDocument(int id)
+        {
+            var document = await _context.ProjectScopeDocuments
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == id && x.IsActive);
+
+            if (document == null)
+            {
+                return NotFound();
+            }
+
+            var project = await _projectRepository.GetByIdAsync(document.ProjectId);
+
+            if (project == null)
+            {
+                return NotFound();
+            }
+
+            if (!await _projectAccessService.CanAccessProjectAsync(User, project.Id))
+            {
+                return Forbid();
+            }
+
+            string fileName = Path.GetFileName(document.StoredFileName);
+
+            string physicalFilePath = Path.Combine(
+                _webHostEnvironment.ContentRootPath,
+                "App_Data",
+                "ProjectScopeDocuments",
+                project.Id.ToString(),
+                fileName);
+
+            if (!System.IO.File.Exists(physicalFilePath))
+            {
+                TempData["Error"] =
+                    "The scope document file could not be found.";
+
+                return RedirectToAction(nameof(Edit), new { id = project.Id });
+            }
+
+            return PhysicalFile(
+                physicalFilePath,
+                document.ContentType,
+                document.OriginalFileName);
+        }
+
+        #endregion
+
         [HttpGet]
         [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> Delete(int id)
@@ -1342,6 +1569,36 @@ namespace AryamanBMS.Controllers
                 clients.OrderBy(x => x.ClientName),
                 "ClientId",
                 "ClientName");
+        }
+
+        private async Task<bool> CanManageProjectScopeAsync(ProjectModel project)
+        {
+            if (User.IsInRole("Admin") ||
+                User.IsInRole("HR") ||
+                User.IsInRole("Master"))
+            {
+                return true;
+            }
+
+            var currentEmployee = await _employeeRepository.Employees
+                .FirstOrDefaultAsync(e =>
+                    e.ApplicationUser != null &&
+                    e.ApplicationUser.UserName == User.Identity!.Name);
+
+            return currentEmployee != null &&
+                   project.ProjectManagerId == currentEmployee.Id;
+        }
+
+        private async Task LoadScopeDocumentViewDataAsync(ProjectModel project)
+        {
+            ViewBag.ScopeDocuments = await _context.ProjectScopeDocuments
+                .AsNoTracking()
+                .Where(x => x.ProjectId == project.Id && x.IsActive)
+                .OrderByDescending(x => x.UploadedOn)
+                .ToListAsync();
+
+            ViewBag.CanManageScopeDocuments =
+                await CanManageProjectScopeAsync(project);
         }
         #endregion
     }

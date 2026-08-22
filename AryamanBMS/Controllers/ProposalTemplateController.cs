@@ -179,7 +179,7 @@ namespace AryamanBMS.Controllers
 
             return View(template);
         }
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Master")]
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
@@ -222,7 +222,7 @@ namespace AryamanBMS.Controllers
             return View(vm);
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Master")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(ProposalTemplateEditViewModel vm)
@@ -337,7 +337,7 @@ namespace AryamanBMS.Controllers
                 template.OriginalFileName);
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Master")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Activate(
