@@ -75,6 +75,13 @@ builder.Services.AddDbContext<GstConfigurationDbContext>(options =>
         ServerVersion.AutoDetect(connectionString));
 });
 
+builder.Services.AddDbContext<FinancialAuditDocumentDbContext>(options =>
+{
+    options.UseMySql(
+        connectionString,
+        ServerVersion.AutoDetect(connectionString));
+});
+
 // Attendance working-day configuration
 builder.Services.Configure<WorkingDayOptions>(
     builder.Configuration.GetSection("Attendance"));

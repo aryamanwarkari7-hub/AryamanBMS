@@ -205,11 +205,6 @@ namespace AryamanBMS.Data
         public DbSet<GstDocumentModel> GstDocuments { get; set; }
 
         // =============================
-        // FINANCIAL DOCUMENTS
-        // =============================
-        public DbSet<FinancialAuditDocumentModel> FinancialAuditDocuments { get; set; }
-
-        // =============================
         // OFFICE ASSETS
         // =============================
         public DbSet<OfficeAssetModel> OfficeAssets { get; set; }
@@ -1185,15 +1180,7 @@ namespace AryamanBMS.Data
                 .HasForeignKey(x => x.SnapshotId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<FinancialAuditDocumentModel>().ToTable("tablefinancialauditdocuments");
-            modelBuilder.Entity<FinancialAuditDocumentModel>()
-                .HasIndex(x => x.FinancialYear);
-            modelBuilder.Entity<FinancialAuditDocumentModel>()
-                .HasIndex(x => x.DocumentCategory);
-            modelBuilder.Entity<FinancialAuditDocumentModel>()
-                .HasIndex(x => x.IsActive);
-            modelBuilder.Entity<FinancialAuditDocumentModel>()
-                .HasIndex(x => x.IsFinalized);
+            
 
             modelBuilder.Entity<OfficeAssetModel>().ToTable("tableofficeasset");
             modelBuilder.Entity<OfficeAssetModel>()

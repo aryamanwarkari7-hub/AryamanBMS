@@ -1,15 +1,16 @@
-﻿using AryamanBMS.Data;
+﻿using AryamanBMS.Database.Context;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
-namespace AryamanBMS.Repositories
+namespace AryamanBMS.Repositories.Implementations
 {
     public class FinancialAuditDocumentRepository : IFinancialAuditDocumentRepository
     {
-        private readonly ApplicationDbContext _context;
+        private readonly FinancialAuditDocumentDbContext _context;
 
-        public FinancialAuditDocumentRepository(ApplicationDbContext context)
+        public FinancialAuditDocumentRepository(
+            FinancialAuditDocumentDbContext context)
         {
             _context = context;
         }
