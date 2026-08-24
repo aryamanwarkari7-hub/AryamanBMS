@@ -16,6 +16,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Validate architecture dependencies
+        shell: pwsh
+        run: ./scripts/Test-Architecture.ps1
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
@@ -26,3 +30,4 @@ jobs:
 
       - name: Build
         run: dotnet build AryamanBMS.slnx --no-restore --configuration Release
+        
