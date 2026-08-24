@@ -54,6 +54,13 @@ builder.Services.AddDbContext<AttendanceCalendarDbContext>(options =>
         ServerVersion.AutoDetect(connectionString));
 });
 
+builder.Services.AddDbContext<PasswordChangeLogDbContext>(options =>
+{
+    options.UseMySql(
+        connectionString,
+        ServerVersion.AutoDetect(connectionString));
+});
+
 // Attendance working-day configuration
 builder.Services.Configure<WorkingDayOptions>(
     builder.Configuration.GetSection("Attendance"));

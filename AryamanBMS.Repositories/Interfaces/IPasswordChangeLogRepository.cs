@@ -6,6 +6,8 @@ namespace AryamanBMS.Repositories.Interfaces
     {
         Task AddAsync(PasswordChangeLogModel log);
 
+        Task<List<PasswordChangeLogModel>> GetAllAsync();
+
         Task<List<PasswordChangeLogModel>> GetRecentAsync(
             int count = 100);
     }

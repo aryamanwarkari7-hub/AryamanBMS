@@ -1,31 +1,28 @@
-using AryamanBMS.Data;
+using AryamanBMS.Business.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
     [Authorize(Roles = "Admin")]
     public class PasswordChangeLogController : Controller
     {
-        #region Actions
+        private readonly IPasswordChangeLogService
+            _passwordChangeLogService;
 
-        private readonly ApplicationDbContext _context;
-
-        public PasswordChangeLogController(ApplicationDbContext context)
+        public PasswordChangeLogController(
+            IPasswordChangeLogService passwordChangeLogService)
         {
-            _context = context;
+            _passwordChangeLogService =
+                passwordChangeLogService;
         }
 
         public async Task<IActionResult> Index()
         {
-            var logs = await _context.PasswordChangeLogs
-                .AsNoTracking()
-                .OrderByDescending(x => x.ChangedOn)
-                .ToListAsync();
+            var logs =
+                await _passwordChangeLogService.GetAllAsync();
 
             return View(logs);
         }
-        #endregion
     }
 }

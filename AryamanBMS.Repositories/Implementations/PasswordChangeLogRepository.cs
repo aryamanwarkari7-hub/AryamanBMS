@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Data;
+﻿using AryamanBMS.Database.Context;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -8,10 +8,10 @@ namespace AryamanBMS.Repositories.Implementations
     public class PasswordChangeLogRepository
         : IPasswordChangeLogRepository
     {
-        private readonly ApplicationDbContext _context;
+        private readonly PasswordChangeLogDbContext _context;
 
         public PasswordChangeLogRepository(
-            ApplicationDbContext context)
+            PasswordChangeLogDbContext context)
         {
             _context = context;
         }
@@ -22,6 +22,14 @@ namespace AryamanBMS.Repositories.Implementations
             _context.PasswordChangeLogs.Add(log);
 
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<PasswordChangeLogModel>> GetAllAsync()
+        {
+            return await _context.PasswordChangeLogs
+                .AsNoTracking()
+                .OrderByDescending(x => x.ChangedOn)
+                .ToListAsync();
         }
 
         public async Task<List<PasswordChangeLogModel>> GetRecentAsync(

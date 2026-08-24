@@ -1,6 +1,6 @@
 ﻿using AryamanBMS.Models;
 
-namespace AryamanBMS.Services.Interfaces
+namespace AryamanBMS.Business.Interfaces
 {
     public interface IPasswordChangeLogService
     {
@@ -13,6 +13,8 @@ namespace AryamanBMS.Services.Interfaces
             string changeType,
             string? ipAddress,
             string? userAgent);
+
+        Task<List<PasswordChangeLogModel>> GetAllAsync();
 
         Task<List<PasswordChangeLogModel>> GetRecentAsync(
             int count = 100);

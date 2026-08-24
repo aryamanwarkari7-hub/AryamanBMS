@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+using AryamanBMS.Business.Interfaces;
+
 namespace AryamanBMS.Controllers
 {
     [Authorize]

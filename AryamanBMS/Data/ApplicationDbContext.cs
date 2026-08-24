@@ -20,8 +20,6 @@ namespace AryamanBMS.Data
 
         public DbSet<DesignationModel> Designations { get; set; }
 
-
-
         // ==================================//
         //  $ HR & ADMINISTRATION SECTION $  //
         // ==================================//
@@ -37,11 +35,11 @@ namespace AryamanBMS.Data
         public DbSet<PincodeModel> Pincodes { get; set; }
         public DbSet<EmployeeAcademicModel> EmployeeAcademics { get; set; }
         public DbSet<EmployeeDocumentModel> EmployeeDocuments { get; set; }
+
         public DbSet<EmployeePreviousEmploymentModel> EmployeePreviousEmployments
         { get; set; }
 
         public DbSet<AttendanceModel> Attendances { get; set; }
-
 
         // =============================
         // LEAVES
@@ -62,6 +60,7 @@ namespace AryamanBMS.Data
         // SALARY
         // =============================
         public DbSet<SalaryRecordModel> SalaryRecords { get; set; }
+
         public DbSet<EmployeeSalaryStructureModel> EmployeeSalaryStructures { get; set; }
         public DbSet<SalaryImportBatchModel> SalaryImportBatches { get; set; }
         public DbSet<PayrollPolicyModel> PayrollPolicies { get; set; }
@@ -81,18 +80,11 @@ namespace AryamanBMS.Data
         // =============================
         public DbSet<LoginHistoryModel> TableLoginHistory { get; set; }
 
-        // =============================
-        // PASSWORD CHANGE HISTORY
-        // =============================
-        public DbSet<PasswordChangeLogModel> PasswordChangeLogs { get; set; }
-
-
-
-
         // ==================================//
         //  $ PROJECT MANAGEMENT SECTION $   //
         // ==================================//
         public DbSet<ProjectModel> Projects { get; set; }
+
         public DbSet<ProjectMemberModel> ProjectMembers { get; set; }
         public DbSet<ProjectTaskModel> ProjectTasks { get; set; }
         public DbSet<ProjectFlowModel> ProjectFlows { get; set; }
@@ -136,8 +128,10 @@ namespace AryamanBMS.Data
         // PROPOSAL
         // =============================
         public DbSet<ProposalModel> Proposals { get; set; }
+
         public DbSet<ProposalTemplateModel> ProposalTemplates
         { get; set; }
+
         public DbSet<ProposalDocumentVersionModel> ProposalDocumentVersions { get; set; }
 
         public DbSet<ProposalAuditModel> ProposalAudits { get; set; }
@@ -156,6 +150,7 @@ namespace AryamanBMS.Data
         // INVOICES
         // =============================
         public DbSet<InvoiceModel> Invoices { get; set; }
+
         public DbSet<InvoiceDetailsModel> InvoiceDetails { get; set; }
 
         public DbSet<InvoiceDocumentVersionModel> InvoiceDocumentVersions { get; set; }
@@ -189,18 +184,21 @@ namespace AryamanBMS.Data
         // VENDORS
         // =============================
         public DbSet<VendorModel> Vendors { get; set; }
+
         public DbSet<VendorPaymentModel> VendorPayments { get; set; }
 
         // =============================
         // EXPENSE VOUCHERS
         // =============================
         public DbSet<ExpenseVoucherModel> ExpenseVouchers { get; set; }
+
         public DbSet<ExpenseVoucherDocumentModel> ExpenseVoucherDocuments { get; set; }
 
         // =============================
         // GST
         // =============================
         public DbSet<GstMonthlySnapshotModel> GstMonthlySnapshots { get; set; }
+
         public DbSet<GstConfigurationModel> GstConfigurations { get; set; }
         public DbSet<GstLutDocumentModel> GstLutDocuments { get; set; }
         public DbSet<GstReturnModel> GstReturns { get; set; }
@@ -217,8 +215,10 @@ namespace AryamanBMS.Data
         // OFFICE ASSETS
         // =============================
         public DbSet<OfficeAssetModel> OfficeAssets { get; set; }
+
         public DbSet<OfficeAssetAssignmentHistoryModel> OfficeAssetAssignmentHistories
         { get; set; }
+
         public DbSet<OfficeAssetDocumentModel> OfficeAssetDocuments { get; set; }
         public DbSet<OfficeAssetMaintenanceModel> OfficeAssetMaintenances { get; set; }
         public DbSet<OfficeAssetVerificationModel> OfficeAssetVerifications { get; set; }
@@ -227,6 +227,7 @@ namespace AryamanBMS.Data
         // PF
         // =============================
         public DbSet<PfMonthlySnapshotModel> PfMonthlySnapshots { get; set; }
+
         public DbSet<PfChallanModel> PfChallans { get; set; }
         public DbSet<PfDocumentModel> PfDocuments { get; set; }
 
@@ -234,6 +235,7 @@ namespace AryamanBMS.Data
         // ESIC
         // =============================
         public DbSet<EsicMonthlySnapshotModel> EsicMonthlySnapshots { get; set; }
+
         public DbSet<EsicChallanModel> EsicChallans { get; set; }
         public DbSet<EsicDocumentModel> EsicDocuments { get; set; }
 
@@ -241,13 +243,15 @@ namespace AryamanBMS.Data
         // PT
         // =============================
         public DbSet<PtMonthlySnapshotModel> PtMonthlySnapshots { get; set; }
+
         public DbSet<PtChallanModel> PtChallans { get; set; }
         public DbSet<PtDocumentModel> PtDocuments { get; set; }
 
         // =============================
         // NOTICES
-        // =============================        
+        // =============================
         public DbSet<NoticeModel> Notices { get; set; }
+
         public DbSet<NoticeDocumentModel> NoticeDocuments { get; set; }
 
         public DbSet<FinancialSequenceModel> FinancialSequences { get; set; }
@@ -271,9 +275,6 @@ namespace AryamanBMS.Data
         // SATURDAY LEAVES SWITCHER
         // =============================
         public DbSet<WorkingDayOverrideModel> WorkingDayOverrides { get; set; }
-
-
-
 
         // =============================
         // MODEL BUILDERS
@@ -405,7 +406,7 @@ namespace AryamanBMS.Data
                 .Property(a => a.AttendanceValue)
                 .HasPrecision(4, 2);
 
-            // Leave 
+            // Leave
             modelBuilder.Entity<LeaveTypeModel>()
                .ToTable("tableleavetypes");
 
@@ -652,7 +653,6 @@ namespace AryamanBMS.Data
                 .HasForeignKey(x => x.CreatedByEmployeeId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-
             // Project Member
             modelBuilder.Entity<ProjectMemberModel>()
                 .ToTable("TableProjectMember");
@@ -751,7 +751,6 @@ namespace AryamanBMS.Data
                 .HasForeignKey(m => m.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-
             modelBuilder.Entity<ProjectMeetingAttendeeModel>()
                 .ToTable("TableProjectMeetingAttendee");
 
@@ -774,7 +773,6 @@ namespace AryamanBMS.Data
                 .WithMany()
                 .HasForeignKey(a => a.EmployeeId)
                 .OnDelete(DeleteBehavior.Restrict);
-
 
             modelBuilder.Entity<ProjectMeetingActionItemModel>()
                 .ToTable("TableProjectMeetingActionItem");
@@ -994,7 +992,6 @@ namespace AryamanBMS.Data
                 .WithOne(x => x.Invoice)
                 .HasForeignKey(x => x.InvoiceId)
                 .OnDelete(DeleteBehavior.Cascade);
-
 
             modelBuilder.Entity<InvoiceDetailsModel>().ToTable("tableinvoicedetails");
 
@@ -1495,10 +1492,6 @@ namespace AryamanBMS.Data
                 entity.HasIndex(x => x.OccurredOn);
                 entity.HasIndex(x => x.EventType);
             });
-
-            modelBuilder.Entity<PasswordChangeLogModel>()
-               .ToTable("tablepasswordchangelogs");
-
         }
     }
 }

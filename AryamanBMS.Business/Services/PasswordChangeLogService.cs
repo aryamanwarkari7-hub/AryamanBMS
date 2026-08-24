@@ -1,8 +1,8 @@
-﻿using AryamanBMS.Models;
+﻿using AryamanBMS.Business.Interfaces;
+using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
-using AryamanBMS.Services.Interfaces;
 
-namespace AryamanBMS.Services
+namespace AryamanBMS.Business.Services
 {
     public class PasswordChangeLogService
         : IPasswordChangeLogService
@@ -64,6 +64,11 @@ namespace AryamanBMS.Services
 
             await _passwordChangeLogRepository
                 .AddAsync(log);
+        }
+
+        public async Task<List<PasswordChangeLogModel>> GetAllAsync()
+        {
+            return await _passwordChangeLogRepository.GetAllAsync();
         }
 
         public async Task<List<PasswordChangeLogModel>> GetRecentAsync(

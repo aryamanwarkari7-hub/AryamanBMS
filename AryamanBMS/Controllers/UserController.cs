@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using AryamanBMS.Data;
 
+using AryamanBMS.Business.Interfaces;
+
 namespace AryamanBMS.Controllers
 {
     [Authorize(Roles = "Admin")]
@@ -20,16 +22,20 @@ namespace AryamanBMS.Controllers
         private readonly ApplicationDbContext _context;
         private readonly INotificationService _notificationService;
 
+        private readonly IPasswordChangeLogService _passwordChangeLogService;
+
         public UserController(
     UserManager<ApplicationUserModel> userManager,
     RoleManager<IdentityRole> roleManager,
     ApplicationDbContext context,
-    INotificationService notificationService)
+    INotificationService notificationService,
+    IPasswordChangeLogService passwordChangeLogService)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _context = context;
             _notificationService = notificationService;
+            _passwordChangeLogService = passwordChangeLogService;
         }
 
         public async Task<IActionResult> Index(
@@ -59,7 +65,7 @@ namespace AryamanBMS.Controllers
                     Role = roles.FirstOrDefault() ?? "Not Assigned",
                     IsActive = user.IsActive,
 
-                    ActivityStatus =string.IsNullOrWhiteSpace(user.ActivityStatus)
+                    ActivityStatus = string.IsNullOrWhiteSpace(user.ActivityStatus)
                       ? "Offline"
                       : user.ActivityStatus,
 
@@ -191,12 +197,14 @@ namespace AryamanBMS.Controllers
 
             return View(model);
         }
+
         public IActionResult Create()
         {
             ViewBag.Roles = _roleManager.Roles.ToList();
 
             return View();
         }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(UserCreateViewModel model)
@@ -347,6 +355,7 @@ namespace AryamanBMS.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+
         public async Task<IActionResult> ResetPassword(string id)
         {
             var user = await _userManager.FindByIdAsync(id);
@@ -394,20 +403,15 @@ namespace AryamanBMS.Controllers
             {
                 var adminUser = await _userManager.GetUserAsync(User);
 
-                _context.PasswordChangeLogs.Add(new PasswordChangeLogModel
-                {
-                    UserId = user.Id,
-                    UserName = user.UserName,
-                    Email = user.Email,
-                    ChangedByUserId = adminUser?.Id,
-                    ChangedByUserName = adminUser?.UserName,
-                    ChangeType = "AdminReset",
-                    ChangedOn = DateTime.Now,
-                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
-                    UserAgent = Request.Headers.UserAgent.ToString()
-                });
-
-                await _context.SaveChangesAsync();
+                await _passwordChangeLogService.RecordAsync(
+    user.Id,
+    user.UserName,
+    user.Email,
+    adminUser?.Id,
+    adminUser?.UserName,
+    "AdminReset",
+    HttpContext.Connection.RemoteIpAddress?.ToString(),
+    Request.Headers.UserAgent.ToString());
 
                 await _notificationService.CreateAsync(
                     user.Id,
@@ -459,6 +463,7 @@ namespace AryamanBMS.Controllers
                 referenceId,
                 actionUrl);
         }
-        #endregion
+
+        #endregion Actions
     }
 }
