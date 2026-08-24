@@ -1,6 +1,6 @@
-﻿using AryamanBMS.Services.Interface;
+﻿using AryamanBMS.Business.Interfaces;
 
-namespace AryamanBMS.Services
+namespace AryamanBMS.Business.Services
 {
         public class FinancialYearService : IFinancialYearService
         {
