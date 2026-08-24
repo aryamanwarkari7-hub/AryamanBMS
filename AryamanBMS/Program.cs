@@ -14,6 +14,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Infrastructure;
 
+// Database context for the application
+using AryamanBMS.Database.Context;
+
 // =============================
 // APPLICATION HOST AND CONFIGURATION
 // =============================
@@ -33,6 +36,13 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     connectionString,
     new MySqlServerVersion(new Version(8, 0, 43))
     );
+});
+
+builder.Services.AddDbContext<LocationDbContext>(options =>
+{
+    options.UseMySql(
+        connectionString,
+        ServerVersion.AutoDetect(connectionString));
 });
 
 // IDENTITY, PASSWORD SECURITY, AND ACCOUNT LOCKOUT

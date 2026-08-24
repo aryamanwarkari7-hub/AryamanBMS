@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Data;
+﻿using AryamanBMS.Database.Context;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -7,10 +7,10 @@ namespace AryamanBMS.Repositories
 {
     public class LocationRepository : ILocationRepository
     {
-        private readonly ApplicationDbContext _context;
+        private readonly LocationDbContext _context;
 
         public LocationRepository(
-            ApplicationDbContext context)
+            LocationDbContext context)
         {
             _context = context;
         }
