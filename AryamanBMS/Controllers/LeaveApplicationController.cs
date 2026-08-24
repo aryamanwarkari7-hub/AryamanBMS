@@ -11,6 +11,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+using AryamanBMS.Business.Interfaces;
+
 namespace AryamanBMS.Controllers
 {
     [Authorize(Roles = "Admin,HR,Employee,Master")]
@@ -449,7 +451,6 @@ namespace AryamanBMS.Controllers
                 }
             }
 
-
             ModelState.Remove("Employee");
             ModelState.Remove("LeaveType");
             ModelState.Remove("ApplicationNumber");
@@ -686,8 +687,6 @@ namespace AryamanBMS.Controllers
             {
                 TempData["Error"] = "Employee not found.";
                 return RedirectToAction(nameof(Index));
-
-
             }
 
             if (isBirthdayLeave)
@@ -1026,7 +1025,7 @@ namespace AryamanBMS.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,HR,Employee,Master")]
-           public async Task<IActionResult> RequestCancellation(
+        public async Task<IActionResult> RequestCancellation(
            int id,
            int[]? leaveDayIds,
            string cancellationReason)
@@ -1325,8 +1324,6 @@ namespace AryamanBMS.Controllers
             await _leaveApplicationRepository
                 .UpdateAsync(leaveApplication);
 
-            
-
             if (isCompOff)
             {
                 await _compOffCreditRepository.SaveAsync();
@@ -1335,8 +1332,6 @@ namespace AryamanBMS.Controllers
 
             await _leaveApplicationDayRepository.SaveAsync();
             await _leaveApplicationRepository.SaveAsync();
-
-            
 
             await _attendanceRepository.SaveAsync();
 
@@ -1615,7 +1610,7 @@ namespace AryamanBMS.Controllers
                     decimal pendingReserved =
                         Math.Min(pendingRequested, balanceBeforePending);
 
-                    decimal birthdayUsed =birthdayUsedMap.TryGetValue(employee.Id, out var birthdayValue)
+                    decimal birthdayUsed = birthdayUsedMap.TryGetValue(employee.Id, out var birthdayValue)
                                           ? birthdayValue
                                           : 0m;
 
@@ -2385,7 +2380,7 @@ namespace AryamanBMS.Controllers
                 $"LeaveApplications_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
         }
 
-        private bool IsAttendanceStatus(string? status,params string[] validStatuses)
+        private bool IsAttendanceStatus(string? status, params string[] validStatuses)
         {
             if (string.IsNullOrWhiteSpace(status))
             {
@@ -2398,6 +2393,7 @@ namespace AryamanBMS.Controllers
                     x,
                     StringComparison.OrdinalIgnoreCase));
         }
+
         private static bool IsBirthdayLeave(LeaveTypeModel leaveType)
         {
             return string.Equals(
@@ -2689,8 +2685,6 @@ namespace AryamanBMS.Controllers
                       referenceDate,
                       excludeLeaveApplicationId)
             };
-
-
         }
 
         private async Task<decimal> GetPaidLeaveCarryForwardDaysAsync(
@@ -2857,6 +2851,6 @@ namespace AryamanBMS.Controllers
             await _leaveApplicationDayRepository.SaveAsync();
         }
 
-        #endregion
+        #endregion Actions
     }
 }

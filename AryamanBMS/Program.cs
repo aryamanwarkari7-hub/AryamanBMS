@@ -54,6 +54,10 @@ builder.Services.AddDbContext<AttendanceCalendarDbContext>(options =>
         ServerVersion.AutoDetect(connectionString));
 });
 
+// Attendance working-day configuration
+builder.Services.Configure<WorkingDayOptions>(
+    builder.Configuration.GetSection("Attendance"));
+
 // IDENTITY, PASSWORD SECURITY, AND ACCOUNT LOCKOUT
 builder.Services
     .AddIdentity<ApplicationUserModel, IdentityRole>(options =>

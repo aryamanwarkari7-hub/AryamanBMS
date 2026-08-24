@@ -1,19 +1,21 @@
-﻿using AryamanBMS.Repositories.Interfaces;
-using AryamanBMS.Services.Interface;
+﻿using AryamanBMS.Business.Interfaces;
+using AryamanBMS.Models;
+using AryamanBMS.Repositories.Interfaces;
+using Microsoft.Extensions.Options;
 
-namespace AryamanBMS.Services
+namespace AryamanBMS.Business.Services
 {
     public class WorkingDayService : IWorkingDayService
     {
         private readonly IWorkingDayRepository _workingDayRepository;
-        private readonly IConfiguration _configuration;
+        private readonly WorkingDayOptions _workingDayOptions;
 
         public WorkingDayService(
-           IWorkingDayRepository workingDayRepository,
-IConfiguration configuration)
+            IWorkingDayRepository workingDayRepository,
+            IOptions<WorkingDayOptions> workingDayOptions)
         {
             _workingDayRepository = workingDayRepository;
-            _configuration = configuration;
+            _workingDayOptions = workingDayOptions.Value;
         }
 
         public async Task<bool> IsWorkingDayAsync(DateTime date)
@@ -52,10 +54,9 @@ IConfiguration configuration)
             }
 
             var configuredHolidays =
-                _configuration
-                    .GetSection("Attendance:OfficeHolidays")
-                    .Get<string[]>()
-                ?? Array.Empty<string>();
+                _workingDayOptions
+                    .OfficeHolidays
+                    .ToArray();
 
             if (configuredHolidays.Any(value =>
                 DateTime.TryParse(value, out var holiday) &&
@@ -65,10 +66,10 @@ IConfiguration configuration)
             }
 
             var configuredWeeklyOffs =
-                _configuration
-                    .GetSection("Attendance:WeeklyOffDays")
-                    .Get<string[]>()
-                ?? Array.Empty<string>();
+                _workingDayOptions
+                    .WeeklyOffDays
+                    .Select(d => d.ToString())
+                    .ToArray();
 
             if (configuredWeeklyOffs.Any(value =>
                 Enum.TryParse(
@@ -85,11 +86,7 @@ IConfiguration configuration)
                 var saturdayNumber =
                     ((date.Day - 1) / 7) + 1;
 
-                var workingSaturdayNumbers =
-                    _configuration
-                        .GetSection("Attendance:WorkingSaturdayNumbers")
-                        .Get<int[]>()
-                    ?? new[] { 1, 3, 5 };
+                var workingSaturdayNumbers = _workingDayOptions.WorkingSaturdayNumbers;
 
                 return workingSaturdayNumbers.Contains(saturdayNumber)
                     ? "Working"

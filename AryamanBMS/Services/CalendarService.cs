@@ -7,6 +7,8 @@ using AryamanBMS.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
+using AryamanBMS.Business.Interfaces;
+
 namespace AryamanBMS.Services
 {
     public class CalendarService : ICalendarService
@@ -51,7 +53,6 @@ namespace AryamanBMS.Services
                 await AddAttendanceExceptionsAsync(events, start, end);
                 await AddAllTasksAsync(events, start, end);
                 await AddAllMeetingsAsync(events, start, end);
-
 
                 if (isAdmin || isMaster)
                 {

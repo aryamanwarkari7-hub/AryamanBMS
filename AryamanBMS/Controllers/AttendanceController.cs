@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+using AryamanBMS.Business.Interfaces;
+
 namespace AryamanBMS.Controllers
 {
     [Authorize(Roles = "Admin,HR,Employee,Master")]
@@ -728,7 +730,6 @@ namespace AryamanBMS.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-
         [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> Register(
     string? searchText,
@@ -939,7 +940,6 @@ namespace AryamanBMS.Controllers
             return View(attendance);
         }
 
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,HR")]
@@ -1081,7 +1081,6 @@ namespace AryamanBMS.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,HR,Master")]
-
         public async Task<IActionResult> DeleteConfirmed(
             int id)
         {
@@ -1716,7 +1715,6 @@ namespace AryamanBMS.Controllers
             headerRange.Style.Alignment.Horizontal =
                 XLAlignmentHorizontalValues.Center;
 
-
             int row = 2;
 
             foreach (var attendance in attendanceList)
@@ -1763,8 +1761,6 @@ namespace AryamanBMS.Controllers
             worksheet.Column(5).Style.DateFormat.Format = "dd-MMM-yyyy";
 
             worksheet.Column(9).Style.DateFormat.Format = "dd-MMM-yyyy HH:mm";
-
-
 
             using var stream =
                 new MemoryStream();
@@ -1919,6 +1915,7 @@ namespace AryamanBMS.Controllers
 
             return View(summary);
         }
-        #endregion
+
+        #endregion Actions
     }
 }

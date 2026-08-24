@@ -1,4 +1,4 @@
-﻿namespace AryamanBMS.Services.Interface
+﻿namespace AryamanBMS.Business.Interfaces
 {
     public interface IWorkingDayService
     {

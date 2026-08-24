@@ -3,6 +3,8 @@ using AryamanBMS.Services.Interface;
 using AryamanBMS.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
+using AryamanBMS.Business.Interfaces;
+
 namespace AryamanBMS.Services.Background
 {
     public class HrNotificationReminderBackgroundService : BackgroundService
@@ -337,9 +339,5 @@ namespace AryamanBMS.Services.Background
                     ? value
                     : fallback;
         }
-
-        
-
-        
     }
 }

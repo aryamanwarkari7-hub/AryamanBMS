@@ -4,6 +4,8 @@ using AryamanBMS.ViewModels;
 using AryamanBMS.Data;
 using Microsoft.EntityFrameworkCore;
 
+using AryamanBMS.Business.Interfaces;
+
 namespace AryamanBMS.Services
 {
     public class SalaryAttendanceSummaryService : ISalaryAttendanceSummaryService
@@ -72,8 +74,6 @@ namespace AryamanBMS.Services
                 .ToListAsync();
 
             var summaries = new List<AttendanceSummaryViewModel>();
-
-            
 
             foreach (var employee in employees)
             {
@@ -191,17 +191,17 @@ namespace AryamanBMS.Services
                             dateApprovedLeaves.Sum(l =>
                             {
                                 decimal dateLeaveValue = GetLeaveDayValue(l, date);
-                            
+
                                 if (l.PaidDays <= 0)
                                 {
                                     return 0m;
                                 }
-                            
+
                                 decimal paidRatio =
                                     l.NumberOfDays <= 0
                                         ? 0m
                                         : l.PaidDays / l.NumberOfDays;
-                            
+
                                 return Math.Min(
                                     dateLeaveValue,
                                     Math.Round(dateLeaveValue * paidRatio, 2));
@@ -416,7 +416,7 @@ namespace AryamanBMS.Services
                 : 1m;
         }
 
-        private bool IsStatus(  string? status, params string[] validStatuses)
+        private bool IsStatus(string? status, params string[] validStatuses)
         {
             if (string.IsNullOrWhiteSpace(status))
             {
