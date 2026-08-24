@@ -1,7 +1,7 @@
 ﻿using AryamanBMS.Models;
 using System.Threading.Tasks;
 
-namespace AryamanBMS.Services.Interfaces
+namespace AryamanBMS.Business.Interfaces
 {
     public interface ILoginHistoryService
     {

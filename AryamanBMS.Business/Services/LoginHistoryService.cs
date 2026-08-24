@@ -1,10 +1,7 @@
 ﻿using AryamanBMS.Models;
-using AryamanBMS.Repositories.Implementations;
+using AryamanBMS.Business.Interfaces;
 using AryamanBMS.Repositories.Interfaces;
-using AryamanBMS.Services.Interfaces;
-using System.Threading.Tasks;
-
-namespace AryamanBMS.Services
+namespace AryamanBMS.Business.Services
 {
     public class LoginHistoryService : ILoginHistoryService
     {

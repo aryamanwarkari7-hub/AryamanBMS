@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Data;
+﻿using AryamanBMS.Database.Context;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -7,10 +7,10 @@ namespace AryamanBMS.Repositories.Implementations
 {
     public class LoginHistoryRepository : ILoginHistoryRepository
     {
-        private readonly ApplicationDbContext _context;
+        private readonly LoginHistoryDbContext _context;
 
-        public LoginHistoryRepository(
-            ApplicationDbContext context)
+
+        public LoginHistoryRepository(LoginHistoryDbContext context)
         {
             _context = context;
         }
