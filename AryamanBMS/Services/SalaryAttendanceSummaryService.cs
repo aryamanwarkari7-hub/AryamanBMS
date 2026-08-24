@@ -1,40 +1,38 @@
-﻿using AryamanBMS.Repositories.Interfaces;
+﻿using AryamanBMS.Business.Interfaces;
+using AryamanBMS.Models;
+using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interface;
 using AryamanBMS.ViewModels;
 using Microsoft.EntityFrameworkCore;
 
-using AryamanBMS.Business.Interfaces;
-
 namespace AryamanBMS.Services
 {
-    public class SalaryAttendanceSummaryService : ISalaryAttendanceSummaryService
+    public class SalaryAttendanceSummaryService
+        : ISalaryAttendanceSummaryService
     {
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IAttendanceRepository _attendanceRepository;
         private readonly ILeaveApplicationRepository _leaveApplicationRepository;
-        private readonly IWorkingDayService _workingDayService;
+        private readonly IAttendanceSummaryCalculator _attendanceSummaryCalculator;
 
         public SalaryAttendanceSummaryService(
-    IEmployeeRepository employeeRepository,
-    IAttendanceRepository attendanceRepository,
-    ILeaveApplicationRepository leaveApplicationRepository,
-    IWorkingDayService workingDayService)
+            IEmployeeRepository employeeRepository,
+            IAttendanceRepository attendanceRepository,
+            ILeaveApplicationRepository leaveApplicationRepository,
+            IAttendanceSummaryCalculator attendanceSummaryCalculator)
         {
             _employeeRepository = employeeRepository;
             _attendanceRepository = attendanceRepository;
             _leaveApplicationRepository = leaveApplicationRepository;
-
-            _workingDayService = workingDayService;
+            _attendanceSummaryCalculator = attendanceSummaryCalculator;
         }
 
-        public async Task<List<AttendanceSummaryViewModel>> GetMonthlySummaryAsync(
-            int month,
-            int year)
+        public async Task<List<AttendanceSummaryViewModel>>
+            GetMonthlySummaryAsync(int month, int year)
         {
             int totalDays = DateTime.DaysInMonth(year, month);
 
             var startDate = new DateTime(year, month, 1);
-
             var endDate = new DateTime(year, month, totalDays);
 
             var employees = await _employeeRepository.Employees
@@ -56,264 +54,90 @@ namespace AryamanBMS.Services
                     a.AttendanceDate <= endDate)
                 .ToListAsync();
 
-            var approvedLeaves = await _leaveApplicationRepository.LeaveApplications
-                .Include(l => l.LeaveType)
+            var approvedLeaves = await _leaveApplicationRepository
+                .LeaveApplications
                 .Where(l =>
                     l.Status == "Approved" &&
                     l.FromDate <= endDate &&
                     l.ToDate >= startDate)
                 .ToListAsync();
 
-            var summaries = new List<AttendanceSummaryViewModel>();
-
-            foreach (var employee in employees)
+            var input = new AttendanceSummaryCalculationInput
             {
-                DateTime eligibleStart =
-                    employee.JoiningDate.Date > startDate
-                        ? employee.JoiningDate.Date
-                        : startDate;
-
-                DateTime eligibleEnd =
-                    employee.LastWorkingDate.HasValue &&
-                    employee.LastWorkingDate.Value.Date < endDate
-                        ? employee.LastWorkingDate.Value.Date
-                        : endDate;
-
-                if (eligibleStart > eligibleEnd)
-                {
-                    continue;
-                }
-
-                decimal eligibleDays =
-                    (eligibleEnd - eligibleStart).Days + 1;
-
-                var employeeAttendance = attendanceRecords
-                    .Where(a =>
-                        a.EmployeeId == employee.Id &&
-                        a.AttendanceDate.Date >= eligibleStart &&
-                        a.AttendanceDate.Date <= eligibleEnd)
-                    .GroupBy(a => a.AttendanceDate.Date)
-                    .ToDictionary(
-                        g => g.Key,
-                        g => g.OrderByDescending(a => a.Id).First());
-
-                var employeeApprovedLeaves = approvedLeaves
-                    .Where(l => l.EmployeeId == employee.Id)
-                    .ToList();
-                decimal presentCount = 0;
-                decimal markedAbsentCount = 0;
-                decimal leaveCount = 0;
-                decimal paidLeaveCount = 0;
-                decimal unpaidLeaveCount = 0;
-                decimal holidayCount = 0;
-                decimal weekOffCount = 0;
-                decimal onDutyCount = 0;
-                decimal missingDays = 0;
-
-                for (var date = eligibleStart.Date;
-                     date <= eligibleEnd.Date;
-                     date = date.AddDays(1))
-                {
-                    var workingDayStatus = await _workingDayService.GetDayStatusAsync(date);
-
-                    employeeAttendance.TryGetValue(date, out var attendance);
-                    decimal attendanceValue =
-                        NormalizeDayValue(attendance?.AttendanceValue ?? 1m);
-
-                    if (IsStatus(attendance?.Status, "P", "Present"))
-                    {
-                        presentCount += attendanceValue;
-                        continue;
-                    }
-
-                    if (IsStatus(attendance?.Status, "OD", "On Duty", "OnDuty"))
-                    {
-                        onDutyCount += attendanceValue;
-                        continue;
-                    }
-
-                    if (IsStatus(attendance?.Status, "A", "Absent"))
-                    {
-                        markedAbsentCount += attendanceValue;
-
-                        if (attendanceValue < 1m)
+                Month = month,
+                Year = year,
+                Employees = employees
+                    .Select(employee =>
+                        new AttendanceSummaryEmployeeInput
                         {
-                            presentCount += 1m - attendanceValue;
-                        }
+                            EmployeeId = employee.Id,
+                            EmployeeCode =
+                                employee.EmployeeCode ?? string.Empty,
+                            EmployeeName = employee.FullName,
+                            JoiningDate = employee.JoiningDate,
+                            LastWorkingDate = employee.LastWorkingDate,
+                            IsActive = employee.IsActive,
 
-                        continue;
-                    }
+                            Attendances = attendanceRecords
+                                .Where(a =>
+                                    a.EmployeeId == employee.Id)
+                                .Select(a =>
+                                    new AttendanceSummaryAttendanceInput
+                                    {
+                                        AttendanceRecordId = a.Id,
+                                        AttendanceDate =
+                                            a.AttendanceDate,
+                                        Status = a.Status,
+                                        AttendanceValue =
+                                            a.AttendanceValue
+                                    })
+                                .ToList(),
 
-                    if (IsStatus(attendance?.Status, "H", "Holiday") ||
-                        workingDayStatus == "Holiday")
-                    {
-                        holidayCount += 1m;
-                        continue;
-                    }
+                            ApprovedLeaves = approvedLeaves
+                                .Where(l =>
+                                    l.EmployeeId == employee.Id)
+                                .Select(l =>
+                                    new AttendanceSummaryLeaveInput
+                                    {
+                                        FromDate = l.FromDate,
+                                        ToDate = l.ToDate,
+                                        NumberOfDays =
+                                            l.NumberOfDays,
+                                        PaidDays = l.PaidDays,
+                                        IsHalfDay = l.IsHalfDay
+                                    })
+                                .ToList()
+                        })
+                    .ToList()
+            };
 
-                    if (IsStatus(attendance?.Status, "WO", "Week Off", "WeekOff", "Weekly Off") ||
-                       workingDayStatus == "WeeklyOff")
-                    {
-                        weekOffCount += 1m;
-                        continue;
-                    }
+            var results =
+                await _attendanceSummaryCalculator.CalculateAsync(input);
 
-                    var dateApprovedLeaves = employeeApprovedLeaves
-                        .Where(l =>
-                            l.FromDate.Date <= date &&
-                            l.ToDate.Date >= date)
-                        .ToList();
-
-                    if (dateApprovedLeaves.Any() ||
-                        IsStatus(attendance?.Status, "L", "Leave"))
-                    {
-                        decimal leaveDayValue = dateApprovedLeaves.Any()
-                            ? Math.Min(
-                                1m,
-                                dateApprovedLeaves.Sum(l =>
-                                    GetLeaveDayValue(l, date)))
-                            : attendanceValue;
-
-                        leaveCount += leaveDayValue;
-
-                        if (dateApprovedLeaves.Any())
-                        {
-                            decimal paidLeaveValue =
-                            dateApprovedLeaves.Sum(l =>
-                            {
-                                decimal dateLeaveValue = GetLeaveDayValue(l, date);
-
-                                if (l.PaidDays <= 0)
-                                {
-                                    return 0m;
-                                }
-
-                                decimal paidRatio =
-                                    l.NumberOfDays <= 0
-                                        ? 0m
-                                        : l.PaidDays / l.NumberOfDays;
-
-                                return Math.Min(
-                                    dateLeaveValue,
-                                    Math.Round(dateLeaveValue * paidRatio, 2));
-                            });
-
-                            paidLeaveValue = Math.Min(
-                                paidLeaveValue,
-                                leaveDayValue);
-
-                            paidLeaveCount += paidLeaveValue;
-                            unpaidLeaveCount += leaveDayValue - paidLeaveValue;
-                        }
-                        else
-                        {
-                            unpaidLeaveCount += leaveDayValue;
-                        }
-
-                        continue;
-                    }
-
-                    missingDays += 1m;
-                }
-
-                decimal absentCount =
-                    markedAbsentCount
-                    + missingDays
-                    + unpaidLeaveCount;
-
-                decimal payDays =
-                    presentCount
-                    + onDutyCount
-                    + holidayCount
-                    + weekOffCount
-                    + paidLeaveCount;
-
-                decimal workingDays =
-                    eligibleDays - holidayCount - weekOffCount;
-
-                decimal attendancePercentage =
-                    workingDays == 0
-                        ? 0
-                        : Math.Round(
-                            ((decimal)(presentCount + onDutyCount)
-                            / workingDays) * 100,
-                            2);
-
-                summaries.Add(new AttendanceSummaryViewModel
+            return results
+                .Select(result => new AttendanceSummaryViewModel
                 {
-                    EmployeeId = employee.Id,
-
-                    EmployeeCode = employee.EmployeeCode ?? string.Empty,
-
-                    EmployeeName = employee.FullName,
-
-                    Month = month,
-
-                    Year = year,
-
-                    PresentCount = presentCount,
-
-                    AbsentCount = absentCount,
-
-                    MarkedAbsentCount = markedAbsentCount,
-
-                    MissingDays = missingDays,
-
-                    LeaveCount = leaveCount,
-
-                    PaidLeaveCount = paidLeaveCount,
-
-                    UnpaidLeaveCount = unpaidLeaveCount,
-
-                    HolidayCount = holidayCount,
-
-                    WeekOffCount = weekOffCount,
-
-                    OnDutyCount = onDutyCount,
-
-                    TotalDays = eligibleDays,
-
-                    PayDays = payDays,
-
-                    AttendancePercentage = attendancePercentage
-                });
-            }
-
-            return summaries;
-        }
-
-        private decimal GetLeaveDayValue(
-            AryamanBMS.Models.LeaveApplicationModel leaveApplication,
-            DateTime date)
-        {
-            if (leaveApplication.IsHalfDay &&
-                leaveApplication.FromDate.Date == date.Date)
-            {
-                return 0.5m;
-            }
-
-            return 1m;
-        }
-
-        private static decimal NormalizeDayValue(decimal value)
-        {
-            return value == 0.5m
-                ? 0.5m
-                : 1m;
-        }
-
-        private bool IsStatus(string? status, params string[] validStatuses)
-        {
-            if (string.IsNullOrWhiteSpace(status))
-            {
-                return false;
-            }
-
-            return validStatuses.Any(x =>
-                string.Equals(
-                    status.Trim(),
-                    x,
-                    StringComparison.OrdinalIgnoreCase));
+                    EmployeeId = result.EmployeeId,
+                    EmployeeCode = result.EmployeeCode,
+                    EmployeeName = result.EmployeeName,
+                    Month = result.Month,
+                    Year = result.Year,
+                    PresentCount = result.PresentCount,
+                    AbsentCount = result.AbsentCount,
+                    LeaveCount = result.LeaveCount,
+                    PaidLeaveCount = result.PaidLeaveCount,
+                    UnpaidLeaveCount = result.UnpaidLeaveCount,
+                    HolidayCount = result.HolidayCount,
+                    WeekOffCount = result.WeekOffCount,
+                    OnDutyCount = result.OnDutyCount,
+                    TotalDays = result.TotalDays,
+                    PayDays = result.PayDays,
+                    MarkedAbsentCount = result.MarkedAbsentCount,
+                    MissingDays = result.MissingDays,
+                    AttendancePercentage =
+                        result.AttendancePercentage
+                })
+                .ToList();
         }
     }
 }

@@ -181,6 +181,7 @@ builder.Services.AddScoped<IProposalTemplateRepository,ProposalTemplateRepositor
 // =============================
 // Salary services
 builder.Services.AddScoped<ISalaryExcelImportService, SalaryExcelImportService>();
+builder.Services.AddScoped<IAttendanceSummaryCalculator, AttendanceSummaryCalculator>();
 builder.Services.AddScoped<ISalaryAttendanceSummaryService, SalaryAttendanceSummaryService>();
 
 // Employee services
