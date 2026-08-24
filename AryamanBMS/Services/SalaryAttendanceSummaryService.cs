@@ -1,7 +1,6 @@
 ﻿using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interface;
 using AryamanBMS.ViewModels;
-using AryamanBMS.Data;
 using Microsoft.EntityFrameworkCore;
 
 using AryamanBMS.Business.Interfaces;
@@ -13,25 +12,17 @@ namespace AryamanBMS.Services
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IAttendanceRepository _attendanceRepository;
         private readonly ILeaveApplicationRepository _leaveApplicationRepository;
-        private readonly ApplicationDbContext _context;
-        private readonly IConfiguration _configuration;
-
         private readonly IWorkingDayService _workingDayService;
 
         public SalaryAttendanceSummaryService(
-            IEmployeeRepository employeeRepository,
-            IAttendanceRepository attendanceRepository,
-            ILeaveApplicationRepository leaveApplicationRepository,
-            ApplicationDbContext context,
-            IConfiguration configuration,
-
-            IWorkingDayService workingDayService)
+    IEmployeeRepository employeeRepository,
+    IAttendanceRepository attendanceRepository,
+    ILeaveApplicationRepository leaveApplicationRepository,
+    IWorkingDayService workingDayService)
         {
             _employeeRepository = employeeRepository;
             _attendanceRepository = attendanceRepository;
             _leaveApplicationRepository = leaveApplicationRepository;
-            _context = context;
-            _configuration = configuration;
 
             _workingDayService = workingDayService;
         }
@@ -289,111 +280,6 @@ namespace AryamanBMS.Services
             }
 
             return summaries;
-        }
-
-        private HashSet<DayOfWeek> GetWeeklyOffDays()
-        {
-            var configuredDays =
-                _configuration
-                    .GetSection("Attendance:WeeklyOffDays")
-                    .Get<string[]>();
-
-            if (configuredDays == null || configuredDays.Length == 0)
-            {
-                return new HashSet<DayOfWeek>
-                {
-                    DayOfWeek.Sunday
-                };
-            }
-
-            var weeklyOffDays = new HashSet<DayOfWeek>();
-
-            foreach (var configuredDay in configuredDays)
-            {
-                if (Enum.TryParse(
-                        configuredDay,
-                        ignoreCase: true,
-                        out DayOfWeek dayOfWeek))
-                {
-                    weeklyOffDays.Add(dayOfWeek);
-                }
-            }
-
-            if (weeklyOffDays.Count == 0)
-            {
-                weeklyOffDays.Add(DayOfWeek.Sunday);
-            }
-
-            return weeklyOffDays;
-        }
-
-        private async Task<HashSet<DateTime>> GetOfficeHolidaysAsync(
-            DateTime startDate,
-            DateTime endDate)
-        {
-            var configuredHolidays =
-                _configuration
-                    .GetSection("Attendance:OfficeHolidays")
-                    .Get<string[]>();
-
-            var officeHolidays = new HashSet<DateTime>();
-
-            foreach (var configuredHoliday in configuredHolidays ?? Array.Empty<string>())
-            {
-                if (DateTime.TryParse(configuredHoliday, out var holiday))
-                {
-                    var holidayDate = holiday.Date;
-
-                    if (holidayDate >= startDate.Date &&
-                        holidayDate <= endDate.Date)
-                    {
-                        officeHolidays.Add(holidayDate);
-                    }
-                }
-            }
-
-            var uploadedHolidays = await _context.Holidays
-                .AsNoTracking()
-                .Where(x =>
-                    x.IsActive &&
-                    x.HolidayDate.Date >= startDate.Date &&
-                    x.HolidayDate.Date <= endDate.Date)
-                .Select(x => x.HolidayDate.Date)
-                .ToListAsync();
-
-            foreach (var holiday in uploadedHolidays)
-            {
-                officeHolidays.Add(holiday);
-            }
-
-            return officeHolidays;
-        }
-
-        private bool IsWeeklyOff(
-          DateTime date,
-          HashSet<DayOfWeek> weeklyOffDays,
-          int[] workingSaturdayNumbers)
-        {
-            if (weeklyOffDays.Contains(date.DayOfWeek))
-            {
-                return true;
-            }
-
-            if (date.DayOfWeek == DayOfWeek.Saturday)
-            {
-                var saturdayNumber = ((date.Day - 1) / 7) + 1;
-
-                return !workingSaturdayNumbers.Contains(saturdayNumber);
-            }
-
-            return false;
-        }
-
-        private bool IsOfficeHoliday(
-            DateTime date,
-            HashSet<DateTime> officeHolidays)
-        {
-            return officeHolidays.Contains(date.Date);
         }
 
         private decimal GetLeaveDayValue(
