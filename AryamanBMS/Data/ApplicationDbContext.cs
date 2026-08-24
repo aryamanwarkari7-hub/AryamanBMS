@@ -198,8 +198,6 @@ namespace AryamanBMS.Data
         // GST
         // =============================
         public DbSet<GstMonthlySnapshotModel> GstMonthlySnapshots { get; set; }
-
-        public DbSet<GstConfigurationModel> GstConfigurations { get; set; }
         public DbSet<GstLutDocumentModel> GstLutDocuments { get; set; }
         public DbSet<GstReturnModel> GstReturns { get; set; }
         public DbSet<GstChallanModel> GstChallans { get; set; }
@@ -1146,9 +1144,7 @@ namespace AryamanBMS.Data
                 .HasIndex(x => new { x.Month, x.Year })
                 .IsUnique();
 
-            modelBuilder.Entity<GstConfigurationModel>().ToTable("tablegstconfiguration");
-            modelBuilder.Entity<GstConfigurationModel>()
-                .HasIndex(x => x.IsActive);
+            
 
             modelBuilder.Entity<GstLutDocumentModel>(entity =>
             {
@@ -1158,10 +1154,7 @@ namespace AryamanBMS.Data
 
                 entity.HasIndex(x => new { x.GstConfigurationId, x.IsActive });
 
-                entity.HasOne(x => x.GstConfiguration)
-                    .WithMany()
-                    .HasForeignKey(x => x.GstConfigurationId)
-                    .OnDelete(DeleteBehavior.Restrict);
+                
             });
 
             modelBuilder.Entity<GstReturnModel>().ToTable("tablegstreturn");

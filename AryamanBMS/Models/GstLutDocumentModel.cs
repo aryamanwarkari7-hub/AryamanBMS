@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AryamanBMS.Models
 {
@@ -10,9 +9,6 @@ namespace AryamanBMS.Models
 
         [Required]
         public int GstConfigurationId { get; set; }
-
-        [ForeignKey(nameof(GstConfigurationId))]
-        public GstConfigurationModel? GstConfiguration { get; set; }
 
         [StringLength(100)]
         public string? LutReference { get; set; }

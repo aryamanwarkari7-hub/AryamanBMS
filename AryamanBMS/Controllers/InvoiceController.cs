@@ -21,6 +21,8 @@ namespace AryamanBMS.Controllers
         private readonly INotificationService _notificationService;
         private readonly UserManager<ApplicationUserModel> _userManager;
 
+        private readonly IGstConfigurationRepository _gstConfigurationRepository;
+
         private readonly ApplicationDbContext _context;
 
         public InvoiceController(
@@ -29,7 +31,8 @@ namespace AryamanBMS.Controllers
           IInvoiceDocumentService invoiceDocumentService,
           ApplicationDbContext context,
           INotificationService notificationService,
-          UserManager<ApplicationUserModel> userManager)
+          UserManager<ApplicationUserModel> userManager,
+          IGstConfigurationRepository gstConfigurationRepository)
         {
             _invoiceRepository = invoiceRepository;
             _fileStorageService = fileStorageService;
@@ -37,6 +40,7 @@ namespace AryamanBMS.Controllers
             _context = context;
             _notificationService = notificationService;
             _userManager = userManager;
+            _gstConfigurationRepository = gstConfigurationRepository;
         }
 
         #region Index
@@ -189,7 +193,8 @@ namespace AryamanBMS.Controllers
 
             return View(model);
         }
-        #endregion
+
+        #endregion Index
 
         #region Create
 
@@ -288,7 +293,7 @@ namespace AryamanBMS.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        #endregion
+        #endregion Create
 
         #region Edit
 
@@ -331,7 +336,7 @@ namespace AryamanBMS.Controllers
                 return NotFound();
             }
 
-            var existingInvoice =  await _invoiceRepository.GetByIdAsync(id);
+            var existingInvoice = await _invoiceRepository.GetByIdAsync(id);
 
             if (existingInvoice == null ||
                 existingInvoice.IsDeleted)
@@ -351,21 +356,21 @@ namespace AryamanBMS.Controllers
 
             model.InvoiceNo = existingInvoice.InvoiceNo;
 
-            model.PaidAmount =  existingInvoice.PaidAmount;
+            model.PaidAmount = existingInvoice.PaidAmount;
 
             model.PaymentStatus = existingInvoice.PaymentStatus;
 
             model.InvoiceStatus = existingInvoice.InvoiceStatus;
 
-            model.AttachmentPath =  existingInvoice.AttachmentPath;
+            model.AttachmentPath = existingInvoice.AttachmentPath;
 
             if (existingInvoice.PaidAmount > 0)
             {
-                model.ClientId =  existingInvoice.ClientId;
+                model.ClientId = existingInvoice.ClientId;
 
                 model.ProjectId = existingInvoice.ProjectId;
 
-                model.ProjectName =  existingInvoice.ProjectName;
+                model.ProjectName = existingInvoice.ProjectName;
             }
 
             await AssignGstStateDecisionAsync(model);
@@ -414,22 +419,22 @@ namespace AryamanBMS.Controllers
                     uploadedFile.RelativePath;
             }
 
-            existingInvoice.ClientId =   model.ClientId;
-            existingInvoice.ProjectId =  model.ProjectId;
-            existingInvoice.ProjectName =  model.ProjectName;
-            existingInvoice.InvoiceType =  model.InvoiceType;
-            existingInvoice.InvoiceDate =  model.InvoiceDate;
+            existingInvoice.ClientId = model.ClientId;
+            existingInvoice.ProjectId = model.ProjectId;
+            existingInvoice.ProjectName = model.ProjectName;
+            existingInvoice.InvoiceType = model.InvoiceType;
+            existingInvoice.InvoiceDate = model.InvoiceDate;
             existingInvoice.PurchaseWorkOrderId = model.PurchaseWorkOrderId;
             existingInvoice.BillingMilestoneId = model.BillingMilestoneId;
             existingInvoice.ProposalId = model.ProposalId;
             existingInvoice.SACCode = model.SACCode;
-            existingInvoice.DueDate =  model.DueDate;
-            existingInvoice.BillingAddress =  model.BillingAddress;
+            existingInvoice.DueDate = model.DueDate;
+            existingInvoice.BillingAddress = model.BillingAddress;
             existingInvoice.GSTNo = model.GSTNo;
             existingInvoice.TaxTreatment = model.TaxTreatment;
-            existingInvoice.CustomerCountryName =  model.CustomerCountryName;
+            existingInvoice.CustomerCountryName = model.CustomerCountryName;
             existingInvoice.CustomerCountryIso2Code = model.CustomerCountryIso2Code;
-            existingInvoice.LutReference =model.LutReference;
+            existingInvoice.LutReference = model.LutReference;
             existingInvoice.IsInterState = model.IsInterState;
             existingInvoice.SupplierStateCode = model.SupplierStateCode;
             existingInvoice.CustomerStateCode = model.CustomerStateCode;
@@ -438,9 +443,9 @@ namespace AryamanBMS.Controllers
             existingInvoice.GstStateOverrideReason =
                 model.GstStateOverrideReason;
             existingInvoice.PaymentTerms = model.PaymentTerms;
-            existingInvoice.Remarks =  model.Remarks;
-            existingInvoice.Discount =  model.Discount;
-            existingInvoice.SubTotal =  model.SubTotal;
+            existingInvoice.Remarks = model.Remarks;
+            existingInvoice.Discount = model.Discount;
+            existingInvoice.SubTotal = model.SubTotal;
             existingInvoice.GSTAmount = model.GSTAmount;
             existingInvoice.GrandTotal = model.GrandTotal;
             existingInvoice.BalanceAmount =
@@ -457,15 +462,15 @@ namespace AryamanBMS.Controllers
 
                         Description = detail.Description,
 
-                        Qty =  detail.Qty,
+                        Qty = detail.Qty,
 
                         Unit = detail.Unit,
 
-                        Rate =   detail.Rate,
+                        Rate = detail.Rate,
 
                         GSTPercent = detail.GSTPercent,
 
-                        GSTAmount =  detail.GSTAmount,
+                        GSTAmount = detail.GSTAmount,
 
                         Amount = detail.Amount,
 
@@ -503,7 +508,7 @@ namespace AryamanBMS.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        #endregion
+        #endregion Edit
 
         #region Details
 
@@ -605,7 +610,7 @@ namespace AryamanBMS.Controllers
                 fileName);
         }
 
-        #endregion
+        #endregion Details
 
         #region Generated Documents
 
@@ -761,7 +766,7 @@ namespace AryamanBMS.Controllers
                 return NotFound();
             }
 
-            ViewBag.Invoice =  invoice;
+            ViewBag.Invoice = invoice;
 
             var documents =
                 await _context
@@ -778,7 +783,7 @@ namespace AryamanBMS.Controllers
             return View(documents);
         }
 
-        #endregion
+        #endregion Generated Documents
 
         #region Issue Invoice
 
@@ -876,9 +881,7 @@ namespace AryamanBMS.Controllers
                 new { id });
         }
 
-        #endregion
-
-
+        #endregion Issue Invoice
 
         #region Cancel Invoice
 
@@ -917,7 +920,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Cancel(int id,string cancellationReason)
+        public async Task<IActionResult> Cancel(int id, string cancellationReason)
         {
             var invoice =
                 await _invoiceRepository.GetByIdAsync(id);
@@ -968,15 +971,15 @@ namespace AryamanBMS.Controllers
                 return Unauthorized();
             }
 
-            invoice.InvoiceStatus =  "Cancelled";
+            invoice.InvoiceStatus = "Cancelled";
 
-            invoice.CancelledByUserId =  userId;
+            invoice.CancelledByUserId = userId;
 
-            invoice.CancelledOn =  DateTime.Now;
+            invoice.CancelledOn = DateTime.Now;
 
-            invoice.CancellationReason =  cancellationReason.Trim();
+            invoice.CancellationReason = cancellationReason.Trim();
 
-            invoice.ModifiedOn =  DateTime.Now;
+            invoice.ModifiedOn = DateTime.Now;
 
             try
             {
@@ -1017,7 +1020,7 @@ namespace AryamanBMS.Controllers
                 new { id });
         }
 
-        #endregion
+        #endregion Cancel Invoice
 
         #region Delete
 
@@ -1079,7 +1082,7 @@ namespace AryamanBMS.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        #endregion
+        #endregion Delete
 
         #region Print
 
@@ -1136,7 +1139,7 @@ namespace AryamanBMS.Controllers
                 "application/pdf");
         }
 
-        #endregion
+        #endregion Print
 
         #region Helpers
 
@@ -1173,7 +1176,6 @@ namespace AryamanBMS.Controllers
 
         private void ValidateInvoiceBusinessRules(InvoiceModel model)
         {
-
             if (model.InvoiceType != "Tax Invoice" &&
                 model.InvoiceType != "Proforma Invoice")
             {
@@ -1278,14 +1280,14 @@ namespace AryamanBMS.Controllers
             .OrderByDescending(x => x.OrderDate)
             .ToListAsync();
 
-             ViewBag.BillingMilestones =
-               await _context.BillingMilestones
-                   .AsNoTracking()
-                   .Where(x => x.IsActive)
-                   .OrderBy(x => x.PurchaseWorkOrderId)
-                   .ThenBy(x => x.SortOrder)
-                   .ThenBy(x => x.MilestoneName)
-                   .ToListAsync();
+            ViewBag.BillingMilestones =
+              await _context.BillingMilestones
+                  .AsNoTracking()
+                  .Where(x => x.IsActive)
+                  .OrderBy(x => x.PurchaseWorkOrderId)
+                  .ThenBy(x => x.SortOrder)
+                  .ThenBy(x => x.MilestoneName)
+                  .ToListAsync();
         }
 
         private async Task AssignGstStateDecisionAsync(
@@ -1341,7 +1343,6 @@ namespace AryamanBMS.Controllers
                     "Proforma Invoice",
                     StringComparison.OrdinalIgnoreCase);
 
-
             if (isProforma)
             {
                 ClearGstStateDecision(model);
@@ -1356,12 +1357,8 @@ namespace AryamanBMS.Controllers
 
             if (isExportUnderLut)
             {
-                var gstConfiguration =
-                    await _context.GstConfigurations
-                        .AsNoTracking()
-                        .Where(x => x.IsActive)
-                        .OrderByDescending(x => x.UpdatedOn)
-                        .FirstOrDefaultAsync();
+                var gstConfiguration = await _gstConfigurationRepository
+                    .GetActiveAsync();
 
                 bool hasValidLut =
                     !string.IsNullOrWhiteSpace(
@@ -1391,11 +1388,8 @@ namespace AryamanBMS.Controllers
             }
 
             var configuration =
-                await _context.GstConfigurations
-                    .AsNoTracking()
-                    .Where(x => x.IsActive)
-                    .OrderByDescending(x => x.UpdatedOn)
-                    .FirstOrDefaultAsync();
+    await _gstConfigurationRepository
+        .GetActiveAsync();
 
             string? supplierStateCode =
                 ExtractStateCodeFromGstin(
@@ -1508,10 +1502,10 @@ namespace AryamanBMS.Controllers
                 return true;
             }
 
-            var projects =await _invoiceRepository.GetProjectsAsync();
+            var projects = await _invoiceRepository.GetProjectsAsync();
 
             var project =
-                projects.FirstOrDefault(x =>x.Id == model.ProjectId.Value);
+                projects.FirstOrDefault(x => x.Id == model.ProjectId.Value);
 
             if (project == null)
             {
@@ -1570,7 +1564,7 @@ namespace AryamanBMS.Controllers
 
             foreach (var item in model.InvoiceDetails)
             {
-                item.ItemName = item.ItemName?.Trim() ??string.Empty;
+                item.ItemName = item.ItemName?.Trim() ?? string.Empty;
 
                 item.Description = item.Description?.Trim() ?? string.Empty;
 
@@ -1613,13 +1607,13 @@ namespace AryamanBMS.Controllers
                  * invoice-level discount. The discount is allocated
                  * proportionately below before calculating GST.
                  */
-                item.Amount =  taxableAmount;
+                item.Amount = taxableAmount;
 
-                subTotal +=  taxableAmount;
+                subTotal += taxableAmount;
                 normalizedItems.Add((item, taxableAmount));
             }
 
-            model.Discount =  Math.Max(0,Math.Round(
+            model.Discount = Math.Max(0, Math.Round(
                         model.Discount,
                         2));
 
@@ -1628,11 +1622,11 @@ namespace AryamanBMS.Controllers
                 model.Discount = subTotal;
             }
 
-            model.PaidAmount = Math.Max(0,Math.Round(
+            model.PaidAmount = Math.Max(0, Math.Round(
                         model.PaidAmount,
                         2));
 
-            model.SubTotal = Math.Round(subTotal,2);
+            model.SubTotal = Math.Round(subTotal, 2);
 
             decimal allocatedDiscountTotal = 0;
 
@@ -1688,7 +1682,7 @@ namespace AryamanBMS.Controllers
                         gstTotal,
                         2);
 
-            decimal taxableTotal = model.SubTotal -  model.Discount;
+            decimal taxableTotal = model.SubTotal - model.Discount;
 
             model.GrandTotal =
                 Math.Round(
@@ -1705,7 +1699,7 @@ namespace AryamanBMS.Controllers
             model.BalanceAmount =
                 Math.Max(
                     0,
-                    Math.Round( model.GrandTotal - model.PaidAmount,2));
+                    Math.Round(model.GrandTotal - model.PaidAmount, 2));
         }
 
         [HttpGet]
@@ -1976,6 +1970,6 @@ namespace AryamanBMS.Controllers
             }
         }
 
-        #endregion
+        #endregion Helpers
     }
 }

@@ -1,15 +1,15 @@
-using AryamanBMS.Data;
+using AryamanBMS.Database.Context;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
-namespace AryamanBMS.Repositories
+namespace AryamanBMS.Repositories.Implementations
 {
     public class GstConfigurationRepository : IGstConfigurationRepository
     {
-        private readonly ApplicationDbContext _context;
+        private readonly GstConfigurationDbContext _context;
 
-        public GstConfigurationRepository(ApplicationDbContext context)
+        public GstConfigurationRepository(GstConfigurationDbContext context)
         {
             _context = context;
         }
