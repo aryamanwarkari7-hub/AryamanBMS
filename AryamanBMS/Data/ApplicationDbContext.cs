@@ -63,12 +63,11 @@ namespace AryamanBMS.Data
 
         public DbSet<EmployeeSalaryStructureModel> EmployeeSalaryStructures { get; set; }
         public DbSet<SalaryImportBatchModel> SalaryImportBatches { get; set; }
-        public DbSet<PayrollPolicyModel> PayrollPolicies { get; set; }
-        public DbSet<PayrollPeriodLockModel> PayrollPeriodLocks { get; set; }
+        
         public DbSet<SalaryAdvanceModel> SalaryAdvances { get; set; }
         public DbSet<SalaryPaymentBatchModel> SalaryPaymentBatches { get; set; }
         public DbSet<FullAndFinalSettlementModel> FullAndFinalSettlements { get; set; }
-        public DbSet<ProfessionalTaxSlabModel> ProfessionalTaxSlabs { get; set; }
+        
 
         // =============================
         // LETTERS
@@ -491,23 +490,7 @@ namespace AryamanBMS.Data
             modelBuilder.Entity<SalaryImportBatchModel>()
                 .ToTable("TableSalaryImportBatch");
 
-            modelBuilder.Entity<PayrollPolicyModel>()
-                .ToTable("TablePayrollPolicy");
-
-            modelBuilder.Entity<PayrollPolicyModel>()
-                .HasIndex(x => x.IsActive);
-
-            modelBuilder.Entity<PayrollPeriodLockModel>()
-                .ToTable("TablePayrollPeriodLock");
-
-            modelBuilder.Entity<PayrollPeriodLockModel>()
-                .HasIndex(x => new
-                {
-                    x.Month,
-                    x.Year
-                })
-                .IsUnique();
-
+           
             modelBuilder.Entity<SalaryAdvanceModel>()
                 .ToTable("TableSalaryAdvance");
 
@@ -537,15 +520,7 @@ namespace AryamanBMS.Data
                 .HasForeignKey(x => x.EmployeeId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<ProfessionalTaxSlabModel>()
-                .ToTable("TableProfessionalTaxSlab");
-
-            modelBuilder.Entity<ProfessionalTaxSlabModel>()
-                .HasIndex(x => new
-                {
-                    x.State,
-                    x.IsActive
-                });
+            
 
             modelBuilder.Entity<EmployeeSalaryStructureModel>()
                 .Property(x => x.ActualSalary)
