@@ -47,6 +47,13 @@ builder.Services.AddDbContext<LocationDbContext>(options =>
         ServerVersion.AutoDetect(connectionString));
 });
 
+builder.Services.AddDbContext<AttendanceCalendarDbContext>(options =>
+{
+    options.UseMySql(
+        connectionString,
+        ServerVersion.AutoDetect(connectionString));
+});
+
 // IDENTITY, PASSWORD SECURITY, AND ACCOUNT LOCKOUT
 builder.Services
     .AddIdentity<ApplicationUserModel, IdentityRole>(options =>
@@ -109,8 +116,9 @@ builder.Services.AddScoped<ICompOffCreditRepository, CompOffCreditRepository>();
 
 builder.Services.AddScoped<ICompOffUsageRepository, CompOffUsageRepository>();
 
-builder.Services.AddScoped<IOffDayWorkRequestRepository,
-    OffDayWorkRequestRepository>();
+builder.Services.AddScoped<IOffDayWorkRequestRepository,OffDayWorkRequestRepository>();
+
+builder.Services.AddScoped<IWorkingDayRepository, WorkingDayRepository>();
 
 // Salary repositories
 builder.Services.AddScoped<ISalaryRecordRepository, SalaryRecordRepository>();

@@ -1,19 +1,18 @@
-﻿using AryamanBMS.Data;
+﻿using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interface;
-using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Services
 {
     public class WorkingDayService : IWorkingDayService
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IWorkingDayRepository _workingDayRepository;
         private readonly IConfiguration _configuration;
 
         public WorkingDayService(
-            ApplicationDbContext context,
-            IConfiguration configuration)
+           IWorkingDayRepository workingDayRepository,
+IConfiguration configuration)
         {
-            _context = context;
+            _workingDayRepository = workingDayRepository;
             _configuration = configuration;
         }
 
@@ -28,14 +27,7 @@ namespace AryamanBMS.Services
         {
             date = date.Date;
 
-            var overrideType =
-                await _context.WorkingDayOverrides
-                    .AsNoTracking()
-                    .Where(x =>
-                        x.IsActive &&
-                        x.OverrideDate.Date == date)
-                    .Select(x => x.OverrideType)
-                    .FirstOrDefaultAsync();
+            var overrideType = await _workingDayRepository.GetActiveOverrideTypeAsync(date);
 
             if (overrideType == "Working Day")
             {
@@ -52,12 +44,7 @@ namespace AryamanBMS.Services
                 return "WeeklyOff";
             }
 
-            var holidayExists =
-                await _context.Holidays
-                    .AsNoTracking()
-                    .AnyAsync(x =>
-                        x.IsActive &&
-                        x.HolidayDate.Date == date);
+            var holidayExists = await _workingDayRepository.HasActiveHolidayAsync(date);
 
             if (holidayExists)
             {
