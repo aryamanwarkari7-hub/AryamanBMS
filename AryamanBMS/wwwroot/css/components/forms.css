@@ -200,8 +200,8 @@
 /* ==========================================
    FILTER FORMS
 ========================================== */
-
-.filter-form-row {
+.filter-form-row,
+.filter-row {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: var(--space-sm);
@@ -212,12 +212,22 @@
     .filter-form-row .app-select,
     .filter-form-row .form-control,
     .filter-form-row .form-select,
-    .filter-form-row .form-group {
+    .filter-form-row .form-group,
+    .filter-row .app-input,
+    .filter-row .app-select,
+    .filter-row .form-control,
+    .filter-row .form-select,
+    .filter-row .filter-field {
         width: 100%;
         min-width: 0;
     }
 
-.filter-form-actions {
+    .filter-row .filter-field-wide {
+        grid-column: span 2;
+    }
+
+.filter-form-actions,
+.filter-actions {
     display: flex;
     gap: var(--space-sm);
     align-items: center;
@@ -288,11 +298,19 @@
 }
 
 @media (max-width: 576px) {
-    .filter-form-row {
+    
+
+    .filter-form-row,
+    .filter-row {
         grid-template-columns: 1fr;
     }
 
-    .filter-form-actions {
+        .filter-row .filter-field-wide {
+            grid-column: span 1;
+        }
+
+    .filter-form-actions,
+    .filter-actions {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         width: 100%;
@@ -300,7 +318,9 @@
     }
 
         .filter-form-actions .btn-app,
-        .filter-form-actions .btn {
+        .filter-form-actions .btn,
+        .filter-actions .btn-app,
+        .filter-actions .btn {
             width: 100%;
             justify-content: center;
         }
