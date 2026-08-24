@@ -112,7 +112,7 @@ namespace AryamanBMS.Data
         // COMPANY
         // =============================
 
-        public DbSet<CompanyProfileModel> CompanyProfiles { get; set; }
+        
         public DbSet<CompanyDocumentCategoryModel> CompanyDocumentCategories { get; set; }
         public DbSet<CompanyDocumentModel> CompanyDocuments { get; set; }
 
@@ -857,10 +857,7 @@ namespace AryamanBMS.Data
                 .HasForeignKey(x => x.InvoiceId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<CompanyProfileModel>().ToTable("tablecompanyprofile");
-            modelBuilder.Entity<CompanyProfileModel>()
-                .HasIndex(x => x.GSTIN)
-                .IsUnique();
+            
 
             modelBuilder.Entity<CompanyDocumentCategoryModel>().ToTable("tablecompanydocumentcategory");
             modelBuilder.Entity<CompanyDocumentCategoryModel>()

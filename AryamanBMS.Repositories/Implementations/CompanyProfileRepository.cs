@@ -1,16 +1,15 @@
-﻿using AryamanBMS.Data;
+﻿using AryamanBMS.Database.Context;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
-namespace AryamanBMS.Repositories
+namespace AryamanBMS.Repositories.Implementations
 {
     public class CompanyProfileRepository : ICompanyProfileRepository
     {
-        private readonly ApplicationDbContext _context;
+        private readonly CompanyProfileDbContext _context;
 
-        public CompanyProfileRepository(
-            ApplicationDbContext context)
+        public CompanyProfileRepository(CompanyProfileDbContext context)
         {
             _context = context;
         }

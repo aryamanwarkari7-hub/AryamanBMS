@@ -11,6 +11,8 @@ using QuestPDF.Infrastructure;
 using System.Globalization;
 using System.Text;
 
+using AryamanBMS.Repositories.Interfaces;
+
 using QuestPdfDocument = QuestPDF.Fluent.Document;
 using WordDocument = DocumentFormat.OpenXml.Wordprocessing.Document;
 
@@ -22,17 +24,21 @@ namespace AryamanBMS.Services
         private const string DocxContentType =
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
-        private const string PdfContentType =
-            "application/pdf";
+        private const string PdfContentType = "application/pdf";
 
         private readonly ApplicationDbContext _context;
+
+        private readonly ICompanyProfileRepository _companyProfileRepository;
+
         private readonly IWebHostEnvironment _environment;
 
         public InvoiceDocumentService(
             ApplicationDbContext context,
+            ICompanyProfileRepository companyProfileRepository,
             IWebHostEnvironment environment)
         {
             _context = context;
+            _companyProfileRepository = companyProfileRepository;
             _environment = environment;
         }
 
@@ -55,8 +61,6 @@ namespace AryamanBMS.Services
                     "Generated-by user is required.");
             }
 
-            
-
             var invoice =
                 await _context.Invoices
                     .AsNoTracking()
@@ -75,10 +79,8 @@ namespace AryamanBMS.Services
                     "Invoice record was not found.");
             }
 
-            var companyProfile = await _context.CompanyProfiles
-        .AsNoTracking()
-        .FirstOrDefaultAsync(x =>
-            x.IsActive);
+            var companyProfile = await _companyProfileRepository
+                .GetActiveAsync();
 
             if (companyProfile == null)
             {
@@ -360,7 +362,7 @@ namespace AryamanBMS.Services
                 }
 
                 var replacements =
-                    BuildReplacements(invoice,companyProfile);
+                    BuildReplacements(invoice, companyProfile);
 
                 ReplaceInvoiceItemRows(
                     mainPart.Document,
@@ -404,7 +406,7 @@ namespace AryamanBMS.Services
             return stream.ToArray();
         }
 
-        private static Dictionary<string, string>BuildReplacements(InvoiceModel invoice,CompanyProfileModel companyProfile)
+        private static Dictionary<string, string> BuildReplacements(InvoiceModel invoice, CompanyProfileModel companyProfile)
         {
             bool isProforma =
                 string.Equals(
@@ -450,22 +452,22 @@ namespace AryamanBMS.Services
                         ? "PROFORMA INVOICE"
                         : "TAX INVOICE",
 
-                ["{{InvoiceType}}"] =  Clean(invoice.InvoiceType),
+                ["{{InvoiceType}}"] = Clean(invoice.InvoiceType),
 
-                ["{{InvoiceNo}}"] =  Clean(invoice.InvoiceNo),
+                ["{{InvoiceNo}}"] = Clean(invoice.InvoiceNo),
 
                 ["{{InvoiceDate}}"] = invoice.InvoiceDate.ToString("dd-MMM-yyyy"),
 
                 ["{{DueDate}}"] = invoice.DueDate?.ToString("dd-MMM-yyyy")
                     ?? string.Empty,
 
-                ["{{InvoiceStatus}}"] =   Clean(invoice.InvoiceStatus),
+                ["{{InvoiceStatus}}"] = Clean(invoice.InvoiceStatus),
 
-                ["{{ClientName}}"] =     Clean(invoice.Client?.ClientName),
+                ["{{ClientName}}"] = Clean(invoice.Client?.ClientName),
 
-                ["{{ClientAddress}}"] =  Clean(invoice.BillingAddress),
+                ["{{ClientAddress}}"] = Clean(invoice.BillingAddress),
 
-                ["{{ClientGSTNo}}"] =   isProforma
+                ["{{ClientGSTNo}}"] = isProforma
                                         ? string.Empty
                                         : Clean(invoice.GSTNo),
 
@@ -484,7 +486,7 @@ namespace AryamanBMS.Services
                 ["{{WorkOrderNo}}"] =
                     workOrder,
 
-                ["{{VendorRegistrationNo}}"] =  Clean(companyProfile.VendorRegistrationNumber),
+                ["{{VendorRegistrationNo}}"] = Clean(companyProfile.VendorRegistrationNumber),
 
                 ["{{VendorReference}}"] =
                     vendorReference,
@@ -634,28 +636,28 @@ namespace AryamanBMS.Services
                     {
                         ["{{ItemSrNo}}"] =
                             serialNumber.ToString(),
-                    
+
                         ["{{ItemName}}"] =
                             Clean(item.ItemName),
-                    
+
                         ["{{ItemDescription}}"] =
                             Clean(item.Description),
-                    
+
                         ["{{ItemQty}}"] =
                             item.Qty.ToString("0.##"),
-                    
+
                         ["{{ItemUnit}}"] =
                             Clean(item.Unit),
-                    
+
                         ["{{ItemRate}}"] =
                             FormatAmount(item.Rate),
-                    
+
                         ["{{ItemGSTPercent}}"] =
                             item.GSTPercent.ToString("0.##"),
-                    
+
                         ["{{ItemGSTAmount}}"] =
                             FormatAmount(item.GSTAmount),
-                    
+
                         ["{{ItemAmount}}"] =
                             FormatAmount(item.Amount)
                     };
@@ -742,7 +744,7 @@ namespace AryamanBMS.Services
         }
 
         private static byte[] GeneratePdf(
-            InvoiceModel invoice,CompanyProfileModel companyProfile)
+            InvoiceModel invoice, CompanyProfileModel companyProfile)
         {
             bool isProforma =
                 invoice.InvoiceType ==
@@ -768,297 +770,297 @@ namespace AryamanBMS.Services
 
             var document = QuestPdfDocument.Create(container =>
     {
-                    container.Page(page =>
-                    {
-                        page.Size(
-                            PageSizes.A4);
+        container.Page(page =>
+        {
+            page.Size(
+                PageSizes.A4);
 
-                        page.MarginLeft(20);
-                        page.MarginRight(20);
-                        page.MarginBottom(20);
+            page.MarginLeft(20);
+            page.MarginRight(20);
+            page.MarginBottom(20);
 
-                        /*
-                         * Leave space for the printed letterhead.
-                         */
-                        page.MarginTop(110);
+            /*
+             * Leave space for the printed letterhead.
+             */
+            page.MarginTop(110);
 
-                        page.DefaultTextStyle(
-                            x => x.FontSize(8));
+            page.DefaultTextStyle(
+                x => x.FontSize(8));
 
-                        page.Content()
-                            .Border(1)
-                            .Padding(3)
-                            .Column(column =>
-                            {
-                                column.Spacing(0);
+            page.Content()
+                .Border(1)
+                .Padding(3)
+                .Column(column =>
+                {
+                    column.Spacing(0);
 
-                                column.Item()
-                                    .BorderBottom(1)
-                                    .AlignCenter()
-                                    .Padding(3)
-                                    .Text(
-                                        isProforma
-                                            ? "PROFORMA INVOICE"
-                                            : "TAX INVOICE")
-                                    .Bold()
-                                    .FontSize(11);
+                    column.Item()
+                        .BorderBottom(1)
+                        .AlignCenter()
+                        .Padding(3)
+                        .Text(
+                            isProforma
+                                ? "PROFORMA INVOICE"
+                                : "TAX INVOICE")
+                        .Bold()
+                        .FontSize(11);
 
-                                column.Item()
-                                    .Table(table =>
-                                    {
-                                        table.ColumnsDefinition(
-                                            columns =>
-                                            {
-                                                columns
-                                                    .RelativeColumn(3);
-
-                                                columns
-                                                    .RelativeColumn(1);
-
-                                                columns
-                                                    .RelativeColumn(1);
-                                            });
-
-                                        AddPdfCell(
-                                            table,
-                                            $"To:\n" +
-                                            $"{invoice.Client?.ClientName}\n" +
-                                            $"{invoice.BillingAddress}");
-
-                                        AddPdfCell(
-                                            table,
-                                            "WORK ORDER:\n" +
-                                            Clean(
-                                                invoice.PurchaseOrder?
-                                                    .OrderNumber));
-
-                                        AddPdfCell(
-                                            table,
-                                            "Vendor Reg. No.:\n" +
-                                            Clean(
-                                                companyProfile
-                                                    .VendorRegistrationNumber));
-
-                                        AddPdfCell(
-                                             table,
-                                             "SELLER GSTIN:\n" +
-                                             (isProforma
-                                                 ? string.Empty
-                                                 : Clean(companyProfile.GSTIN)));
-
-                                        AddPdfCell(
-                                              table,
-                                              "SAC CODE:\n" +
-                                              Clean(invoice.SACCode));
-
-                                        AddPdfCell(
-                                              table,
-                                              "PAN NO.:\n" +
-                                              Clean(companyProfile.PAN));
-
-                                        AddPdfCell(
-                                            table,
-                                            $"KIND ATTN:\n" +
-                                            $"{invoice.Client?.ContactPerson}");
-
-                                        AddPdfCell(
-                                            table,
-                                            $"INVOICE DATE:\n" +
-                                            $"{invoice.InvoiceDate:dd-MM-yyyy}");
-
-                                        AddPdfCell(
-                                            table,
-                                            $"INVOICE NO.:\n" +
-                                            $"{invoice.InvoiceNo}");
-                                    });
-
-                                column.Item()
-                                    .Table(table =>
-                                    {
-                                        table.ColumnsDefinition(
-                                            columns =>
-                                            {
-                                                columns
-                                                    .ConstantColumn(35);
-
-                                                columns
-                                                    .RelativeColumn(5);
-
-                                                columns
-                                                    .RelativeColumn(1.3f);
-
-                                                columns
-                                                    .RelativeColumn(1.1f);
-
-                                                columns
-                                                    .RelativeColumn(1.5f);
-                                            });
-
-                                        AddPdfHeader(
-                                            table,
-                                            "SR. NO.");
-
-                                        AddPdfHeader(
-                                            table,
-                                            "DESCRIPTION");
-
-                                        AddPdfHeader(
-                                            table,
-                                            "RATE");
-
-                                        AddPdfHeader(
-                                            table,
-                                            "QUANTITY");
-
-                                        AddPdfHeader(
-                                            table,
-                                            "AMOUNT");
-
-                                        int srNo = 1;
-
-                                        foreach (var item in
-                                                 invoice.InvoiceDetails
-                                                     .OrderBy(x =>
-                                                         x.SortOrder))
-                                        {
-                                            AddPdfCell(
-                                                table,
-                                                srNo.ToString());
-
-                                            AddPdfCell(
-                                                table,
-                                                string.IsNullOrWhiteSpace(
-                                                    item.Description)
-                                                    ? item.ItemName
-                                                    : $"{item.ItemName}\n" +
-                                                      $"{item.Description}");
-
-                                            AddPdfCell(
-                                                table,
-                                                FormatAmount(
-                                                    item.Rate),
-                                                true);
-
-                                            AddPdfCell(
-                                                table,
-                                                $"{item.Qty:0.##} " +
-                                                $"{item.Unit}",
-                                                true);
-
-                                            AddPdfCell(
-                                                table,
-                                                FormatAmount(
-                                                    item.Amount),
-                                                true);
-
-                                            srNo++;
-                                        }
-                                    });
-
-                                AddPdfTotalRow(
-                                    column,
-                                    "SUB TOTAL",
-                                    invoice.SubTotal);
-
-                                if (!isProforma)
+                    column.Item()
+                        .Table(table =>
+                        {
+                            table.ColumnsDefinition(
+                                columns =>
                                 {
-                                    if (invoice.IsInterState)
-                                    {
-                                        AddPdfTotalRow(
-                                            column,
-                                            "IGST",
-                                            igst);
-                                    }
-                                    else
-                                    {
-                                        AddPdfTotalRow(
-                                            column,
-                                            "CGST",
-                                            cgst);
+                                    columns
+                                        .RelativeColumn(3);
 
-                                        AddPdfTotalRow(
-                                            column,
-                                            "SGST",
-                                            sgst);
-                                    }
-                                }
+                                    columns
+                                        .RelativeColumn(1);
 
-                                AddPdfTotalRow(
-                                    column,
-                                    "GRAND TOTAL",
-                                    invoice.GrandTotal,
+                                    columns
+                                        .RelativeColumn(1);
+                                });
+
+                            AddPdfCell(
+                                table,
+                                $"To:\n" +
+                                $"{invoice.Client?.ClientName}\n" +
+                                $"{invoice.BillingAddress}");
+
+                            AddPdfCell(
+                                table,
+                                "WORK ORDER:\n" +
+                                Clean(
+                                    invoice.PurchaseOrder?
+                                        .OrderNumber));
+
+                            AddPdfCell(
+                                table,
+                                "Vendor Reg. No.:\n" +
+                                Clean(
+                                    companyProfile
+                                        .VendorRegistrationNumber));
+
+                            AddPdfCell(
+                                 table,
+                                 "SELLER GSTIN:\n" +
+                                 (isProforma
+                                     ? string.Empty
+                                     : Clean(companyProfile.GSTIN)));
+
+                            AddPdfCell(
+                                  table,
+                                  "SAC CODE:\n" +
+                                  Clean(invoice.SACCode));
+
+                            AddPdfCell(
+                                  table,
+                                  "PAN NO.:\n" +
+                                  Clean(companyProfile.PAN));
+
+                            AddPdfCell(
+                                table,
+                                $"KIND ATTN:\n" +
+                                $"{invoice.Client?.ContactPerson}");
+
+                            AddPdfCell(
+                                table,
+                                $"INVOICE DATE:\n" +
+                                $"{invoice.InvoiceDate:dd-MM-yyyy}");
+
+                            AddPdfCell(
+                                table,
+                                $"INVOICE NO.:\n" +
+                                $"{invoice.InvoiceNo}");
+                        });
+
+                    column.Item()
+                        .Table(table =>
+                        {
+                            table.ColumnsDefinition(
+                                columns =>
+                                {
+                                    columns
+                                        .ConstantColumn(35);
+
+                                    columns
+                                        .RelativeColumn(5);
+
+                                    columns
+                                        .RelativeColumn(1.3f);
+
+                                    columns
+                                        .RelativeColumn(1.1f);
+
+                                    columns
+                                        .RelativeColumn(1.5f);
+                                });
+
+                            AddPdfHeader(
+                                table,
+                                "SR. NO.");
+
+                            AddPdfHeader(
+                                table,
+                                "DESCRIPTION");
+
+                            AddPdfHeader(
+                                table,
+                                "RATE");
+
+                            AddPdfHeader(
+                                table,
+                                "QUANTITY");
+
+                            AddPdfHeader(
+                                table,
+                                "AMOUNT");
+
+                            int srNo = 1;
+
+                            foreach (var item in
+                                     invoice.InvoiceDetails
+                                         .OrderBy(x =>
+                                             x.SortOrder))
+                            {
+                                AddPdfCell(
+                                    table,
+                                    srNo.ToString());
+
+                                AddPdfCell(
+                                    table,
+                                    string.IsNullOrWhiteSpace(
+                                        item.Description)
+                                        ? item.ItemName
+                                        : $"{item.ItemName}\n" +
+                                          $"{item.Description}");
+
+                                AddPdfCell(
+                                    table,
+                                    FormatAmount(
+                                        item.Rate),
                                     true);
 
-                                column.Item()
-                                    .Border(1)
-                                    .Padding(3)
-                                    .Text(
-                                        $"IN WORDS: " +
-                                        $"{ConvertAmountToWords(invoice.GrandTotal)}");
+                                AddPdfCell(
+                                    table,
+                                    $"{item.Qty:0.##} " +
+                                    $"{item.Unit}",
+                                    true);
 
-                               column.Item()
-                                 .Border(1)
-                                 .Padding(5)
-                                 .Column(bank =>
-                                 {
-                                     bank.Item()
-                                         .Text(
-                                             $"Bank Details: " +
-                                             $"{Clean(companyProfile.AccountName)}")
-                                         .Bold();
-                              
-                                     bank.Item()
-                                         .Text(
-                                             $"Bank Name: " +
-                                             $"{Clean(companyProfile.BankName)}");
-                              
-                                     bank.Item()
-                                         .Text(
-                                             $"Account No.: " +
-                                             $"{Clean(companyProfile.AccountNumber)}");
-                              
-                                     bank.Item()
-                                         .Text(
-                                             $"IFSC Code: " +
-                                             $"{Clean(companyProfile.IFSCCode)}");
-                              
-                                     bank.Item()
-                                         .Text(
-                                             $"Branch: " +
-                                             $"{Clean(companyProfile.BankBranch)}");
-                              
-                                     bank.Item()
-                                         .Text(
-                                             $"Remarks: " +
-                                             $"{Clean(invoice.Remarks)}");
-                                 });
+                                AddPdfCell(
+                                    table,
+                                    FormatAmount(
+                                        item.Amount),
+                                    true);
 
-                                column.Item()
-                                    .Table(table =>
-                                    {
-                                        table.ColumnsDefinition(
-                                            columns =>
-                                            {
-                                                columns
-                                                    .RelativeColumn();
+                                srNo++;
+                            }
+                        });
 
-                                                columns
-                                                    .RelativeColumn();
-                                            });
+                    AddPdfTotalRow(
+                        column,
+                        "SUB TOTAL",
+                        invoice.SubTotal);
 
-                                        AddPdfSignatureCell(
-                                             table,
-                                             "FOR ARYAMAN TECHNOLOGIES PVT. LTD.\n\n\n\n" +
-                                             $"{Clean(companyProfile.AuthorizedSignatory)}\n" +
-                                             "AUTHORIZED SIGNATORY");
+                    if (!isProforma)
+                    {
+                        if (invoice.IsInterState)
+                        {
+                            AddPdfTotalRow(
+                                column,
+                                "IGST",
+                                igst);
+                        }
+                        else
+                        {
+                            AddPdfTotalRow(
+                                column,
+                                "CGST",
+                                cgst);
 
-                                        AddPdfSignatureCell(
-                                            table,
-                                            "RECEIVER'S SIGNATURE,\n\n\n\n\n");
-                                    });
-                            });
-                    });
+                            AddPdfTotalRow(
+                                column,
+                                "SGST",
+                                sgst);
+                        }
+                    }
+
+                    AddPdfTotalRow(
+                        column,
+                        "GRAND TOTAL",
+                        invoice.GrandTotal,
+                        true);
+
+                    column.Item()
+                        .Border(1)
+                        .Padding(3)
+                        .Text(
+                            $"IN WORDS: " +
+                            $"{ConvertAmountToWords(invoice.GrandTotal)}");
+
+                    column.Item()
+                                  .Border(1)
+                                  .Padding(5)
+                                  .Column(bank =>
+                                  {
+                                      bank.Item()
+                                          .Text(
+                                              $"Bank Details: " +
+                                              $"{Clean(companyProfile.AccountName)}")
+                                          .Bold();
+
+                                      bank.Item()
+                                          .Text(
+                                              $"Bank Name: " +
+                                              $"{Clean(companyProfile.BankName)}");
+
+                                      bank.Item()
+                                          .Text(
+                                              $"Account No.: " +
+                                              $"{Clean(companyProfile.AccountNumber)}");
+
+                                      bank.Item()
+                                          .Text(
+                                              $"IFSC Code: " +
+                                              $"{Clean(companyProfile.IFSCCode)}");
+
+                                      bank.Item()
+                                          .Text(
+                                              $"Branch: " +
+                                              $"{Clean(companyProfile.BankBranch)}");
+
+                                      bank.Item()
+                                          .Text(
+                                              $"Remarks: " +
+                                              $"{Clean(invoice.Remarks)}");
+                                  });
+
+                    column.Item()
+                        .Table(table =>
+                        {
+                            table.ColumnsDefinition(
+                                columns =>
+                                {
+                                    columns
+                                        .RelativeColumn();
+
+                                    columns
+                                        .RelativeColumn();
+                                });
+
+                            AddPdfSignatureCell(
+                                 table,
+                                 "FOR ARYAMAN TECHNOLOGIES PVT. LTD.\n\n\n\n" +
+                                 $"{Clean(companyProfile.AuthorizedSignatory)}\n" +
+                                 "AUTHORIZED SIGNATORY");
+
+                            AddPdfSignatureCell(
+                                table,
+                                "RECEIVER'S SIGNATURE,\n\n\n\n\n");
+                        });
                 });
+        });
+    });
 
             return document.GeneratePdf();
         }
