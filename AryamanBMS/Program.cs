@@ -282,6 +282,7 @@ builder.Services.AddScoped<IProjectAccessService, ProjectAccessService>();
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 builder.Services.AddScoped<IFinancialYearService, FinancialYearService>();
 builder.Services.AddScoped<IPurchaseReportService, PurchaseReportService>();
+builder.Services.AddScoped<IReceivablesReportService, ReceivablesReportService>();
 builder.Services.AddScoped<IVendorService, VendorService>();
 builder.Services.AddScoped<IGstCalculationService, GstCalculationService>();
 builder.Services.AddScoped<IGstDashboardService, GstDashboardService>();

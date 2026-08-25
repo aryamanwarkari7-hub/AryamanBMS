@@ -5,6 +5,10 @@ namespace AryamanBMS.Repositories.Interfaces
 {
     public interface IInvoiceRepository
     {
+        Task<List<InvoiceModel>> GetForReceivablesAsync();
+
+        Task<List<InvoiceModel>> GetOutstandingForAgeingAsync();
+
         IQueryable<InvoiceModel> Invoices { get; }
 
         Task<List<InvoiceModel>> GetAllAsync();

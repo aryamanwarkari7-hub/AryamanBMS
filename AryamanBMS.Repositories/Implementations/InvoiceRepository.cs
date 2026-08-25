@@ -18,6 +18,32 @@ namespace AryamanBMS.Repositories
 
         public IQueryable<InvoiceModel> Invoices => _context.Invoices;
 
+        public async Task<List<InvoiceModel>> GetForReceivablesAsync()
+        {
+            return await _context.Invoices
+                .AsNoTracking()
+                .Include(x => x.Client)
+                .Include(x => x.Project)
+                .Where(x =>
+                    !x.IsDeleted &&
+                    x.InvoiceStatus != "Cancelled" &&
+                    x.InvoiceStatus != "Draft")
+                .ToListAsync();
+        }
+
+        public async Task<List<InvoiceModel>> GetOutstandingForAgeingAsync()
+        {
+            return await _context.Invoices
+                .AsNoTracking()
+                .Include(x => x.Client)
+                .Where(x =>
+                    !x.IsDeleted &&
+                    x.InvoiceStatus != "Cancelled" &&
+                    x.InvoiceStatus != "Draft" &&
+                    x.BalanceAmount > 0)
+                .ToListAsync();
+        }
+
         public async Task<List<InvoiceModel>> GetAllAsync()
         {
             var invoices = await Invoices
