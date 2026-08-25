@@ -82,6 +82,7 @@ A module is complete only when:
 - Password Change Logs: entity, context, repository, service, and controller consumers layered.
 - Company Profile: entity, context, repository, registration, and document-service consumer layered.
 - GST Configuration: entity, context, repository, registration, and invoice consumer layered.
+- GST LUT Documents: entity, GST context mapping, repository, and controller document flow layered.
 - Financial Audit Documents: entity, context, repository, and registration layered.
 - Payroll Configuration: payroll policy, payroll period lock, and professional-tax slabs moved to Models and owned by `PayrollConfigurationDbContext`.
 - Login History: entity, context, repository, service, and controller consumers layered.
@@ -89,39 +90,42 @@ A module is complete only when:
 - Calendar Manual Events: entity, context, repository, controller, and calendar-service consumers layered.
 - Holidays: entity ownership moved to the attendance-calendar context; controller, Excel import, and calendar consumers use `IHolidayRepository`.
 - Working Day Overrides: repository-backed controller flow completed; ownership is solely in `AttendanceCalendarDbContext`.
+- Notices: `NoticeModel` and `NoticeDocumentModel` moved together with their parent/document relationship, repository, and `NoticeDbContext`.
 - User-facing calendar register improvements: authenticated Holiday register and Birthday register added, with calendar links corrected and verified.
 - Architecture guard: `scripts/Test-Architecture.ps1` validates project-reference direction locally and in GitHub Actions.
 
-## Delivery Scope and Time-Box
+## Current Layering Inventory
 
-This branch has established and verified the target layering with representative
-vertical slices across administration, attendance, compliance, payroll, and
-calendar features. The current delivery scope is **stabilization and safe
-handoff**, not a risky one-DbContext-per-table conversion.
+As of 25-Aug-2026:
 
-Before merging this branch:
+| Item | Count |
+| --- | ---: |
+| Entity files owned by `AryamanBMS.Models` | 21 |
+| Dedicated DbContexts in `AryamanBMS.Database` | 11 |
+| DbSets remaining in transitional `ApplicationDbContext` | 76 |
 
-1. Run the Release build and architecture dependency guard.
-2. Smoke-test the principal workflows: authentication, attendance/leave,
-   payroll, finance/invoice, projects, notifications, and calendar.
-3. Review the branch commits and resolve only defects found by those checks.
-4. Record remaining aggregate migrations as planned future work.
+## Remaining ApplicationDbContext Aggregates
 
-No new table-by-table persistence move should begin unless it is needed to fix
-a verified defect or is explicitly scheduled after this delivery.
+The remaining DbSets are grouped by transactional boundary. Future work must
+move a complete aggregate into one dedicated context; do not split an entity
+from records that must be saved atomically with it.
 
-## Deferred Aggregates
+| Aggregate | Remaining ownership |
+| --- | --- |
+| Master data and employees | Country, State, City, Pincode, Department, Designation, Employee, employee academic/document/salary records |
+| Attendance and leave | Attendance, Leave Type, Leave Balance, Leave Application/Days, Comp-off, Off-day Work Requests |
+| Payroll processing | Salary Import Batch, Salary Record, Salary Payment Batch, Salary Advance, Full and Final Settlement, Financial Sequence |
+| Projects | Project, members, tasks, progress, flow, timeline, communications, meetings, risks, scope documents |
+| CRM and proposals | Client, client communication, Proposal, proposal audit/document versions, Purchase Orders |
+| Finance and billing | Invoice/details/document versions, receipts, credit/debit notes, vendor/payments, expense vouchers/documents, billing milestones, advance receipts |
+| GST compliance | GST snapshots, returns, challans, ITC records, and documents |
+| PF, ESIC, and PT compliance | Monthly snapshots, challans, and documents for each compliance stream |
+| Office assets and letters | Office assets with assignment/history/documents/maintenance/verification, Letters |
 
-The following remain in the transitional `ApplicationDbContext` intentionally.
-They require an aggregate-level redesign to preserve EF relationships and
-atomic workflows:
-
-- Leave: Leave Balance, Leave Type, Leave Applications, and related attendance updates.
-- Payroll processing: Salary Payment Batches, Salary Records, and Financial Sequences.
-- Office Assets: assets, assignment history, documents, maintenance, and verification records.
-- GST LUT documents and other file-upload workflows with relationship dependencies.
-- Core connected aggregates: Employees, Clients, Projects, Proposals, Invoices,
-  Expenses, and their related documents, audit records, and workflow entities.
+Location entities and Company Document Category remain mapped by
+`ApplicationDbContext` as transitional shared references for their still-legacy
+parent aggregates. Their completed moves are therefore retained, but their old
+mapping cannot be removed until those parent aggregates move.
 
 ## Verification
 
