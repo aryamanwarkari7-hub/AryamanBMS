@@ -1,13 +1,12 @@
-﻿using System.Security.Claims;
+﻿using AryamanBMS.Business.Interfaces;
 using AryamanBMS.Data;
 using AryamanBMS.Models;
-using AryamanBMS.Services.Interface;
+using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
 using AryamanBMS.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-
-using AryamanBMS.Business.Interfaces;
+using System.Security.Claims;
 
 namespace AryamanBMS.Services
 {
@@ -17,15 +16,19 @@ namespace AryamanBMS.Services
         private readonly UserManager<ApplicationUserModel> _userManager;
 
         private readonly IWorkingDayService _workingDayService;
+        private readonly ICalendarManualEventRepository _calendarManualEventRepository;
 
         public CalendarService(
-           ApplicationDbContext context,
-           UserManager<ApplicationUserModel> userManager,
-           IWorkingDayService workingDayService)
+    ApplicationDbContext context,
+    UserManager<ApplicationUserModel> userManager,
+    IWorkingDayService workingDayService,
+    ICalendarManualEventRepository calendarManualEventRepository)
         {
             _context = context;
             _userManager = userManager;
             _workingDayService = workingDayService;
+            _calendarManualEventRepository =
+                calendarManualEventRepository;
         }
 
         public async Task<List<CalendarEventViewModel>> GetEventsAsync(
@@ -453,16 +456,11 @@ namespace AryamanBMS.Services
             DateTime end,
             string? personalUserId = null)
         {
-            var manualEvents = await _context.CalendarManualEvents
-                .AsNoTracking()
-                .Where(x =>
-                    x.IsActive &&
-                    x.StartDateTime <= end &&
-                    (x.EndDateTime ?? x.StartDateTime) >= start &&
-                    (personalUserId == null ||
-                     x.VisibilityScope == "All" ||
-                     x.CreatedByUserId == personalUserId))
-                .ToListAsync();
+            var manualEvents = await _calendarManualEventRepository
+    .GetActiveEventsAsync(
+        start,
+        end,
+        personalUserId);
 
             foreach (var item in manualEvents)
             {

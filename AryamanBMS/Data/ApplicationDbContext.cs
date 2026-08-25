@@ -243,11 +243,6 @@ namespace AryamanBMS.Data
         public DbSet<FinancialSequenceModel> FinancialSequences { get; set; }
 
         // =============================
-        // CALENDAR
-        // =============================
-        public DbSet<CalendarManualEventModel> CalendarManualEvents { get; set; }
-
-        // =============================
         // HOLIDAY
         // =============================
         public DbSet<HolidayModel> Holidays { get; set; }
@@ -1278,22 +1273,6 @@ namespace AryamanBMS.Data
                 .WithMany(x => x.Documents)
                 .HasForeignKey(x => x.NoticeId)
                 .OnDelete(DeleteBehavior.Cascade);
-
-            //Calendar Events
-            modelBuilder.Entity<CalendarManualEventModel>()
-                .ToTable("TableCalendarManualEvent");
-
-            modelBuilder.Entity<CalendarManualEventModel>()
-                .HasOne(x => x.CreatedByUser)
-                .WithMany()
-                .HasForeignKey(x => x.CreatedByUserId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            modelBuilder.Entity<CalendarManualEventModel>()
-                .HasOne(x => x.UpdatedByUser)
-                .WithMany()
-                .HasForeignKey(x => x.UpdatedByUserId)
-                .OnDelete(DeleteBehavior.SetNull);
 
             // Holiday
             modelBuilder.Entity<HolidayModel>(entity =>

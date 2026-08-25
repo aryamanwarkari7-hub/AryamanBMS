@@ -103,6 +103,13 @@ builder.Services.AddDbContext<NotificationDbContext>(options =>
         ServerVersion.AutoDetect(connectionString));
 });
 
+builder.Services.AddDbContext<CalendarManualEventDbContext>(options =>
+{
+    options.UseMySql(
+        connectionString,
+        ServerVersion.AutoDetect(connectionString));
+});
+
 // Attendance working-day configuration
 builder.Services.Configure<WorkingDayOptions>(
     builder.Configuration.GetSection("Attendance"));
@@ -202,6 +209,9 @@ builder.Services.AddScoped<IPasswordChangeLogRepository,PasswordChangeLogReposit
 
 // Notification repositories
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+
+//Calendar repositories
+builder.Services.AddScoped<ICalendarManualEventRepository,CalendarManualEventRepository>();
 
 // Accounts, documents, billing, compliance, and asset repositories
 builder.Services.AddScoped<IClientRepository, ClientRepository>();

@@ -1,4 +1,4 @@
-﻿using AryamanBMS.Data;
+﻿
 using AryamanBMS.Models;
 using AryamanBMS.Services.Interfaces;
 using AryamanBMS.ViewModels;
@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+using AryamanBMS.Repositories.Interfaces;
 
 namespace AryamanBMS.Controllers
 {
@@ -14,16 +15,17 @@ namespace AryamanBMS.Controllers
     public class CalendarController : Controller
     {
         private readonly ICalendarService _calendarService;
-        private readonly ApplicationDbContext _context;
+
         private readonly UserManager<ApplicationUserModel> _userManager;
+        private readonly ICalendarManualEventRepository _calendarManualEventRepository;
 
         public CalendarController(
-           ICalendarService calendarService,
-           ApplicationDbContext context,
-           UserManager<ApplicationUserModel> userManager)
+    ICalendarService calendarService,
+    ICalendarManualEventRepository calendarManualEventRepository,
+    UserManager<ApplicationUserModel> userManager)
         {
             _calendarService = calendarService;
-            _context = context;
+            _calendarManualEventRepository = calendarManualEventRepository;
             _userManager = userManager;
         }
 
@@ -80,9 +82,7 @@ namespace AryamanBMS.Controllers
         [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> ManualEvent(int id)
         {
-            var item = await _context.CalendarManualEvents
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == id && x.IsActive);
+            var item = await _calendarManualEventRepository.GetActiveByIdAsync(id);
 
             if (item == null)
             {
@@ -138,10 +138,7 @@ namespace AryamanBMS.Controllers
 
             if (model.Id.HasValue)
             {
-                item = await _context.CalendarManualEvents
-                    .FirstOrDefaultAsync(x =>
-                        x.Id == model.Id.Value &&
-                        x.IsActive);
+                item = await _calendarManualEventRepository.GetActiveByIdAsync(model.Id.Value);
 
                 if (item == null)
                 {
@@ -160,7 +157,7 @@ namespace AryamanBMS.Controllers
                     IsActive = true
                 };
 
-                _context.CalendarManualEvents.Add(item);
+                await _calendarManualEventRepository.AddAsync(item);
             }
 
             item.Title = model.Title.Trim();
@@ -171,7 +168,7 @@ namespace AryamanBMS.Controllers
             item.EventType = model.EventType.Trim();
             item.VisibilityScope = model.VisibilityScope.Trim();
 
-            await _context.SaveChangesAsync();
+            await _calendarManualEventRepository.SaveAsync();
 
             return Json(new
             {
@@ -190,8 +187,7 @@ namespace AryamanBMS.Controllers
                 return Forbid();
             }
 
-            var item = await _context.CalendarManualEvents
-                .FirstOrDefaultAsync(x => x.Id == id && x.IsActive);
+            var item = await _calendarManualEventRepository.GetActiveByIdAsync(id);
 
             if (item == null)
             {
@@ -204,7 +200,7 @@ namespace AryamanBMS.Controllers
             item.UpdatedByUserId = user?.Id;
             item.UpdatedOn = DateTime.Now;
 
-            await _context.SaveChangesAsync();
+            await _calendarManualEventRepository.SaveAsync();
 
             return Json(new
             {
