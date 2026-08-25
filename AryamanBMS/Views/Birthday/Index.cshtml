@@ -1,0 +1,126 @@
+@using System.Globalization
+@model List<AryamanBMS.ViewModels.BirthdayListItemViewModel>
+
+@{
+    ViewData["Title"] = "Birthdays";
+
+    int? selectedMonth =
+        ViewBag.Month is int monthValue
+            ? monthValue
+            : null;
+
+    string GetMonthName(int month) =>
+        CultureInfo.CurrentCulture
+            .DateTimeFormat
+            .GetMonthName(month);
+
+    string selectedMonthName = selectedMonth.HasValue
+        ? GetMonthName(selectedMonth.Value)
+        : "Full Year";
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">Birthday Directory</h1>
+        <p class="module-subtitle">
+            Celebrate upcoming team birthdays.
+        </p>
+    </div>
+</div>
+
+<div class="app-card mb-3">
+    <div class="card-header">
+        <div class="card-heading">
+            <h2 class="card-title">@selectedMonthName Birthdays</h2>
+            <p class="card-subtitle">
+                Choose a month to view team birthdays.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <form asp-action="Index" method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label" for="month">Month</label>
+                <select id="month" name="month" class="app-input">
+                    <option value="" selected="@(!selectedMonth.HasValue)">
+                        Full Year
+                    </option>
+                    @for (int month = 1; month <= 12; month++)
+                    {
+                        <option value="@month" selected="@(selectedMonth == month)">
+                            @GetMonthName(month)
+                        </option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-3 d-flex gap-2">
+    <button type="submit"
+            class="btn-app btn-primary-app flex-fill">
+        <i class="bi bi-funnel"></i>
+        Apply
+    </button>
+
+    <a asp-action="Index"
+       class="btn-app btn-secondary-app">
+        <i class="bi bi-arrow-clockwise"></i>
+        Reset
+    </a>
+</div>
+        </form>
+    </div>
+</div>
+
+<div class="app-card">
+    <div class="card-header">
+        <div class="card-heading">
+            <h2 class="card-title">@selectedMonthName Birthdays</h2>
+            <p class="card-subtitle">
+                @Model.Count team member(s) with birthdays this month.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="app-table mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Employee Name</th>
+                        <th>Birthday</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="3" class="text-center text-muted py-4">
+                                No birthdays found for this month.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        for (int index = 0; index < Model.Count; index++)
+                        {
+                            var item = Model[index];
+                            var displayDate = new DateTime(
+                                2000,
+                                item.Month,
+                                item.Day);
+
+                            <tr>
+                                <td>@(index + 1)</td>
+                                <td>@item.EmployeeName</td>
+                                <td>@displayDate.ToString("dd MMMM")</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

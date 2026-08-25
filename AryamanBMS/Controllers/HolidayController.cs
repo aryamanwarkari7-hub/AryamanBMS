@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Controllers
 {
-    [Authorize(Roles = "Admin,HR,Master")]
+    [Authorize]
     public class HolidayController : Controller
     {
         #region Actions
@@ -45,8 +45,16 @@ namespace AryamanBMS.Controllers
             int page = 1)
         {
             const int pageSize = 12;
+
+            bool canManageHolidays =
+                User.IsInRole("Admin") ||
+                User.IsInRole("HR") ||
+                User.IsInRole("Master");
             int selectedYear = year ?? DateTime.Today.Year;
-            string selectedStatus = string.IsNullOrWhiteSpace(status) ? "All" : status;
+            string selectedStatus = canManageHolidays &&
+                        !string.IsNullOrWhiteSpace(status)
+                ? status
+                : "Active";
 
             sortBy = sortBy switch
             {
@@ -63,6 +71,7 @@ namespace AryamanBMS.Controllers
             ViewBag.Year = selectedYear;
             ViewBag.Month = month;
             ViewBag.Status = selectedStatus;
+            ViewBag.CanManageHolidays = canManageHolidays;
 
             var query = _context.Holidays
                 .Where(x => x.HolidayDate.Year == selectedYear);
@@ -147,6 +156,7 @@ namespace AryamanBMS.Controllers
             return RedirectToAction(nameof(Index), new { year });
         }
 
+        [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> ExportExcel(int? year, int? month, string? status)
         {
             int selectedYear = year ?? DateTime.Today.Year;
@@ -218,6 +228,8 @@ namespace AryamanBMS.Controllers
                 fileName);
         }
 
+
+        [Authorize(Roles = "Admin,HR,Master")]
         public IActionResult DownloadTemplate()
         {
             var templatePath = Path.Combine(

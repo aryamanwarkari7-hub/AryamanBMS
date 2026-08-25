@@ -507,7 +507,10 @@ namespace AryamanBMS.Services
                     Status = holiday.HolidayType,
                     Color = "#7c3aed",
                     TextColor = "#ffffff",
-                    Url = null
+                    Url =
+                     $"/Holiday/Index?year={holiday.HolidayDate.Year}" +
+                     $"&month={holiday.HolidayDate.Month}" +
+                     "&status=Active"
                 });
             }
         }
@@ -613,7 +616,7 @@ namespace AryamanBMS.Services
                         Status = "Birthday",
                         Color = "#db2777",
                         TextColor = "#ffffff",
-                        Url = null
+                        Url = $"/Birthday/Index?month={birthday.Month}"
                     });
                 }
             }

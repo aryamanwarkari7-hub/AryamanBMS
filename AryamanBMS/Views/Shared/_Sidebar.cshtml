@@ -103,6 +103,8 @@
             Context.Request.Query["mine"] == "true" ||
             currentController == "Calendar" &&
             Context.Request.Query["mine"] == "true" ||
+            currentController == "Holiday" ||
+currentController == "Birthday" ||
             currentController == "EmployeeProject" ||
             currentController == "Project" &&
             isEmployeeOnly ||
@@ -1459,6 +1461,18 @@ currentController == "LeaveApplication" ||
                        class="submenu-item @(currentController == "Calendar" ? "active-menu" : "")">
                         <i class="bi bi-calendar3"></i>
                         <span>My Calendar</span>
+                    </a>
+
+                    <a asp-controller="Holiday" asp-action="Index"
+                       class="submenu-item @(currentController == "Holiday" ? "active-menu" : "")">
+                        <i class="bi bi-calendar-event"></i>
+                        <span>Holidays</span>
+                    </a>
+
+                    <a asp-controller="Birthday" asp-action="Index"
+                       class="submenu-item @(currentController == "Birthday" ? "active-menu" : "")">
+                        <i class="bi bi-balloon"></i>
+                        <span>Birthdays</span>
                     </a>
 
                     <a asp-controller="EmployeeProject" asp-action="MyTasks"

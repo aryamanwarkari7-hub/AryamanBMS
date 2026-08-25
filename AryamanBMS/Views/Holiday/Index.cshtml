@@ -39,30 +39,39 @@
     }
 
     bool isMaster = User.IsInRole("Master");
+
+    bool canManageHolidays =
+    ViewBag.CanManageHolidays is bool canManage &&
+    canManage;
 }
 
 <div class="module-header">
     <div>
         <h1 class="module-title">Holiday Register</h1>
         <p class="module-subtitle">
-            Manage yearly office holidays used for attendance and payroll.
+            @(canManageHolidays
+    ? "Manage yearly office holidays used for attendance and payroll."
+    : "View active office holidays used for attendance and payroll.")
         </p>
     </div>
 
-    <div class="module-header-actions">
-        @if (!isMaster)
-        {
-            <a asp-action="DownloadTemplate" class="btn-app btn-outline-app">
-                <i class="bi bi-download"></i>
-                Blank Template
+    @if (canManageHolidays)
+    {
+        <div class="module-header-actions">
+            @if (!isMaster)
+            {
+                <a asp-action="DownloadTemplate" class="btn-app btn-outline-app">
+                    <i class="bi bi-download"></i>
+                    Blank Template
+                </a>
+            }
+            <a asp-action="ExportExcel" asp-route-year="@selectedYear" asp-route-month="@selectedMonth"
+               asp-route-status="@selectedStatus" class="btn-app btn-success-app">
+                <i class="bi bi-file-earmark-excel"></i>
+                Export Excel
             </a>
-        }
-        <a asp-action="ExportExcel" asp-route-year="@selectedYear" asp-route-month="@selectedMonth"
-           asp-route-status="@selectedStatus" class="btn-app btn-success-app">
-            <i class="bi bi-file-earmark-excel"></i>
-            Export Excel
-        </a>
-    </div>
+        </div>
+    }
 </div>
 
 <div class="app-card mb-3">
@@ -75,6 +84,7 @@
 
     <div class="card-body">
         <form asp-action="Index" method="get" class="row g-3 align-items-end">
+
             <div class="col-md-3">
                 <label class="form-label">Year</label>
                 <input type="number" name="year" value="@selectedYear" class="app-input" />
@@ -93,14 +103,17 @@
                 </select>
             </div>
 
-            <div class="col-md-3">
-                <label class="form-label">Status</label>
-                <select name="status" class="app-input">
-                    <option value="All" selected="@(selectedStatus == "All")">All</option>
-                    <option value="Active" selected="@(selectedStatus == "Active")">Active</option>
-                    <option value="Inactive" selected="@(selectedStatus == "Inactive")">Inactive</option>
-                </select>
-            </div>
+            @if (canManageHolidays)
+            {
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="app-input">
+                        <option value="All" selected="@(selectedStatus == "All")">All</option>
+                        <option value="Active" selected="@(selectedStatus == "Active")">Active</option>
+                        <option value="Inactive" selected="@(selectedStatus == "Inactive")">Inactive</option>
+                    </select>
+                </div>
+            }
 
             <div class="col-md-3">
                 <label class="form-label">Sort By</label>
@@ -134,7 +147,7 @@
     </div>
 </div>
 
-@if (!isMaster)
+@if (canManageHolidays && !isMaster)
 {
     <div class="app-card mb-3">
         <div class="card-header">
