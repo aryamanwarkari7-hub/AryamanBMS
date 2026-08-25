@@ -243,11 +243,6 @@ namespace AryamanBMS.Data
         public DbSet<FinancialSequenceModel> FinancialSequences { get; set; }
 
         // =============================
-        // SATURDAY LEAVES SWITCHER
-        // =============================
-        public DbSet<WorkingDayOverrideModel> WorkingDayOverrides { get; set; }
-
-        // =============================
         // MODEL BUILDERS
         // =============================
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -1268,29 +1263,6 @@ namespace AryamanBMS.Data
                 .WithMany(x => x.Documents)
                 .HasForeignKey(x => x.NoticeId)
                 .OnDelete(DeleteBehavior.Cascade);
-
-            // Saturday working override
-            modelBuilder.Entity<WorkingDayOverrideModel>(entity =>
-            {
-                entity.ToTable("TableWorkingDayOverride");
-
-                entity.HasKey(x => x.Id);
-
-                entity.Property(x => x.OverrideType)
-                    .IsRequired()
-                    .HasMaxLength(20);
-
-                entity.Property(x => x.Reason)
-                    .HasMaxLength(250);
-
-                entity.Property(x => x.CreatedByUserId)
-                    .HasMaxLength(450);
-
-                entity.HasIndex(x => x.OverrideDate)
-                    .IsUnique();
-            });
-
-            // Login History
         }
     }
 }

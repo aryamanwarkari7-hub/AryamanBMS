@@ -1,11 +1,10 @@
-using AryamanBMS.Data;
 using AryamanBMS.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-
 using ClosedXML.Excel;
+
+using AryamanBMS.Repositories.Interfaces;
 
 namespace AryamanBMS.Controllers
 {
@@ -14,14 +13,14 @@ namespace AryamanBMS.Controllers
     {
         #region Actions
 
-        private readonly ApplicationDbContext _context;
+        private readonly IWorkingDayOverrideRepository _workingDayOverrideRepository;
         private readonly UserManager<ApplicationUserModel> _userManager;
 
         public WorkingDayOverrideController(
-            ApplicationDbContext context,
+           IWorkingDayOverrideRepository workingDayOverrideRepository,
             UserManager<ApplicationUserModel> userManager)
         {
-            _context = context;
+            _workingDayOverrideRepository = workingDayOverrideRepository;
             _userManager = userManager;
         }
 
@@ -42,33 +41,11 @@ namespace AryamanBMS.Controllers
                 ? "desc"
                 : "asc";
 
-            var query = _context.WorkingDayOverrides
-                .AsNoTracking()
-                .AsQueryable();
-
-            if (selectedStatus == "Active")
-            {
-                query = query.Where(x => x.IsActive);
-            }
-            else if (selectedStatus == "Inactive")
-            {
-                query = query.Where(x => !x.IsActive);
-            }
-
-            query = sortBy switch
-            {
-                "OverrideType" => sortOrder == "desc"
-                    ? query.OrderByDescending(x => x.OverrideType).ThenBy(x => x.OverrideDate)
-                    : query.OrderBy(x => x.OverrideType).ThenBy(x => x.OverrideDate),
-                "Status" => sortOrder == "desc"
-                    ? query.OrderByDescending(x => x.IsActive).ThenBy(x => x.OverrideDate)
-                    : query.OrderBy(x => x.IsActive).ThenBy(x => x.OverrideDate),
-                _ => sortOrder == "desc"
-                    ? query.OrderByDescending(x => x.OverrideDate)
-                    : query.OrderBy(x => x.OverrideDate)
-            };
-
-            var overrides = await query.ToListAsync();
+            var overrides = await _workingDayOverrideRepository
+    .GetAllAsync(
+        selectedStatus,
+        sortBy,
+        sortOrder);
 
             ViewBag.Status = selectedStatus;
             ViewBag.SortBy = sortBy;
@@ -80,11 +57,8 @@ namespace AryamanBMS.Controllers
         [HttpGet]
         public async Task<IActionResult> ExportExcel()
         {
-            var overrides =
-                await _context.WorkingDayOverrides
-                    .AsNoTracking()
-                    .OrderBy(x => x.OverrideDate)
-                    .ToListAsync();
+            var overrides = await _workingDayOverrideRepository
+    .GetForExportAsync();
 
             using var workbook = new XLWorkbook();
             var worksheet = workbook.Worksheets.Add("Saturday Switcher");
@@ -160,10 +134,8 @@ namespace AryamanBMS.Controllers
                     "Select a valid override type.");
             }
 
-            var dateExists =
-                await _context.WorkingDayOverrides
-                    .AnyAsync(x =>
-                        x.OverrideDate.Date == model.OverrideDate);
+            var dateExists = await _workingDayOverrideRepository
+    .ExistsForDateAsync(model.OverrideDate);
 
             if (dateExists)
             {
@@ -183,8 +155,8 @@ namespace AryamanBMS.Controllers
             model.CreatedOn = DateTime.Now;
             model.IsActive = true;
 
-            _context.WorkingDayOverrides.Add(model);
-            await _context.SaveChangesAsync();
+            await _workingDayOverrideRepository.AddAsync(model);
+            await _workingDayOverrideRepository.SaveAsync();
 
             TempData["Success"] =
                 "Working-day override created successfully.";
@@ -197,8 +169,7 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> Edit(int id)
         {
             var model =
-                await _context.WorkingDayOverrides
-                    .FirstOrDefaultAsync(x => x.Id == id);
+                await _workingDayOverrideRepository.GetByIdAsync(id);
 
             if (model == null)
             {
@@ -229,11 +200,10 @@ namespace AryamanBMS.Controllers
                     "Select a valid override type.");
             }
 
-            var duplicateDate =
-                await _context.WorkingDayOverrides
-                    .AnyAsync(x =>
-                        x.Id != id &&
-                        x.OverrideDate.Date == model.OverrideDate);
+            var duplicateDate = await _workingDayOverrideRepository
+    .ExistsForDateAsync(
+        model.OverrideDate,
+        id);
 
             if (duplicateDate)
             {
@@ -247,9 +217,7 @@ namespace AryamanBMS.Controllers
                 return View(model);
             }
 
-            var existing =
-                await _context.WorkingDayOverrides
-                    .FirstOrDefaultAsync(x => x.Id == id);
+            var existing = await _workingDayOverrideRepository.GetByIdAsync(id);
 
             if (existing == null)
             {
@@ -262,7 +230,7 @@ namespace AryamanBMS.Controllers
             existing.IsActive = model.IsActive;
             existing.UpdatedOn = DateTime.Now;
 
-            await _context.SaveChangesAsync();
+            await _workingDayOverrideRepository.SaveAsync();
 
             TempData["Success"] =
                 "Working-day override updated successfully.";
@@ -275,9 +243,7 @@ namespace AryamanBMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Deactivate(int id)
         {
-            var model =
-                await _context.WorkingDayOverrides
-                    .FirstOrDefaultAsync(x => x.Id == id);
+            var model = await _workingDayOverrideRepository.GetByIdAsync(id);
 
             if (model == null)
             {
@@ -287,7 +253,7 @@ namespace AryamanBMS.Controllers
             model.IsActive = false;
             model.UpdatedOn = DateTime.Now;
 
-            await _context.SaveChangesAsync();
+            await _workingDayOverrideRepository.SaveAsync();
 
             TempData["Success"] =
                 "Working-day override deactivated.";

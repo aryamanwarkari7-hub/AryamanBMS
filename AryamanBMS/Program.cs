@@ -216,6 +216,9 @@ builder.Services.AddScoped<ICalendarManualEventRepository,CalendarManualEventRep
 // Holiday repositories
 builder.Services.AddScoped<IHolidayRepository, HolidayRepository>();
 
+//Working-day and Saturday Switcher repositories
+builder.Services.AddScoped<IWorkingDayOverrideRepository, WorkingDayOverrideRepository>();
+
 // Accounts, documents, billing, compliance, and asset repositories
 builder.Services.AddScoped<IClientRepository, ClientRepository>();
 builder.Services.AddScoped<ICompanyProfileRepository, CompanyProfileRepository>();
