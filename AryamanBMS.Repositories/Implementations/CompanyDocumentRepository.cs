@@ -1,16 +1,16 @@
 ﻿
-    using global::AryamanBMS.Data;
+   using AryamanBMS.Database.Context;
     using global::AryamanBMS.Models;
     using global::AryamanBMS.Repositories.Interfaces;
     using Microsoft.EntityFrameworkCore;
 
-    namespace AryamanBMS.Repositories
+namespace AryamanBMS.Repositories.Implementations
     {
         public class CompanyDocumentRepository : ICompanyDocumentRepository
         {
-            private readonly ApplicationDbContext _context;
+            private readonly CompanyDocumentDbContext _context;
 
-            public CompanyDocumentRepository(ApplicationDbContext context)
+            public CompanyDocumentRepository(CompanyDocumentDbContext context)
             {
                 _context = context;
             }

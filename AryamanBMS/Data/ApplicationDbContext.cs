@@ -102,13 +102,6 @@ namespace AryamanBMS.Data
         // ==================================//
 
         // =============================
-        // COMPANY
-        // =============================
-
-        public DbSet<CompanyDocumentCategoryModel> CompanyDocumentCategories { get; set; }
-        public DbSet<CompanyDocumentModel> CompanyDocuments { get; set; }
-
-        // =============================
         // CLIENTS
         // =============================
 
@@ -787,19 +780,7 @@ namespace AryamanBMS.Data
                 .HasForeignKey(x => x.InvoiceId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<CompanyDocumentCategoryModel>().ToTable("tablecompanydocumentcategory");
-            modelBuilder.Entity<CompanyDocumentCategoryModel>()
-                .HasIndex(x => x.CategoryName)
-                .IsUnique();
-
-            modelBuilder.Entity<CompanyDocumentModel>().ToTable("tablecompanydocument");
-            modelBuilder.Entity<CompanyDocumentModel>()
-                .HasIndex(x => x.IsActive);
-            modelBuilder.Entity<CompanyDocumentModel>()
-                .HasOne(x => x.Category)
-                .WithMany()
-                .HasForeignKey(x => x.DocumentCategoryId)
-                .OnDelete(DeleteBehavior.Restrict);
+            
 
             modelBuilder.Entity<FinancialSequenceModel>().ToTable("tablefinancialsequence");
             modelBuilder.Entity<FinancialSequenceModel>()
