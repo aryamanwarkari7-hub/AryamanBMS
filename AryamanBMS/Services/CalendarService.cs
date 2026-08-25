@@ -18,17 +18,20 @@ namespace AryamanBMS.Services
         private readonly IWorkingDayService _workingDayService;
         private readonly ICalendarManualEventRepository _calendarManualEventRepository;
 
+        private readonly IHolidayRepository _holidayRepository;
+
         public CalendarService(
     ApplicationDbContext context,
     UserManager<ApplicationUserModel> userManager,
     IWorkingDayService workingDayService,
-    ICalendarManualEventRepository calendarManualEventRepository)
+    ICalendarManualEventRepository calendarManualEventRepository,
+    IHolidayRepository holidayRepository)
         {
             _context = context;
             _userManager = userManager;
             _workingDayService = workingDayService;
-            _calendarManualEventRepository =
-                calendarManualEventRepository;
+            _calendarManualEventRepository = calendarManualEventRepository;
+            _holidayRepository = holidayRepository;
         }
 
         public async Task<List<CalendarEventViewModel>> GetEventsAsync(
@@ -486,14 +489,8 @@ namespace AryamanBMS.Services
             DateTime start,
             DateTime end)
         {
-            var holidays = await _context.Holidays
-                .AsNoTracking()
-                .Where(x =>
-                    x.IsActive &&
-                    x.HolidayDate.Date >= start.Date &&
-                    x.HolidayDate.Date <= end.Date)
-                .OrderBy(x => x.HolidayDate)
-                .ToListAsync();
+            var holidays = await _holidayRepository
+    .GetActiveInRangeAsync(start, end);
 
             foreach (var holiday in holidays)
             {

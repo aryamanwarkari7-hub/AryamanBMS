@@ -243,11 +243,6 @@ namespace AryamanBMS.Data
         public DbSet<FinancialSequenceModel> FinancialSequences { get; set; }
 
         // =============================
-        // HOLIDAY
-        // =============================
-        public DbSet<HolidayModel> Holidays { get; set; }
-
-        // =============================
         // SATURDAY LEAVES SWITCHER
         // =============================
         public DbSet<WorkingDayOverrideModel> WorkingDayOverrides { get; set; }
@@ -1273,32 +1268,6 @@ namespace AryamanBMS.Data
                 .WithMany(x => x.Documents)
                 .HasForeignKey(x => x.NoticeId)
                 .OnDelete(DeleteBehavior.Cascade);
-
-            // Holiday
-            modelBuilder.Entity<HolidayModel>(entity =>
-            {
-                entity.ToTable("TableHoliday");
-
-                entity.HasKey(x => x.HolidayId);
-
-                entity.Property(x => x.HolidayName)
-                    .IsRequired()
-                    .HasMaxLength(160);
-
-                entity.Property(x => x.MonthName)
-                    .HasMaxLength(20);
-
-                entity.Property(x => x.DayName)
-                    .HasMaxLength(20);
-
-                entity.Property(x => x.HolidayType)
-                    .IsRequired()
-                    .HasMaxLength(80)
-                    .HasDefaultValue("Office Holiday");
-
-                entity.HasIndex(x => x.HolidayDate)
-                    .IsUnique();
-            });
 
             // Saturday working override
             modelBuilder.Entity<WorkingDayOverrideModel>(entity =>

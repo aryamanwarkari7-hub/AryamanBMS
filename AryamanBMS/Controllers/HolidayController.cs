@@ -1,4 +1,4 @@
-using AryamanBMS.Data;
+
 using AryamanBMS.Services.Interface;
 using AryamanBMS.Models;
 using AryamanBMS.Services.Interfaces;
@@ -7,7 +7,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+
+using AryamanBMS.Repositories.Interfaces;
 
 namespace AryamanBMS.Controllers
 {
@@ -16,20 +17,20 @@ namespace AryamanBMS.Controllers
     {
         #region Actions
 
-        private readonly ApplicationDbContext _context;
+        private readonly IHolidayRepository _holidayRepository;
         private readonly IHolidayExcelImportService _holidayExcelImportService;
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly UserManager<ApplicationUserModel> _userManager;
         private readonly INotificationService _notificationService;
 
         public HolidayController(
-            ApplicationDbContext context,
+            IHolidayRepository holidayRepository,
             IHolidayExcelImportService holidayExcelImportService,
             IWebHostEnvironment webHostEnvironment,
             UserManager<ApplicationUserModel> userManager,
             INotificationService notificationService)
         {
-            _context = context;
+            _holidayRepository = holidayRepository;
             _holidayExcelImportService = holidayExcelImportService;
             _webHostEnvironment = webHostEnvironment;
             _userManager = userManager;
@@ -73,47 +74,25 @@ namespace AryamanBMS.Controllers
             ViewBag.Status = selectedStatus;
             ViewBag.CanManageHolidays = canManageHolidays;
 
-            var query = _context.Holidays
-                .Where(x => x.HolidayDate.Year == selectedYear);
+            var result = await _holidayRepository.GetPagedAsync(
+    selectedYear,
+    month,
+    selectedStatus,
+    sortBy,
+    sortOrder,
+    page,
+    pageSize);
 
-            if (month.HasValue)
-            {
-                query = query.Where(x => x.HolidayDate.Month == month.Value);
-            }
+            int totalRecords = result.TotalRecords;
 
-            if (selectedStatus == "Active")
-            {
-                query = query.Where(x => x.IsActive);
-            }
-            else if (selectedStatus == "Inactive")
-            {
-                query = query.Where(x => !x.IsActive);
-            }
+            int totalPages = totalRecords == 0
+                ? 1
+                : (int)Math.Ceiling(
+                    totalRecords / (double)pageSize);
 
-            query = sortBy switch
-            {
-                "HolidayName" => sortOrder == "desc"
-                    ? query.OrderByDescending(x => x.HolidayName).ThenBy(x => x.HolidayDate)
-                    : query.OrderBy(x => x.HolidayName).ThenBy(x => x.HolidayDate),
-                "HolidayType" => sortOrder == "desc"
-                    ? query.OrderByDescending(x => x.HolidayType).ThenBy(x => x.HolidayDate)
-                    : query.OrderBy(x => x.HolidayType).ThenBy(x => x.HolidayDate),
-                "Status" => sortOrder == "desc"
-                    ? query.OrderByDescending(x => x.IsActive).ThenBy(x => x.HolidayDate)
-                    : query.OrderBy(x => x.IsActive).ThenBy(x => x.HolidayDate),
-                _ => sortOrder == "desc"
-                    ? query.OrderByDescending(x => x.HolidayDate).ThenBy(x => x.HolidayName)
-                    : query.OrderBy(x => x.HolidayDate).ThenBy(x => x.HolidayName)
-            };
+            page = Math.Clamp(page, 1, totalPages);
 
-            int totalRecords = await query.CountAsync();
-            int totalPages = (int)Math.Ceiling(totalRecords / (double)pageSize);
-            page = Math.Clamp(page, 1, Math.Max(totalPages, 1));
-
-            var holidays = await query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
+            var holidays = result.Records;
 
             ViewBag.Page = page;
             ViewBag.PageSize = pageSize;
@@ -162,26 +141,12 @@ namespace AryamanBMS.Controllers
             int selectedYear = year ?? DateTime.Today.Year;
             string selectedStatus = string.IsNullOrWhiteSpace(status) ? "All" : status;
 
-            var query = _context.Holidays
-                .Where(x => x.HolidayDate.Year == selectedYear);
+            var holidays = await _holidayRepository.GetForExportAsync(
+    selectedYear,
+    month,
+    selectedStatus);
 
-            if (month.HasValue)
-            {
-                query = query.Where(x => x.HolidayDate.Month == month.Value);
-            }
 
-            if (selectedStatus == "Active")
-            {
-                query = query.Where(x => x.IsActive);
-            }
-            else if (selectedStatus == "Inactive")
-            {
-                query = query.Where(x => !x.IsActive);
-            }
-
-            var holidays = await query
-                .OrderBy(x => x.HolidayDate)
-                .ToListAsync();
 
             using var workbook = new XLWorkbook();
             var worksheet = workbook.Worksheets.Add("Holiday Register");

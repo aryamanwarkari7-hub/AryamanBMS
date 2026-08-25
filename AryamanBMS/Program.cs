@@ -213,6 +213,9 @@ builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 //Calendar repositories
 builder.Services.AddScoped<ICalendarManualEventRepository,CalendarManualEventRepository>();
 
+// Holiday repositories
+builder.Services.AddScoped<IHolidayRepository, HolidayRepository>();
+
 // Accounts, documents, billing, compliance, and asset repositories
 builder.Services.AddScoped<IClientRepository, ClientRepository>();
 builder.Services.AddScoped<ICompanyProfileRepository, CompanyProfileRepository>();

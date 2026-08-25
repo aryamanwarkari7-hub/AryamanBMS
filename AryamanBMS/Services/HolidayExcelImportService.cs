@@ -1,10 +1,10 @@
 ﻿using System.Globalization;
-using AryamanBMS.Data;
+
 using AryamanBMS.Models;
 using AryamanBMS.Services.Interface;
 using AryamanBMS.ViewModels;
 using ClosedXML.Excel;
-using Microsoft.EntityFrameworkCore;
+using AryamanBMS.Repositories.Interfaces;
 
 namespace AryamanBMS.Services
 {
@@ -12,11 +12,12 @@ namespace AryamanBMS.Services
     {
         private const long MaxUploadBytes = 5 * 1024 * 1024;
 
-        private readonly ApplicationDbContext _context;
+        private readonly IHolidayRepository _holidayRepository;
 
-        public HolidayExcelImportService(ApplicationDbContext context)
+        public HolidayExcelImportService(
+    IHolidayRepository holidayRepository)
         {
-            _context = context;
+            _holidayRepository = holidayRepository;
         }
 
         public async Task<HolidayImportResult> ImportAsync(IFormFile file)
@@ -126,12 +127,11 @@ namespace AryamanBMS.Services
                         continue;
                     }
 
-                    var existing = await _context.Holidays
-                        .FirstOrDefaultAsync(x => x.HolidayDate == holidayDate);
+                    var existing = await _holidayRepository.GetByDateAsync(holidayDate);
 
                     if (existing == null)
                     {
-                        _context.Holidays.Add(new HolidayModel
+                        await _holidayRepository.AddAsync(new HolidayModel
                         {
                             HolidayDate = holidayDate,
                             HolidayName = festival,
@@ -161,7 +161,7 @@ namespace AryamanBMS.Services
                     }
                 }
 
-                await _context.SaveChangesAsync();
+                await _holidayRepository.SaveAsync();
             }
 
             return result;
