@@ -32,6 +32,8 @@ namespace AryamanBMS.Controllers
         private readonly IGstReturnRepository _returnRepository;
         private readonly IGstChallanRepository _challanRepository;
         private readonly IGstDocumentRepository _documentRepository;
+
+        private readonly IGstLutDocumentRepository _lutDocumentRepository;
         private readonly IFileStorageService _fileStorageService;
         private readonly UserManager<ApplicationUserModel> _userManager;
         private readonly ILogger<GstController> _logger;
@@ -40,7 +42,7 @@ namespace AryamanBMS.Controllers
 
         private const string DocumentFolder = "GstDocuments";
 
-        
+
 
         /// <summary>
         /// Constructor with dependency injection
@@ -53,6 +55,7 @@ namespace AryamanBMS.Controllers
            IGstReturnRepository returnRepository,
            IGstChallanRepository challanRepository,
            IGstDocumentRepository documentRepository,
+           IGstLutDocumentRepository lutDocumentRepository,
            IFileStorageService fileStorageService,
            UserManager<ApplicationUserModel> userManager,
            ILogger<GstController> logger,
@@ -66,6 +69,7 @@ namespace AryamanBMS.Controllers
             _returnRepository = returnRepository;
             _challanRepository = challanRepository;
             _documentRepository = documentRepository;
+            _lutDocumentRepository = lutDocumentRepository;
             _fileStorageService = fileStorageService;
             _userManager = userManager;
             _logger = logger;
@@ -379,13 +383,9 @@ namespace AryamanBMS.Controllers
 
                 ViewBag.LutDocuments = configuration == null
     ? new List<GstLutDocumentModel>()
-    : await _context.GstLutDocuments
-        .AsNoTracking()
-        .Where(x =>
-            x.GstConfigurationId == configuration.GstConfigurationId &&
-            x.IsActive)
-        .OrderByDescending(x => x.UploadedOn)
-        .ToListAsync();
+    : await _lutDocumentRepository
+        .GetActiveByConfigurationIdAsync(
+            configuration.GstConfigurationId);
 
                 return View(model);
             }
@@ -645,16 +645,9 @@ namespace AryamanBMS.Controllers
 
                 await _configurationRepository.SaveActiveAsync(configuration);
 
-                var activeDocuments = await _context.GstLutDocuments
-                    .Where(x =>
-                        x.GstConfigurationId == configuration.GstConfigurationId &&
-                        x.IsActive)
-                    .ToListAsync();
-
-                foreach (var document in activeDocuments)
-                {
-                    document.IsActive = false;
-                }
+                await _lutDocumentRepository
+    .DeactivateActiveByConfigurationIdAsync(
+        configuration.GstConfigurationId);
 
                 var lutRecord = new GstLutDocumentModel
                 {
@@ -671,8 +664,8 @@ namespace AryamanBMS.Controllers
                     IsActive = true
                 };
 
-                _context.GstLutDocuments.Add(lutRecord);
-                await _context.SaveChangesAsync();
+                await _lutDocumentRepository.AddAsync(lutRecord);
+                await _lutDocumentRepository.SaveAsync();
 
                 TempData["Success"] =
                     "LUT document uploaded and activated successfully.";
@@ -693,11 +686,8 @@ namespace AryamanBMS.Controllers
         [HttpGet]
         public async Task<IActionResult> DownloadLutDocument(int id)
         {
-            var document = await _context.GstLutDocuments
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x =>
-                    x.GstLutDocumentId == id &&
-                    x.IsActive);
+            var document = await _lutDocumentRepository
+    .GetActiveByIdAsync(id);
 
             if (document == null)
             {
@@ -1801,28 +1791,28 @@ namespace AryamanBMS.Controllers
                     .Select(x => x.First())
                     .ToList();
 
-            foreach (var recipient in recipients)
-            {
-                bool exists =
-                    await _notificationService.ExistsAsync(
-                        recipient.Id,
-                        notificationType,
-                        referenceType,
-                        referenceId);
-
-                if (exists)
+                foreach (var recipient in recipients)
                 {
-                    continue;
-                }
+                    bool exists =
+                        await _notificationService.ExistsAsync(
+                            recipient.Id,
+                            notificationType,
+                            referenceType,
+                            referenceId);
 
-                await _notificationService.CreateAsync(
-                    userId: recipient.Id,
-                    title: title,
-                    message: message,
-                    notificationType: notificationType,
-                    referenceType: referenceType,
-                    referenceId: referenceId,
-                    actionUrl: actionUrl);
+                    if (exists)
+                    {
+                        continue;
+                    }
+
+                    await _notificationService.CreateAsync(
+                        userId: recipient.Id,
+                        title: title,
+                        message: message,
+                        notificationType: notificationType,
+                        referenceType: referenceType,
+                        referenceId: referenceId,
+                        actionUrl: actionUrl);
                 }
             }
             catch (Exception ex)

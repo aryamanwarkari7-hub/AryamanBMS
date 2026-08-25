@@ -17,6 +17,12 @@ namespace AryamanBMS.Database.Context
             set;
         }
 
+        public DbSet<GstLutDocumentModel> GstLutDocuments
+        {
+            get;
+            set;
+        }
+
         protected override void OnModelCreating(
             ModelBuilder modelBuilder)
         {
@@ -27,6 +33,19 @@ namespace AryamanBMS.Database.Context
 
             modelBuilder.Entity<GstConfigurationModel>()
                 .HasIndex(x => x.IsActive);
+
+            modelBuilder.Entity<GstLutDocumentModel>(entity =>
+{
+    entity.ToTable("TableGstLutDocument");
+
+    entity.HasKey(x => x.GstLutDocumentId);
+
+    entity.HasIndex(x => new
+    {
+        x.GstConfigurationId,
+        x.IsActive
+    });
+});
         }
     }
 }

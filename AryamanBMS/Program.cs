@@ -236,6 +236,7 @@ builder.Services.AddScoped<IGstReturnRepository, GstReturnRepository>();
 builder.Services.AddScoped<IGstChallanRepository, GstChallanRepository>();
 builder.Services.AddScoped<IGstItcRepository, GstItcRepository>();
 builder.Services.AddScoped<IGstDocumentRepository, GstDocumentRepository>();
+builder.Services.AddScoped<IGstLutDocumentRepository,GstLutDocumentRepository>();
 builder.Services.AddScoped<IFinancialAuditDocumentRepository, FinancialAuditDocumentRepository>();
 builder.Services.AddScoped<IOfficeAssetRepository, OfficeAssetRepository>();
 builder.Services.AddScoped<IPfRepository, PfRepository>();
