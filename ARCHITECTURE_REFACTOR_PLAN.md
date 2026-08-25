@@ -23,14 +23,14 @@
 
 ## Target Project Ownership
 
-| Project                 | Owns                                                       |
-| ----------------------- | ---------------------------------------------------------- |
-| AryamanBMS              | Controllers, Views, ViewModels, UI, DI composition         |
-| AryamanBMS.Business     | Business workflows, domain services, validation rules      |
-| AryamanBMS.Repositories | Repository interfaces and data-access implementations      |
-| AryamanBMS.Database     | ApplicationDbContext, EF configurations, migrations, seeds |
-| AryamanBMS.Models       | Domain entities, enums, contracts                          |
-| AryamanBMS.Utilities    | Pure helpers, constants, extensions                        |
+| Project                 | Owns                                                  |
+| ----------------------- | ----------------------------------------------------- |
+| AryamanBMS              | Controllers, Views, ViewModels, UI, DI composition    |
+| AryamanBMS.Business     | Business workflows, domain services, validation rules |
+| AryamanBMS.Repositories | Repository interfaces and data-access implementations |
+| AryamanBMS.Database     | EF DbContexts, configurations, migrations, seeds      |
+| AryamanBMS.Models       | Domain entities, enums, contracts                     |
+| AryamanBMS.Utilities    | Pure helpers, constants, extensions                   |
 
 ## Dependency Direction
 
@@ -84,20 +84,49 @@ A module is complete only when:
 - GST Configuration: entity, context, repository, registration, and invoice consumer layered.
 - Financial Audit Documents: entity, context, repository, and registration layered.
 - Payroll Configuration: payroll policy, payroll period lock, and professional-tax slabs moved to Models and owned by `PayrollConfigurationDbContext`.
+- Login History: entity, context, repository, service, and controller consumers layered.
+- Notifications: entity, context, repository, and controller data access layered; the SignalR notification adapter remains intentionally in Web.
+- Calendar Manual Events: entity, context, repository, controller, and calendar-service consumers layered.
+- Holidays: entity ownership moved to the attendance-calendar context; controller, Excel import, and calendar consumers use `IHolidayRepository`.
+- Working Day Overrides: repository-backed controller flow completed; ownership is solely in `AttendanceCalendarDbContext`.
+- User-facing calendar register improvements: authenticated Holiday register and Birthday register added, with calendar links corrected and verified.
+- Architecture guard: `scripts/Test-Architecture.ps1` validates project-reference direction locally and in GitHub Actions.
+
+## Delivery Scope and Time-Box
+
+This branch has established and verified the target layering with representative
+vertical slices across administration, attendance, compliance, payroll, and
+calendar features. The current delivery scope is **stabilization and safe
+handoff**, not a risky one-DbContext-per-table conversion.
+
+Before merging this branch:
+
+1. Run the Release build and architecture dependency guard.
+2. Smoke-test the principal workflows: authentication, attendance/leave,
+   payroll, finance/invoice, projects, notifications, and calendar.
+3. Review the branch commits and resolve only defects found by those checks.
+4. Record remaining aggregate migrations as planned future work.
+
+No new table-by-table persistence move should begin unless it is needed to fix
+a verified defect or is explicitly scheduled after this delivery.
 
 ## Deferred Aggregates
 
-The following remain in the Web-owned EF context intentionally. They require an aggregate-level redesign to preserve EF relationships and atomic workflows:
+The following remain in the transitional `ApplicationDbContext` intentionally.
+They require an aggregate-level redesign to preserve EF relationships and
+atomic workflows:
 
-- Identity-bound records: Login History and other entities that navigate to `ApplicationUserModel`.
 - Leave: Leave Balance, Leave Type, Leave Applications, and related attendance updates.
 - Payroll processing: Salary Payment Batches, Salary Records, and Financial Sequences.
 - Office Assets: assets, assignment history, documents, maintenance, and verification records.
 - GST LUT documents and other file-upload workflows with relationship dependencies.
+- Core connected aggregates: Employees, Clients, Projects, Proposals, Invoices,
+  Expenses, and their related documents, audit records, and workflow entities.
 
 ## Verification
 
 - Project-reference direction audited: no lower-layer project references the Web project.
+- The reference-direction guard runs locally and in GitHub Actions.
 - No migrations or database schema changes were introduced.
 - Each completed slice was built with `dotnet build AryamanBMS.slnx --no-restore`.
 - Affected workflows were manually verified during each slice.
