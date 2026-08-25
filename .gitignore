@@ -357,3 +357,6 @@ AryamanBMS/wwwroot/documents/letters/
 .tmp-build/
 .codex-build/
 User Manuals/
+
+# Local personal backup archive
+AryamanBMS.zip
