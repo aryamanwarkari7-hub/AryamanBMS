@@ -16,6 +16,19 @@ namespace AryamanBMS.Repositories
             _context = context;
         }
 
+        public async Task<List<ExpenseVoucherModel>>
+            GetActiveForPurchaseReportAsync()
+        {
+            return await _context.ExpenseVouchers
+                .AsNoTracking()
+                .Where(x => x.IsActive)
+                .Include(x => x.Vendor)
+                .Include(x => x.Category)
+                .Include(x => x.Project)
+                .Include(x => x.Department)
+                .ToListAsync();
+        }
+
         public async Task<IEnumerable<ExpenseVoucherModel>> GetAllAsync()
         {
             return await _context.ExpenseVouchers

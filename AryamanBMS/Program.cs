@@ -281,6 +281,7 @@ builder.Services.AddScoped<IProjectAccessService, ProjectAccessService>();
 // Accounts, file storage, financial-year, and GST services
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 builder.Services.AddScoped<IFinancialYearService, FinancialYearService>();
+builder.Services.AddScoped<IPurchaseReportService, PurchaseReportService>();
 builder.Services.AddScoped<IVendorService, VendorService>();
 builder.Services.AddScoped<IGstCalculationService, GstCalculationService>();
 builder.Services.AddScoped<IGstDashboardService, GstDashboardService>();

@@ -4,6 +4,8 @@ namespace AryamanBMS.Repositories.Interfaces
 {
     public interface IExpenseVoucherRepository
     {
+        Task<List<ExpenseVoucherModel>> GetActiveForPurchaseReportAsync();
+
         Task<IEnumerable<ExpenseVoucherModel>> GetAllAsync();
 
         Task<IEnumerable<ExpenseVoucherModel>> GetByStatusAsync(string status);
