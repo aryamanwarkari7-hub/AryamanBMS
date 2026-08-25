@@ -244,6 +244,7 @@ builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
 builder.Services.AddScoped<IPaymentReceiptRepository, PaymentRepository>();
 builder.Services.AddScoped<IExpenseCategoryRepository, ExpenseCategoryRepository>();
 builder.Services.AddScoped<IExpenseVoucherRepository, ExpenseVoucherRepository>();
+builder.Services.AddScoped<IVendorRepository, VendorRepository>();
 builder.Services.AddScoped<IGstSnapshotRepository, GstSnapshotRepository>();
 builder.Services.AddScoped<IGstConfigurationRepository, GstConfigurationRepository>();
 builder.Services.AddScoped<IGstReturnRepository, GstReturnRepository>();
@@ -280,6 +281,7 @@ builder.Services.AddScoped<IProjectAccessService, ProjectAccessService>();
 // Accounts, file storage, financial-year, and GST services
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 builder.Services.AddScoped<IFinancialYearService, FinancialYearService>();
+builder.Services.AddScoped<IVendorService, VendorService>();
 builder.Services.AddScoped<IGstCalculationService, GstCalculationService>();
 builder.Services.AddScoped<IGstDashboardService, GstDashboardService>();
 
