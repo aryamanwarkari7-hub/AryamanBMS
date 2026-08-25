@@ -283,6 +283,8 @@ builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 builder.Services.AddScoped<IFinancialYearService, FinancialYearService>();
 builder.Services.AddScoped<IPurchaseReportService, PurchaseReportService>();
 builder.Services.AddScoped<IReceivablesReportService, ReceivablesReportService>();
+builder.Services.AddScoped<IAccountsFinanceDashboardRepository, AccountsFinanceDashboardRepository>();
+builder.Services.AddScoped<IAccountsFinanceDashboardService, AccountsFinanceDashboardService>();
 builder.Services.AddScoped<IVendorService, VendorService>();
 builder.Services.AddScoped<IGstCalculationService, GstCalculationService>();
 builder.Services.AddScoped<IGstDashboardService, GstDashboardService>();
