@@ -1,4 +1,5 @@
 using System.Text;
+using AryamanBMS.Business.Interfaces;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
@@ -15,15 +16,18 @@ namespace AryamanBMS.Controllers
     public class PaymentReceiptController : Controller
     {
         private readonly IPaymentReceiptRepository _paymentRepository;
+        private readonly IPaymentReceiptTrackerService _trackerService;
         private readonly UserManager<ApplicationUserModel> _userManager;
         private readonly INotificationService _notificationService;
 
         public PaymentReceiptController(
           IPaymentReceiptRepository paymentRepository,
+          IPaymentReceiptTrackerService trackerService,
           UserManager<ApplicationUserModel> userManager,
           INotificationService notificationService)
         {
             _paymentRepository = paymentRepository;
+            _trackerService = trackerService;
             _userManager = userManager;
             _notificationService = notificationService;
         }
@@ -40,118 +44,19 @@ namespace AryamanBMS.Controllers
     string sortOrder = "desc",
     int page = 1)
         {
-            var payments = await _paymentRepository.GetAllAsync();
-
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                string keyword = search.Trim().ToLower();
-
-                payments = payments
-                    .Where(x =>
-                        (!string.IsNullOrWhiteSpace(x.ReceiptNo) &&
-                            x.ReceiptNo.ToLower().Contains(keyword)) ||
-                        (x.Client != null &&
-                            !string.IsNullOrWhiteSpace(x.Client.ClientName) &&
-                            x.Client.ClientName.ToLower().Contains(keyword)) ||
-                        (x.Invoice != null &&
-                            !string.IsNullOrWhiteSpace(x.Invoice.InvoiceNo) &&
-                            x.Invoice.InvoiceNo.ToLower().Contains(keyword)) ||
-                        (!string.IsNullOrWhiteSpace(x.PaymentMode) &&
-                            x.PaymentMode.ToLower().Contains(keyword)) ||
-                        (!string.IsNullOrWhiteSpace(x.TransactionNo) &&
-                            x.TransactionNo.ToLower().Contains(keyword)) ||
-                        (!string.IsNullOrWhiteSpace(x.ReferenceNo) &&
-                            x.ReferenceNo.ToLower().Contains(keyword)))
-                    .ToList();
-            }
-
-            if (clientId.HasValue && clientId.Value > 0)
-            {
-                payments = payments
-                    .Where(x => x.ClientId == clientId.Value)
-                    .ToList();
-            }
-
-            if (!string.IsNullOrWhiteSpace(status))
-            {
-                payments = status switch
-                {
-                    "Active" => payments.Where(x => !x.IsCancelled).ToList(),
-                    "Cancelled" => payments.Where(x => x.IsCancelled).ToList(),
-                    _ => payments
-                };
-            }
-
-            if (fromDate.HasValue)
-            {
-                payments = payments
-                    .Where(x => x.ReceiptDate.Date >= fromDate.Value.Date)
-                    .ToList();
-            }
-
-            if (toDate.HasValue)
-            {
-                payments = payments
-                    .Where(x => x.ReceiptDate.Date <= toDate.Value.Date)
-                    .ToList();
-            }
-
-            bool desc =
-                string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
-
-            payments = sortBy switch
-            {
-                "ReceiptNo" => desc
-                    ? payments.OrderByDescending(x => x.ReceiptNo).ToList()
-                    : payments.OrderBy(x => x.ReceiptNo).ToList(),
-
-                "Client" => desc
-                    ? payments.OrderByDescending(x => x.Client?.ClientName).ToList()
-                    : payments.OrderBy(x => x.Client?.ClientName).ToList(),
-
-                "Invoice" => desc
-                    ? payments.OrderByDescending(x => x.Invoice?.InvoiceNo).ToList()
-                    : payments.OrderBy(x => x.Invoice?.InvoiceNo).ToList(),
-
-                "Mode" => desc
-                    ? payments.OrderByDescending(x => x.PaymentMode).ToList()
-                    : payments.OrderBy(x => x.PaymentMode).ToList(),
-
-                "Amount" => desc
-                    ? payments.OrderByDescending(x => x.AmountReceived).ToList()
-                    : payments.OrderBy(x => x.AmountReceived).ToList(),
-
-                "Status" => desc
-                    ? payments.OrderByDescending(x => x.IsCancelled).ToList()
-                    : payments.OrderBy(x => x.IsCancelled).ToList(),
-
-                _ => desc
-                    ? payments.OrderByDescending(x => x.ReceiptDate).ToList()
-                    : payments.OrderBy(x => x.ReceiptDate).ToList()
-            };
-
-            const int pageSize = 20;
-            int totalRecords = payments.Count;
-
-            payments = payments
-                .Skip((Math.Max(page, 1) - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
-
-            var allPayments = await _paymentRepository.GetAllAsync();
-            var activePayments = allPayments.Where(x => !x.IsCancelled).ToList();
+            var tracker = await _trackerService.GetTrackerAsync(
+                search, clientId, status, fromDate, toDate, sortBy, sortOrder, page);
 
             var model = new PaymentReceiptTrackerViewModel
             {
-                PaymentReceipts = payments,
-                Clients = await _paymentRepository.GetClientsAsync(),
-
+                PaymentReceipts = tracker.PaymentReceipts,
+                Clients = tracker.Clients,
                 Summary = new PaymentSummary
                 {
-                    TotalReceipts = allPayments.Count,
-                    TotalReceived = activePayments.Sum(x => x.AmountReceived),
-                    ActiveReceiptCount = activePayments.Count,
-                    CancelledReceiptCount = allPayments.Count(x => x.IsCancelled),
+                    TotalReceipts = tracker.Summary.TotalReceipts,
+                    TotalReceived = tracker.Summary.TotalReceived,
+                    ActiveReceiptCount = tracker.Summary.ActiveReceiptCount,
+                    CancelledReceiptCount = tracker.Summary.CancelledReceiptCount
                 }
             };
 
@@ -163,8 +68,7 @@ namespace AryamanBMS.Controllers
             ViewBag.SortBy = sortBy;
             ViewBag.SortOrder = sortOrder;
             ViewBag.CurrentPage = page;
-            ViewBag.TotalPages =
-                (int)Math.Ceiling(totalRecords / (double)pageSize);
+            ViewBag.TotalPages = tracker.TotalPages;
 
             return View(model);
         }
@@ -176,40 +80,12 @@ namespace AryamanBMS.Controllers
     DateTime? fromDate,
     DateTime? toDate)
         {
-            var payments = await _paymentRepository.GetAllAsync();
-
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                string keyword = search.Trim().ToLower();
-
-                payments = payments.Where(x =>
-                    (!string.IsNullOrWhiteSpace(x.ReceiptNo) && x.ReceiptNo.ToLower().Contains(keyword)) ||
-                    (x.Client != null && !string.IsNullOrWhiteSpace(x.Client.ClientName) && x.Client.ClientName.ToLower().Contains(keyword)) ||
-                    (x.Invoice != null && !string.IsNullOrWhiteSpace(x.Invoice.InvoiceNo) && x.Invoice.InvoiceNo.ToLower().Contains(keyword)) ||
-                    (!string.IsNullOrWhiteSpace(x.PaymentMode) && x.PaymentMode.ToLower().Contains(keyword)) ||
-                    (!string.IsNullOrWhiteSpace(x.TransactionNo) && x.TransactionNo.ToLower().Contains(keyword)) ||
-                    (!string.IsNullOrWhiteSpace(x.ReferenceNo) && x.ReferenceNo.ToLower().Contains(keyword)))
-                    .ToList();
-            }
-
-            if (clientId.HasValue && clientId.Value > 0)
-                payments = payments.Where(x => x.ClientId == clientId.Value).ToList();
-
-            if (!string.IsNullOrWhiteSpace(status))
-            {
-                payments = status switch
-                {
-                    "Active" => payments.Where(x => !x.IsCancelled).ToList(),
-                    "Cancelled" => payments.Where(x => x.IsCancelled).ToList(),
-                    _ => payments
-                };
-            }
-
-            if (fromDate.HasValue)
-                payments = payments.Where(x => x.ReceiptDate.Date >= fromDate.Value.Date).ToList();
-
-            if (toDate.HasValue)
-                payments = payments.Where(x => x.ReceiptDate.Date <= toDate.Value.Date).ToList();
+            var payments = await _trackerService.GetForExportAsync(
+                search,
+                clientId,
+                status,
+                fromDate,
+                toDate);
 
             using var workbook = new XLWorkbook();
             var worksheet = workbook.Worksheets.Add("Payment Receipts");
