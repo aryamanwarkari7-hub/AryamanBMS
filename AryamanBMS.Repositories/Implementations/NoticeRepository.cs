@@ -1,15 +1,15 @@
-﻿using AryamanBMS.Data;
+﻿using AryamanBMS.Database.Context;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
-namespace AryamanBMS.Repositories
+namespace AryamanBMS.Repositories.Implementations
 {
     public class NoticeRepository : INoticeRepository
     {
-        private readonly ApplicationDbContext _context;
+        private readonly NoticeDbContext _context;
 
-        public NoticeRepository(ApplicationDbContext context)
+        public NoticeRepository(NoticeDbContext context)
         {
             _context = context;
         }

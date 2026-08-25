@@ -231,13 +231,6 @@ namespace AryamanBMS.Data
         public DbSet<PtChallanModel> PtChallans { get; set; }
         public DbSet<PtDocumentModel> PtDocuments { get; set; }
 
-        // =============================
-        // NOTICES
-        // =============================
-        public DbSet<NoticeModel> Notices { get; set; }
-
-        public DbSet<NoticeDocumentModel> NoticeDocuments { get; set; }
-
         public DbSet<FinancialSequenceModel> FinancialSequences { get; set; }
 
         // =============================
@@ -1240,19 +1233,6 @@ namespace AryamanBMS.Data
                 .HasOne(x => x.Snapshot)
                 .WithMany(x => x.Documents)
                 .HasForeignKey(x => x.PtSnapshotId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<NoticeModel>().ToTable("tablenotice");
-            modelBuilder.Entity<NoticeModel>()
-                .HasIndex(x => x.IsActive);
-
-            modelBuilder.Entity<NoticeDocumentModel>().ToTable("tablenoticedocument");
-            modelBuilder.Entity<NoticeDocumentModel>()
-                .HasIndex(x => x.IsActive);
-            modelBuilder.Entity<NoticeDocumentModel>()
-                .HasOne(x => x.Notice)
-                .WithMany(x => x.Documents)
-                .HasForeignKey(x => x.NoticeId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

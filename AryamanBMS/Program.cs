@@ -110,6 +110,13 @@ builder.Services.AddDbContext<CalendarManualEventDbContext>(options =>
         ServerVersion.AutoDetect(connectionString));
 });
 
+builder.Services.AddDbContext<NoticeDbContext>(options =>
+{
+    options.UseMySql(
+        connectionString,
+        ServerVersion.AutoDetect(connectionString));
+});
+
 // Attendance working-day configuration
 builder.Services.Configure<WorkingDayOptions>(
     builder.Configuration.GetSection("Attendance"));
