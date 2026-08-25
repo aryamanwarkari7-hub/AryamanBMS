@@ -118,6 +118,14 @@ A module is complete only when:
 - Architecture guard: `scripts/Test-Architecture.ps1` validates project-reference direction locally and in GitHub Actions.
 - Accelerated ownership move: all remaining entity files were moved to AryamanBMS.Models`; the central `ApplicationDbContext` was moved to `AryamanBMS.Database` without namespace, mapping, or migration changes; and all compatible repository contracts and implementations were moved to `AryamanBMS.Repositories`.
 
+## In-Progress Refactor Slice
+
+- Expense Category: list filtering/sorting and create, edit, duplicate-code,
+  GST-rate validation, and soft-delete rules now flow through a Business
+  service backed by the existing repository. The Release build and architecture
+  dependency guard pass; manual workflow verification and the green commit
+  checkpoint remain required before this slice is marked complete.
+
 ## Current Layering Inventory
 
 As of 25-Aug-2026:
