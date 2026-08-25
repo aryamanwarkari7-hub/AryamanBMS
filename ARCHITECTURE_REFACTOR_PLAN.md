@@ -76,7 +76,7 @@ A module is complete only when:
 ## Completed Refactor Slices
 
 - Location and Country: location entities, DbContext, and repository layering.
-- Company Document Category: shared entity move.
+- Company Documents: category and document entities, context, repositories, registrations, and file-workflow consumers layered as one aggregate.
 - Financial Constants and Financial Year: constants moved to Models; service moved to Business.
 - Attendance Calendar and Working Days: calendar entities, context, repository, options, and service layering.
 - Password Change Logs: entity, context, repository, service, and controller consumers layered.
@@ -100,9 +100,9 @@ As of 25-Aug-2026:
 
 | Item | Count |
 | --- | ---: |
-| Entity files owned by `AryamanBMS.Models` | 21 |
-| Dedicated DbContexts in `AryamanBMS.Database` | 11 |
-| DbSets remaining in transitional `ApplicationDbContext` | 76 |
+| Entity files owned by `AryamanBMS.Models` | 22 |
+| Dedicated DbContexts in `AryamanBMS.Database` | 12 |
+| DbSets remaining in transitional `ApplicationDbContext` | 74 |
 
 ## Remaining ApplicationDbContext Aggregates
 
@@ -122,10 +122,10 @@ from records that must be saved atomically with it.
 | PF, ESIC, and PT compliance | Monthly snapshots, challans, and documents for each compliance stream |
 | Office assets and letters | Office assets with assignment/history/documents/maintenance/verification, Letters |
 
-Location entities and Company Document Category remain mapped by
-`ApplicationDbContext` as transitional shared references for their still-legacy
-parent aggregates. Their completed moves are therefore retained, but their old
-mapping cannot be removed until those parent aggregates move.
+Location entities remain mapped by `ApplicationDbContext` as transitional
+shared references for their still-legacy parent aggregates. Their completed
+moves are therefore retained, but their old mappings cannot be removed until
+those parent aggregates move.
 
 ## Verification
 
