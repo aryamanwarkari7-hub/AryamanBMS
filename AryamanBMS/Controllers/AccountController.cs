@@ -715,7 +715,7 @@ namespace AryamanBMS.Controllers
             var user = await _userManager.FindByIdAsync(model.UserId);
             if (user == null)
             {
-                // Security best practice: Redirect to login with a vague success message 
+                // Security best practice: Redirect to login with a vague success message
                 // to avoid disclosing user presence to enumeration bots.
                 TempData["Success"] = "Your system security credentials have been updated.";
                 return RedirectToAction(nameof(Login));
@@ -750,8 +750,8 @@ namespace AryamanBMS.Controllers
             return View(model);
         }
 
-
         #region Helpers
+
         private async Task<IActionResult> RedirectByRoleAsync(ApplicationUserModel user)
         {
             var roles = await _userManager.GetRolesAsync(user);
@@ -1153,7 +1153,6 @@ namespace AryamanBMS.Controllers
                 userAgent: Request.Headers.UserAgent.ToString());
         }
 
-        #endregion
+        #endregion Helpers
     }
-
 }
