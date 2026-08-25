@@ -1,5 +1,26 @@
 # AryamanBMS Architecture Refactor Plan
 
+## Accelerated Layering Milestone — Completed
+
+The application now has clear physical project ownership without changing its
+runtime behaviour:
+
+- `AryamanBMS.Models` owns 95 entity files.
+- `AryamanBMS.Database` owns 13 DbContexts, including the central
+  `ApplicationDbContext`.
+- The central `ApplicationDbContext` retains its `AryamanBMS.Data` namespace,
+  74 remaining DbSets, existing EF mappings, and migrations. No schema change
+  was introduced by this move.
+- `AryamanBMS.Repositories` owns 57 repository interfaces and 57 repository
+  implementations.
+- Controllers, Razor views, view models, and Web-only services remain in the
+  Web project by design.
+
+The completed ownership move passed the architecture dependency guard, Debug
+and Release builds, and representative runtime smoke tests. Future work may
+split the central context by complete transactional aggregate; it must not
+separate records that need to be saved atomically.
+
 ## Branch
 
 `refactor/complete-project-layering`
@@ -58,10 +79,12 @@ Location and Country.
 
 ## Current-State Finding
 
-The Web project currently contains most application Models, Controllers,
-Repositories, Services, ApplicationDbContext, and EF mappings.
+The remaining central EF ownership is now in `AryamanBMS.Database`:
+`ApplicationDbContext`, its 74 remaining DbSets, and 95 entity files are no
+longer physically owned by the Web project. Controllers, views, view models,
+and Web-only services remain in the Web project by design.
 
-The refactor will move responsibility—not alter business behaviour.
+The refactor moves responsibility without altering business behaviour.
 
 ## Migration Definition of Done
 
@@ -93,22 +116,23 @@ A module is complete only when:
 - Notices: `NoticeModel` and `NoticeDocumentModel` moved together with their parent/document relationship, repository, and `NoticeDbContext`.
 - User-facing calendar register improvements: authenticated Holiday register and Birthday register added, with calendar links corrected and verified.
 - Architecture guard: `scripts/Test-Architecture.ps1` validates project-reference direction locally and in GitHub Actions.
+- Accelerated ownership move: all remaining entity files were moved to AryamanBMS.Models`; the central `ApplicationDbContext` was moved to `AryamanBMS.Database` without namespace, mapping, or migration changes; and all compatible repository contracts and implementations were moved to `AryamanBMS.Repositories`.
 
 ## Current Layering Inventory
 
 As of 25-Aug-2026:
 
-| Item | Count |
-| --- | ---: |
-| Entity files owned by `AryamanBMS.Models` | 22 |
-| Dedicated DbContexts in `AryamanBMS.Database` | 12 |
-| DbSets remaining in transitional `ApplicationDbContext` | 74 |
+- `AryamanBMS.Models`: 95 entity files
+- `AryamanBMS.Database`: 13 DbContexts, including the central `ApplicationDbContext`
+- `AryamanBMS.Repositories`: 57 repository interfaces and 57 implementations
+- Central `ApplicationDbContext`: 74 DbSets retained for future aggregate-based context splitting
 
-## Remaining ApplicationDbContext Aggregates
+## Remaining Central ApplicationDbContext Aggregates
 
-The remaining DbSets are grouped by transactional boundary. Future work must
-move a complete aggregate into one dedicated context; do not split an entity
-from records that must be saved atomically with it.
+Location entities remain mapped by the central `ApplicationDbContext` as shared
+references for their parent aggregates. Their entity ownership is already in
+Models; a later context split can remove the central mappings when the parent
+aggregates move.
 
 | Aggregate | Remaining ownership |
 | --- | --- |
