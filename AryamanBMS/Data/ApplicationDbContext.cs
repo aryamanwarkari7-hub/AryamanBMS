@@ -63,11 +63,10 @@ namespace AryamanBMS.Data
 
         public DbSet<EmployeeSalaryStructureModel> EmployeeSalaryStructures { get; set; }
         public DbSet<SalaryImportBatchModel> SalaryImportBatches { get; set; }
-        
+
         public DbSet<SalaryAdvanceModel> SalaryAdvances { get; set; }
         public DbSet<SalaryPaymentBatchModel> SalaryPaymentBatches { get; set; }
         public DbSet<FullAndFinalSettlementModel> FullAndFinalSettlements { get; set; }
-        
 
         // =============================
         // LETTERS
@@ -106,7 +105,6 @@ namespace AryamanBMS.Data
         // COMPANY
         // =============================
 
-        
         public DbSet<CompanyDocumentCategoryModel> CompanyDocumentCategories { get; set; }
         public DbSet<CompanyDocumentModel> CompanyDocuments { get; set; }
 
@@ -192,6 +190,7 @@ namespace AryamanBMS.Data
         // GST
         // =============================
         public DbSet<GstMonthlySnapshotModel> GstMonthlySnapshots { get; set; }
+
         public DbSet<GstLutDocumentModel> GstLutDocuments { get; set; }
         public DbSet<GstReturnModel> GstReturns { get; set; }
         public DbSet<GstChallanModel> GstChallans { get; set; }
@@ -242,11 +241,6 @@ namespace AryamanBMS.Data
         public DbSet<NoticeDocumentModel> NoticeDocuments { get; set; }
 
         public DbSet<FinancialSequenceModel> FinancialSequences { get; set; }
-
-        // =============================
-        // NOTIFICATIONS
-        // =============================
-        public DbSet<NotificationModel> TableNotification { get; set; }
 
         // =============================
         // CALENDAR
@@ -485,7 +479,6 @@ namespace AryamanBMS.Data
             modelBuilder.Entity<SalaryImportBatchModel>()
                 .ToTable("TableSalaryImportBatch");
 
-           
             modelBuilder.Entity<SalaryAdvanceModel>()
                 .ToTable("TableSalaryAdvance");
 
@@ -514,8 +507,6 @@ namespace AryamanBMS.Data
                 .WithMany()
                 .HasForeignKey(x => x.EmployeeId)
                 .OnDelete(DeleteBehavior.Restrict);
-
-            
 
             modelBuilder.Entity<EmployeeSalaryStructureModel>()
                 .Property(x => x.ActualSalary)
@@ -820,8 +811,6 @@ namespace AryamanBMS.Data
                 .HasForeignKey(x => x.InvoiceId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            
-
             modelBuilder.Entity<CompanyDocumentCategoryModel>().ToTable("tablecompanydocumentcategory");
             modelBuilder.Entity<CompanyDocumentCategoryModel>()
                 .HasIndex(x => x.CategoryName)
@@ -1109,8 +1098,6 @@ namespace AryamanBMS.Data
                 .HasIndex(x => new { x.Month, x.Year })
                 .IsUnique();
 
-            
-
             modelBuilder.Entity<GstLutDocumentModel>(entity =>
             {
                 entity.ToTable("TableGstLutDocument");
@@ -1118,8 +1105,6 @@ namespace AryamanBMS.Data
                 entity.HasKey(x => x.GstLutDocumentId);
 
                 entity.HasIndex(x => new { x.GstConfigurationId, x.IsActive });
-
-                
             });
 
             modelBuilder.Entity<GstReturnModel>().ToTable("tablegstreturn");
@@ -1149,8 +1134,6 @@ namespace AryamanBMS.Data
                 .WithMany(x => x.Documents)
                 .HasForeignKey(x => x.SnapshotId)
                 .OnDelete(DeleteBehavior.Cascade);
-
-            
 
             modelBuilder.Entity<OfficeAssetModel>().ToTable("tableofficeasset");
             modelBuilder.Entity<OfficeAssetModel>()
@@ -1296,50 +1279,6 @@ namespace AryamanBMS.Data
                 .HasForeignKey(x => x.NoticeId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Notification
-            modelBuilder.Entity<NotificationModel>(entity =>
-            {
-                entity.ToTable("TableNotification");
-
-                entity.HasKey(x => x.Id);
-
-                entity.Property(x => x.Title)
-                    .HasMaxLength(150)
-                    .IsRequired();
-
-                entity.Property(x => x.Message)
-                    .HasMaxLength(500)
-                    .IsRequired();
-
-                entity.Property(x => x.NotificationType)
-                    .HasMaxLength(50)
-                    .IsRequired();
-
-                entity.Property(x => x.ReferenceType)
-                    .HasMaxLength(100);
-
-                entity.Property(x => x.ActionUrl)
-                    .HasMaxLength(500);
-
-                entity.Property(x => x.IsRead)
-                    .HasDefaultValue(false);
-
-                entity.Property(x => x.CreatedOn)
-                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                entity.HasOne(x => x.User)
-                    .WithMany()
-                    .HasForeignKey(x => x.UserId)
-                    .OnDelete(DeleteBehavior.Cascade);
-
-                entity.HasIndex(x => new
-                {
-                    x.UserId,
-                    x.IsRead,
-                    x.CreatedOn
-                });
-            });
-
             //Calendar Events
             modelBuilder.Entity<CalendarManualEventModel>()
                 .ToTable("TableCalendarManualEvent");
@@ -1404,7 +1343,6 @@ namespace AryamanBMS.Data
             });
 
             // Login History
-           
         }
     }
 }

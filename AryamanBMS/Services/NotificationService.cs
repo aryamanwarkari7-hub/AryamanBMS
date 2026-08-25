@@ -1,22 +1,26 @@
-using AryamanBMS.Data;
 using AryamanBMS.Hubs;
 using AryamanBMS.Models;
+using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
 
 namespace AryamanBMS.Services
 {
     public class NotificationService : INotificationService
     {
-        private readonly ApplicationDbContext _context;
-        private readonly IHubContext<NotificationHub> _notificationHub;
+        private readonly INotificationRepository
+            _notificationRepository;
+
+        private readonly IHubContext<NotificationHub>
+            _notificationHub;
 
         public NotificationService(
-            ApplicationDbContext context,
+            INotificationRepository notificationRepository,
             IHubContext<NotificationHub> notificationHub)
         {
-            _context = context;
+            _notificationRepository =
+                notificationRepository;
+
             _notificationHub = notificationHub;
         }
 
@@ -77,26 +81,18 @@ namespace AryamanBMS.Services
                 CreatedOn = DateTime.Now
             };
 
-            _context.TableNotification.Add(notification);
+            await _notificationRepository.AddAsync(notification);
 
-            await _context.SaveChangesAsync();
+            bool realtimeNotificationsEnabled =
+                await _notificationRepository
+                    .IsRealtimeNotificationsEnabledAsync(userId);
 
-            var notificationPreference =
-                await _context.Users
-                    .AsNoTracking()
-                    .Where(x => x.Id == userId)
-                    .Select(x => new
-                    {
-                        x.EnableRealtimeNotifications
-                    })
-                    .FirstOrDefaultAsync();
-
-            if (notificationPreference?.EnableRealtimeNotifications != true)
+            if (!realtimeNotificationsEnabled)
             {
                 return;
             }
 
-            var unreadCount = await GetUnreadCountAsync(userId);
+            int unreadCount = await GetUnreadCountAsync(userId);
 
             await _notificationHub.Clients
                 .User(userId)
@@ -116,9 +112,10 @@ namespace AryamanBMS.Services
                     });
         }
 
-        public async Task<List<NotificationModel>> GetRecentAsync(
-            string userId,
-            int count = 10)
+        public async Task<List<NotificationModel>>
+            GetRecentAsync(
+                string userId,
+                int count = 10)
         {
             if (count <= 0)
             {
@@ -130,96 +127,45 @@ namespace AryamanBMS.Services
                 count = 50;
             }
 
-            return await _context.TableNotification
-                .AsNoTracking()
-                .Where(x => x.UserId == userId)
-                .OrderByDescending(x => x.CreatedOn)
-                .Take(count)
-                .ToListAsync();
+            return await _notificationRepository
+                .GetRecentAsync(userId, count);
         }
 
-        public async Task<List<NotificationModel>> GetAllAsync(
-            string userId)
+        public async Task<List<NotificationModel>>
+            GetAllAsync(string userId)
         {
-            return await _context.TableNotification
-                .AsNoTracking()
-                .Where(x => x.UserId == userId)
-                .OrderByDescending(x => x.CreatedOn)
-                .ToListAsync();
+            return await _notificationRepository
+                .GetAllAsync(userId);
         }
 
         public async Task<NotificationModel?> GetByIdAsync(
             int notificationId,
             string userId)
         {
-            return await _context.TableNotification
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x =>
-                    x.Id == notificationId &&
-                    x.UserId == userId);
+            return await _notificationRepository
+                .GetByIdAsync(notificationId, userId);
         }
 
-        public async Task<int> GetUnreadCountAsync(string userId)
+        public async Task<int> GetUnreadCountAsync(
+            string userId)
         {
-            return await _context.TableNotification
-                .AsNoTracking()
-                .CountAsync(x =>
-                    x.UserId == userId &&
-                    !x.IsRead);
+            return await _notificationRepository
+                .GetUnreadCountAsync(userId);
         }
 
         public async Task<bool> MarkAsReadAsync(
             int notificationId,
             string userId)
         {
-            var notification =
-                await _context.TableNotification
-                    .FirstOrDefaultAsync(x =>
-                        x.Id == notificationId &&
-                        x.UserId == userId);
-
-            if (notification == null)
-            {
-                return false;
-            }
-
-            if (!notification.IsRead)
-            {
-                notification.IsRead = true;
-                notification.ReadOn = DateTime.Now;
-
-                await _context.SaveChangesAsync();
-            }
-
-            return true;
+            return await _notificationRepository
+                .MarkAsReadAsync(notificationId, userId);
         }
 
         public async Task<int> MarkAllAsReadAsync(
             string userId)
         {
-            var notifications =
-                await _context.TableNotification
-                    .Where(x =>
-                        x.UserId == userId &&
-                        !x.IsRead)
-                    .ToListAsync();
-
-            if (notifications.Count == 0)
-            {
-                return 0;
-            }
-
-            var now = DateTime.Now;
-
-            foreach (var notification in notifications)
-            {
-                notification.IsRead = true;
-                notification.ReadOn = now;
-            }
-
-            await _context.SaveChangesAsync();
-
-            return notifications.Count;
+            return await _notificationRepository
+                .MarkAllAsReadAsync(userId);
         }
 
         public async Task<bool> ExistsAsync(
@@ -228,13 +174,50 @@ namespace AryamanBMS.Services
             string referenceType,
             int referenceId)
         {
-            return await _context.TableNotification
-                .AsNoTracking()
-                .AnyAsync(x =>
-                    x.UserId == userId &&
-                    x.NotificationType == notificationType &&
-                    x.ReferenceType == referenceType &&
-                    x.ReferenceId == referenceId);
+            return await _notificationRepository
+                .ExistsAsync(
+                    userId,
+                    notificationType,
+                    referenceType,
+                    referenceId);
+        }
+
+        public async Task<(List<NotificationModel> Records, int TotalRecords)>
+    SearchForUserAsync(
+        string userId,
+        string? searchText,
+        string? notificationType,
+        string? readStatus,
+        int page,
+        int pageSize)
+        {
+            return await _notificationRepository.SearchForUserAsync(
+                userId,
+                searchText,
+                notificationType,
+                readStatus,
+                page,
+                pageSize);
+        }
+
+        public async Task<List<string>> GetNotificationTypesAsync(
+            string? userId = null)
+        {
+            return await _notificationRepository
+                .GetNotificationTypesAsync(userId);
+        }
+
+        public async Task<List<NotificationModel>> SearchAuditAsync(
+            string? searchText,
+            string? notificationType,
+            string? readStatus,
+            int maximumRecords = 300)
+        {
+            return await _notificationRepository.SearchAuditAsync(
+                searchText,
+                notificationType,
+                readStatus,
+                maximumRecords);
         }
     }
 }

@@ -1,4 +1,4 @@
-using AryamanBMS.Data;
+
 using AryamanBMS.Extensions;
 using AryamanBMS.Models;
 using AryamanBMS.Services.Interfaces;
@@ -16,16 +16,16 @@ namespace AryamanBMS.Controllers
 
         private readonly INotificationService _notificationService;
         private readonly UserManager<ApplicationUserModel> _userManager;
-        private readonly ApplicationDbContext _context;
+
 
         public NotificationController(
             INotificationService notificationService,
-            UserManager<ApplicationUserModel> userManager,
-            ApplicationDbContext context)
+            UserManager<ApplicationUserModel> userManager
+           )
         {
             _notificationService = notificationService;
             _userManager = userManager;
-            _context = context;
+
         }
 
         [HttpGet]
@@ -36,6 +36,7 @@ namespace AryamanBMS.Controllers
             int page = 1)
         {
             const int pageSize = 15;
+
             var user = await _userManager.GetUserAsync(User);
 
             if (user == null)
@@ -43,58 +44,33 @@ namespace AryamanBMS.Controllers
                 return Unauthorized();
             }
 
-            var query = _context.TableNotification
-                .AsNoTracking()
-                .Where(x => x.UserId == user.Id);
+            var result = await _notificationService
+                .SearchForUserAsync(
+                    user.Id,
+                    searchText,
+                    notificationType,
+                    readStatus,
+                    page,
+                    pageSize);
 
-            if (!string.IsNullOrWhiteSpace(searchText))
-            {
-                string keyword = searchText.Trim();
-                query = query.Where(x =>
-                    x.Title.Contains(keyword) ||
-                    x.Message.Contains(keyword));
-            }
+            int totalPages = result.TotalRecords == 0
+                ? 1
+                : (int)Math.Ceiling(
+                    result.TotalRecords / (double)pageSize);
 
-            if (!string.IsNullOrWhiteSpace(notificationType))
-            {
-                query = query.Where(x => x.NotificationType == notificationType);
-            }
-
-            if (readStatus == "Unread")
-            {
-                query = query.Where(x => !x.IsRead);
-            }
-            else if (readStatus == "Read")
-            {
-                query = query.Where(x => x.IsRead);
-            }
-
-            query = query
-                .OrderByDescending(x => x.CreatedOn)
-                .ThenByDescending(x => x.Id);
-
-            var routeValues = new Dictionary<string, string>();
-            if (!string.IsNullOrWhiteSpace(searchText)) routeValues["searchText"] = searchText.Trim();
-            if (!string.IsNullOrWhiteSpace(notificationType)) routeValues["notificationType"] = notificationType;
-            if (!string.IsNullOrWhiteSpace(readStatus)) routeValues["readStatus"] = readStatus;
-
-            var paged = await query.ToPagedListAsync(page, pageSize, routeValues);
+            page = Math.Clamp(page, 1, totalPages);
 
             ViewBag.SearchText = searchText;
             ViewBag.NotificationType = notificationType;
             ViewBag.ReadStatus = readStatus;
-            ViewBag.Page = paged.Pagination.CurrentPage;
-            ViewBag.PageSize = paged.Pagination.PageSize;
-            ViewBag.TotalRecords = paged.Pagination.TotalRecords;
-            ViewBag.NotificationTypes = await _context.TableNotification
-                .AsNoTracking()
-                .Where(x => x.UserId == user.Id)
-                .Select(x => x.NotificationType)
-                .Distinct()
-                .OrderBy(x => x)
-                .ToListAsync();
+            ViewBag.Page = page;
+            ViewBag.PageSize = pageSize;
+            ViewBag.TotalRecords = result.TotalRecords;
+            ViewBag.NotificationTypes =
+                await _notificationService
+                    .GetNotificationTypesAsync(user.Id);
 
-            return View(paged.Items);
+            return View(result.Records);
         }
 
         [HttpGet]
@@ -197,65 +173,26 @@ namespace AryamanBMS.Controllers
         [HttpGet]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Audit(
-            string? searchText,
-            string? notificationType,
-            string? readStatus)
+        string? searchText,
+        string? notificationType,
+        string? readStatus)
         {
-            var query =
-                _context.TableNotification
-                    .AsNoTracking()
-                    .Include(x => x.User)
-                    .AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(searchText))
-            {
-                var keyword = searchText.Trim();
-
-                query = query.Where(x =>
-                    x.Title.Contains(keyword) ||
-                    x.Message.Contains(keyword) ||
-                    x.UserId.Contains(keyword) ||
-                    (x.User != null &&
-                     ((x.User.FullName ?? string.Empty).Contains(keyword) ||
-                      (x.User.Email ?? string.Empty).Contains(keyword))));
-            }
-
-            if (!string.IsNullOrWhiteSpace(notificationType))
-            {
-                query = query.Where(x =>
-                    x.NotificationType == notificationType);
-            }
-
-            if (readStatus == "Unread")
-            {
-                query = query.Where(x => !x.IsRead);
-            }
-            else if (readStatus == "Read")
-            {
-                query = query.Where(x => x.IsRead);
-            }
-
             ViewBag.SearchText = searchText;
             ViewBag.NotificationType = notificationType;
             ViewBag.ReadStatus = readStatus;
 
             ViewBag.NotificationTypes =
-                await _context.TableNotification
-                    .AsNoTracking()
-                    .Select(x => x.NotificationType)
-                    .Distinct()
-                    .OrderBy(x => x)
-                    .ToListAsync();
+                await _notificationService
+                    .GetNotificationTypesAsync();
 
-            var notifications =
-                await query
-                    .OrderByDescending(x => x.CreatedOn)
-                    .Take(300)
-                    .ToListAsync();
+            var notifications = await _notificationService
+                .SearchAuditAsync(
+                    searchText,
+                    notificationType,
+                    readStatus);
 
             return View(notifications);
         }
-
         private IActionResult RedirectToLocal(string? returnUrl)
         {
             if (!string.IsNullOrWhiteSpace(returnUrl) &&

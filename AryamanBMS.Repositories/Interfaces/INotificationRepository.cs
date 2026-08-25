@@ -1,32 +1,36 @@
-﻿using System.Runtime.CompilerServices;
 using AryamanBMS.Models;
 
-namespace AryamanBMS.Services.Interfaces
+namespace AryamanBMS.Repositories.Interfaces
 {
-    public interface INotificationService
+    public interface INotificationRepository
     {
-        Task CreateAsync(
-            string userId,
-            string title,
-            string message,
-            string notificationType,
-            string? referenceType = null,
-            int? referenceId = null,
-            string? actionUrl = null);
+        Task AddAsync(NotificationModel notification);
 
-        Task<List<NotificationModel>> GetRecentAsync(string userId, int count = 10);
+        Task<bool> IsRealtimeNotificationsEnabledAsync(string userId);
+
+        Task<List<NotificationModel>> GetRecentAsync(
+            string userId,
+            int count);
 
         Task<List<NotificationModel>> GetAllAsync(string userId);
 
-        Task<NotificationModel?> GetByIdAsync(int notificationId, string userId);
+        Task<NotificationModel?> GetByIdAsync(
+            int notificationId,
+            string userId);
 
         Task<int> GetUnreadCountAsync(string userId);
 
-        Task<bool> MarkAsReadAsync(int notificationId, string userId);
+        Task<bool> MarkAsReadAsync(
+            int notificationId,
+            string userId);
 
         Task<int> MarkAllAsReadAsync(string userId);
 
-        Task<bool> ExistsAsync(string userId, string notificationType, string referenceType, int referenceId);
+        Task<bool> ExistsAsync(
+            string userId,
+            string notificationType,
+            string referenceType,
+            int referenceId);
 
         Task<(List<NotificationModel> Records, int TotalRecords)>
             SearchForUserAsync(

@@ -96,6 +96,13 @@ builder.Services.AddDbContext<LoginHistoryDbContext>(options =>
         ServerVersion.AutoDetect(connectionString));
 });
 
+builder.Services.AddDbContext<NotificationDbContext>(options =>
+{
+    options.UseMySql(
+        connectionString,
+        ServerVersion.AutoDetect(connectionString));
+});
+
 // Attendance working-day configuration
 builder.Services.Configure<WorkingDayOptions>(
     builder.Configuration.GetSection("Attendance"));
@@ -192,6 +199,9 @@ builder.Services.AddScoped<ILoginHistoryRepository, LoginHistoryRepository>();
 
 // Password Change History
 builder.Services.AddScoped<IPasswordChangeLogRepository,PasswordChangeLogRepository>();
+
+// Notification repositories
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 
 // Accounts, documents, billing, compliance, and asset repositories
 builder.Services.AddScoped<IClientRepository, ClientRepository>();
