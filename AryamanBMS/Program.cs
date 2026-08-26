@@ -244,6 +244,7 @@ builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
 builder.Services.AddScoped<IPaymentReceiptRepository, PaymentRepository>();
 builder.Services.AddScoped<IExpenseCategoryRepository, ExpenseCategoryRepository>();
 builder.Services.AddScoped<ICreditNoteRepository, CreditNoteRepository>();
+builder.Services.AddScoped<IDebitNoteRepository, DebitNoteRepository>();
 builder.Services.AddScoped<IExpenseCategoryService, ExpenseCategoryService>();
 builder.Services.AddScoped<IExpenseVoucherRepository, ExpenseVoucherRepository>();
 builder.Services.AddScoped<IExpenseVoucherTrackerService, ExpenseVoucherTrackerService>();
@@ -252,6 +253,8 @@ builder.Services.AddScoped<IExpenseVoucherTransitionService, ExpenseVoucherTrans
 builder.Services.AddScoped<IExpenseVoucherDocumentService, ExpenseVoucherDocumentService>();
 builder.Services.AddScoped<ICreditNoteQueryService, CreditNoteQueryService>();
 builder.Services.AddScoped<ICreditNoteService, CreditNoteService>();
+builder.Services.AddScoped<IDebitNoteService, DebitNoteService>();
+builder.Services.AddScoped<IDebitNoteQueryService, DebitNoteQueryService>();
 builder.Services.AddScoped<IVendorRepository, VendorRepository>();
 builder.Services.AddScoped<IGstSnapshotRepository, GstSnapshotRepository>();
 builder.Services.AddScoped<IGstConfigurationRepository, GstConfigurationRepository>();

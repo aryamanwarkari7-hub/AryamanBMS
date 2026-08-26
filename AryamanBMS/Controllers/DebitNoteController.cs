@@ -1,8 +1,7 @@
-using AryamanBMS.Data;
+using AryamanBMS.Business.Interfaces;
 using AryamanBMS.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace AryamanBMS.Controllers
@@ -12,76 +11,24 @@ namespace AryamanBMS.Controllers
     {
         #region Actions
 
-        private readonly ApplicationDbContext _context;
+        private readonly IDebitNoteQueryService _queryService;
+        private readonly IDebitNoteService _debitNoteService;
 
-        public DebitNoteController(ApplicationDbContext context)
+        public DebitNoteController(IDebitNoteQueryService queryService, IDebitNoteService debitNoteService)
         {
-            _context = context;
+            _queryService = queryService;
+            _debitNoteService = debitNoteService;
         }
 
         public async Task<IActionResult> Index(
-    string? search,
-    string sortBy = "CreatedOn",
-    string sortOrder = "desc")
+            string? search,
+            string sortBy = "CreatedOn",
+            string sortOrder = "desc")
         {
-            var query =
-                _context.DebitNotes
-                    .AsNoTracking()
-                    .Include(x => x.OriginalInvoice)
-                        .ThenInclude(x => x!.Client)
-                    .AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                string keyword = search.Trim().ToLower();
-
-                query = query.Where(x =>
-                    x.DebitNoteNo.ToLower().Contains(keyword) ||
-                    x.Reason.ToLower().Contains(keyword) ||
-                    (x.OriginalInvoice != null &&
-                        x.OriginalInvoice.InvoiceNo.ToLower().Contains(keyword)) ||
-                    (x.OriginalInvoice != null &&
-                        x.OriginalInvoice.Client != null &&
-                        x.OriginalInvoice.Client.ClientName.ToLower().Contains(keyword)));
-            }
-
-            bool desc =
-                string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
-
-            query = sortBy switch
-            {
-                "DebitNoteNo" => desc
-                    ? query.OrderByDescending(x => x.DebitNoteNo)
-                    : query.OrderBy(x => x.DebitNoteNo),
-
-                "Invoice" => desc
-                    ? query.OrderByDescending(x => x.OriginalInvoice!.InvoiceNo)
-                    : query.OrderBy(x => x.OriginalInvoice!.InvoiceNo),
-
-                "Client" => desc
-                    ? query.OrderByDescending(x => x.OriginalInvoice!.Client!.ClientName)
-                    : query.OrderBy(x => x.OriginalInvoice!.Client!.ClientName),
-
-                "TotalDebit" => desc
-                    ? query.OrderByDescending(x => x.TotalDebit)
-                    : query.OrderBy(x => x.TotalDebit),
-
-                "ApprovedOn" => desc
-                    ? query.OrderByDescending(x => x.ApprovedOn)
-                    : query.OrderBy(x => x.ApprovedOn),
-
-                _ => desc
-                    ? query.OrderByDescending(x => x.CreatedOn)
-                    : query.OrderBy(x => x.CreatedOn)
-            };
-
-            var notes =
-                await query.ToListAsync();
-
+            var notes = await _queryService.GetAllAsync(search, sortBy, sortOrder);
             ViewBag.Search = search;
             ViewBag.SortBy = sortBy;
             ViewBag.SortOrder = sortOrder;
-
             return View(notes);
         }
 
@@ -100,8 +47,11 @@ namespace AryamanBMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(DebitNoteModel model)
         {
-            Normalize(model);
-            await ValidateDebitNoteAsync(model);
+            var validation = await _debitNoteService.ValidateAsync(model);
+            foreach (var error in validation.Errors)
+            {
+                ModelState.AddModelError(error.Key, error.Value);
+            }
 
             if (!ModelState.IsValid)
             {
@@ -109,181 +59,14 @@ namespace AryamanBMS.Controllers
                 return View(model);
             }
 
-            model.DebitNoteNo = await GenerateDebitNoteNoAsync();
-            model.TotalDebit =
-                model.AdditionalTaxableValue +
-                model.CGST +
-                model.SGST +
-                model.IGST;
-
-            model.CreatedByUserId =
-                User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            model.ApprovedByUserId = model.CreatedByUserId;
-            model.ApprovedOn = DateTime.Now;
-            model.CreatedOn = DateTime.Now;
-
-            var invoice =
-                await _context.Invoices
-                    .FirstAsync(x =>
-                        x.InvoiceId == model.OriginalInvoiceId);
-
-            ApplyDebitToInvoice(
-                invoice,
-                model.TotalDebit,
-                model.DebitNoteNo);
-
-            await _context.DebitNotes.AddAsync(model);
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] =
-                "Debit note created successfully.";
-
+            await _debitNoteService.CreateAsync(model, User.FindFirstValue(ClaimTypes.NameIdentifier));
+            TempData["Success"] = "Debit note created successfully.";
             return RedirectToAction(nameof(Index));
         }
 
         private async Task LoadInvoicesAsync()
         {
-            ViewBag.Invoices =
-                await _context.Invoices
-                    .AsNoTracking()
-                    .Include(x => x.Client)
-                    .Where(x =>
-                        !x.IsDeleted &&
-                        x.InvoiceStatus == "Issued")
-                    .OrderByDescending(x => x.InvoiceDate)
-                    .ToListAsync();
-        }
-
-        private static void Normalize(DebitNoteModel model)
-        {
-            model.Reason =
-                model.Reason?.Trim() ?? string.Empty;
-
-            model.AdditionalTaxableValue =
-                Math.Round(model.AdditionalTaxableValue, 2);
-
-            model.CGST =
-                Math.Round(model.CGST, 2);
-
-            model.SGST =
-                Math.Round(model.SGST, 2);
-
-            model.IGST =
-                Math.Round(model.IGST, 2);
-        }
-
-        private async Task ValidateDebitNoteAsync(DebitNoteModel model)
-        {
-            var invoice =
-                await _context.Invoices
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(x =>
-                        x.InvoiceId == model.OriginalInvoiceId &&
-                        !x.IsDeleted &&
-                        x.InvoiceStatus == "Issued");
-
-            if (invoice == null)
-            {
-                ModelState.AddModelError(
-                    nameof(model.OriginalInvoiceId),
-                    "Select a valid issued invoice.");
-
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(model.Reason))
-            {
-                ModelState.AddModelError(
-                    nameof(model.Reason),
-                    "Reason is required.");
-            }
-
-            if (model.AdditionalTaxableValue < 0 ||
-                model.CGST < 0 ||
-                model.SGST < 0 ||
-                model.IGST < 0)
-            {
-                ModelState.AddModelError(
-                    nameof(model.TotalDebit),
-                    "Debit note values cannot be negative.");
-            }
-
-            decimal totalDebit =
-                model.AdditionalTaxableValue +
-                model.CGST +
-                model.SGST +
-                model.IGST;
-
-            if (totalDebit <= 0)
-            {
-                ModelState.AddModelError(
-                    nameof(model.TotalDebit),
-                    "Debit note total must be greater than zero.");
-            }
-        }
-
-        private async Task<string> GenerateDebitNoteNoAsync()
-        {
-            int count =
-                await _context.DebitNotes.CountAsync();
-
-            return $"DBN-{DateTime.Now:yyMM}-{count + 1:0000}";
-        }
-
-        private static void ApplyDebitToInvoice(
-            InvoiceModel invoice,
-            decimal debitAmount,
-            string debitNoteNo)
-        {
-            invoice.GrandTotal =
-                Math.Round(
-                    invoice.GrandTotal + debitAmount,
-                    2);
-
-            invoice.BalanceAmount =
-                Math.Max(
-                    0,
-                    Math.Round(
-                        invoice.GrandTotal - invoice.PaidAmount,
-                        2));
-
-            RefreshPaymentStatus(invoice);
-
-            string note =
-                $"Debit note {debitNoteNo} applied: {debitAmount:N2}.";
-
-            invoice.Remarks =
-                string.IsNullOrWhiteSpace(invoice.Remarks)
-                    ? note
-                    : $"{invoice.Remarks} | {note}";
-        }
-
-        private static void RefreshPaymentStatus(
-            InvoiceModel invoice)
-        {
-            if (invoice.InvoiceStatus == "Cancelled")
-            {
-                return;
-            }
-
-            if (invoice.BalanceAmount <= 0)
-            {
-                invoice.PaymentStatus = "Paid";
-            }
-            else if (invoice.DueDate.HasValue &&
-                     invoice.DueDate.Value.Date < DateTime.Today)
-            {
-                invoice.PaymentStatus = "Overdue";
-            }
-            else if (invoice.PaidAmount > 0)
-            {
-                invoice.PaymentStatus = "Partially Paid";
-            }
-            else
-            {
-                invoice.PaymentStatus = "Unpaid";
-            }
+            ViewBag.Invoices = await _queryService.GetIssuedInvoicesAsync();
         }
         #endregion
     }
