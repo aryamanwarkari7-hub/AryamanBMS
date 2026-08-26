@@ -73,6 +73,8 @@ Refactor these controller workflows into Business services in the listed order.
 
 **Total remaining workflow subtopics: 34.**
 
+**Next workflow: Invoice.**
+
 The central `ApplicationDbContext` can be split later only by complete
 transactional aggregate. It is not a bulk refactor task.
 
