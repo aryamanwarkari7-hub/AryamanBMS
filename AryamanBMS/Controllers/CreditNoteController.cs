@@ -15,11 +15,13 @@ namespace AryamanBMS.Controllers
 
         private readonly ApplicationDbContext _context;
         private readonly ICreditNoteQueryService _queryService;
+        private readonly ICreditNoteService _creditNoteService;
 
-        public CreditNoteController(ApplicationDbContext context, ICreditNoteQueryService queryService)
+        public CreditNoteController(ApplicationDbContext context, ICreditNoteQueryService queryService, ICreditNoteService creditNoteService)
         {
             _context = context;
             _queryService = queryService;
+            _creditNoteService = creditNoteService;
         }
 
         public async Task<IActionResult> Index(
@@ -49,45 +51,11 @@ namespace AryamanBMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CreditNoteModel model)
         {
-            Normalize(model);
-            await ValidateCreditNoteAsync(model);
-
-            if (!ModelState.IsValid)
-            {
-                await LoadInvoicesAsync();
-                return View(model);
-            }
-
-            model.CreditNoteNo = await GenerateCreditNoteNoAsync();
-            model.TotalCredit =
-                model.TaxableValueReduction +
-                model.CGSTAdjustment +
-                model.SGSTAdjustment +
-                model.IGSTAdjustment;
-
-            model.CreatedByUserId =
-                User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            model.ApprovedByUserId = model.CreatedByUserId;
-            model.ApprovedOn = DateTime.Now;
-            model.CreatedOn = DateTime.Now;
-
-            var invoice =
-                await _context.Invoices
-                    .FirstAsync(x =>
-                        x.InvoiceId == model.OriginalInvoiceId);
-
-            ApplyCreditToInvoice(
-                invoice,
-                model.TotalCredit,
-                model.CreditNoteNo);
-
-            await _context.CreditNotes.AddAsync(model);
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] =
-                "Credit note created successfully.";
-
+            var validation = await _creditNoteService.ValidateAsync(model);
+            foreach (var error in validation.Errors) ModelState.AddModelError(error.Key, error.Value);
+            if (!ModelState.IsValid) { await LoadInvoicesAsync(); return View(model); }
+            await _creditNoteService.CreateAsync(model, User.FindFirstValue(ClaimTypes.NameIdentifier));
+            TempData["Success"] = "Credit note created successfully.";
             return RedirectToAction(nameof(Index));
         }
 

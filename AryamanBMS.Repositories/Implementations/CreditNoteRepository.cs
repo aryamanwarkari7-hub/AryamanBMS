@@ -32,4 +32,13 @@ public class CreditNoteRepository : ICreditNoteRepository
             .OrderByDescending(x => x.InvoiceDate)
             .ToListAsync();
     }
+
+    public Task<InvoiceModel?> GetIssuedInvoiceAsync(int invoiceId) => _context.Invoices.FirstOrDefaultAsync(x => x.InvoiceId == invoiceId && !x.IsDeleted && x.InvoiceStatus == "Issued");
+
+    public async Task CreateWithInvoiceAdjustmentAsync(CreditNoteModel note, InvoiceModel invoice)
+    {
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+        try { int count = await _context.CreditNotes.CountAsync(); note.CreditNoteNo = $"CRN-{DateTime.Now:yyMM}-{count + 1:0000}"; await _context.CreditNotes.AddAsync(note); await _context.SaveChangesAsync(); await transaction.CommitAsync(); }
+        catch { await transaction.RollbackAsync(); throw; }
+    }
 }
