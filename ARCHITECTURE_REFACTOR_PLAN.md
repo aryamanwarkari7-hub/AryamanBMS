@@ -54,24 +54,24 @@ queries, persistence, and reusable contracts.
 - Expense Category
 - Expense Voucher: read/export selection, create, edit, transitions,
   documents, and repository-backed lookups
-- Credit Note: list/query flow and transactional creation with original-invoice
-  balance and payment-status adjustment
+- Credit Note: list/query flow, transactional creation, and original-invoice
+  balance/payment-status adjustment
 
 ## Remaining Work
 
-Refactor the remaining controller workflows into Business services, in this
-order:
+Refactor these controller workflows into Business services in the listed order.
 
-1. Finance: Invoice, Credit/Debit Note, Advance Receipt, Billing Milestone,
-   Vendor Payment, Office Asset.
-2. CRM: Client, Client Communication, Proposal, Proposal Template,
-   Purchase Order.
-3. Projects: Project, members, tasks, timeline, flow, meetings, risks,
-   communications.
-4. HR and payroll: Employee, Attendance, Leave, Comp-off, Salary, advances,
-   payments, and full-and-final settlement.
-5. Compliance and platform: GST operational flows, PF, ESIC, PT, Account,
-   User, Dashboard, Letters.
+| Priority | Module | Remaining subtopics | Count |
+| ---: | --- | --- | ---: |
+| 1 | Finance | Invoice; Debit Note; Advance Receipt; Billing Milestone; Vendor Payment; Office Asset | 6 |
+| 2 | CRM | Client; Client Communication; Proposal; Proposal Template; Purchase Order | 5 |
+| 3 | Projects | Project; Project Members; Project Tasks; Timeline; Flow; Meetings; Risks; Communications | 8 |
+| 4 | HR and payroll | Employee; Attendance; Leave; Comp-off; Salary; Salary Advance; Salary Payment; Full and Final Settlement | 8 |
+| 5 | Compliance and platform | GST operations; PF; ESIC; PT; Account; User; Dashboard; Letters | 8 |
+
+**Total remaining workflow subtopics: 35.**
+
+Credit Note is complete and is deliberately excluded from the Finance count.
 
 The central `ApplicationDbContext` can be split later only by complete
 transactional aggregate. It is not a bulk refactor task.
