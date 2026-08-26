@@ -20,6 +20,7 @@ namespace AryamanBMS.Controllers
         private readonly IExpenseVoucherRepository _voucherRepository;
         private readonly IExpenseVoucherTrackerService _voucherTrackerService;
         private readonly IExpenseVoucherCreateService _voucherCreateService;
+        private readonly IExpenseVoucherTransitionService _voucherTransitionService;
         private readonly IExpenseCategoryRepository _categoryRepository;
         private readonly IFileStorageService _fileStorageService;
         private readonly UserManager<ApplicationUserModel> _userManager;
@@ -34,6 +35,7 @@ namespace AryamanBMS.Controllers
            IExpenseVoucherRepository voucherRepository,
            IExpenseVoucherTrackerService voucherTrackerService,
            IExpenseVoucherCreateService voucherCreateService,
+           IExpenseVoucherTransitionService voucherTransitionService,
            IExpenseCategoryRepository categoryRepository,
            IFileStorageService fileStorageService,
            UserManager<ApplicationUserModel> userManager,
@@ -45,6 +47,7 @@ namespace AryamanBMS.Controllers
             _voucherRepository = voucherRepository;
             _voucherTrackerService = voucherTrackerService;
             _voucherCreateService = voucherCreateService;
+            _voucherTransitionService = voucherTransitionService;
             _categoryRepository = categoryRepository;
             _fileStorageService = fileStorageService;
             _userManager = userManager;
@@ -291,12 +294,11 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            bool submitted =
-                await _voucherRepository.SubmitAsync(
-                    id,
-                    GetCurrentUserId());
+            var submitted = await _voucherTransitionService.SubmitAsync(
+                voucher,
+                GetCurrentUserId());
 
-            if (!submitted)
+            if (!submitted.Succeeded)
             {
                 TempData["Error"] =
                     "Expense claim could not be submitted.";
@@ -350,9 +352,9 @@ namespace AryamanBMS.Controllers
 
             var userId = GetCurrentUserId();
 
-            bool approved = await _voucherRepository.ApproveAsync(id, userId);
+            var approved = await _voucherTransitionService.ApproveAsync(voucher, userId);
 
-            if (!approved)
+            if (!approved.Succeeded)
             {
                 TempData["Error"] =
                     "Expense voucher could not be approved.";
@@ -381,9 +383,9 @@ namespace AryamanBMS.Controllers
             if (voucher == null)
                 return NotFound();
 
-            bool posted = await _voucherRepository.PostAsync(id, GetCurrentUserId());
+            var posted = await _voucherTransitionService.PostAsync(voucher, GetCurrentUserId());
 
-            if (posted)
+            if (posted.Succeeded)
             {
                 await NotifyVoucherCreatorAsync(
                     voucher,
@@ -394,8 +396,8 @@ namespace AryamanBMS.Controllers
                         $"to the accounts records.");
             }
 
-            TempData[posted ? "Success" : "Error"] =
-                posted
+            TempData[posted.Succeeded ? "Success" : "Error"] =
+                posted.Succeeded
                     ? $"Expense Voucher '{voucher.VoucherNumber}' posted successfully."
                     : "Only approved expense vouchers can be posted.";
 
@@ -431,16 +433,8 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction(nameof(Details), new { id });
             }
 
-            voucher.IsReversed = true;
-            voucher.ReversalReason = reversalReason.Trim();
-            voucher.ReversedByUserId = GetCurrentUserId();
-            voucher.ReversedOn = DateTime.Now;
-            voucher.Status = FinancialConstants.ExpenseVoucherStatus.Reversed;
-            voucher.ApprovalStatus = FinancialConstants.ExpenseVoucherStatus.Reversed;
-            voucher.UpdatedOn = DateTime.Now;
-
-            await _voucherRepository.UpdateAsync(voucher);
-            await _voucherRepository.SaveAsync();
+            var reversed = await _voucherTransitionService.ReverseAsync(voucher, GetCurrentUserId(), reversalReason);
+            if (!reversed.Succeeded) { TempData["Error"] = reversed.ErrorMessage; return RedirectToAction(nameof(Details), new { id }); }
 
             await NotifyVoucherCreatorAsync(
              voucher,
@@ -496,13 +490,9 @@ namespace AryamanBMS.Controllers
                     new { id });
             }
 
-            bool rejected =
-                await _voucherRepository.RejectAsync(
-                    id,
-                    GetCurrentUserId(),
-                    rejectionReason);
+            var rejected = await _voucherTransitionService.RejectAsync(voucher, GetCurrentUserId(), rejectionReason);
 
-            if (!rejected)
+            if (!rejected.Succeeded)
             {
                 TempData["Error"] =
                     "Expense voucher could not be rejected.";
@@ -561,8 +551,8 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            await _voucherRepository.SoftDeleteAsync(id);
-            await _voucherRepository.SaveAsync();
+            var deleted = await _voucherTransitionService.DeleteDraftAsync(voucher);
+            if (!deleted.Succeeded) { TempData["Error"] = deleted.ErrorMessage; return RedirectToAction(nameof(Index)); }
 
             TempData["Success"] = $"Expense Voucher '{voucher.VoucherNumber}' deleted.";
             return RedirectToAction(nameof(Index));

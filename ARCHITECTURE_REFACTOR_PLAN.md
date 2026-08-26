@@ -127,8 +127,10 @@ A module is complete only when:
 - Expense Voucher: Index, Excel-export data selection, and draft creation and
   editing (validation, GST period checks, defaults, calculations, and
   persistence) now flow through Business services and have been manually
-  verified. Excel workbook generation and the approval/posting/document
-  workflows remain in the Web controller for later, separately verified slices.
+  verified. Submit, approve, reject, post, reverse, and draft deletion now use
+  a Business transition service; notifications and HTTP/UI orchestration remain
+  in Web. Excel workbook generation and document workflows remain for later,
+  separately verified slices.
 
 ## Current Layering Inventory
 
