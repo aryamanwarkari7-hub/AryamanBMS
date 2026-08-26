@@ -10,8 +10,7 @@ public class ExpenseVoucherTrackerService : IExpenseVoucherTrackerService
 
     private readonly IExpenseVoucherRepository _voucherRepository;
 
-    public ExpenseVoucherTrackerService(
-        IExpenseVoucherRepository voucherRepository)
+    public ExpenseVoucherTrackerService(IExpenseVoucherRepository voucherRepository)
     {
         _voucherRepository = voucherRepository;
     }
@@ -26,7 +25,8 @@ public class ExpenseVoucherTrackerService : IExpenseVoucherTrackerService
         string sortOrder,
         int page,
         string currentUserId,
-        bool restrictToCurrentUser)
+        bool restrictToCurrentUser
+    )
     {
         var vouchers = await FilterAsync(
             status,
@@ -35,12 +35,10 @@ public class ExpenseVoucherTrackerService : IExpenseVoucherTrackerService
             fromDate,
             toDate,
             currentUserId,
-            restrictToCurrentUser);
+            restrictToCurrentUser
+        );
 
-        bool descending = string.Equals(
-            sortOrder,
-            "desc",
-            StringComparison.OrdinalIgnoreCase);
+        bool descending = string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
 
         vouchers = sortBy switch
         {
@@ -67,18 +65,15 @@ public class ExpenseVoucherTrackerService : IExpenseVoucherTrackerService
                 : vouchers.OrderBy(x => x.PaymentStatus).ToList(),
             _ => descending
                 ? vouchers.OrderByDescending(x => x.VoucherDate).ToList()
-                : vouchers.OrderBy(x => x.VoucherDate).ToList()
+                : vouchers.OrderBy(x => x.VoucherDate).ToList(),
         };
 
         int totalRecords = vouchers.Count;
 
         return new ExpenseVoucherTrackerData
         {
-            Vouchers = vouchers
-                .Skip((Math.Max(page, 1) - 1) * PageSize)
-                .Take(PageSize)
-                .ToList(),
-            TotalPages = (int)Math.Ceiling(totalRecords / (double)PageSize)
+            Vouchers = vouchers.Skip((Math.Max(page, 1) - 1) * PageSize).Take(PageSize).ToList(),
+            TotalPages = (int)Math.Ceiling(totalRecords / (double)PageSize),
         };
     }
 
@@ -89,7 +84,8 @@ public class ExpenseVoucherTrackerService : IExpenseVoucherTrackerService
         DateTime? fromDate,
         DateTime? toDate,
         string currentUserId,
-        bool restrictToCurrentUser)
+        bool restrictToCurrentUser
+    )
     {
         return await FilterAsync(
             status,
@@ -98,7 +94,8 @@ public class ExpenseVoucherTrackerService : IExpenseVoucherTrackerService
             fromDate,
             toDate,
             currentUserId,
-            restrictToCurrentUser);
+            restrictToCurrentUser
+        );
     }
 
     private async Task<List<ExpenseVoucherModel>> FilterAsync(
@@ -108,15 +105,14 @@ public class ExpenseVoucherTrackerService : IExpenseVoucherTrackerService
         DateTime? fromDate,
         DateTime? toDate,
         string currentUserId,
-        bool restrictToCurrentUser)
+        bool restrictToCurrentUser
+    )
     {
         var vouchers = (await _voucherRepository.GetAllAsync()).ToList();
 
         if (restrictToCurrentUser)
         {
-            vouchers = vouchers
-                .Where(x => x.CreatedByUserId == currentUserId)
-                .ToList();
+            vouchers = vouchers.Where(x => x.CreatedByUserId == currentUserId).ToList();
         }
 
         if (!string.IsNullOrWhiteSpace(status))
@@ -126,9 +122,7 @@ public class ExpenseVoucherTrackerService : IExpenseVoucherTrackerService
 
         if (categoryId.HasValue && categoryId.Value > 0)
         {
-            vouchers = vouchers
-                .Where(x => x.ExpenseCategoryId == categoryId.Value)
-                .ToList();
+            vouchers = vouchers.Where(x => x.ExpenseCategoryId == categoryId.Value).ToList();
         }
 
         if (!string.IsNullOrWhiteSpace(search))
@@ -137,35 +131,44 @@ public class ExpenseVoucherTrackerService : IExpenseVoucherTrackerService
 
             vouchers = vouchers
                 .Where(x =>
-                    (!string.IsNullOrWhiteSpace(x.VoucherNumber) &&
-                        x.VoucherNumber.ToLower().Contains(keyword)) ||
-                    (!string.IsNullOrWhiteSpace(x.VendorName) &&
-                        x.VendorName.ToLower().Contains(keyword)) ||
-                    (x.Vendor != null &&
-                        !string.IsNullOrWhiteSpace(x.Vendor.VendorName) &&
-                        x.Vendor.VendorName.ToLower().Contains(keyword)) ||
-                    (x.Category != null &&
-                        !string.IsNullOrWhiteSpace(x.Category.CategoryName) &&
-                        x.Category.CategoryName.ToLower().Contains(keyword)) ||
-                    (!string.IsNullOrWhiteSpace(x.InvoiceNumber) &&
-                        x.InvoiceNumber.ToLower().Contains(keyword)) ||
-                    (!string.IsNullOrWhiteSpace(x.Description) &&
-                        x.Description.ToLower().Contains(keyword)))
+                    (
+                        !string.IsNullOrWhiteSpace(x.VoucherNumber)
+                        && x.VoucherNumber.ToLower().Contains(keyword)
+                    )
+                    || (
+                        !string.IsNullOrWhiteSpace(x.VendorName)
+                        && x.VendorName.ToLower().Contains(keyword)
+                    )
+                    || (
+                        x.Vendor != null
+                        && !string.IsNullOrWhiteSpace(x.Vendor.VendorName)
+                        && x.Vendor.VendorName.ToLower().Contains(keyword)
+                    )
+                    || (
+                        x.Category != null
+                        && !string.IsNullOrWhiteSpace(x.Category.CategoryName)
+                        && x.Category.CategoryName.ToLower().Contains(keyword)
+                    )
+                    || (
+                        !string.IsNullOrWhiteSpace(x.InvoiceNumber)
+                        && x.InvoiceNumber.ToLower().Contains(keyword)
+                    )
+                    || (
+                        !string.IsNullOrWhiteSpace(x.Description)
+                        && x.Description.ToLower().Contains(keyword)
+                    )
+                )
                 .ToList();
         }
 
         if (fromDate.HasValue)
         {
-            vouchers = vouchers
-                .Where(x => x.VoucherDate.Date >= fromDate.Value.Date)
-                .ToList();
+            vouchers = vouchers.Where(x => x.VoucherDate.Date >= fromDate.Value.Date).ToList();
         }
 
         if (toDate.HasValue)
         {
-            vouchers = vouchers
-                .Where(x => x.VoucherDate.Date <= toDate.Value.Date)
-                .ToList();
+            vouchers = vouchers.Where(x => x.VoucherDate.Date <= toDate.Value.Date).ToList();
         }
 
         return vouchers;

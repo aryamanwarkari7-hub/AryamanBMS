@@ -39,4 +39,3 @@ git checkout bms-system-main
 git pull origin bms-system-main
 git branch -d feature/short-change-name
 ```
-
