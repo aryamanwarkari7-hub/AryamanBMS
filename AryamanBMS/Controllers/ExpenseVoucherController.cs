@@ -25,7 +25,9 @@ namespace AryamanBMS.Controllers
         private readonly IExpenseCategoryRepository _categoryRepository;
         private readonly IFileStorageService _fileStorageService;
         private readonly UserManager<ApplicationUserModel> _userManager;
-        private readonly ApplicationDbContext _context;
+        private readonly IVendorRepository _vendorRepository;
+        private readonly IProjectRepository _projectRepository;
+        private readonly IDepartmentRepository _departmentRepository;
         private readonly INotificationService _notificationService;
         private readonly ILogger<ExpenseVoucherController> _logger;
         private readonly ILocationRepository _locationRepository;
@@ -41,7 +43,9 @@ namespace AryamanBMS.Controllers
            IExpenseCategoryRepository categoryRepository,
            IFileStorageService fileStorageService,
            UserManager<ApplicationUserModel> userManager,
-           ApplicationDbContext context,
+           IVendorRepository vendorRepository,
+           IProjectRepository projectRepository,
+           IDepartmentRepository departmentRepository,
            INotificationService notificationService,
            ILocationRepository locationRepository,
            ILogger<ExpenseVoucherController> logger)
@@ -54,7 +58,9 @@ namespace AryamanBMS.Controllers
             _categoryRepository = categoryRepository;
             _fileStorageService = fileStorageService;
             _userManager = userManager;
-            _context = context;
+            _vendorRepository = vendorRepository;
+            _projectRepository = projectRepository;
+            _departmentRepository = departmentRepository;
             _notificationService = notificationService;
             _locationRepository = locationRepository;
             _logger = logger;
@@ -719,24 +725,15 @@ namespace AryamanBMS.Controllers
             ViewBag.Categories =
                 await _categoryRepository.GetAllActiveAsync();
 
-            ViewBag.Vendors =
-                await _context.Vendors
-                    .AsNoTracking()
-                    .Where(x => x.IsActive)
-                    .OrderBy(x => x.VendorName)
-                    .ToListAsync();
+            ViewBag.Vendors = await _vendorRepository.GetActiveAsync();
 
-            ViewBag.Projects =
-                await _context.Projects
-                    .AsNoTracking()
-                    .OrderBy(x => x.ProjectName)
-                    .ToListAsync();
+            ViewBag.Projects = _projectRepository.Projects
+                .OrderBy(x => x.ProjectName)
+                .ToList();
 
-            ViewBag.Departments =
-                await _context.Departments
-                    .AsNoTracking()
-                    .OrderBy(x => x.DepartmentName)
-                    .ToListAsync();
+            ViewBag.Departments = (await _departmentRepository.GetAllAsync())
+                .OrderBy(x => x.DepartmentName)
+                .ToList();
 
             ViewBag.States =
                 await _locationRepository.GetActiveStatesAsync();
@@ -772,320 +769,6 @@ namespace AryamanBMS.Controllers
             }
         }
 
-        private static readonly decimal[] AllowedGstRates =
-        {
-            0m,
-            5m,
-            12m,
-            18m,
-            28m
-        };
-
-        private static readonly Regex GstinRegex =
-            new(
-                @"^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$",
-                RegexOptions.Compiled |
-                RegexOptions.CultureInvariant);
-
-        private static void NormalizeVoucher(
-            ExpenseVoucherModel model)
-        {
-            model.Description =
-                model.Description?.Trim() ??
-                string.Empty;
-
-            model.ExpensePartyType =
-    string.IsNullOrWhiteSpace(model.ExpensePartyType)
-        ? "Registered Vendor"
-        : model.ExpensePartyType.Trim();
-
-            model.VendorName =
-                string.IsNullOrWhiteSpace(model.VendorName)
-                    ? null
-                    : model.VendorName.Trim();
-
-            model.VendorGSTIN =
-                string.IsNullOrWhiteSpace(model.VendorGSTIN)
-                    ? null
-                    : model.VendorGSTIN
-                        .Trim()
-                        .ToUpperInvariant();
-
-            model.InvoiceNumber =
-                string.IsNullOrWhiteSpace(model.InvoiceNumber)
-                    ? null
-                    : model.InvoiceNumber
-                        .Trim()
-                        .ToUpperInvariant();
-
-            model.Remarks =
-                string.IsNullOrWhiteSpace(model.Remarks)
-                    ? null
-                    : model.Remarks.Trim();
-
-            model.BusinessPurpose =
-                string.IsNullOrWhiteSpace(model.BusinessPurpose)
-                    ? null
-                    : model.BusinessPurpose.Trim();
-
-            model.BeneficiaryName =
-                string.IsNullOrWhiteSpace(model.BeneficiaryName)
-                    ? null
-                    : model.BeneficiaryName.Trim();
-
-            model.SupportingReference =
-                string.IsNullOrWhiteSpace(model.SupportingReference)
-                    ? null
-                    : model.SupportingReference.Trim();
-        }
-
-        private void ValidateVoucherBusinessRules(
-            ExpenseVoucherModel model)
-        {
-            if (model.Amount <= 0)
-            {
-                ModelState.AddModelError(
-                    nameof(model.Amount),
-                    "Amount must be greater than zero.");
-            }
-
-            if (model.VoucherDate.Date >
-                DateTime.Today)
-            {
-                ModelState.AddModelError(
-                    nameof(model.VoucherDate),
-                    "Voucher date cannot be in the future.");
-            }
-
-            if (!AllowedGstRates.Contains(
-                    model.GSTRate))
-            {
-                ModelState.AddModelError(
-                    nameof(model.GSTRate),
-                    "GST rate must be 0%, 5%, 12%, 18% or 28%.");
-            }
-
-            if (!string.IsNullOrWhiteSpace(
-                    model.VendorGSTIN) &&
-                !GstinRegex.IsMatch(model.VendorGSTIN))
-            {
-                ModelState.AddModelError(
-                    nameof(model.VendorGSTIN),
-                    "Enter a valid 15-character GSTIN.");
-            }
-
-            bool isRegisteredVendor =
-    model.ExpensePartyType == "Registered Vendor";
-
-            bool isSmallOrNonGstExpense =
-                model.ExpensePartyType == "Unregistered Vendor" ||
-                model.ExpensePartyType == "One-Time Vendor" ||
-                model.ExpensePartyType == "Employee Reimbursement" ||
-                model.ExpensePartyType == "Petty Cash";
-
-            if (isRegisteredVendor && !model.VendorId.HasValue)
-            {
-                ModelState.AddModelError(
-                    nameof(model.VendorId),
-                    "Vendor is required for registered vendor expenses.");
-            }
-
-            if (isSmallOrNonGstExpense)
-            {
-                model.VendorId = null;
-                model.VendorGSTIN = null;
-                model.GSTRate = 0;
-                model.ITCEligible = false;
-                model.ITCStatus = "Not Applicable";
-                model.Gstr2BMatchStatus = "Not Applicable";
-                model.Gstr2BMatchedOn = null;
-                model.Gstr2BMatchedByUserId = null;
-                model.Gstr2BMismatchReason = null;
-                model.ITCClaimMonth = null;
-                model.ITCClaimYear = null;
-                model.InputGSTGLAccountCode = null;
-            }
-
-            if (isSmallOrNonGstExpense &&
-                string.IsNullOrWhiteSpace(model.VendorName) &&
-                string.IsNullOrWhiteSpace(model.BeneficiaryName))
-            {
-                ModelState.AddModelError(
-                    nameof(model.VendorName),
-                    "Vendor or payee name is required.");
-            }
-
-            if (model.ITCEligible)
-            {
-                if (model.GSTRate <= 0)
-                {
-                    ModelState.AddModelError(
-                        nameof(model.ITCEligible),
-                        "ITC cannot be claimed when GST rate is zero.");
-                }
-
-                if (string.IsNullOrWhiteSpace(
-                        model.VendorGSTIN))
-                {
-                    ModelState.AddModelError(
-                        nameof(model.VendorGSTIN),
-                        "Vendor GSTIN is required when ITC is eligible.");
-                }
-
-                if (string.IsNullOrWhiteSpace(
-                        model.InvoiceNumber))
-                {
-                    ModelState.AddModelError(
-                        nameof(model.InvoiceNumber),
-                        "Vendor invoice number is required when ITC is eligible.");
-                }
-            }
-        }
-        private static void CalculateGSTAmounts(ExpenseVoucherModel model)
-        {
-            model.Amount = Math.Round(
-                model.Amount,
-                2,
-                MidpointRounding.AwayFromZero);
-
-            model.GSTRate = Math.Round(
-                model.GSTRate,
-                2,
-                MidpointRounding.AwayFromZero);
-
-            model.TaxableAmount = model.Amount;
-
-            if (model.GSTRate <= 0)
-            {
-                model.CGSTAmount = 0;
-                model.SGSTAmount = 0;
-                model.IGSTAmount = 0;
-                model.TotalGSTAmount = 0;
-                model.TotalAmount = model.Amount;
-
-                return;
-            }
-
-            decimal totalGst = Math.Round(
-                model.Amount * model.GSTRate / 100,
-                2,
-                MidpointRounding.AwayFromZero);
-
-            if (model.IsInterState)
-            {
-                model.CGSTAmount = 0;
-                model.SGSTAmount = 0;
-                model.IGSTAmount = totalGst;
-            }
-            else
-            {
-                decimal cgst = Math.Round(
-                    totalGst / 2,
-                    2,
-                    MidpointRounding.AwayFromZero);
-
-                model.CGSTAmount = cgst;
-                model.SGSTAmount = totalGst - cgst;
-                model.IGSTAmount = 0;
-            }
-
-            model.TotalGSTAmount = totalGst;
-
-            model.TotalAmount = Math.Round(
-                model.Amount + totalGst,
-                2,
-                MidpointRounding.AwayFromZero);
-        }
-
-        private async Task ValidateGstPeriodOpen(DateTime voucherDate)
-        {
-            bool isClosed =
-                await _context.GstMonthlySnapshots
-                    .AnyAsync(x =>
-                        x.Month == voucherDate.Month &&
-                        x.Year == voucherDate.Year &&
-                        (x.Status == FinancialConstants.GstSnapshotStatus.Filed ||
-                         x.Status == FinancialConstants.GstSnapshotStatus.Locked ||
-                         x.IsFiledPeriodLocked));
-
-            if (isClosed)
-            {
-                ModelState.AddModelError(
-                    nameof(ExpenseVoucherModel.VoucherDate),
-                    "This GST period is filed or locked. Reopen the GST period before changing expenses.");
-            }
-        }
-
-        private async Task ApplyVendorDefaults(ExpenseVoucherModel model)
-        {
-            if (!model.VendorId.HasValue)
-                return;
-
-            var vendor = await _context.Vendors
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.VendorId == model.VendorId.Value && x.IsActive);
-
-            if (vendor == null)
-                return;
-
-            model.VendorName = vendor.VendorName;
-            model.VendorGSTIN = vendor.GSTIN;
-            model.VendorStateCode = vendor.StateCode;
-
-            if (string.IsNullOrWhiteSpace(model.PlaceOfSupplyStateCode))
-            {
-                model.PlaceOfSupplyStateCode = vendor.StateCode;
-            }
-
-            if (!model.IsGstStateOverride &&
-                !string.IsNullOrWhiteSpace(model.CompanyStateCode) &&
-                !string.IsNullOrWhiteSpace(model.PlaceOfSupplyStateCode))
-            {
-                model.IsInterState =
-                    model.CompanyStateCode != model.PlaceOfSupplyStateCode;
-            }
-        }
-
-        private static void ApplyCategoryDefaults(
-            ExpenseVoucherModel model,
-            ExpenseCategoryModel? category)
-        {
-            if (category == null)
-                return;
-
-            model.GLAccountCode = category.GLAccountCode;
-            model.PayableGLAccountCode = category.PayableGLAccountCode;
-            model.InputGSTGLAccountCode = category.InputGSTGLAccountCode;
-
-            if (string.IsNullOrWhiteSpace(model.ExpenseClassification))
-            {
-                model.ExpenseClassification = category.ExpenseType;
-            }
-
-            model.ITCStatus =
-                model.ITCEligible
-                    ? model.ITCStatus
-                    : "Not Applicable";
-        }
-
-        private static void RefreshPaymentFields(ExpenseVoucherModel model)
-        {
-            model.PaidAmount = Math.Round(model.PaidAmount, 2, MidpointRounding.AwayFromZero);
-            model.BalanceAmount = Math.Max(model.TotalAmount - model.PaidAmount, 0);
-
-            if (model.PaidAmount <= 0)
-            {
-                model.PaymentStatus = FinancialConstants.PaymentStatus.Unpaid;
-            }
-            else if (model.BalanceAmount <= 0)
-            {
-                model.PaymentStatus = FinancialConstants.PaymentStatus.Paid;
-            }
-            else
-            {
-                model.PaymentStatus = FinancialConstants.PaymentStatus.PartiallyPaid;
-            }
-        }
         private static string GetContentType(string fileName)
         {
             return Path.GetExtension(fileName).ToLowerInvariant() switch
