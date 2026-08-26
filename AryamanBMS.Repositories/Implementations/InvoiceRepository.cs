@@ -141,6 +141,69 @@ namespace AryamanBMS.Repositories
                 .ToListAsync();
         }
 
+        public Task<ClientModel?> GetClientWithCountryAsync(int clientId)
+        {
+            return _context.Clients
+                .AsNoTracking()
+                .Include(x => x.Country)
+                .FirstOrDefaultAsync(x => x.ClientId == clientId);
+        }
+
+        public Task<bool> IsGstPeriodClosedAsync(DateTime invoiceDate)
+        {
+            return _context.GstMonthlySnapshots.AnyAsync(x =>
+                x.Month == invoiceDate.Month &&
+                x.Year == invoiceDate.Year &&
+                (x.Status == FinancialConstants.GstSnapshotStatus.Filed ||
+                 x.Status == FinancialConstants.GstSnapshotStatus.Locked ||
+                 x.IsFiledPeriodLocked));
+        }
+
+        public Task<List<PurchaseOrderModel>> GetActivePurchaseOrdersAsync()
+        {
+            return _context.PurchaseOrders
+                .AsNoTracking()
+                .Where(x => x.IsActive)
+                .OrderByDescending(x => x.OrderDate)
+                .ToListAsync();
+        }
+
+        public Task<List<BillingMilestoneModel>> GetActiveBillingMilestonesAsync()
+        {
+            return _context.BillingMilestones
+                .AsNoTracking()
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.PurchaseWorkOrderId)
+                .ThenBy(x => x.SortOrder)
+                .ThenBy(x => x.MilestoneName)
+                .ToListAsync();
+        }
+
+        public Task<PurchaseOrderModel?> GetActivePurchaseOrderAsync(int id)
+        {
+            return _context.PurchaseOrders
+                .AsNoTracking()
+                .Include(x => x.Client)
+                .Include(x => x.Proposal)
+                .FirstOrDefaultAsync(x => x.PurchaseOrderId == id && x.IsActive);
+        }
+        public Task<decimal> GetBilledTaxableAmountForPurchaseOrderAsync(int purchaseOrderId, int excludedInvoiceId) => _context.Invoices.AsNoTracking().Where(x => x.PurchaseWorkOrderId == purchaseOrderId && x.InvoiceId != excludedInvoiceId && !x.IsDeleted && x.InvoiceStatus != "Cancelled").SumAsync(x => x.SubTotal - x.Discount);
+        public Task<BillingMilestoneModel?> GetActiveBillingMilestoneAsync(int billingMilestoneId) => _context.BillingMilestones.AsNoTracking().FirstOrDefaultAsync(x => x.BillingMilestoneId == billingMilestoneId && x.IsActive);
+        public Task<bool> IsBillingMilestoneInvoicedAsync(int billingMilestoneId, int excludedInvoiceId) => _context.Invoices.AsNoTracking().AnyAsync(x => x.BillingMilestoneId == billingMilestoneId && x.InvoiceId != excludedInvoiceId && !x.IsDeleted && x.InvoiceStatus != "Cancelled");
+
+        public Task<bool> HasCurrentDocumentAsync(int invoiceId, string documentFormat)
+        {
+            return _context.InvoiceDocumentVersions
+                .AsNoTracking()
+                .AnyAsync(x =>
+                    x.InvoiceId == invoiceId &&
+                    x.DocumentFormat == documentFormat &&
+                    x.IsCurrent);
+        }
+        public Task<List<InvoiceDocumentVersionModel>> GetDocumentHistoryAsync(int invoiceId) => _context.InvoiceDocumentVersions.AsNoTracking().Where(x => x.InvoiceId == invoiceId).OrderByDescending(x => x.VersionNumber).ThenBy(x => x.DocumentFormat).ToListAsync();
+        public Task<InvoiceDocumentVersionModel?> GetCurrentDocumentAsync(int invoiceId, string documentFormat) => _context.InvoiceDocumentVersions.AsNoTracking().Where(x => x.InvoiceId == invoiceId && x.DocumentFormat == documentFormat && x.IsCurrent).OrderByDescending(x => x.VersionNumber).FirstOrDefaultAsync();
+        public Task<InvoiceDocumentVersionModel?> GetDocumentVersionAsync(int documentVersionId) => _context.InvoiceDocumentVersions.AsNoTracking().FirstOrDefaultAsync(x => x.InvoiceDocumentVersionId == documentVersionId);
+
         public Task UpdateAsync(InvoiceModel invoice)
         {
             invoice.ModifiedOn = DateTime.Now;

@@ -75,6 +75,12 @@ Refactor these controller workflows into Business services in the listed order.
 
 **Next workflow: Invoice.**
 
+## Deferred Cross-Cutting Work
+
+| Area | What remains in Web | Why it is deferred |
+| --- | --- | --- |
+| Invoice notifications | Recipient selection and best-effort issue/cancel notification calls | `INotificationService` is currently a Web-owned contract. Move that shared contract to a lower layer before Business orchestrates notifications; this avoids reversing the dependency direction during the Invoice slice. |
+
 The central `ApplicationDbContext` can be split later only by complete
 transactional aggregate. It is not a bulk refactor task.
 

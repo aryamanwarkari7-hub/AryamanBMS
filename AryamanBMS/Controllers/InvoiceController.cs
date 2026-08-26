@@ -1,4 +1,5 @@
 using AryamanBMS.Models;
+using AryamanBMS.Business.Interfaces;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -16,6 +17,9 @@ namespace AryamanBMS.Controllers
     public class InvoiceController : Controller
     {
         private readonly IInvoiceRepository _invoiceRepository;
+        private readonly IInvoiceQueryService _invoiceQueryService;
+        private readonly IInvoiceDraftService _invoiceDraftService;
+        private readonly IInvoiceWorkflowService _invoiceWorkflowService;
         private readonly IFileStorageService _fileStorageService;
         private readonly IInvoiceDocumentService _invoiceDocumentService;
         private readonly INotificationService _notificationService;
@@ -27,6 +31,9 @@ namespace AryamanBMS.Controllers
 
         public InvoiceController(
           IInvoiceRepository invoiceRepository,
+          IInvoiceQueryService invoiceQueryService,
+          IInvoiceDraftService invoiceDraftService,
+          IInvoiceWorkflowService invoiceWorkflowService,
           IFileStorageService fileStorageService,
           IInvoiceDocumentService invoiceDocumentService,
           ApplicationDbContext context,
@@ -35,6 +42,9 @@ namespace AryamanBMS.Controllers
           IGstConfigurationRepository gstConfigurationRepository)
         {
             _invoiceRepository = invoiceRepository;
+            _invoiceQueryService = invoiceQueryService;
+            _invoiceDraftService = invoiceDraftService;
+            _invoiceWorkflowService = invoiceWorkflowService;
             _fileStorageService = fileStorageService;
             _invoiceDocumentService = invoiceDocumentService;
             _context = context;
@@ -53,142 +63,25 @@ namespace AryamanBMS.Controllers
                int? month,
                int? year)
         {
-            var allInvoices =
-                await _invoiceRepository.GetAllAsync();
+            var tracker = await _invoiceQueryService.GetTrackerAsync(
+                search, clientId, invoiceStatus, paymentStatus, month, year);
 
-            var activeInvoices = allInvoices
-                .Where(x => !x.IsDeleted)
-                .ToList();
-
-            IEnumerable<InvoiceModel> filteredInvoices =
-                activeInvoices;
-
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                search = search.Trim();
-
-                filteredInvoices = filteredInvoices.Where(x =>
-                    x.InvoiceNo.Contains(
-                        search,
-                        StringComparison.OrdinalIgnoreCase) ||
-
-                    (x.Client?.ClientName?.Contains(
-                        search,
-                        StringComparison.OrdinalIgnoreCase) ?? false) ||
-
-                    (x.Project?.ProjectName?.Contains(
-                        search,
-                        StringComparison.OrdinalIgnoreCase) ?? false) ||
-
-                    (x.ProjectName?.Contains(
-                        search,
-                        StringComparison.OrdinalIgnoreCase) ?? false));
-            }
-
-            if (clientId.HasValue)
-            {
-                filteredInvoices = filteredInvoices.Where(x =>
-                    x.ClientId == clientId.Value);
-            }
-
-            if (!string.IsNullOrWhiteSpace(invoiceStatus))
-            {
-                filteredInvoices = filteredInvoices.Where(x =>
-                    string.Equals(
-                        x.InvoiceStatus,
-                        invoiceStatus,
-                        StringComparison.OrdinalIgnoreCase));
-            }
-
-            if (!string.IsNullOrWhiteSpace(paymentStatus))
-            {
-                filteredInvoices = filteredInvoices.Where(x =>
-                    string.Equals(
-                        x.PaymentStatus,
-                        paymentStatus,
-                        StringComparison.OrdinalIgnoreCase));
-            }
-
-            // Month filter
-            if (month.HasValue &&
-                month.Value >= 1 &&
-                month.Value <= 12)
-            {
-                filteredInvoices = filteredInvoices.Where(x =>
-                    x.InvoiceDate.Month == month.Value);
-            }
-
-            // Year filter
-            if (year.HasValue && year.Value > 0)
-            {
-                filteredInvoices = filteredInvoices.Where(x =>
-                    x.InvoiceDate.Year == year.Value);
-            }
-
-            // Years available in existing invoice records
-            var availableYears = activeInvoices
-                .Select(x => x.InvoiceDate.Year)
-                .Distinct()
-                .OrderByDescending(x => x)
-                .ToList();
-
-            // Ensure current year is always available
-            if (!availableYears.Contains(DateTime.Today.Year))
-            {
-                availableYears.Insert(0, DateTime.Today.Year);
-            }
-
-            ViewBag.AvailableYears = availableYears;
+            ViewBag.AvailableYears = tracker.AvailableYears;
 
             var model = new InvoiceTrackerViewModel
             {
-                Invoices = filteredInvoices
-                    .OrderByDescending(x => x.InvoiceDate)
-                    .ThenByDescending(x => x.InvoiceId)
-                    .ToList(),
-
-                Clients =
-                    await _invoiceRepository.GetClientsAsync(),
-
-                TotalInvoices =
-                    activeInvoices.Count,
-
-                DraftCount =
-                    activeInvoices.Count(x =>
-                        x.InvoiceStatus == "Draft"),
-
-                IssuedCount =
-                    activeInvoices.Count(x =>
-                        x.InvoiceStatus == "Issued"),
-
-                CancelledCount =
-                    allInvoices.Count(x =>
-                        x.InvoiceStatus == "Cancelled" ||
-                        x.IsDeleted),
-
-                UnpaidCount =
-                    activeInvoices.Count(x =>
-                        x.PaymentStatus == "Unpaid"),
-
-                PartiallyPaidCount =
-                    activeInvoices.Count(x =>
-                        x.PaymentStatus == "Partially Paid"),
-
-                PaidCount =
-                    activeInvoices.Count(x =>
-                        x.PaymentStatus == "Paid"),
-
-                TotalInvoiceAmount =
-                    activeInvoices.Sum(x =>
-                        x.GrandTotal),
-
-                TotalReceivedAmount =
-                    activeInvoices.Sum(x =>
-                        x.PaidAmount),
-
-                TotalOutstandingAmount =
-                    activeInvoices.Sum(x =>
-                        x.BalanceAmount)
+                Invoices = tracker.Invoices,
+                Clients = tracker.Clients,
+                TotalInvoices = tracker.TotalInvoices,
+                DraftCount = tracker.DraftCount,
+                IssuedCount = tracker.IssuedCount,
+                CancelledCount = tracker.CancelledCount,
+                UnpaidCount = tracker.UnpaidCount,
+                PartiallyPaidCount = tracker.PartiallyPaidCount,
+                PaidCount = tracker.PaidCount,
+                TotalInvoiceAmount = tracker.TotalInvoiceAmount,
+                TotalReceivedAmount = tracker.TotalReceivedAmount,
+                TotalOutstandingAmount = tracker.TotalOutstandingAmount
             };
 
             return View(model);
@@ -228,16 +121,16 @@ namespace AryamanBMS.Controllers
             ModelState.Remove(
                 nameof(model.InvoiceNo));
 
-            await AssignGstStateDecisionAsync(model);
+            AddValidationErrors(await _invoiceDraftService.ApplyGstStateDecisionAsync(model));
 
-            NormalizeInvoice(model);
+            _invoiceDraftService.NormalizeAndCalculate(model);
 
-            ValidateInvoiceBusinessRules(model);
-            await ValidateGstPeriodOpen(model.InvoiceDate);
+            AddValidationErrors(_invoiceDraftService.ValidateBasicRules(model));
+            AddValidationErrors(await _invoiceDraftService.ValidateGstPeriodAsync(model.InvoiceDate));
 
-            await ValidateAndAssignProjectAsync(model);
-            await ValidatePurchaseOrderAsync(model);
-            await ValidateBillingMilestoneAsync(model);
+            AddValidationErrors(await _invoiceDraftService.ValidateAndAssignProjectAsync(model));
+            AddValidationErrors(await _invoiceDraftService.ValidatePurchaseOrderAsync(model));
+            AddValidationErrors(await _invoiceDraftService.ValidateBillingMilestoneAsync(model));
 
             if (!ModelState.IsValid)
             {
@@ -273,8 +166,7 @@ namespace AryamanBMS.Controllers
 
             try
             {
-                await _invoiceRepository
-                    .CreateWithSequenceAsync(model);
+                await _invoiceDraftService.CreateAsync(model);
             }
             catch
             {
@@ -373,16 +265,16 @@ namespace AryamanBMS.Controllers
                 model.ProjectName = existingInvoice.ProjectName;
             }
 
-            await AssignGstStateDecisionAsync(model);
+            AddValidationErrors(await _invoiceDraftService.ApplyGstStateDecisionAsync(model));
 
-            NormalizeInvoice(model);
+            _invoiceDraftService.NormalizeAndCalculate(model);
 
-            ValidateInvoiceBusinessRules(model);
-            await ValidateGstPeriodOpen(model.InvoiceDate);
+            AddValidationErrors(_invoiceDraftService.ValidateBasicRules(model));
+            AddValidationErrors(await _invoiceDraftService.ValidateGstPeriodAsync(model.InvoiceDate));
 
-            await ValidateAndAssignProjectAsync(model);
-            await ValidatePurchaseOrderAsync(model);
-            await ValidateBillingMilestoneAsync(model);
+            AddValidationErrors(await _invoiceDraftService.ValidateAndAssignProjectAsync(model));
+            AddValidationErrors(await _invoiceDraftService.ValidatePurchaseOrderAsync(model));
+            AddValidationErrors(await _invoiceDraftService.ValidateBillingMilestoneAsync(model));
 
             if (!ModelState.IsValid)
             {
@@ -480,9 +372,7 @@ namespace AryamanBMS.Controllers
 
             try
             {
-                await _invoiceRepository.UpdateAsync(existingInvoice);
-
-                await _invoiceRepository.SaveAsync();
+                await _invoiceDraftService.UpdateAsync(existingInvoice);
             }
             catch
             {
@@ -524,23 +414,8 @@ namespace AryamanBMS.Controllers
                 return NotFound();
             }
 
-            ViewBag.CurrentDocx =
-                await _context
-                    .InvoiceDocumentVersions
-                    .AsNoTracking()
-                    .AnyAsync(x =>
-                        x.InvoiceId == id &&
-                        x.DocumentFormat == "DOCX" &&
-                        x.IsCurrent);
-
-            ViewBag.CurrentPdf =
-                await _context
-                    .InvoiceDocumentVersions
-                    .AsNoTracking()
-                    .AnyAsync(x =>
-                        x.InvoiceId == id &&
-                        x.DocumentFormat == "PDF" &&
-                        x.IsCurrent);
+            ViewBag.CurrentDocx = await _invoiceRepository.HasCurrentDocumentAsync(id, "DOCX");
+            ViewBag.CurrentPdf = await _invoiceRepository.HasCurrentDocumentAsync(id, "PDF");
 
             return View(invoice);
         }
@@ -683,17 +558,7 @@ namespace AryamanBMS.Controllers
                 return BadRequest();
             }
 
-            var document =
-                await _context
-                    .InvoiceDocumentVersions
-                    .AsNoTracking()
-                    .Where(x =>
-                        x.InvoiceId == id &&
-                        x.DocumentFormat == format &&
-                        x.IsCurrent)
-                    .OrderByDescending(x =>
-                        x.VersionNumber)
-                    .FirstOrDefaultAsync();
+            var document = await _invoiceRepository.GetCurrentDocumentAsync(id, format);
 
             if (document == null)
             {
@@ -725,12 +590,7 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> DownloadDocumentVersion(
             int id)
         {
-            var document =
-                await _context
-                    .InvoiceDocumentVersions
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(x =>
-                        x.InvoiceDocumentVersionId == id);
+            var document = await _invoiceRepository.GetDocumentVersionAsync(id);
 
             if (document == null)
             {
@@ -768,17 +628,7 @@ namespace AryamanBMS.Controllers
 
             ViewBag.Invoice = invoice;
 
-            var documents =
-                await _context
-                    .InvoiceDocumentVersions
-                    .AsNoTracking()
-                    .Where(x =>
-                        x.InvoiceId == id)
-                    .OrderByDescending(x =>
-                        x.VersionNumber)
-                    .ThenBy(x =>
-                        x.DocumentFormat)
-                    .ToListAsync();
+            var documents = await _invoiceRepository.GetDocumentHistoryAsync(id);
 
             return View(documents);
         }
@@ -800,37 +650,6 @@ namespace AryamanBMS.Controllers
                 return NotFound();
             }
 
-            if (invoice.InvoiceStatus != "Draft")
-            {
-                TempData["Error"] =
-                    "Only draft invoices can be issued.";
-
-                return RedirectToAction(
-                    nameof(Details),
-                    new { id });
-            }
-
-            if (invoice.InvoiceDetails == null ||
-                !invoice.InvoiceDetails.Any())
-            {
-                TempData["Error"] =
-                    "Invoice must contain at least one item before it can be issued.";
-
-                return RedirectToAction(
-                    nameof(Details),
-                    new { id });
-            }
-
-            if (invoice.GrandTotal <= 0)
-            {
-                TempData["Error"] =
-                    "Invoice total must be greater than zero before it can be issued.";
-
-                return RedirectToAction(
-                    nameof(Details),
-                    new { id });
-            }
-
             string? userId =
                 User.FindFirstValue(
                     ClaimTypes.NameIdentifier);
@@ -842,13 +661,12 @@ namespace AryamanBMS.Controllers
 
             try
             {
-                invoice.InvoiceStatus = "Issued";
-                invoice.IssuedByUserId = userId;
-                invoice.IssuedOn = DateTime.Now;
-                invoice.ModifiedOn = DateTime.Now;
-
-                await _invoiceRepository.UpdateAsync(invoice);
-                await _invoiceRepository.SaveAsync();
+                var error = await _invoiceWorkflowService.IssueAsync(invoice, userId);
+                if (error != null)
+                {
+                    TempData["Error"] = error;
+                    return RedirectToAction(nameof(Details), new { id });
+                }
 
                 try
                 {
@@ -971,20 +789,14 @@ namespace AryamanBMS.Controllers
                 return Unauthorized();
             }
 
-            invoice.InvoiceStatus = "Cancelled";
-
-            invoice.CancelledByUserId = userId;
-
-            invoice.CancelledOn = DateTime.Now;
-
-            invoice.CancellationReason = cancellationReason.Trim();
-
-            invoice.ModifiedOn = DateTime.Now;
-
             try
             {
-                await _invoiceRepository.UpdateAsync(invoice);
-                await _invoiceRepository.SaveAsync();
+                var error = await _invoiceWorkflowService.CancelAsync(invoice, cancellationReason, userId);
+                if (error != null)
+                {
+                    TempData["Error"] = error;
+                    return RedirectToAction(nameof(Details), new { id });
+                }
 
                 try
                 {
@@ -1053,28 +865,12 @@ namespace AryamanBMS.Controllers
                 return NotFound();
             }
 
-            if (invoice.PaidAmount > 0)
+            var error = await _invoiceWorkflowService.DeleteDraftAsync(invoice);
+            if (error != null)
             {
-                TempData["Error"] =
-                    "Invoices with payment receipts cannot be cancelled.";
-
+                TempData["Error"] = error;
                 return RedirectToAction(nameof(Index));
             }
-
-            if (invoice.InvoiceStatus ==
-                "Cancelled")
-            {
-                TempData["Error"] =
-                    "Invoice is already cancelled.";
-
-                return RedirectToAction(nameof(Index));
-            }
-
-            await _invoiceRepository
-                .DeleteAsync(invoice);
-
-            await _invoiceRepository
-                .SaveAsync();
 
             TempData["Success"] =
                 "Invoice cancelled successfully.";
@@ -1098,17 +894,7 @@ namespace AryamanBMS.Controllers
                 return NotFound();
             }
 
-            var pdfDocument =
-                await _context
-                    .InvoiceDocumentVersions
-                    .AsNoTracking()
-                    .Where(x =>
-                        x.InvoiceId == id &&
-                        x.DocumentFormat == "PDF" &&
-                        x.IsCurrent)
-                    .OrderByDescending(x =>
-                        x.VersionNumber)
-                    .FirstOrDefaultAsync();
+            var pdfDocument = await _invoiceRepository.GetCurrentDocumentAsync(id, "PDF");
 
             if (pdfDocument == null)
             {
@@ -1274,20 +1060,18 @@ namespace AryamanBMS.Controllers
                     .GetProjectsAsync();
 
             ViewBag.PurchaseOrders =
-              await _context.PurchaseOrders
-            .AsNoTracking()
-            .Where(x => x.IsActive)
-            .OrderByDescending(x => x.OrderDate)
-            .ToListAsync();
+                await _invoiceRepository.GetActivePurchaseOrdersAsync();
 
             ViewBag.BillingMilestones =
-              await _context.BillingMilestones
-                  .AsNoTracking()
-                  .Where(x => x.IsActive)
-                  .OrderBy(x => x.PurchaseWorkOrderId)
-                  .ThenBy(x => x.SortOrder)
-                  .ThenBy(x => x.MilestoneName)
-                  .ToListAsync();
+                await _invoiceRepository.GetActiveBillingMilestonesAsync();
+        }
+
+        private void AddValidationErrors(Dictionary<string, string> errors)
+        {
+            foreach (var error in errors)
+            {
+                ModelState.AddModelError(error.Key, error.Value);
+            }
         }
 
         private async Task AssignGstStateDecisionAsync(
@@ -1705,14 +1489,7 @@ namespace AryamanBMS.Controllers
         [HttpGet]
         public async Task<IActionResult> GetPurchaseOrderDetails(int id)
         {
-            var order =
-                await _context.PurchaseOrders
-                    .AsNoTracking()
-                    .Include(x => x.Client)
-                    .Include(x => x.Proposal)
-                    .FirstOrDefaultAsync(x =>
-                        x.PurchaseOrderId == id &&
-                        x.IsActive);
+            var order = await _invoiceRepository.GetActivePurchaseOrderAsync(id);
 
             if (order == null)
             {
