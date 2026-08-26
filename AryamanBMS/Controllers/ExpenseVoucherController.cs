@@ -103,39 +103,19 @@ namespace AryamanBMS.Controllers
             DateTime? toDate,
             bool mine = false)
         {
-            var vouchers = await _voucherRepository.GetAllAsync();
+            bool restrictToCurrentUser = mine || !IsFinanceUser();
+            string userId = restrictToCurrentUser
+                ? GetCurrentUserId()
+                : string.Empty;
 
-            if (mine || !IsFinanceUser())
-            {
-                string userId = GetCurrentUserId();
-                vouchers = vouchers.Where(x => x.CreatedByUserId == userId).ToList();
-            }
-
-            if (!string.IsNullOrWhiteSpace(status))
-                vouchers = vouchers.Where(x => x.Status == status).ToList();
-
-            if (categoryId.HasValue && categoryId.Value > 0)
-                vouchers = vouchers.Where(x => x.ExpenseCategoryId == categoryId.Value).ToList();
-
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                string keyword = search.Trim().ToLower();
-                vouchers = vouchers.Where(x =>
-                    (!string.IsNullOrWhiteSpace(x.VoucherNumber) && x.VoucherNumber.ToLower().Contains(keyword)) ||
-                    (!string.IsNullOrWhiteSpace(x.VendorName) && x.VendorName.ToLower().Contains(keyword)) ||
-                    (x.Vendor != null && !string.IsNullOrWhiteSpace(x.Vendor.VendorName) && x.Vendor.VendorName.ToLower().Contains(keyword)) ||
-                    (x.Category != null && !string.IsNullOrWhiteSpace(x.Category.CategoryName) && x.Category.CategoryName.ToLower().Contains(keyword)) ||
-                    (!string.IsNullOrWhiteSpace(x.InvoiceNumber) && x.InvoiceNumber.ToLower().Contains(keyword)) ||
-                    (!string.IsNullOrWhiteSpace(x.Description) && x.Description.ToLower().Contains(keyword)))
-                    .ToList();
-            }
-
-            if (fromDate.HasValue)
-                vouchers = vouchers.Where(x => x.VoucherDate.Date >= fromDate.Value.Date).ToList();
-
-            if (toDate.HasValue)
-                vouchers = vouchers.Where(x => x.VoucherDate.Date <= toDate.Value.Date).ToList();
-
+            var vouchers = await _voucherTrackerService.GetForExportAsync(
+                status,
+                categoryId,
+                search,
+                fromDate,
+                toDate,
+                userId,
+                restrictToCurrentUser);
             using var workbook = new XLWorkbook();
             var worksheet = workbook.Worksheets.Add("Expense Vouchers");
 
