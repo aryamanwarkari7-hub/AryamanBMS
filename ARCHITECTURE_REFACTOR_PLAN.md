@@ -121,17 +121,10 @@ A module is complete only when:
   GST-rate validation, and soft-delete rules now flow through a Business
   service backed by the existing repository; the workflow was manually
   verified and checkpointed.
-
-## In-Progress Refactor Slice
-
-- Expense Voucher: Index, Excel-export data selection, and draft creation and
-  editing (validation, GST period checks, defaults, calculations, and
-  persistence) now flow through Business services and have been manually
-  verified. Submit, approve, reject, post, reverse, and draft deletion now use
-  a Business transition service; notifications and HTTP/UI orchestration remain
-  in Web. Document-record creation and draft-only deletion now flow through a
-  Business service; file transport remains Web-owned. Excel workbook generation
-  remains for a later, separately verified slice.
+- Expense Voucher: read/export data, draft creation and editing, state
+  transitions, document persistence, and repository-backed lookups now flow
+  through Business and Repositories; the controller has no direct
+  `ApplicationDbContext` dependency and the workflow was manually verified.
 
 ## Current Layering Inventory
 
