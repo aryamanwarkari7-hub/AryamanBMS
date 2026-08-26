@@ -122,6 +122,14 @@ A module is complete only when:
   service backed by the existing repository; the workflow was manually
   verified and checkpointed.
 
+## In-Progress Refactor Slice
+
+- Expense Voucher: the Index read flow (access scoping, filtering, sorting,
+  and paging) now flows through a Business service backed by the existing
+  repository and has been manually verified. Excel generation and the
+  create/edit/approval/posting/document workflows remain in the Web controller
+  for later, separately verified sub-slices.
+
 ## Current Layering Inventory
 
 As of 25-Aug-2026:

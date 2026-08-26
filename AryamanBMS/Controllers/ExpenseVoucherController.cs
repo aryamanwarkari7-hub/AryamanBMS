@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.RegularExpressions;
+using AryamanBMS.Business.Interfaces;
 using AryamanBMS.Data;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
@@ -17,6 +18,7 @@ namespace AryamanBMS.Controllers
     public class ExpenseVoucherController : Controller
     {
         private readonly IExpenseVoucherRepository _voucherRepository;
+        private readonly IExpenseVoucherTrackerService _voucherTrackerService;
         private readonly IExpenseCategoryRepository _categoryRepository;
         private readonly IFileStorageService _fileStorageService;
         private readonly UserManager<ApplicationUserModel> _userManager;
@@ -29,6 +31,7 @@ namespace AryamanBMS.Controllers
 
         public ExpenseVoucherController(
            IExpenseVoucherRepository voucherRepository,
+           IExpenseVoucherTrackerService voucherTrackerService,
            IExpenseCategoryRepository categoryRepository,
            IFileStorageService fileStorageService,
            UserManager<ApplicationUserModel> userManager,
@@ -38,6 +41,7 @@ namespace AryamanBMS.Controllers
            ILogger<ExpenseVoucherController> logger)
         {
             _voucherRepository = voucherRepository;
+            _voucherTrackerService = voucherTrackerService;
             _categoryRepository = categoryRepository;
             _fileStorageService = fileStorageService;
             _userManager = userManager;
@@ -48,123 +52,32 @@ namespace AryamanBMS.Controllers
         }
 
         public async Task<IActionResult> Index(
-    string? status,
-    int? categoryId,
-    string? search,
-    DateTime? fromDate,
-    DateTime? toDate,
-    string sortBy = "VoucherDate",
-    string sortOrder = "desc",
-    int page = 1,
-    bool mine = false)
+            string? status,
+            int? categoryId,
+            string? search,
+            DateTime? fromDate,
+            DateTime? toDate,
+            string sortBy = "VoucherDate",
+            string sortOrder = "desc",
+            int page = 1,
+            bool mine = false)
         {
-            var vouchers = await _voucherRepository.GetAllAsync();
+            bool restrictToCurrentUser = mine || !IsFinanceUser();
+            string userId = restrictToCurrentUser
+                ? GetCurrentUserId()
+                : string.Empty;
 
-            if (mine || !IsFinanceUser())
-            {
-                string userId = GetCurrentUserId();
-
-                vouchers = vouchers
-                    .Where(x => x.CreatedByUserId == userId)
-                    .ToList();
-            }
-
-            if (!string.IsNullOrWhiteSpace(status))
-            {
-                vouchers = vouchers
-                    .Where(x => x.Status == status)
-                    .ToList();
-            }
-
-            if (categoryId.HasValue && categoryId.Value > 0)
-            {
-                vouchers = vouchers
-                    .Where(x => x.ExpenseCategoryId == categoryId.Value)
-                    .ToList();
-            }
-
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                string keyword = search.Trim().ToLower();
-
-                vouchers = vouchers
-                    .Where(x =>
-                        (!string.IsNullOrWhiteSpace(x.VoucherNumber) &&
-                            x.VoucherNumber.ToLower().Contains(keyword)) ||
-                        (!string.IsNullOrWhiteSpace(x.VendorName) &&
-                            x.VendorName.ToLower().Contains(keyword)) ||
-                        (x.Vendor != null &&
-                            !string.IsNullOrWhiteSpace(x.Vendor.VendorName) &&
-                            x.Vendor.VendorName.ToLower().Contains(keyword)) ||
-                        (x.Category != null &&
-                            !string.IsNullOrWhiteSpace(x.Category.CategoryName) &&
-                            x.Category.CategoryName.ToLower().Contains(keyword)) ||
-                        (!string.IsNullOrWhiteSpace(x.InvoiceNumber) &&
-                            x.InvoiceNumber.ToLower().Contains(keyword)) ||
-                        (!string.IsNullOrWhiteSpace(x.Description) &&
-                            x.Description.ToLower().Contains(keyword)))
-                    .ToList();
-            }
-
-            if (fromDate.HasValue)
-            {
-                vouchers = vouchers
-                    .Where(x => x.VoucherDate.Date >= fromDate.Value.Date)
-                    .ToList();
-            }
-
-            if (toDate.HasValue)
-            {
-                vouchers = vouchers
-                    .Where(x => x.VoucherDate.Date <= toDate.Value.Date)
-                    .ToList();
-            }
-
-            bool desc =
-                string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
-
-            vouchers = sortBy switch
-            {
-                "VoucherNo" => desc
-                    ? vouchers.OrderByDescending(x => x.VoucherNumber).ToList()
-                    : vouchers.OrderBy(x => x.VoucherNumber).ToList(),
-
-                "Category" => desc
-                    ? vouchers.OrderByDescending(x => x.Category?.CategoryName).ToList()
-                    : vouchers.OrderBy(x => x.Category?.CategoryName).ToList(),
-
-                "Vendor" => desc
-                    ? vouchers.OrderByDescending(x => x.Vendor?.VendorName ?? x.VendorName).ToList()
-                    : vouchers.OrderBy(x => x.Vendor?.VendorName ?? x.VendorName).ToList(),
-
-                "Amount" => desc
-                    ? vouchers.OrderByDescending(x => x.Amount).ToList()
-                    : vouchers.OrderBy(x => x.Amount).ToList(),
-
-                "TotalAmount" => desc
-                    ? vouchers.OrderByDescending(x => x.TotalAmount).ToList()
-                    : vouchers.OrderBy(x => x.TotalAmount).ToList(),
-
-                "Status" => desc
-                    ? vouchers.OrderByDescending(x => x.Status).ToList()
-                    : vouchers.OrderBy(x => x.Status).ToList(),
-
-                "PaymentStatus" => desc
-                    ? vouchers.OrderByDescending(x => x.PaymentStatus).ToList()
-                    : vouchers.OrderBy(x => x.PaymentStatus).ToList(),
-
-                _ => desc
-                    ? vouchers.OrderByDescending(x => x.VoucherDate).ToList()
-                    : vouchers.OrderBy(x => x.VoucherDate).ToList()
-            };
-
-            const int pageSize = 20;
-            int totalRecords = vouchers.Count();
-
-            vouchers = vouchers
-                .Skip((Math.Max(page, 1) - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
+            var tracker = await _voucherTrackerService.GetTrackerAsync(
+                status,
+                categoryId,
+                search,
+                fromDate,
+                toDate,
+                sortBy,
+                sortOrder,
+                page,
+                userId,
+                restrictToCurrentUser);
 
             ViewBag.Status = status;
             ViewBag.CategoryId = categoryId;
@@ -175,12 +88,11 @@ namespace AryamanBMS.Controllers
             ViewBag.SortOrder = sortOrder;
             ViewBag.Mine = mine;
             ViewBag.CurrentPage = page;
-            ViewBag.TotalPages =
-                (int)Math.Ceiling(totalRecords / (double)pageSize);
+            ViewBag.TotalPages = tracker.TotalPages;
 
             await LoadLookups();
 
-            return View(vouchers);
+            return View(tracker.Vouchers);
         }
 
         public async Task<IActionResult> ExportExcel(
