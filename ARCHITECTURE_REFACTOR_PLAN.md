@@ -74,6 +74,11 @@ order:
 The central `ApplicationDbContext` can be split later only by complete
 transactional aggregate. It is not a bulk refactor task.
 
+## In Progress
+
+- Credit Note: list/search/sort and issued-invoice lookups are now layered;
+  the invoice-adjustment creation transaction remains.
+
 ## Definition of Done for Each Workflow
 
 - Controller contains HTTP/UI orchestration only.
