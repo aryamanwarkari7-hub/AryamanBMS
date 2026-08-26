@@ -248,6 +248,7 @@ builder.Services.AddScoped<IExpenseVoucherRepository, ExpenseVoucherRepository>(
 builder.Services.AddScoped<IExpenseVoucherTrackerService, ExpenseVoucherTrackerService>();
 builder.Services.AddScoped<IExpenseVoucherCreateService, ExpenseVoucherCreateService>();
 builder.Services.AddScoped<IExpenseVoucherTransitionService, ExpenseVoucherTransitionService>();
+builder.Services.AddScoped<IExpenseVoucherDocumentService, ExpenseVoucherDocumentService>();
 builder.Services.AddScoped<IVendorRepository, VendorRepository>();
 builder.Services.AddScoped<IGstSnapshotRepository, GstSnapshotRepository>();
 builder.Services.AddScoped<IGstConfigurationRepository, GstConfigurationRepository>();

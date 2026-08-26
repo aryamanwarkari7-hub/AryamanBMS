@@ -21,6 +21,7 @@ namespace AryamanBMS.Controllers
         private readonly IExpenseVoucherTrackerService _voucherTrackerService;
         private readonly IExpenseVoucherCreateService _voucherCreateService;
         private readonly IExpenseVoucherTransitionService _voucherTransitionService;
+        private readonly IExpenseVoucherDocumentService _voucherDocumentService;
         private readonly IExpenseCategoryRepository _categoryRepository;
         private readonly IFileStorageService _fileStorageService;
         private readonly UserManager<ApplicationUserModel> _userManager;
@@ -36,6 +37,7 @@ namespace AryamanBMS.Controllers
            IExpenseVoucherTrackerService voucherTrackerService,
            IExpenseVoucherCreateService voucherCreateService,
            IExpenseVoucherTransitionService voucherTransitionService,
+           IExpenseVoucherDocumentService voucherDocumentService,
            IExpenseCategoryRepository categoryRepository,
            IFileStorageService fileStorageService,
            UserManager<ApplicationUserModel> userManager,
@@ -48,6 +50,7 @@ namespace AryamanBMS.Controllers
             _voucherTrackerService = voucherTrackerService;
             _voucherCreateService = voucherCreateService;
             _voucherTransitionService = voucherTransitionService;
+            _voucherDocumentService = voucherDocumentService;
             _categoryRepository = categoryRepository;
             _fileStorageService = fileStorageService;
             _userManager = userManager;
@@ -613,8 +616,7 @@ namespace AryamanBMS.Controllers
                     UploadedByUserId = GetCurrentUserId()
                 };
 
-                await _voucherRepository.AddDocumentAsync(document);
-                await _voucherRepository.SaveAsync();
+                await _voucherDocumentService.CreateAsync(document);
 
                 TempData["Success"] = "Expense voucher document uploaded successfully.";
             }
@@ -669,22 +671,15 @@ namespace AryamanBMS.Controllers
             if (!CanAccessVoucher(document.ExpenseVoucher))
                 return Forbid();
 
-            if (document.ExpenseVoucher.Status !=
-                FinancialConstants.ExpenseVoucherStatus.Draft)
-            {
-                TempData["Error"] =
-                    "Documents linked to posted or rejected vouchers cannot be deleted.";
-
-                return RedirectToAction(
-                    nameof(Details),
-                    new { id = document.ExpenseVoucherId });
-            }
-
             int voucherId = document.ExpenseVoucherId;
             string storedPath = document.StoredFilePath;
 
-            await _voucherRepository.DeleteDocumentAsync(document);
-            await _voucherRepository.SaveAsync();
+            if (!await _voucherDocumentService.DeleteAsync(document))
+            {
+                TempData["Error"] =
+                    "Documents linked to posted or rejected vouchers cannot be deleted.";
+                return RedirectToAction(nameof(Details), new { id = voucherId });
+            }
 
             await _fileStorageService.DeleteAsync(storedPath);
 

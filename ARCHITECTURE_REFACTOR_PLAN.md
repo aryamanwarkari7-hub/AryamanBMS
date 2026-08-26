@@ -129,8 +129,9 @@ A module is complete only when:
   persistence) now flow through Business services and have been manually
   verified. Submit, approve, reject, post, reverse, and draft deletion now use
   a Business transition service; notifications and HTTP/UI orchestration remain
-  in Web. Excel workbook generation and document workflows remain for later,
-  separately verified slices.
+  in Web. Document-record creation and draft-only deletion now flow through a
+  Business service; file transport remains Web-owned. Excel workbook generation
+  remains for a later, separately verified slice.
 
 ## Current Layering Inventory
 
