@@ -19,6 +19,7 @@ namespace AryamanBMS.Controllers
     {
         private readonly IExpenseVoucherRepository _voucherRepository;
         private readonly IExpenseVoucherTrackerService _voucherTrackerService;
+        private readonly IExpenseVoucherCreateService _voucherCreateService;
         private readonly IExpenseCategoryRepository _categoryRepository;
         private readonly IFileStorageService _fileStorageService;
         private readonly UserManager<ApplicationUserModel> _userManager;
@@ -32,6 +33,7 @@ namespace AryamanBMS.Controllers
         public ExpenseVoucherController(
            IExpenseVoucherRepository voucherRepository,
            IExpenseVoucherTrackerService voucherTrackerService,
+           IExpenseVoucherCreateService voucherCreateService,
            IExpenseCategoryRepository categoryRepository,
            IFileStorageService fileStorageService,
            UserManager<ApplicationUserModel> userManager,
@@ -42,6 +44,7 @@ namespace AryamanBMS.Controllers
         {
             _voucherRepository = voucherRepository;
             _voucherTrackerService = voucherTrackerService;
+            _voucherCreateService = voucherCreateService;
             _categoryRepository = categoryRepository;
             _fileStorageService = fileStorageService;
             _userManager = userManager;
@@ -188,52 +191,11 @@ namespace AryamanBMS.Controllers
             ExpenseVoucherModel model,
             bool mine = false)
         {
-            ModelState.Remove(
-                nameof(model.VoucherNumber));
+            ModelState.Remove(nameof(model.VoucherNumber));
+            ModelState.Remove(nameof(model.CreatedByUserId));
 
-            ModelState.Remove(
-                nameof(model.CreatedByUserId));
-
-            NormalizeVoucher(model);
-
-            var category =
-                await _categoryRepository.GetByIdAsync(
-                    model.ExpenseCategoryId);
-
-            if (category == null)
-            {
-                ModelState.AddModelError(
-                    nameof(model.ExpenseCategoryId),
-                    "Selected category does not exist.");
-            }
-            else if (model.GSTRate == 0 &&
-                     category.DefaultGSTRate > 0)
-            {
-                model.GSTRate =
-                    category.DefaultGSTRate;
-            }
-
-            ValidateVoucherBusinessRules(model);
-            await ValidateGstPeriodOpen(model.VoucherDate);
-
-            if (!string.IsNullOrWhiteSpace(
-                    model.InvoiceNumber))
-            {
-                bool duplicateExists =
-                    await _voucherRepository
-                        .VendorInvoiceExistsAsync(
-                            model.VendorId,
-                            model.VendorGSTIN,
-                            model.InvoiceNumber,
-                            model.FinancialYear);
-
-                if (duplicateExists)
-                {
-                    ModelState.AddModelError(
-                        nameof(model.InvoiceNumber),
-                        "This vendor invoice number already exists for the vendor.");
-                }
-            }
+            var validation = await _voucherCreateService.ValidateAsync(model);
+            AddValidationErrors(validation.Errors);
 
             if (!ModelState.IsValid)
             {
@@ -241,33 +203,16 @@ namespace AryamanBMS.Controllers
                 return View(model);
             }
 
-            CalculateGSTAmounts(model);
-
-            model.CreatedByUserId =
-                GetCurrentUserId();
-
-            model.Status =
-                FinancialConstants
-                    .ExpenseVoucherStatus
-                    .Draft;
-
-            model.FinancialYear =
-                GetCurrentFinancialYear();
-
-            await ApplyVendorDefaults(model);
-            ApplyCategoryDefaults(model, category);
-            RefreshPaymentFields(model);
-
-            await _voucherRepository
-                .CreateWithSequenceAsync(model);
+            await _voucherCreateService.CreateAsync(
+                model,
+                validation.Category,
+                GetCurrentUserId(),
+                GetCurrentFinancialYear());
 
             TempData["Success"] =
                 $"Expense Voucher '{model.VoucherNumber}' created successfully.";
 
-            return RedirectToAction(nameof(Index), new
-            {
-                mine
-            });
+            return RedirectToAction(nameof(Index), new { mine });
         }
 
         #region Edit
@@ -933,6 +878,15 @@ namespace AryamanBMS.Controllers
         {
             value ??= string.Empty;
             return $"\"{value.Replace("\"", "\"\"")}\"";
+        }
+
+        private void AddValidationErrors(
+            IReadOnlyDictionary<string, string> errors)
+        {
+            foreach (var error in errors)
+            {
+                ModelState.AddModelError(error.Key, error.Value);
+            }
         }
 
         private static readonly decimal[] AllowedGstRates =

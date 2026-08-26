@@ -45,7 +45,7 @@
 
 </div>
 
-<form asp-action="Create"
+<form asp-action="@(isCreate ? "Create" : "Edit")"
       asp-route-mine="@(Context.Request.Query["mine"] == "true" ? "true" : null)"
       method="post"
       id="expenseForm">
