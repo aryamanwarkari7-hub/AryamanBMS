@@ -236,124 +236,22 @@ namespace AryamanBMS.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
-    ExpenseVoucherModel model)
+            ExpenseVoucherModel model)
         {
-            var existing =
-                await _voucherRepository.GetByIdAsync(
-                    model.ExpenseVoucherId);
-
-            if (existing == null)
-                return NotFound();
-
+            var existing = await _voucherRepository.GetByIdAsync(model.ExpenseVoucherId);
+            if (existing == null) return NotFound();
             if (!CanModifyDraftVoucher(existing))
             {
-                TempData["Error"] =
-                    "Only accessible draft expense vouchers can be edited.";
-
+                TempData["Error"] = "Only accessible draft expense vouchers can be edited.";
                 return RedirectToAction(nameof(Index));
             }
 
-            NormalizeVoucher(model);
+            var validation = await _voucherCreateService.ValidateForUpdateAsync(model, existing);
+            AddValidationErrors(validation.Errors);
+            if (!ModelState.IsValid) { await LoadLookups(); return View(model); }
 
-            var category =
-                await _categoryRepository.GetByIdAsync(
-                    model.ExpenseCategoryId);
-
-            if (category == null)
-            {
-                ModelState.AddModelError(
-                    nameof(model.ExpenseCategoryId),
-                    "Selected category does not exist.");
-            }
-            else if (model.GSTRate == 0 &&
-                     category.DefaultGSTRate > 0)
-            {
-                model.GSTRate =
-                    category.DefaultGSTRate;
-            }
-
-            ValidateVoucherBusinessRules(model);
-            await ValidateGstPeriodOpen(model.VoucherDate);
-
-            if (!string.IsNullOrWhiteSpace(
-                    model.InvoiceNumber))
-            {
-                bool duplicateExists =
-                    await _voucherRepository
-                        .VendorInvoiceExistsAsync(
-                            model.VendorId,
-                            model.VendorGSTIN,
-                            model.InvoiceNumber,
-                            existing.FinancialYear,
-                            existing.ExpenseVoucherId);
-
-                if (duplicateExists)
-                {
-                    ModelState.AddModelError(
-                        nameof(model.InvoiceNumber),
-                        "This vendor invoice number already exists for the vendor.");
-                }
-            }
-
-            if (!ModelState.IsValid)
-            {
-                await LoadLookups();
-                return View(model);
-            }
-
-            existing.ExpenseCategoryId = model.ExpenseCategoryId;
-
-            existing.VoucherDate = model.VoucherDate;
-
-            existing.Description = model.Description;
-            existing.BusinessPurpose = model.BusinessPurpose;
-            existing.BeneficiaryName = model.BeneficiaryName;
-            existing.SupportingReference = model.SupportingReference;
-
-            existing.Amount = model.Amount;
-
-            existing.GSTRate = model.GSTRate;
-
-            existing.IsInterState = model.IsInterState;
-            existing.CompanyStateCode = model.CompanyStateCode;
-            existing.VendorStateCode = model.VendorStateCode;
-            existing.PlaceOfSupplyStateCode = model.PlaceOfSupplyStateCode;
-            existing.IsGstStateOverride = model.IsGstStateOverride;
-            existing.GstStateOverrideReason = model.GstStateOverrideReason;
-
-            existing.VendorId = model.VendorId;
-            existing.VendorName = model.VendorName;
-
-            existing.VendorGSTIN = model.VendorGSTIN;
-
-            existing.InvoiceNumber = model.InvoiceNumber;
-            existing.VendorInvoiceDate = model.VendorInvoiceDate;
-
-            existing.ITCEligible = model.ITCEligible;
-            existing.ITCStatus = model.ITCStatus;
-            existing.ProjectId = model.ProjectId;
-            existing.DepartmentId = model.DepartmentId;
-            existing.CostCentreId = model.CostCentreId;
-            existing.ExpenseClassification = model.ExpenseClassification;
-            existing.IsEmployeeReimbursement = model.IsEmployeeReimbursement;
-            existing.ReimbursementEmployeeId = model.ReimbursementEmployeeId;
-            existing.ReimbursementStatus = model.ReimbursementStatus;
-
-            existing.Remarks = model.Remarks;
-
-            await ApplyVendorDefaults(existing);
-            ApplyCategoryDefaults(existing, category);
-            CalculateGSTAmounts(existing);
-            RefreshPaymentFields(existing);
-
-            await _voucherRepository.UpdateAsync(
-                existing);
-
-            await _voucherRepository.SaveAsync();
-
-            TempData["Success"] =
-                $"Expense Voucher '{existing.VoucherNumber}' updated successfully.";
-
+            await _voucherCreateService.UpdateAsync(existing, model, validation.Category);
+            TempData["Success"] = $"Expense Voucher '{existing.VoucherNumber}' updated successfully.";
             return RedirectToAction(nameof(Index));
         }
 

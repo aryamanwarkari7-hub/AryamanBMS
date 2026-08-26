@@ -124,10 +124,10 @@ A module is complete only when:
 
 ## In-Progress Refactor Slice
 
-- Expense Voucher: Index, Excel-export data selection, and draft creation
-  (validation, GST period checks, defaults, calculations, and sequence-backed
+- Expense Voucher: Index, Excel-export data selection, and draft creation and
+  editing (validation, GST period checks, defaults, calculations, and
   persistence) now flow through Business services and have been manually
-  verified. Excel workbook generation and the edit/approval/posting/document
+  verified. Excel workbook generation and the approval/posting/document
   workflows remain in the Web controller for later, separately verified slices.
 
 ## Current Layering Inventory
