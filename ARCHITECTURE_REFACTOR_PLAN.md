@@ -54,6 +54,8 @@ queries, persistence, and reusable contracts.
 - Expense Category
 - Expense Voucher: read/export selection, create, edit, transitions,
   documents, and repository-backed lookups
+- Credit Note: list/query flow and transactional creation with original-invoice
+  balance and payment-status adjustment
 
 ## Remaining Work
 
@@ -73,11 +75,6 @@ order:
 
 The central `ApplicationDbContext` can be split later only by complete
 transactional aggregate. It is not a bulk refactor task.
-
-## In Progress
-
-- Credit Note: list/search/sort and issued-invoice lookups are now layered;
-  the invoice-adjustment creation transaction remains.
 
 ## Definition of Done for Each Workflow
 
