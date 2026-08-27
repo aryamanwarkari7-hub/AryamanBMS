@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 
-using AryamanBMS.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using DocumentFormat.OpenXml.Spreadsheet;
@@ -27,8 +26,6 @@ namespace AryamanBMS.Controllers
 
         private readonly IGstConfigurationRepository _gstConfigurationRepository;
 
-        private readonly ApplicationDbContext _context;
-
         public InvoiceController(
           IInvoiceRepository invoiceRepository,
           IInvoiceQueryService invoiceQueryService,
@@ -36,7 +33,6 @@ namespace AryamanBMS.Controllers
           IInvoiceWorkflowService invoiceWorkflowService,
           IFileStorageService fileStorageService,
           IInvoiceDocumentService invoiceDocumentService,
-          ApplicationDbContext context,
           INotificationService notificationService,
           UserManager<ApplicationUserModel> userManager,
           IGstConfigurationRepository gstConfigurationRepository)
@@ -47,7 +43,6 @@ namespace AryamanBMS.Controllers
             _invoiceWorkflowService = invoiceWorkflowService;
             _fileStorageService = fileStorageService;
             _invoiceDocumentService = invoiceDocumentService;
-            _context = context;
             _notificationService = notificationService;
             _userManager = userManager;
             _gstConfigurationRepository = gstConfigurationRepository;
@@ -960,95 +955,6 @@ namespace AryamanBMS.Controllers
             };
         }
 
-        private void ValidateInvoiceBusinessRules(InvoiceModel model)
-        {
-            if (model.InvoiceType != "Tax Invoice" &&
-                model.InvoiceType != "Proforma Invoice")
-            {
-                ModelState.AddModelError(
-                    nameof(model.InvoiceType),
-                    "Invoice type must be Tax Invoice or Proforma Invoice.");
-            }
-
-            if (model.DueDate.HasValue &&
-                model.DueDate.Value.Date <
-                model.InvoiceDate.Date)
-            {
-                ModelState.AddModelError(
-                    nameof(model.DueDate),
-                    "Due date cannot be before invoice date.");
-            }
-
-            if (model.InvoiceDetails == null ||
-                model.InvoiceDetails.Count == 0)
-            {
-                ModelState.AddModelError(
-                    nameof(model.InvoiceDetails),
-                    "At least one valid invoice item is required.");
-
-                return;
-            }
-
-            for (int index = 0;
-                 index < model.InvoiceDetails.Count;
-                 index++)
-            {
-                // Convert ICollection to IList for indexing
-                var detail = model.InvoiceDetails.ElementAt(index);
-
-                if (string.IsNullOrWhiteSpace(detail.ItemName))
-                {
-                    ModelState.AddModelError(
-                        $"InvoiceDetails[{index}].ItemName",
-                        "Item name is required.");
-                }
-
-                if (detail.Qty <= 0)
-                {
-                    ModelState.AddModelError(
-                        $"InvoiceDetails[{index}].Qty",
-                        "Quantity must be greater than zero.");
-                }
-
-                if (detail.Rate < 0)
-                {
-                    ModelState.AddModelError(
-                        $"InvoiceDetails[{index}].Rate",
-                        "Rate cannot be negative.");
-                }
-
-                if (detail.GSTPercent < 0 ||
-                    detail.GSTPercent > 100)
-                {
-                    ModelState.AddModelError(
-                        $"InvoiceDetails[{index}].GSTPercent",
-                        "GST percentage must be between 0 and 100.");
-                }
-            }
-
-            if (model.Discount < 0)
-            {
-                ModelState.AddModelError(
-                    nameof(model.Discount),
-                    "Discount cannot be negative.");
-            }
-
-            if (model.Discount > model.SubTotal)
-            {
-                ModelState.AddModelError(
-                    nameof(model.Discount),
-                    "Discount cannot exceed the subtotal.");
-            }
-
-            if (model.InvoiceStatus != "Draft" &&
-                model.InvoiceStatus != "Issued")
-            {
-                ModelState.AddModelError(
-                    nameof(model.InvoiceStatus),
-                    "Invoice status must be Draft or Issued.");
-            }
-        }
-
         private async Task LoadDropdownsAsync()
         {
             ViewBag.Clients =
@@ -1074,6 +980,7 @@ namespace AryamanBMS.Controllers
             }
         }
 
+#if false // Superseded by IInvoiceDraftService
         private async Task AssignGstStateDecisionAsync(
     InvoiceModel model)
         {
@@ -1486,6 +1393,7 @@ namespace AryamanBMS.Controllers
                     Math.Round(model.GrandTotal - model.PaidAmount, 2));
         }
 
+#endif
         [HttpGet]
         public async Task<IActionResult> GetPurchaseOrderDetails(int id)
         {
@@ -1510,6 +1418,7 @@ namespace AryamanBMS.Controllers
             });
         }
 
+#if false // Superseded by IInvoiceDraftService
         private async Task ValidatePurchaseOrderAsync(InvoiceModel model)
         {
             if (!model.PurchaseWorkOrderId.HasValue)
@@ -1648,6 +1557,7 @@ namespace AryamanBMS.Controllers
             }
         }
 
+#endif
         private async Task NotifyInvoiceIssuedAsync(
     InvoiceModel invoice,
     string actionUserId)

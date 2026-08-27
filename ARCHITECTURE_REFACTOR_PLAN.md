@@ -58,6 +58,8 @@ queries, persistence, and reusable contracts.
   balance/payment-status adjustment
 - Debit Note: list/query flow, transactional creation, and original-invoice
   balance/payment-status adjustment
+- Invoice: tracker queries, draft create/edit validation and persistence,
+  issue/cancel/delete transitions, and document lookups
 
 ## Remaining Work
 
@@ -65,15 +67,15 @@ Refactor these controller workflows into Business services in the listed order.
 
 | Priority | Module | Remaining subtopics | Count |
 | ---: | --- | --- | ---: |
-| 1 | Finance | Invoice; Advance Receipt; Billing Milestone; Vendor Payment; Office Asset | 5 |
+| 1 | Finance | Advance Receipt; Billing Milestone; Vendor Payment; Office Asset | 4 |
 | 2 | CRM | Client; Client Communication; Proposal; Proposal Template; Purchase Order | 5 |
 | 3 | Projects | Project; Project Members; Project Tasks; Timeline; Flow; Meetings; Risks; Communications | 8 |
 | 4 | HR and payroll | Employee; Attendance; Leave; Comp-off; Salary; Salary Advance; Salary Payment; Full and Final Settlement | 8 |
 | 5 | Compliance and platform | GST operations; PF; ESIC; PT; Account; User; Dashboard; Letters | 8 |
 
-**Total remaining workflow subtopics: 34.**
+**Total remaining workflow subtopics: 33.**
 
-**Next workflow: Invoice.**
+**Next workflow: Advance Receipt.**
 
 ## Deferred Cross-Cutting Work
 
