@@ -1,5 +1,7 @@
 using AryamanBMS.Data;
+using AryamanBMS.Business.Interfaces;
 using AryamanBMS.Models;
+using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,14 +15,28 @@ namespace AryamanBMS.Controllers
     {
         #region Actions
 
-        private readonly ApplicationDbContext _context;
+        private readonly IAdvanceReceiptQueryService _queryService;
+        private readonly IAdvanceReceiptService _advanceReceiptService;
+        private readonly IAdvanceReceiptRepository _advanceReceiptRepository;
 
-        public AdvanceReceiptController(ApplicationDbContext context)
+        public AdvanceReceiptController(IAdvanceReceiptQueryService queryService, IAdvanceReceiptService advanceReceiptService, IAdvanceReceiptRepository advanceReceiptRepository)
         {
-            _context = context;
+            _queryService = queryService;
+            _advanceReceiptService = advanceReceiptService;
+            _advanceReceiptRepository = advanceReceiptRepository;
         }
 
-        public async Task<IActionResult> Index(
+        public async Task<IActionResult> Index(string? search, string sortBy = "ReceiptDate", string sortOrder = "desc")
+        {
+            var receipts = await _queryService.GetAllAsync(search, sortBy, sortOrder);
+            ViewBag.Search = search;
+            ViewBag.SortBy = sortBy;
+            ViewBag.SortOrder = sortOrder;
+            return View(receipts);
+        }
+
+#if false // Superseded by IAdvanceReceiptQueryService
+        private async Task<IActionResult> LegacyIndex(
     string? search,
     string sortBy = "ReceiptDate",
     string sortOrder = "desc")
@@ -109,8 +125,8 @@ namespace AryamanBMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(AdvanceReceiptModel model)
         {
-            NormalizeAdvanceReceipt(model);
-            await ValidateAdvanceReceiptAsync(model);
+            var validation = await _advanceReceiptService.ValidateAsync(model);
+            foreach (var error in validation) ModelState.AddModelError(error.Key, error.Value);
 
             if (!ModelState.IsValid)
             {
@@ -118,17 +134,7 @@ namespace AryamanBMS.Controllers
                 return View(model);
             }
 
-            model.AdvanceReceiptNo =
-                await GenerateAdvanceReceiptNoAsync();
-
-            model.AvailableBalance = model.Amount;
-            model.AdjustedAmount = 0;
-            model.CreatedOn = DateTime.Now;
-            model.ReceivedByUserId =
-                User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            await _context.AdvanceReceipts.AddAsync(model);
-            await _context.SaveChangesAsync();
+            await _advanceReceiptService.CreateAsync(model, User.FindFirstValue(ClaimTypes.NameIdentifier));
 
             TempData["Success"] =
                 "Advance receipt created successfully.";
@@ -136,16 +142,11 @@ namespace AryamanBMS.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+#endif
         [HttpGet]
         public async Task<IActionResult> Apply(int id)
         {
-            var receipt =
-                await _context.AdvanceReceipts
-                    .AsNoTracking()
-                    .Include(x => x.Client)
-                    .FirstOrDefaultAsync(x =>
-                        x.AdvanceReceiptId == id &&
-                        !x.IsCancelled);
+            var receipt = await _advanceReceiptRepository.GetAvailableByIdAsync(id);
 
             if (receipt == null)
             {
@@ -185,42 +186,16 @@ namespace AryamanBMS.Controllers
                 return NotFound();
             }
 
-            var receipt =
-                await _context.AdvanceReceipts
-                    .Include(x => x.Client)
-                    .FirstOrDefaultAsync(x =>
-                        x.AdvanceReceiptId == id &&
-                        !x.IsCancelled);
+            var receipt = await _advanceReceiptRepository.GetAvailableByIdAsync(id);
 
             if (receipt == null)
             {
                 return NotFound();
             }
 
-            var invoice =
-                await _context.Invoices
-                    .FirstOrDefaultAsync(x =>
-                        x.InvoiceId == vm.InvoiceId &&
-                        x.ClientId == receipt.ClientId &&
-                        !x.IsDeleted &&
-                        x.InvoiceStatus == "Issued");
-
             vm.AdvanceReceiptNo = receipt.AdvanceReceiptNo;
             vm.ClientName = receipt.Client?.ClientName ?? string.Empty;
             vm.AvailableBalance = receipt.AvailableBalance;
-
-            if (invoice == null)
-            {
-                ModelState.AddModelError(
-                    nameof(vm.InvoiceId),
-                    "Select a valid issued invoice for this client.");
-            }
-            else if (invoice.BalanceAmount <= 0)
-            {
-                ModelState.AddModelError(
-                    nameof(vm.InvoiceId),
-                    "Selected invoice has no outstanding balance.");
-            }
 
             vm.AmountToAdjust =
                 Math.Round(vm.AmountToAdjust, 2);
@@ -239,12 +214,21 @@ namespace AryamanBMS.Controllers
                     $"Amount cannot exceed available advance balance {receipt.AvailableBalance:N2}.");
             }
 
-            if (invoice != null &&
-                vm.AmountToAdjust > invoice.BalanceAmount)
+            if (!ModelState.IsValid)
             {
-                ModelState.AddModelError(
-                    nameof(vm.AmountToAdjust),
-                    $"Amount cannot exceed invoice balance {invoice.BalanceAmount:N2}.");
+                await LoadApplyInvoicesAsync(vm, receipt.ClientId);
+                return View(vm);
+            }
+
+            var workflowErrors = await _advanceReceiptService.ApplyAsync(
+                id,
+                vm.InvoiceId,
+                vm.AmountToAdjust,
+                vm.Remarks);
+
+            foreach (var error in workflowErrors)
+            {
+                ModelState.AddModelError(error.Key, error.Value);
             }
 
             if (!ModelState.IsValid)
@@ -253,6 +237,12 @@ namespace AryamanBMS.Controllers
                 return View(vm);
             }
 
+            TempData["Success"] =
+                "Advance receipt adjusted against invoice successfully.";
+
+            return RedirectToAction(nameof(Index));
+
+#if false // Superseded by IAdvanceReceiptService.ApplyAsync
             receipt.AdjustedAmount =
                 Math.Round(
                     receipt.AdjustedAmount + vm.AmountToAdjust,
@@ -300,40 +290,20 @@ namespace AryamanBMS.Controllers
                 "Advance receipt adjusted against invoice successfully.";
 
             return RedirectToAction(nameof(Index));
+#endif
         }
 
         private async Task LoadDropdownsAsync()
         {
-            ViewBag.Clients =
-                await _context.Clients
-                    .AsNoTracking()
-                    .Where(x => x.IsActive)
-                    .OrderBy(x => x.ClientName)
-                    .ToListAsync();
-
-            ViewBag.Projects =
-                await _context.Projects
-                    .AsNoTracking()
-                    .Where(x => x.IsActive)
-                    .OrderBy(x => x.ProjectName)
-                    .ToListAsync();
+            ViewBag.Clients = await _advanceReceiptRepository.GetActiveClientsAsync();
+            ViewBag.Projects = await _advanceReceiptRepository.GetActiveProjectsAsync();
         }
 
         private async Task LoadApplyInvoicesAsync(
             AdvanceReceiptApplyViewModel vm,
             int clientId)
         {
-            var invoices =
-                await _context.Invoices
-                    .AsNoTracking()
-                    .Where(x =>
-                        x.ClientId == clientId &&
-                        !x.IsDeleted &&
-                        x.InvoiceStatus == "Issued" &&
-                        x.BalanceAmount > 0)
-                    .OrderByDescending(x => x.InvoiceDate)
-                    .ThenByDescending(x => x.InvoiceId)
-                    .ToListAsync();
+            var invoices = await _advanceReceiptRepository.GetOutstandingInvoicesForClientAsync(clientId);
 
             vm.Invoices =
                 invoices.Select(x =>
@@ -345,6 +315,7 @@ namespace AryamanBMS.Controllers
                     });
         }
 
+#if false // Superseded by IAdvanceReceiptService
         private static void NormalizeAdvanceReceipt(
             AdvanceReceiptModel model)
         {
@@ -441,6 +412,7 @@ namespace AryamanBMS.Controllers
                 invoice.PaymentStatus = "Unpaid";
             }
         }
+#endif
         #endregion
     }
 }
