@@ -2,6 +2,15 @@
 
 namespace AryamanBMS.Utilities.Helpers
 {
+    public enum GstinValidationStatus { Valid, InvalidFormat, InvalidChecksum }
+
+    public readonly record struct GstinValidationResult(
+        GstinValidationStatus Status,
+        char? ExpectedCheckDigit)
+    {
+        public bool IsValid => Status == GstinValidationStatus.Valid;
+    }
+
     public static class GstinValidator
     {
         private const string Characters =
@@ -20,12 +29,17 @@ namespace AryamanBMS.Utilities.Helpers
 
         public static bool IsValid(string? gstin)
         {
+            return Validate(gstin).IsValid;
+        }
+
+        public static GstinValidationResult Validate(string? gstin)
+        {
             string? normalized = Normalize(gstin);
 
             if (normalized == null ||
                 !StructureRegex.IsMatch(normalized))
             {
-                return false;
+                return new(GstinValidationStatus.InvalidFormat, null);
             }
 
             int checksumTotal = 0;
@@ -48,7 +62,12 @@ namespace AryamanBMS.Utilities.Helpers
                     (checksumTotal % Characters.Length)) %
                 Characters.Length;
 
-            return normalized[14] == Characters[checkDigitIndex];
+            char expectedCheckDigit = Characters[checkDigitIndex];
+            return new(
+                normalized[14] == expectedCheckDigit
+                    ? GstinValidationStatus.Valid
+                    : GstinValidationStatus.InvalidChecksum,
+                expectedCheckDigit);
         }
     }
 }

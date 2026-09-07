@@ -156,7 +156,8 @@
                     <label asp-for="Client.GSTNumber" class="form-label">
                         GST Number
                     </label>
-                    <input asp-for="Client.GSTNumber" class="app-input" />
+                    <input asp-for="Client.GSTNumber" class="app-input" maxlength="15" autocapitalize="characters" spellcheck="false" placeholder="Example: 27AAPFU0939F1ZV" />
+                    <small class="form-text text-muted">Enter the 15-character GSTIN without spaces or hyphens.</small>
                     <span asp-validation-for="Client.GSTNumber" class="validation-message"></span>
                 </div>
 

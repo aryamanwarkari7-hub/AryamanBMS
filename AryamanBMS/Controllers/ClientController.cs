@@ -433,12 +433,13 @@ namespace AryamanBMS.Controllers
                     "GSTIN is required for registered clients.");
             }
 
-            if (!string.IsNullOrWhiteSpace(client.GSTNumber) &&
-                !GstinValidator.IsValid(client.GSTNumber))
+            if (!string.IsNullOrWhiteSpace(client.GSTNumber))
             {
-                ModelState.AddModelError(
-                    "Client.GSTNumber",
-                    "Enter a valid GSTIN with a valid checksum.");
+                var result = GstinValidator.Validate(client.GSTNumber);
+                if (result.Status == GstinValidationStatus.InvalidFormat)
+                    ModelState.AddModelError("Client.GSTNumber", "GSTIN must be 15 characters in the required format. Remove spaces or hyphens.");
+                else if (result.Status == GstinValidationStatus.InvalidChecksum)
+                    ModelState.AddModelError("Client.GSTNumber", $"GSTIN checksum does not match. Verify the final character; expected {result.ExpectedCheckDigit}.");
             }
 
             if (!string.IsNullOrWhiteSpace(client.PANNumber) &&
