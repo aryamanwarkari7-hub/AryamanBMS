@@ -20,6 +20,9 @@ namespace AryamanBMS.Controllers
         private readonly IAttendanceRepository
             _attendanceRepository;
 
+        private readonly ICompOffUsageRepository
+            _compOffUsageRepository;
+
         private readonly IEmployeeRepository
             _employeeRepository;
 
@@ -35,6 +38,7 @@ namespace AryamanBMS.Controllers
         public CompOffCreditController(
             ICompOffCreditRepository compOffCreditRepository,
             IAttendanceRepository attendanceRepository,
+            ICompOffUsageRepository compOffUsageRepository,
             IEmployeeRepository employeeRepository,
             UserManager<ApplicationUserModel> userManager,
             INotificationService notificationService,
@@ -45,6 +49,9 @@ namespace AryamanBMS.Controllers
 
             _attendanceRepository =
                 attendanceRepository;
+
+            _compOffUsageRepository =
+                compOffUsageRepository;
 
             _employeeRepository =
                 employeeRepository;
@@ -62,7 +69,9 @@ namespace AryamanBMS.Controllers
         
 
         [HttpGet]
-        public async Task<IActionResult> Index(bool mine = false)
+        public async Task<IActionResult> Index(
+            bool mine = false,
+            string? dashboardFilter = null)
         {
             await UpdateExpiredCreditsAsync();
 
@@ -104,11 +113,49 @@ namespace AryamanBMS.Controllers
                     x.EmployeeId == employee.Id);
             }
 
+            string? dashboardFilterLabel = dashboardFilter switch
+            {
+                "pending" => "Pending Comp Off Requests",
+                "available" => "Available Comp Off Credits",
+                "expiring-soon" => "Comp Off Credits Expiring Soon",
+                "used-this-month" => "Comp Off Credits Used This Month",
+                _ => null
+            };
+
+            if (dashboardFilterLabel != null)
+            {
+                DateTime today = DateTime.Today;
+
+                query = dashboardFilter switch
+                {
+                    "pending" => query.Where(x => x.Status == "Pending"),
+                    "available" => query.Where(x =>
+                        x.Status == "Available" &&
+                        x.ExpiryDate >= today &&
+                        x.CreditDays > x.UsedDays),
+                    "expiring-soon" => query.Where(x =>
+                        x.Status == "Available" &&
+                        x.ExpiryDate >= today &&
+                        x.ExpiryDate <= today.AddDays(15) &&
+                        x.CreditDays > x.UsedDays),
+                    "used-this-month" => query.Where(x =>
+                        _compOffUsageRepository.CompOffUsages
+                            .Where(usage =>
+                                usage.CompOffCreditId == x.Id &&
+                                !usage.IsReversed &&
+                                usage.UsedOn >= new DateTime(today.Year, today.Month, 1) &&
+                                usage.UsedOn < new DateTime(today.Year, today.Month, 1).AddMonths(1))
+                            .Any()),
+                    _ => query
+                };
+            }
+
             var requests =
                 await query
                     .OrderByDescending(x => x.RequestedOn)
                     .ToListAsync();
 
+            ViewBag.DashboardFilterLabel = dashboardFilterLabel;
             return View(requests);
         }
 

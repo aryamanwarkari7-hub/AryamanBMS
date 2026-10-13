@@ -15,6 +15,9 @@ namespace AryamanBMS.ViewModels
         public List<EmployeeDocumentInputViewModel> JoiningDocuments
         { get; set; } = new();
 
+        public List<EmployeeDocumentInputViewModel> OtherJoiningDocuments
+        { get; set; } = new();
+
         public List<int> RemovedAcademicIds { get; set; } = new();
 
         public List<EmployeePreviousEmploymentInputViewModel> PreviousEmployments

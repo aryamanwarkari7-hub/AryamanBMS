@@ -72,7 +72,8 @@ namespace AryamanBMS.Controllers
            string sortBy = "AppliedOn",
            string sortOrder = "desc",
            int page = 1,
-           bool mine = false)
+           bool mine = false,
+           string? dashboardFilter = null)
         {
             const int pageSize = 10;
 
@@ -157,6 +158,62 @@ namespace AryamanBMS.Controllers
                     x.Status == status);
             }
 
+            string? dashboardFilterLabel = dashboardFilter switch
+            {
+                "this-month" => "This Month Applications",
+                "pending" => "Pending Applications",
+                "approved-this-month" => "Approved This Month",
+                "rejected-this-month" => "Rejected This Month",
+                "on-leave-today" => "On Leave Today",
+                "upcoming" => "Upcoming Leaves",
+                "cancellation-pending" => "Cancellation Requests",
+                "cancelled-this-month" => "Cancelled This Month",
+                _ => null
+            };
+
+            if (dashboardFilterLabel != null)
+            {
+                DateTime today = DateTime.Today;
+                DateTime monthStart = new(today.Year, today.Month, 1);
+                DateTime nextMonth = monthStart.AddMonths(1);
+                DateTime upcomingEnd = today.AddDays(30);
+
+                query = dashboardFilter switch
+                {
+                    "this-month" => query.Where(x =>
+                        x.AppliedOn >= monthStart &&
+                        x.AppliedOn < nextMonth),
+                    "pending" => query.Where(x =>
+                        x.Status == "Pending"),
+                    "approved-this-month" => query.Where(x =>
+                        x.Status == "Approved" &&
+                        x.ApprovedOn.HasValue &&
+                        x.ApprovedOn.Value >= monthStart &&
+                        x.ApprovedOn.Value < nextMonth),
+                    "rejected-this-month" => query.Where(x =>
+                        x.Status == "Rejected" &&
+                        x.ApprovedOn.HasValue &&
+                        x.ApprovedOn.Value >= monthStart &&
+                        x.ApprovedOn.Value < nextMonth),
+                    "on-leave-today" => query.Where(x =>
+                        x.Status == "Approved" &&
+                        x.FromDate <= today &&
+                        x.ToDate >= today),
+                    "upcoming" => query.Where(x =>
+                        x.Status == "Approved" &&
+                        x.FromDate > today &&
+                        x.FromDate <= upcomingEnd),
+                    "cancellation-pending" => query.Where(x =>
+                        x.CancellationStatus == "Pending"),
+                    "cancelled-this-month" => query.Where(x =>
+                        x.Status == "Cancelled" &&
+                        x.CancellationReviewedOn.HasValue &&
+                        x.CancellationReviewedOn.Value >= monthStart &&
+                        x.CancellationReviewedOn.Value < nextMonth),
+                    _ => query
+                };
+            }
+
             query = sortBy switch
             {
                 "ApplicationNumber" => sortOrder == "asc"
@@ -196,6 +253,11 @@ namespace AryamanBMS.Controllers
                 routeValues["mine"] = "true";
             }
 
+            if (dashboardFilterLabel != null)
+            {
+                routeValues["dashboardFilter"] = dashboardFilter!;
+            }
+
             routeValues["sortBy"] = sortBy;
             routeValues["sortOrder"] = sortOrder;
 
@@ -214,6 +276,7 @@ namespace AryamanBMS.Controllers
             ViewBag.Status = status;
             ViewBag.SortBy = sortBy;
             ViewBag.SortOrder = sortOrder;
+            ViewBag.DashboardFilterLabel = dashboardFilterLabel;
 
             return View(model);
         }

@@ -24,6 +24,10 @@ namespace AryamanBMS.Repositories.Interfaces
         Task DeleteAsync(
             ProjectCommunicationModel communication);
 
+        Task AddDocumentAsync(ProjectCommunicationDocumentModel document);
+
+        Task<ProjectCommunicationDocumentModel?> GetDocumentByIdAsync(int id);
+
         
 
     }

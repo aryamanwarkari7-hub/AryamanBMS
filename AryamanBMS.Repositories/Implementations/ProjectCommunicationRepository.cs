@@ -21,7 +21,8 @@ namespace AryamanBMS.Repositories
             _context.ProjectCommunications
                 .Include(x => x.Project)
                 .Include(x => x.CreatedByEmployee)
-                .Include(x => x.CreatedByUser);
+                .Include(x => x.CreatedByUser)
+                .Include(x => x.Documents.Where(document => document.IsActive));
 
         public async Task<List<ProjectCommunicationModel>>
             GetByProjectIdAsync(int projectId)
@@ -75,6 +76,20 @@ namespace AryamanBMS.Repositories
 
             await _context.SaveChangesAsync();
         }
+
+        public async Task AddDocumentAsync(ProjectCommunicationDocumentModel document)
+        {
+            _context.ProjectCommunicationDocuments.Add(document);
+            await _context.SaveChangesAsync();
+        }
+
+        public Task<ProjectCommunicationDocumentModel?> GetDocumentByIdAsync(int id) =>
+            _context.ProjectCommunicationDocuments
+                .Include(x => x.ProjectCommunication)
+                .FirstOrDefaultAsync(x =>
+                    x.Id == id &&
+                    x.IsActive &&
+                    x.ProjectCommunication!.IsActive);
 
 
     }

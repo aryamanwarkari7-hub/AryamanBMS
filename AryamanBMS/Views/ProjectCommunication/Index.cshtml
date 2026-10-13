@@ -134,6 +134,24 @@ else
 
                     </div>
 
+                    @if (item.Documents.Any())
+                    {
+                        <div class="mt-3 d-flex flex-wrap gap-2">
+                            @foreach (var document in item.Documents)
+                            {
+                                <a asp-action="DownloadDocument"
+                                   asp-route-id="@document.Id"
+                                   class="btn-app btn-secondary-app btn-sm-app"
+                                   title="Download @document.OriginalFileName">
+                                    <i class="bi bi-paperclip"></i>
+                                    @(string.IsNullOrWhiteSpace(document.DocumentName)
+                                        ? document.OriginalFileName
+                                        : document.DocumentName)
+                                </a>
+                            }
+                        </div>
+                    }
+
                             <div class="project-communication-footer">
 
                                 <div class="project-communication-badges">

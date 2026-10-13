@@ -241,6 +241,8 @@ builder.Services.AddScoped<ICompanyDocumentRepository, CompanyDocumentRepository
 builder.Services.AddScoped<IProposalRepository, ProposalRepository>();
 builder.Services.AddScoped<IPurchaseOrderRepository, PurchaseOrderRepository>();
 builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+builder.Services.AddScoped<IBillingMilestoneRepository, BillingMilestoneRepository>();
+builder.Services.AddScoped<IVendorPaymentRepository, VendorPaymentRepository>();
 builder.Services.AddScoped<IAdvanceReceiptRepository, AdvanceReceiptRepository>();
 builder.Services.AddScoped<IPaymentReceiptRepository, PaymentRepository>();
 builder.Services.AddScoped<IExpenseCategoryRepository, ExpenseCategoryRepository>();
@@ -261,6 +263,8 @@ builder.Services.AddScoped<IAdvanceReceiptQueryService, AdvanceReceiptQueryServi
 builder.Services.AddScoped<IAdvanceReceiptService, AdvanceReceiptService>();
 builder.Services.AddScoped<IInvoiceDraftService, InvoiceDraftService>();
 builder.Services.AddScoped<IInvoiceWorkflowService, InvoiceWorkflowService>();
+builder.Services.AddScoped<IBillingMilestoneService, BillingMilestoneService>();
+builder.Services.AddScoped<IVendorPaymentService, VendorPaymentService>();
 builder.Services.AddScoped<IVendorRepository, VendorRepository>();
 builder.Services.AddScoped<IGstSnapshotRepository, GstSnapshotRepository>();
 builder.Services.AddScoped<IGstConfigurationRepository, GstConfigurationRepository>();

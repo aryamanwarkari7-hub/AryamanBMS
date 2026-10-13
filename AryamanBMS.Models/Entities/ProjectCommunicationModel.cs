@@ -58,5 +58,8 @@ namespace AryamanBMS.Models
         public DateTime CreatedOn { get; set; } = DateTime.Now;
 
         public DateTime? UpdatedOn { get; set; }
+
+        public virtual ICollection<ProjectCommunicationDocumentModel> Documents { get; set; }
+            = new List<ProjectCommunicationDocumentModel>();
     }
 }

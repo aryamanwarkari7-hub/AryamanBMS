@@ -237,6 +237,11 @@ namespace AryamanBMS.Controllers
 
                 JoiningDocuments = GetJoiningDocumentInputs(),
 
+                OtherJoiningDocuments = new List<EmployeeDocumentInputViewModel>
+                {
+                    new()
+                },
+
                 PreviousEmployments =
                 new List<EmployeePreviousEmploymentInputViewModel>
                 {
@@ -254,6 +259,7 @@ namespace AryamanBMS.Controllers
         {
             model.Academics ??= new List<EmployeeAcademicInputViewModel>();
             model.PreviousEmployments ??= new List<EmployeePreviousEmploymentInputViewModel>();
+            RemoveBlankOtherJoiningDocuments(model);
 
             for (int i = model.PreviousEmployments.Count - 1; i >= 0; i--)
             {
@@ -323,6 +329,9 @@ namespace AryamanBMS.Controllers
 
             ValidateFixedPdfDocuments(model.JoiningDocuments,
                              "JoiningDocuments");
+            ValidateOtherJoiningDocuments(model.OtherJoiningDocuments);
+            ValidateFixedPdfDocuments(BuildOtherJoiningDocumentInputs(model.OtherJoiningDocuments),
+                              "OtherJoiningDocuments");
 
             for (int i = 0; i < model.Academics.Count; i++)
             {
@@ -523,6 +532,12 @@ namespace AryamanBMS.Controllers
                             "Joining",
                             storedFiles);
 
+                joiningUploadCount += await SaveFixedDocumentsAsync(
+                    BuildOtherJoiningDocumentInputs(model.OtherJoiningDocuments),
+                    employee,
+                    "Joining",
+                    storedFiles);
+
                 await _employeeDocumentRepository.SaveAsync();
                 await transaction.CommitAsync();
 
@@ -672,10 +687,20 @@ namespace AryamanBMS.Controllers
                     fixedDocuments.Where(x =>
                         x.DocumentCategory == "Joining")),
 
+                OtherJoiningDocuments = BuildOtherJoiningDocumentInputs(
+                    fixedDocuments.Where(x =>
+                        x.DocumentCategory == "Joining" &&
+                        x.DocumentType.StartsWith("Other Joining Document - "))),
+
                 PreviousEmployments = previousEmployments
             };
 
             await LoadDropdownsAsync();
+
+            if (!model.OtherJoiningDocuments.Any())
+            {
+                model.OtherJoiningDocuments.Add(new EmployeeDocumentInputViewModel());
+            }
 
             return View(model);
         }
@@ -783,6 +808,8 @@ namespace AryamanBMS.Controllers
             model.JoiningDocuments ??=
                 new List<EmployeeDocumentInputViewModel>();
 
+            RemoveBlankOtherJoiningDocuments(model);
+
             for (int i = 0; i < model.Academics.Count; i++)
             {
                 ModelState.Remove(
@@ -799,6 +826,12 @@ namespace AryamanBMS.Controllers
             {
                 ModelState.Remove(
                     $"JoiningDocuments[{i}].ExistingDocument");
+            }
+
+            for (int i = 0; i < model.OtherJoiningDocuments.Count; i++)
+            {
+                ModelState.Remove(
+                    $"OtherJoiningDocuments[{i}].ExistingDocument");
             }
 
             var existingEmployee =
@@ -867,6 +900,9 @@ namespace AryamanBMS.Controllers
 
             ValidateFixedPdfDocuments(model.JoiningDocuments,
                 "JoiningDocuments");
+            ValidateOtherJoiningDocuments(model.OtherJoiningDocuments);
+            ValidateFixedPdfDocuments(BuildOtherJoiningDocumentInputs(model.OtherJoiningDocuments),
+                "OtherJoiningDocuments");
 
             ValidatePreviousEmployments(model.PreviousEmployments);
 
@@ -1264,6 +1300,12 @@ namespace AryamanBMS.Controllers
                         newFilePaths,
                         deletedFilePaths);
 
+                joiningUploadCount += await SaveFixedDocumentsAsync(
+                    BuildOtherJoiningDocumentInputs(model.OtherJoiningDocuments),
+                    existingEmployee,
+                    "Joining",
+                    newFilePaths);
+
                 await _employeeRepository.SaveAsync();
                 await _employeeAcademicRepository.SaveAsync();
                 await _employeeDocumentRepository.SaveAsync();
@@ -1489,9 +1531,73 @@ namespace AryamanBMS.Controllers
         new() { DocumentType = "Salary Slip" },
         new() { DocumentType = "Bank Proof" },
         new() { DocumentType = "Address Proof" },
-        new() { DocumentType = "Signed NDA" },
-        new() { DocumentType = "Other Joining Document" }
+        new() { DocumentType = "Signed NDA" }
     };
+        }
+
+        private static List<EmployeeDocumentInputViewModel>
+            BuildOtherJoiningDocumentInputs(
+                IEnumerable<EmployeeDocumentInputViewModel>? inputs)
+        {
+            return (inputs ?? Enumerable.Empty<EmployeeDocumentInputViewModel>())
+                .Where(input => input.File != null && input.File.Length > 0)
+                .Select(input => new EmployeeDocumentInputViewModel
+                {
+                    DocumentType = $"Other Joining Document - {input.DocumentType?.Trim()}",
+                    File = input.File
+                })
+                .ToList();
+        }
+
+        private static List<EmployeeDocumentInputViewModel>
+            BuildOtherJoiningDocumentInputs(
+                IEnumerable<EmployeeDocumentModel> documents)
+        {
+            const string prefix = "Other Joining Document - ";
+
+            return documents
+                .Where(document => document.DocumentType.StartsWith(prefix))
+                .OrderBy(document => document.UploadedOn)
+                .Select(document => new EmployeeDocumentInputViewModel
+                {
+                    DocumentType = document.DocumentType[prefix.Length..],
+                    ExistingDocument = document
+                })
+                .ToList();
+        }
+
+        private void ValidateOtherJoiningDocuments(
+            IEnumerable<EmployeeDocumentInputViewModel>? documents)
+        {
+            foreach (var (document, index) in (documents ?? []).Select((item, index) => (item, index)))
+            {
+                if (document.File?.Length > 0 && string.IsNullOrWhiteSpace(document.DocumentType))
+                {
+                    ModelState.AddModelError(
+                        $"OtherJoiningDocuments[{index}].DocumentType",
+                        "Enter a name for this document.");
+                }
+            }
+        }
+
+        private void RemoveBlankOtherJoiningDocuments(EmployeeFormViewModel model)
+        {
+            model.OtherJoiningDocuments ??= new List<EmployeeDocumentInputViewModel>();
+
+            for (int i = model.OtherJoiningDocuments.Count - 1; i >= 0; i--)
+            {
+                var document = model.OtherJoiningDocuments[i];
+
+                if (!string.IsNullOrWhiteSpace(document.DocumentType) ||
+                    document.File?.Length > 0)
+                {
+                    continue;
+                }
+
+                ModelState.Remove($"OtherJoiningDocuments[{i}].DocumentType");
+                ModelState.Remove($"OtherJoiningDocuments[{i}].File");
+                model.OtherJoiningDocuments.RemoveAt(i);
+            }
         }
 
         // Excel Export
@@ -2411,6 +2517,16 @@ namespace AryamanBMS.Controllers
                         GetJoiningDocumentInputs()),
                     existingDocuments.Where(x =>
                         x.DocumentCategory == "Joining"));
+
+            model.OtherJoiningDocuments = BuildOtherJoiningDocumentInputs(
+                existingDocuments.Where(x =>
+                    x.DocumentCategory == "Joining" &&
+                    x.DocumentType.StartsWith("Other Joining Document - ")));
+
+            if (!model.OtherJoiningDocuments.Any())
+            {
+                model.OtherJoiningDocuments.Add(new EmployeeDocumentInputViewModel());
+            }
         }
 
         private async Task<int> ReplaceFixedDocumentsAsync(

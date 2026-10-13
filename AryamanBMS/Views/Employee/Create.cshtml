@@ -689,6 +689,29 @@
                 </div>
             }
 
+            <div id="otherJoiningDocumentsContainer">
+                @if (!Model.OtherJoiningDocuments.Any())
+                {
+                    Model.OtherJoiningDocuments.Add(new EmployeeDocumentInputViewModel());
+                }
+                @for (int i = 0; i < Model.OtherJoiningDocuments.Count; i++)
+                {
+                    <div class="row align-items-center border-bottom py-3 other-joining-document-row">
+                        <div class="col-md-4">
+                            <label asp-for="OtherJoiningDocuments[i].DocumentType" class="form-label mb-0">Other Joining Document Name</label>
+                        </div>
+                        <div class="col-md-8">
+                            <input asp-for="OtherJoiningDocuments[i].DocumentType" class="form-control mb-2" maxlength="70" placeholder="e.g. Background verification" />
+                            <span asp-validation-for="OtherJoiningDocuments[i].DocumentType" class="validation-message"></span>
+                            <input asp-for="OtherJoiningDocuments[i].File" type="file" accept=".pdf,application/pdf" class="form-control document-pdf-input" />
+                            <span asp-validation-for="OtherJoiningDocuments[i].File" class="validation-message"></span>
+                            <button type="button" class="btn-app btn-danger-app btn-sm mt-2 remove-other-joining-document">Remove</button>
+                        </div>
+                    </div>
+                }
+            </div>
+            <button type="button" id="addOtherJoiningDocument" class="btn-app btn-secondary-app mt-3">+ Add document</button>
+
             <small class="text-muted d-block mt-3">
                 Upload PDF files only. Maximum size: 5 MB per document.
             </small>
@@ -1158,4 +1181,5 @@
     <partial name="_ValidationScriptsPartial" />
     <script src="~/js/employee-form.js" asp-append-version="true"></script>
     <script src="~/js/employee-create.js" asp-append-version="true"></script>
+    <script src="~/js/other-joining-documents.js" asp-append-version="true"></script>
 }

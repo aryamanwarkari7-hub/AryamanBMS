@@ -39,42 +39,42 @@
 
         <div class="card-body">
             <div class="dashboard-metric-grid finance-grid">
-                <a asp-action="Index" class="dashboard-metric">
+                <a asp-action="Index" asp-route-dashboardFilter="this-month" class="dashboard-metric">
                     <span>This Month Applications</span>
                     <strong>@Model.Summary.TotalThisMonth</strong>
                 </a>
 
-                <a asp-action="Index" class="dashboard-metric metric-danger">
+                <a asp-action="Index" asp-route-dashboardFilter="pending" class="dashboard-metric metric-danger">
                     <span>Pending Applications</span>
                     <strong>@Model.Summary.PendingApplications</strong>
                 </a>
 
-                <a asp-action="Index" class="dashboard-metric">
+                <a asp-action="Index" asp-route-dashboardFilter="approved-this-month" class="dashboard-metric">
                     <span>Approved This Month</span>
                     <strong>@Model.Summary.ApprovedThisMonth</strong>
                 </a>
 
-                <a asp-action="Index" class="dashboard-metric metric-danger">
+                <a asp-action="Index" asp-route-dashboardFilter="rejected-this-month" class="dashboard-metric metric-danger">
                     <span>Rejected This Month</span>
                     <strong>@Model.Summary.RejectedThisMonth</strong>
                 </a>
 
-                <a asp-action="Index" class="dashboard-metric">
+                <a asp-action="Index" asp-route-dashboardFilter="on-leave-today" class="dashboard-metric">
                     <span>On Leave Today</span>
                     <strong>@Model.Summary.OnLeaveToday</strong>
                 </a>
 
-                <a asp-action="Index" class="dashboard-metric">
+                <a asp-action="Index" asp-route-dashboardFilter="upcoming" class="dashboard-metric">
                     <span>Upcoming Leaves</span>
                     <strong>@Model.Summary.UpcomingLeaves</strong>
                 </a>
 
-                <a asp-action="Index" class="dashboard-metric metric-danger">
+                <a asp-action="Index" asp-route-dashboardFilter="cancellation-pending" class="dashboard-metric metric-danger">
                     <span>Cancellation Requests</span>
                     <strong>@Model.Summary.CancellationRequests</strong>
                 </a>
 
-                <a asp-action="Index" class="dashboard-metric">
+                <a asp-action="Index" asp-route-dashboardFilter="cancelled-this-month" class="dashboard-metric">
                     <span>Cancelled This Month</span>
                     <strong>@Model.Summary.CancelledThisMonth</strong>
                 </a>
@@ -150,22 +150,22 @@
 
         <div class="card-body">
             <div class="dashboard-metric-grid">
-                <a asp-controller="CompOffCredit" asp-action="Index" class="dashboard-metric metric-danger">
+                <a asp-controller="CompOffCredit" asp-action="Index" asp-route-dashboardFilter="pending" class="dashboard-metric metric-danger">
                     <span>Pending Requests</span>
                     <strong>@Model.CompOff.PendingRequests</strong>
                 </a>
 
-                <a asp-controller="CompOffCredit" asp-action="Index" class="dashboard-metric">
+                <a asp-controller="CompOffCredit" asp-action="Index" asp-route-dashboardFilter="available" class="dashboard-metric">
                     <span>Available Credits</span>
                     <strong>@Model.CompOff.ApprovedAvailableCredits</strong>
                 </a>
 
-                <a asp-controller="CompOffCredit" asp-action="Index" class="dashboard-metric metric-danger">
+                <a asp-controller="CompOffCredit" asp-action="Index" asp-route-dashboardFilter="expiring-soon" class="dashboard-metric metric-danger">
                     <span>Expiring Soon</span>
                     <strong>@Model.CompOff.ExpiringSoon</strong>
                 </a>
 
-                <a asp-controller="CompOffCredit" asp-action="Index" class="dashboard-metric">
+                <a asp-controller="CompOffCredit" asp-action="Index" asp-route-dashboardFilter="used-this-month" class="dashboard-metric">
                     <span>Used This Month</span>
                     <strong>@Model.CompOff.UsedThisMonth.ToString("0.##")</strong>
                 </a>

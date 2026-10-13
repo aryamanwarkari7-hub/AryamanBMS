@@ -2,6 +2,9 @@
 
 @{
     ViewData["Title"] = "Comp Off Requests";
+
+    string? dashboardFilterLabel =
+        ViewBag.DashboardFilterLabel as string;
 }
 
 <div class="module-header">
@@ -25,6 +28,13 @@
     </a>
 
 </div>
+
+@if (!string.IsNullOrWhiteSpace(dashboardFilterLabel))
+{
+    <div class="app-alert-info mb-3">
+        <strong>Dashboard filter:</strong> @dashboardFilterLabel
+    </div>
+}
 
 
 

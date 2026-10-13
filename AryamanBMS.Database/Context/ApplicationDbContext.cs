@@ -85,6 +85,8 @@ namespace AryamanBMS.Data
         public DbSet<ProjectTimelineModel> ProjectTimelines { get; set; }
         public DbSet<ProjectCommunicationModel> ProjectCommunications { get; set; }
 
+        public DbSet<ProjectCommunicationDocumentModel> ProjectCommunicationDocuments { get; set; }
+
         public DbSet<ProjectScopeDocumentModel> ProjectScopeDocuments { get; set; }
 
         // Meetings
@@ -569,6 +571,17 @@ namespace AryamanBMS.Data
                 .WithMany()
                 .HasForeignKey(x => x.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ProjectCommunicationDocumentModel>(entity =>
+            {
+                entity.ToTable("tableprojectcommunicationdocuments");
+                entity.HasKey(x => x.Id);
+                entity.HasIndex(x => new { x.ProjectCommunicationId, x.IsActive });
+                entity.HasOne(x => x.ProjectCommunication)
+                    .WithMany(x => x.Documents)
+                    .HasForeignKey(x => x.ProjectCommunicationId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
 
             modelBuilder.Entity<ProjectCommunicationModel>()
                 .HasOne(x => x.CreatedByEmployee)

@@ -746,6 +746,42 @@
                 </div>
             }
 
+            <div id="otherJoiningDocumentsContainer">
+                @if (!Model.OtherJoiningDocuments.Any())
+                {
+                    Model.OtherJoiningDocuments.Add(new EmployeeDocumentInputViewModel());
+                }
+                @for (int i = 0; i < Model.OtherJoiningDocuments.Count; i++)
+                {
+                    <div class="row align-items-center border-bottom py-3 other-joining-document-row">
+                        <div class="col-md-3">
+                            <label asp-for="OtherJoiningDocuments[i].DocumentType" class="form-label mb-0">Other Joining Document Name</label>
+                        </div>
+                        <div class="col-md-5">
+                            <input asp-for="OtherJoiningDocuments[i].DocumentType" class="form-control mb-2" maxlength="70" placeholder="e.g. Background verification" />
+                            <span asp-validation-for="OtherJoiningDocuments[i].DocumentType" class="validation-message"></span>
+                            <input asp-for="OtherJoiningDocuments[i].File" type="file" accept=".pdf,application/pdf" class="form-control document-pdf-input" />
+                            <span asp-validation-for="OtherJoiningDocuments[i].File" class="validation-message"></span>
+                            @if (Model.OtherJoiningDocuments[i].ExistingDocument == null)
+                            {
+                                <button type="button" class="btn-app btn-danger-app btn-sm mt-2 remove-other-joining-document">Remove</button>
+                            }
+                        </div>
+                        <div class="col-md-4">
+                            @if (Model.OtherJoiningDocuments[i].ExistingDocument != null)
+                            {
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="text-success"><i class="bi bi-file-earmark-pdf"></i> @Model.OtherJoiningDocuments[i].ExistingDocument!.OriginalFileName</span>
+                                    <a asp-action="DownloadDocument" asp-route-id="@Model.OtherJoiningDocuments[i].ExistingDocument!.Id" class="btn-app btn-primary-app btn-icon" title="Download"><i class="bi bi-download"></i></a>
+                                    <button type="submit" asp-action="DeleteDocument" asp-route-id="@Model.OtherJoiningDocuments[i].ExistingDocument!.Id" asp-route-employeeId="@Model.Employee.Id" formmethod="post" formnovalidate class="btn-app btn-danger-app btn-icon" onclick="return confirm('Delete this document?');"><i class="bi bi-trash"></i></button>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+            <button type="button" id="addOtherJoiningDocument" class="btn-app btn-secondary-app mt-3">+ Add document</button>
+
             <small class="text-muted d-block mt-3">
                 Uploading a new PDF replaces the previous document.
             </small>
@@ -1347,4 +1383,5 @@
     <partial name="_ValidationScriptsPartial" />
     <script src="~/js/employee-form.js" asp-append-version="true"></script>
     <script src="~/js/employee-edit.js" asp-append-version="true"></script>
+    <script src="~/js/other-joining-documents.js" asp-append-version="true"></script>
 }

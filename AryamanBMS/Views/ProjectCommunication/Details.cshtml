@@ -71,6 +71,35 @@
 <div class="app-card mt-4">
 
     <div class="card-header">
+        <h5 class="card-title">Attached Documents</h5>
+    </div>
+
+    <div class="card-body">
+        @if (Model.Documents.Any())
+        {
+            <div class="d-flex flex-wrap gap-2">
+                @foreach (var document in Model.Documents.Where(x => x.IsActive).OrderByDescending(x => x.UploadedOn))
+                {
+                    <a asp-action="DownloadDocument"
+                       asp-route-id="@document.Id"
+                       class="btn-app btn-secondary-app btn-sm">
+                        <i class="bi bi-paperclip"></i>
+                        @(string.IsNullOrWhiteSpace(document.DocumentName) ? document.OriginalFileName : document.DocumentName)
+                    </a>
+                }
+            </div>
+        }
+        else
+        {
+            <span class="text-muted">No documents attached.</span>
+        }
+    </div>
+
+</div>
+
+<div class="app-card mt-4">
+
+    <div class="card-header">
         <h5 class="card-title">
             Source
         </h5>
