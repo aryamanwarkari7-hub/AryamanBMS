@@ -171,6 +171,50 @@
                 }
             }
 
+            <div class="mt-4 pt-3 border-top">
+                <label for="attendanceRemark" class="form-label">
+                    Add Remark for Attendance
+                </label>
+
+                @if (Model?.CheckInTime != null && Model.Status != "L")
+                {
+                    <form asp-action="AddRemark" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <textarea id="attendanceRemark"
+                                  name="remark"
+                                  class="app-input w-100"
+                                  rows="3"
+                                  maxlength="500"
+                                  placeholder="Example: I arrived late today, or stepped out of office for a site visit."
+                                  required></textarea>
+
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-2">
+                            <small class="text-muted">
+                                Each remark is saved with its time and retained in today’s record.
+                            </small>
+
+                            <button type="submit" class="btn-app btn-secondary-app">
+                                <i class="bi bi-chat-left-text"></i>
+                                Add Remark
+                            </button>
+                        </div>
+                    </form>
+                }
+                else
+                {
+                    <textarea id="attendanceRemark"
+                              class="app-input w-100"
+                              rows="3"
+                              placeholder="Check in to add an attendance remark."
+                              disabled></textarea>
+
+                    <small class="text-muted d-block mt-2">
+                        Remarks become available after check-in.
+                    </small>
+                }
+            </div>
+
             <div class="attendance-inline-actions">
                 <div class="dashboard-list-title">Quick Actions</div>
 
@@ -275,7 +319,7 @@
                         <i class="bi bi-chat-left-text"></i>
                         Remarks
                     </span>
-                    <strong>@(string.IsNullOrWhiteSpace(Model?.Remarks) ? "-" : Model.Remarks)</strong>
+                    <strong style="white-space: pre-line;">@(string.IsNullOrWhiteSpace(Model?.Remarks) ? "-" : Model.Remarks)</strong>
                 </div>
             </div>
         </div>

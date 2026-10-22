@@ -642,6 +642,65 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddRemark(string? remark)
+        {
+            if (string.IsNullOrWhiteSpace(remark))
+            {
+                TempData["Error"] = "Please enter an attendance remark.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            remark = remark.Trim();
+
+            if (remark.Length > 500)
+            {
+                TempData["Error"] = "An attendance remark cannot exceed 500 characters.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+
+            if (user == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var employee = await _employeeRepository.Employees
+                .FirstOrDefaultAsync(e => e.ApplicationUserId == user.Id);
+
+            if (employee == null)
+            {
+                TempData["Error"] = "Employee mapping not found.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var attendance = await _attendanceRepository.Attendances
+                .FirstOrDefaultAsync(a =>
+                    a.EmployeeId == employee.Id &&
+                    a.AttendanceDate.Date == DateTime.Today);
+
+            if (attendance?.CheckInTime == null || attendance.Status == "L")
+            {
+                TempData["Error"] = "Check in before adding an attendance remark.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            string entry =
+                $"[{DateTime.Now:dd-MMM-yyyy hh:mm tt}] {remark}";
+
+            attendance.Remarks = string.IsNullOrWhiteSpace(attendance.Remarks)
+                ? entry
+                : $"{attendance.Remarks}{Environment.NewLine}{entry}";
+
+            await _attendanceRepository.SaveAsync();
+
+            TempData["Success"] = "Attendance remark added.";
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> RequestLateCheckoutCorrection(
     TimeSpan? requestedCheckOutTime,
     string? lateCheckoutReason)
