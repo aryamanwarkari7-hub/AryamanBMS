@@ -20,6 +20,9 @@
 
     string dashboardFilter =
         Context.Request.Query["dashboardFilter"].ToString();
+
+    LeaveDashboardSummary? leaveOverview =
+        ViewBag.LeaveOverview as LeaveDashboardSummary;
 }
 
 <div class="module-header">
@@ -46,6 +49,62 @@
     }
 
 </div>
+
+@if (isManagementView && leaveOverview != null)
+{
+    <section class="app-card dashboard-section-card mb-3">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Leave Overview</h2>
+                <p class="card-subtitle">Current month approvals and active leave pressure</p>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="dashboard-metric-grid finance-grid">
+                <a asp-action="Index" asp-route-dashboardFilter="this-month" class="dashboard-metric">
+                    <span>This Month Applications</span>
+                    <strong>@leaveOverview.TotalThisMonth</strong>
+                </a>
+
+                <a asp-action="Index" asp-route-dashboardFilter="pending" class="dashboard-metric metric-danger">
+                    <span>Pending Applications</span>
+                    <strong>@leaveOverview.PendingApplications</strong>
+                </a>
+
+                <a asp-action="Index" asp-route-dashboardFilter="approved-this-month" class="dashboard-metric">
+                    <span>Approved This Month</span>
+                    <strong>@leaveOverview.ApprovedThisMonth</strong>
+                </a>
+
+                <a asp-action="Index" asp-route-dashboardFilter="rejected-this-month" class="dashboard-metric metric-danger">
+                    <span>Rejected This Month</span>
+                    <strong>@leaveOverview.RejectedThisMonth</strong>
+                </a>
+
+                <a asp-action="Index" asp-route-dashboardFilter="on-leave-today" class="dashboard-metric">
+                    <span>On Leave Today</span>
+                    <strong>@leaveOverview.OnLeaveToday</strong>
+                </a>
+
+                <a asp-action="Index" asp-route-dashboardFilter="upcoming" class="dashboard-metric">
+                    <span>Upcoming Leaves</span>
+                    <strong>@leaveOverview.UpcomingLeaves</strong>
+                </a>
+
+                <a asp-action="Index" asp-route-dashboardFilter="cancellation-pending" class="dashboard-metric metric-danger">
+                    <span>Cancellation Requests</span>
+                    <strong>@leaveOverview.CancellationRequests</strong>
+                </a>
+
+                <a asp-action="Index" asp-route-dashboardFilter="cancelled-this-month" class="dashboard-metric">
+                    <span>Cancelled This Month</span>
+                    <strong>@leaveOverview.CancelledThisMonth</strong>
+                </a>
+            </div>
+        </div>
+    </section>
+}
 
 @if (TempData["LeaveApprovalSplit"] != null)
 {

@@ -128,6 +128,69 @@ namespace AryamanBMS.Controllers
                 }
             }
 
+            bool isManagementView =
+                !mine &&
+                (User.IsInRole("Admin") ||
+                 User.IsInRole("HR") ||
+                 User.IsInRole("Master"));
+
+            if (isManagementView)
+            {
+                DateTime today = DateTime.Today;
+                DateTime monthStart = new(today.Year, today.Month, 1);
+                DateTime nextMonth = monthStart.AddMonths(1);
+                DateTime upcomingEnd = today.AddDays(30);
+
+                var overviewApplications = await _leaveApplicationRepository
+                    .LeaveApplications
+                    .AsNoTracking()
+                    .Select(x => new
+                    {
+                        x.Status,
+                        x.CancellationStatus,
+                        x.AppliedOn,
+                        x.ApprovedOn,
+                        x.CancellationReviewedOn,
+                        x.FromDate,
+                        x.ToDate
+                    })
+                    .ToListAsync();
+
+                ViewBag.LeaveOverview = new LeaveDashboardSummary
+                {
+                    TotalThisMonth = overviewApplications.Count(x =>
+                        x.AppliedOn >= monthStart &&
+                        x.AppliedOn < nextMonth),
+                    PendingApplications = overviewApplications.Count(x =>
+                        x.Status == "Pending"),
+                    ApprovedThisMonth = overviewApplications.Count(x =>
+                        x.Status == "Approved" &&
+                        x.ApprovedOn.HasValue &&
+                        x.ApprovedOn.Value >= monthStart &&
+                        x.ApprovedOn.Value < nextMonth),
+                    RejectedThisMonth = overviewApplications.Count(x =>
+                        x.Status == "Rejected" &&
+                        x.ApprovedOn.HasValue &&
+                        x.ApprovedOn.Value >= monthStart &&
+                        x.ApprovedOn.Value < nextMonth),
+                    OnLeaveToday = overviewApplications.Count(x =>
+                        x.Status == "Approved" &&
+                        x.FromDate <= today &&
+                        x.ToDate >= today),
+                    UpcomingLeaves = overviewApplications.Count(x =>
+                        x.Status == "Approved" &&
+                        x.FromDate > today &&
+                        x.FromDate <= upcomingEnd),
+                    CancellationRequests = overviewApplications.Count(x =>
+                        x.CancellationStatus == "Pending"),
+                    CancelledThisMonth = overviewApplications.Count(x =>
+                        x.Status == "Cancelled" &&
+                        x.CancellationReviewedOn.HasValue &&
+                        x.CancellationReviewedOn.Value >= monthStart &&
+                        x.CancellationReviewedOn.Value < nextMonth)
+                };
+            }
+
             if (!string.IsNullOrWhiteSpace(searchText))
             {
                 searchText = searchText.Trim();
@@ -1978,8 +2041,12 @@ namespace AryamanBMS.Controllers
                 var hrUsers =
                     await _userManager.GetUsersInRoleAsync("HR");
 
+                var masterUsers =
+                    await _userManager.GetUsersInRoleAsync("Master");
+
                 var recipients = admins
                     .Concat(hrUsers)
+                    .Concat(masterUsers)
                     .Where(x =>
                         x.IsActive &&
                         x.Id != actionUserId)

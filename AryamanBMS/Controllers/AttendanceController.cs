@@ -735,6 +735,7 @@ namespace AryamanBMS.Controllers
     string? searchText,
     DateTime? fromDate,
     DateTime? toDate,
+    string? statusFilter,
     string sortBy = "AttendanceDate",
     string sortOrder = "desc",
     int page = 1)
@@ -752,6 +753,7 @@ namespace AryamanBMS.Controllers
             sortOrder = string.Equals(sortOrder, "asc", StringComparison.OrdinalIgnoreCase)
                 ? "asc"
                 : "desc";
+            statusFilter = NormalizeAttendanceStatusFilter(statusFilter);
 
             var effectiveFromDate =
                 fromDate?.Date ??
@@ -817,6 +819,13 @@ namespace AryamanBMS.Controllers
                 effectiveFromDate,
                 effectiveToDate,
                 today);
+
+            if (statusFilter != null)
+            {
+                displayRecords = displayRecords
+                    .Where(a => a.Status == statusFilter)
+                    .ToList();
+            }
 
             var sortedRecords = sortBy switch
             {
@@ -884,6 +893,11 @@ namespace AryamanBMS.Controllers
                     toDate.Value.ToString("yyyy-MM-dd");
             }
 
+            if (statusFilter != null)
+            {
+                routeValues["statusFilter"] = statusFilter;
+            }
+
             routeValues["sortBy"] = sortBy;
             routeValues["sortOrder"] = sortOrder;
 
@@ -920,6 +934,7 @@ namespace AryamanBMS.Controllers
             ViewBag.SearchText = searchText;
             ViewBag.FromDate = effectiveFromDate.ToString("yyyy-MM-dd");
             ViewBag.ToDate = effectiveToDate.ToString("yyyy-MM-dd");
+            ViewBag.StatusFilter = statusFilter;
             ViewBag.SortBy = sortBy;
             ViewBag.SortOrder = sortOrder;
 
@@ -1531,6 +1546,15 @@ namespace AryamanBMS.Controllers
             };
         }
 
+        private static string? NormalizeAttendanceStatusFilter(string? statusFilter)
+        {
+            return statusFilter switch
+            {
+                "P" or "A" or "M" or "L" or "H" or "WO" or "OD" => statusFilter,
+                _ => null
+            };
+        }
+
         private async Task<string?> GetCalendarStatusAsync(DateTime date)
         {
             var dayStatus = await _workingDayService.GetDayStatusAsync(date);
@@ -1627,8 +1651,10 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> ExportExcel(
                string? searchText,
                DateTime? fromDate,
-               DateTime? toDate)
+               DateTime? toDate,
+               string? statusFilter)
         {
+            statusFilter = NormalizeAttendanceStatusFilter(statusFilter);
             var today = DateTime.Today;
             var effectiveFromDate =
                 fromDate?.Date ??
@@ -1689,6 +1715,7 @@ namespace AryamanBMS.Controllers
                     effectiveFromDate,
                     effectiveToDate,
                     today))
+                .Where(a => statusFilter == null || a.Status == statusFilter)
                 .OrderByDescending(a => a.AttendanceDate)
                 .ThenBy(a => a.Employee?.FirstName)
                 .ThenBy(a => a.Employee?.LastName)

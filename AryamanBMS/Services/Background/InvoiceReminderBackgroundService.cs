@@ -158,8 +158,12 @@ namespace AryamanBMS.Services.Background
             var financeUsers =
                 await userManager.GetUsersInRoleAsync("Finance");
 
+            var masterUsers =
+                await userManager.GetUsersInRoleAsync("Master");
+
             return admins
                 .Concat(financeUsers)
+                .Concat(masterUsers)
                 .Where(x => x.IsActive)
                 .GroupBy(x => x.Id)
                 .Select(x => x.First())

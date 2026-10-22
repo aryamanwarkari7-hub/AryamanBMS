@@ -47,7 +47,7 @@
         @if (!isMaster)
         {
             <a asp-action="ExportExcel" asp-route-searchText="@ViewBag.SearchText" asp-route-fromDate="@ViewBag.FromDate"
-               asp-route-toDate="@ViewBag.ToDate" class="btn-app btn-success-app">
+               asp-route-toDate="@ViewBag.ToDate" asp-route-statusFilter="@ViewBag.StatusFilter" class="btn-app btn-success-app">
 
                 <i class="bi bi-file-earmark-excel"></i>
                 Export Excel
@@ -90,6 +90,20 @@
                     </label>
 
                     <input type="date" name="toDate" value="@ViewBag.ToDate" class="app-input" />
+                </div>
+
+                <div>
+                    <label class="form-label">Status</label>
+                    <select name="statusFilter" class="app-select">
+                        <option value="">All Statuses</option>
+                        <option value="P" selected="@(ViewBag.StatusFilter == "P")">Present</option>
+                        <option value="A" selected="@(ViewBag.StatusFilter == "A")">Absent</option>
+                        <option value="M" selected="@(ViewBag.StatusFilter == "M")">Missing</option>
+                        <option value="L" selected="@(ViewBag.StatusFilter == "L")">Leave</option>
+                        <option value="H" selected="@(ViewBag.StatusFilter == "H")">Holiday</option>
+                        <option value="WO" selected="@(ViewBag.StatusFilter == "WO")">Week Off</option>
+                        <option value="OD" selected="@(ViewBag.StatusFilter == "OD")">On Duty</option>
+                    </select>
                 </div>
 
                 <div>

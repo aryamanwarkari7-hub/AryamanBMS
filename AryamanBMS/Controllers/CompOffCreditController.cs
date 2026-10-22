@@ -598,8 +598,12 @@ namespace AryamanBMS.Controllers
                 var hrUsers =
                     await _userManager.GetUsersInRoleAsync("HR");
 
+                var masterUsers =
+                    await _userManager.GetUsersInRoleAsync("Master");
+
                 var recipients = admins
                     .Concat(hrUsers)
+                    .Concat(masterUsers)
                     .Where(x =>
                         x.IsActive &&
                         x.Id != actionUserId)

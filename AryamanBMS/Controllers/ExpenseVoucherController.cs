@@ -796,10 +796,14 @@ namespace AryamanBMS.Controllers
             var financeUsers =
                 await _userManager.GetUsersInRoleAsync("Finance");
 
+            var masterUsers =
+                await _userManager.GetUsersInRoleAsync("Master");
+
             string currentUserId = GetCurrentUserId();
 
             var recipients = admins
                 .Concat(financeUsers)
+                .Concat(masterUsers)
                 .Where(x =>
                  x.IsActive &&
                  x.Id != currentUserId)
@@ -859,6 +863,7 @@ namespace AryamanBMS.Controllers
             bool canReceiveExpenseNotification =
                 roles.Contains("Admin") ||
                 roles.Contains("Finance") ||
+                roles.Contains("Master") ||
                 roles.Contains("Employee");
 
             if (!canReceiveExpenseNotification)

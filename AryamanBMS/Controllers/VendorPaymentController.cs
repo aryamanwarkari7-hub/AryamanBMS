@@ -213,9 +213,11 @@ namespace AryamanBMS.Controllers
             {
                 var admins = await _userManager.GetUsersInRoleAsync("Admin");
                 var financeUsers = await _userManager.GetUsersInRoleAsync("Finance");
+                var masterUsers = await _userManager.GetUsersInRoleAsync("Master");
 
                 var recipients = admins
                     .Concat(financeUsers)
+                    .Concat(masterUsers)
                     .Where(x => x.IsActive && x.Id != actionUserId)
                     .GroupBy(x => x.Id)
                     .Select(x => x.First())

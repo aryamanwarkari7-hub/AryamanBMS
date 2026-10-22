@@ -1568,8 +1568,12 @@ namespace AryamanBMS.Controllers
             var financeUsers =
                 await _userManager.GetUsersInRoleAsync("Finance");
 
+            var masterUsers =
+                await _userManager.GetUsersInRoleAsync("Master");
+
             var recipients = admins
                 .Concat(financeUsers)
+                .Concat(masterUsers)
                 .Where(x =>
                     x.IsActive &&
                     x.Id != actionUserId)
@@ -1618,8 +1622,12 @@ namespace AryamanBMS.Controllers
             var financeUsers =
                 await _userManager.GetUsersInRoleAsync("Finance");
 
+            var masterUsers =
+                await _userManager.GetUsersInRoleAsync("Master");
+
             var recipients = admins
                 .Concat(financeUsers)
+                .Concat(masterUsers)
                 .Where(x =>
                     x.IsActive &&
                     x.Id != actionUserId)
