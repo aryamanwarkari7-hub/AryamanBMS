@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = "Apply Leave";
+    var isEligibleForPaidLeave = Convert.ToBoolean(ViewBag.IsEligibleForPaidLeave ?? true);
+    var employmentType = Convert.ToString(ViewBag.EmploymentType ?? "Permanent");
     var paidLeaveSnapshot =
            ViewBag.PaidLeaveSnapshot as AryamanBMS.ViewModels.PaidLeaveBalanceSnapshotViewModel;
     var availableCompOffDays =
@@ -17,10 +19,10 @@
     </div>
 
     <div class="module-header-actions">
-        <a asp-action="Index"
-           asp-route-mine="@(Context.Request.Query["mine"] == "true" ? "true" : null)" class="btn-app btn-secondary-app">
+        <a asp-action="Index" asp-route-mine="@(Context.Request.Query["mine"] == "true" ? "true" : null)"
+           class="btn-app btn-secondary-app">
             <i class="bi bi-arrow-left"></i>
-            Back 
+            Back
         </a>
     </div>
 </div>
@@ -28,116 +30,161 @@
 <div class="app-card form-card">
     @if (paidLeaveSnapshot != null)
     {
-        <div class="leave-apply-summary">
-            <div class="leave-apply-summary-heading">
-                <div class="leave-apply-summary-icon">
-                    <i class="bi bi-calendar2-check"></i>
-                </div>
-
-                <div>
-                    <div class="leave-apply-summary-title">
-                        Paid Leave Balance
+        @if (isEligibleForPaidLeave)
+        {
+            <div class="leave-apply-summary">
+                <div class="leave-apply-summary-heading">
+                    <div class="leave-apply-summary-icon">
+                        <i class="bi bi-calendar2-check"></i>
                     </div>
-                    <div class="leave-apply-summary-period">
-                        FY @paidLeaveSnapshot.FinancialYearLabel
+
+                    <div>
+                        <div class="leave-apply-summary-title">
+                            Paid Leave Balance
+                        </div>
+                        <div class="leave-apply-summary-period">
+                            FY @paidLeaveSnapshot.FinancialYearLabel
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="leave-apply-summary-grid">
-                <div>
-                    <span>Earned This FY</span>
-                    <strong>@paidLeaveSnapshot.ProratedEntitlement.ToString("0.##")</strong>
-                </div>
+                <div class="leave-apply-summary-grid">
+                    <div>
+                        <span>Earned This FY</span>
+                        <strong>@paidLeaveSnapshot.ProratedEntitlement.ToString("0.##")</strong>
+                    </div>
 
-                <div>
-                    <span>Carry Forward</span>
-                    <strong>@paidLeaveSnapshot.CarryForwardDays.ToString("0.##")</strong>
-                </div>
+                    <div>
+                        <span>Carry Forward</span>
+                        <strong>@paidLeaveSnapshot.CarryForwardDays.ToString("0.##")</strong>
+                    </div>
 
-                <div>
-                    <span>Total Leave Pool</span>
-                    <strong>
-                        @((paidLeaveSnapshot.ProratedEntitlement + paidLeaveSnapshot.CarryForwardDays).ToString("0.##"))
-                    </strong>
-                </div>
+                    <div>
+                        <span>Total Leave Pool</span>
+                        <strong>
+                            @((paidLeaveSnapshot.ProratedEntitlement + paidLeaveSnapshot.CarryForwardDays).ToString("0.##"))
+                        </strong>
+                    </div>
 
-                <div>
-                    <span>Available</span>
-                    <strong>@paidLeaveSnapshot.PaidLeaveBalance.ToString("0.##")</strong>
-                </div>
+                    <div>
+                        <span>Available</span>
+                        <strong>@paidLeaveSnapshot.PaidLeaveBalance.ToString("0.##")</strong>
+                    </div>
 
-                <div>
-                    <span>Used</span>
-                    <strong>@paidLeaveSnapshot.PaidLeaveUsed.ToString("0.##")</strong>
-                </div>
+                    <div>
+                        <span>Used</span>
+                        <strong>@paidLeaveSnapshot.PaidLeaveUsed.ToString("0.##")</strong>
+                    </div>
 
-                <div>
-                    <span>Pending Approvals</span>
-                    <strong>@paidLeaveSnapshot.PendingPaidLeaveReserved.ToString("0.##")</strong>
-                </div>
+                    <div>
+                        <span>Pending Approvals</span>
+                        <strong>@paidLeaveSnapshot.PendingPaidLeaveReserved.ToString("0.##")</strong>
+                    </div>
 
-                <div>
-                    <span>Birthday Leave</span>
-                    <strong>
-                        @paidLeaveSnapshot.BirthdayLeave.Available.ToString("0.##")
-                        /
-                        @paidLeaveSnapshot.BirthdayLeave.Entitlement.ToString("0.##")
-                    </strong>
-                </div>
+                    <div>
+                        <span>Birthday Leave</span>
+                        <strong>
+                            @paidLeaveSnapshot.BirthdayLeave.Available.ToString("0.##")
+                            /
+                            @paidLeaveSnapshot.BirthdayLeave.Entitlement.ToString("0.##")
+                        </strong>
+                    </div>
 
                 
-            </div>
-        </div>
-
-        <div class="comp-off-apply-summary">
-
-            <div class="comp-off-apply-summary-heading">
-
-                <div class="comp-off-apply-summary-icon">
-                    <i class="bi bi-calendar2-plus"></i>
                 </div>
+            </div>
+        }
 
-                <div>
-                    <div class="comp-off-apply-summary-title">
-                        Comp Off
+        <div class="leave-previews-calendar-grid">
+            <!-- Left Column: Comp Off + Paid/Unpaid Preview -->
+            <div class="leave-previews-column">
+                @if (isEligibleForPaidLeave)
+                {
+                    <div class="comp-off-apply-summary">
+                        <div class="comp-off-apply-summary-heading">
+                            <div class="comp-off-apply-summary-icon">
+                                <i class="bi bi-calendar2-plus"></i>
+                            </div>
+                            <div>
+                                <div class="comp-off-apply-summary-title">Comp Off</div>
+                                <div class="comp-off-apply-summary-subtitle">Available balance for compensatory leave</div>
+                            </div>
+                        </div>
+                        <div class="comp-off-apply-summary-value">
+                            <span>Available</span>
+                            <strong>@availableCompOffDays.ToString("0.##")</strong>
+                            <small>day@(availableCompOffDays == 1 ? "" : "s")</small>
+                        </div>
                     </div>
+                }
+                else
+                {
+                    <div class="comp-off-apply-summary">
+                        <div class="comp-off-apply-summary-heading">
+                            <div class="comp-off-apply-summary-icon">
+                                <i class="bi bi-person-badge text-primary"></i>
+                            </div>
+                            <div>
+                                <div class="comp-off-apply-summary-title">@employmentType Leave Registration</div>
+                                <div class="comp-off-apply-summary-subtitle">Working days tracked • No annual balance deduction
+                                </div>
+                            </div>
+                        </div>
+                        @if (availableCompOffDays > 0)
+                        {
+                            <div class="comp-off-apply-summary-value">
+                                <span>Comp Off</span>
+                                <strong>@availableCompOffDays.ToString("0.##")</strong>
+                                <small>day@(availableCompOffDays == 1 ? "" : "s")</small>
+                            </div>
+                        }
+                    </div>
+                }
 
-                    <div class="comp-off-apply-summary-subtitle">
-                        Available balance for compensatory leave
+                <div class="leave-split-preview is-empty" id="leaveSplitPreview">
+                    <div class="leave-split-preview-icon">
+                        <i class="bi bi-calculator"></i>
+                    </div>
+                    <div>
+                        <strong>@(isEligibleForPaidLeave ? "Paid / unpaid preview" : "Leave preview")</strong>
+                        <span id="leaveSplitPreviewText">@(isEligibleForPaidLeave ? "Select leave type and dates to preview the split." : "Select dates to preview working days.")</span>
                     </div>
                 </div>
-
             </div>
 
-            <div class="comp-off-apply-summary-value">
-
-                <span>Available</span>
-
-                <strong>
-                    @availableCompOffDays.ToString("0.##")
-                </strong>
-
-                <small>
-                    day@(availableCompOffDays == 1 ? "" : "s")
-                </small>
-
+            <!-- Right Column: Mini Calendar Breakdown -->
+            <div class="leave-calendar-column">
+                <div class="leave-mini-calendar-card" id="dayBreakdownWrapper">
+                    <div class="leave-mini-calendar-header">
+                        <div>
+                            <h6 class="leave-mini-calendar-title">
+                                <i class="bi bi-calendar3-range text-primary me-1"></i> Date Breakdown & Exclusions
+                            </h6>
+                            <span class="leave-mini-calendar-subtitle" id="dayBreakdownSummary">
+                                Select date range below to preview working days, week-offs, and holidays
+                            </span>
+                        </div>
+                        <button type="button" class="btn-calendar-expand" id="btnExpandCalendar" data-bs-toggle="modal"
+                                data-bs-target="#dateBreakdownModal" title="Expand to Fullscreen">
+                            <i class="bi bi-arrows-fullscreen"></i>
+                        </button>
+                    </div>
+                    <div class="leave-calendar-strip" id="leaveCalendarStrip">
+                        <div class="leave-calendar-empty-state" id="leaveCalendarEmptyState">
+                            <i class="bi bi-calendar-event text-muted"></i>
+                            <span>Select date range below to preview daily breakdown.</span>
+                        </div>
+                    </div>
+                    <div class="leave-calendar-legend">
+                        <span><span class="legend-dot is-working"></span> Leave Day</span>
+                        <span><span class="legend-dot is-off"></span> Weekly Off</span>
+                        <span><span class="legend-dot is-holiday"></span> Holiday</span>
+                    </div>
+                </div>
             </div>
-
         </div>
 
-        <div class="leave-split-preview is-empty" id="leaveSplitPreview">
-            <div class="leave-split-preview-icon">
-                <i class="bi bi-calculator"></i>
-            </div>
-
-            <div>
-                <strong>Paid / unpaid preview</strong>
-                <span id="leaveSplitPreviewText">
-                    Select leave type and dates to preview the split.
-                </span>
-            </div>
-        </div>
+        
     }
     <div class="card-header">
         
@@ -153,8 +200,7 @@
 
             @Html.AntiForgeryToken()
 
-            <div asp-validation-summary="ModelOnly"
-                 class="validation-message mb-3">
+            <div asp-validation-summary="ModelOnly" class="validation-message mb-3">
             </div>
 
             <div class="form-grid-2">
@@ -167,15 +213,13 @@
 
                         @foreach (var leaveType in ViewBag.LeaveTypes)
                         {
-                            <option value="@leaveType.Id"
-                                    data-leave-code="@leaveType.LeaveCode">
+                            <option value="@leaveType.Id" data-leave-code="@leaveType.LeaveCode">
                                 @leaveType.LeaveCode - @leaveType.LeaveName
                             </option>
                         }
                     </select>
 
-                    <span asp-validation-for="LeaveTypeId"
-                          class="validation-message">
+                    <span asp-validation-for="LeaveTypeId" class="validation-message">
                     </span>
                 </div>
 
@@ -190,9 +234,7 @@
                 <div class="form-group">
                     <label class="form-label">Leave Duration</label>
 
-                    <select asp-for="IsHalfDay"
-                            class="app-select"
-                            id="leaveDuration">
+                    <select asp-for="IsHalfDay" class="app-select" id="leaveDuration">
                         <option value="false">Full Day</option>
                         <option value="true">Half Day</option>
                     </select>
@@ -201,78 +243,382 @@
                 <div class="form-group" id="halfDaySessionGroup">
                     <label asp-for="HalfDaySession" class="form-label">Half Day</label>
 
-                    <select asp-for="HalfDaySession"
-                            class="app-select"
-                            id="halfDaySession">
+                    <select asp-for="HalfDaySession" class="app-select" id="halfDaySession">
                         <option value="">Select Half</option>
                         <option value="FirstHalf">First Half</option>
                         <option value="SecondHalf">Second Half</option>
                     </select>
 
-                    <span asp-validation-for="HalfDaySession"
-                          class="validation-message">
+                    <span asp-validation-for="HalfDaySession" class="validation-message">
                     </span>
                 </div>
 
                 <div class="form-group">
                     <label asp-for="FromDate" class="form-label">From Date</label>
 
-                    <input asp-for="FromDate"
-                           type="date"
-                           class="app-input"
-                           id="fromDate" />
+                    <input asp-for="FromDate" type="date" class="app-input" id="fromDate" />
 
-                    <span asp-validation-for="FromDate"
-                          class="validation-message">
+                    <span asp-validation-for="FromDate" class="validation-message">
                     </span>
                 </div>
 
                 <div class="form-group">
                     <label asp-for="ToDate" class="form-label">To Date</label>
 
-                    <input asp-for="ToDate"
-                           type="date"
-                           class="app-input"
-                           id="toDate" />
+                    <input asp-for="ToDate" type="date" class="app-input" id="toDate" />
 
-                    <span asp-validation-for="ToDate"
-                          class="validation-message">
+                    <span asp-validation-for="ToDate" class="validation-message">
                     </span>
                 </div>
 
                 <div class="form-group form-span-2">
                     <label asp-for="Reason" class="form-label">Reason</label>
 
-                    <textarea asp-for="Reason"
-                              class="app-textarea"
-                              rows="4"
-                              maxlength="500"
+                    <textarea asp-for="Reason" class="app-textarea" rows="4" maxlength="500"
                               placeholder="Enter reason for leave"></textarea>
 
-                    <span asp-validation-for="Reason"
-                          class="validation-message">
+                    <span asp-validation-for="Reason" class="validation-message">
                     </span>
                 </div>
 
             </div>
 
             <div class="form-actions mt-4">
-                <button type="submit"
-                        class="btn-app btn-primary-app">
+                <button type="submit" class="btn-app btn-primary-app">
                     <i class="bi bi-send"></i>
                     Submit Application
                 </button>
 
-                <a asp-action="Index"
-                   asp-route-mine="@(Context.Request.Query["mine"] == "true" ? "true" : null)"
+                <a asp-action="Index" asp-route-mine="@(Context.Request.Query["mine"] == "true" ? "true" : null)"
                    class="btn-app btn-secondary-app">
                     Cancel
                 </a>
             </div>
 
         </form>
+
+        <!-- Fullscreen Date Breakdown Modal -->
+        <div class="modal fade" id="dateBreakdownModal" tabindex="-1" aria-labelledby="dateBreakdownModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content app-card border-0 shadow-lg">
+                    <div class="modal-header border-bottom py-3 px-4">
+                        <div>
+                            <h5 class="modal-title font-weight-bold" id="dateBreakdownModalLabel">
+                                <i class="bi bi-calendar3-range text-primary me-2"></i>Date Breakdown & Exclusions
+                            </h5>
+                            <p class="text-muted small mb-0" id="modalDayBreakdownSummary">
+                                Daily breakdown of selected leave dates
+                            </p>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <div class="leave-calendar-strip modal-strip" id="modalLeaveCalendarStrip">
+                            <!-- Populated dynamically -->
+                        </div>
+                        <div class="leave-calendar-legend mt-4 pt-3 border-top justify-content-center">
+                            <span><span class="legend-dot is-working"></span> Leave Day (Counts towards leave)</span>
+                            <span><span class="legend-dot is-off"></span> Weekly Off (Excluded)</span>
+                            <span><span class="legend-dot is-holiday"></span> Public Holiday (Excluded)</span>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top bg-light py-2 px-4">
+                        <button type="button" class="btn-app btn-secondary-app" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
+<style>
+    .leave-previews-calendar-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    @@media (max-width: 992px) {
+        .leave-previews-calendar-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .leave-previews-column {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .leave-previews-column .comp-off-apply-summary {
+        margin-bottom: 0;
+        flex: 1;
+    }
+
+    .leave-previews-column .leave-split-preview {
+        margin-bottom: 0;
+        flex: 1;
+    }
+
+    .leave-calendar-column {
+        display: flex;
+    }
+
+    .leave-mini-calendar-card {
+        background: #ffffff;
+        border: 1px solid var(--border-color, #e2e8f0);
+        border-radius: 12px;
+        padding: 12px 16px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    .leave-mini-calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .leave-mini-calendar-title {
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .leave-mini-calendar-subtitle {
+        font-size: 0.73rem;
+        color: #64748b;
+    }
+
+    .leave-calendar-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 8px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        flex: 1;
+        align-content: flex-start;
+        min-height: 105px;
+        max-height: 145px;
+        overflow-y: auto;
+    }
+
+    .leave-calendar-empty-state {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        color: #94a3b8;
+        font-size: 0.78rem;
+        padding: 20px 10px;
+        text-align: center;
+    }
+
+    .leave-calendar-empty-state i {
+        font-size: 1.4rem;
+    }
+
+    .leave-day-card {
+        flex: 1 1 calc(25% - 8px);
+        min-width: 80px;
+        background: #ffffff;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 7px;
+        padding: 5px 4px;
+        text-align: center;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+    }
+
+    .leave-day-card.is-working {
+        border-color: #93c5fd;
+        background: #f0f7ff;
+    }
+
+    .leave-day-card.is-off {
+        border-color: #cbd5e1;
+        background: #f1f5f9;
+        opacity: 0.82;
+    }
+
+    .leave-day-card.is-holiday {
+        border-color: #fcd34d;
+        background: #fffbeb;
+    }
+
+    .leave-day-card .day-name {
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 1px;
+    }
+
+    .leave-day-card.is-working .day-name {
+        color: #1d4ed8;
+    }
+
+    .leave-day-card.is-off .day-name {
+        color: #64748b;
+    }
+
+    .leave-day-card.is-holiday .day-name {
+        color: #b45309;
+    }
+
+    .leave-day-card .day-number {
+        font-size: 1.1rem;
+        font-weight: 700;
+        line-height: 1.1;
+        margin-bottom: 1px;
+    }
+
+    .leave-day-card.is-working .day-number {
+        color: #0f172a;
+    }
+
+    .leave-day-card.is-off .day-number {
+        color: #94a3b8;
+        text-decoration: line-through;
+    }
+
+    .leave-day-card.is-holiday .day-number {
+        color: #b45309;
+    }
+
+    .leave-day-card .day-month {
+        font-size: 0.63rem;
+        color: #64748b;
+        margin-bottom: 3px;
+    }
+
+    .leave-day-card .day-badge {
+        font-size: 0.6rem;
+        font-weight: 600;
+        padding: 1px 4px;
+        border-radius: 4px;
+        display: inline-block;
+        white-space: nowrap;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .leave-day-card.is-working .day-badge {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .leave-day-card.is-off .day-badge {
+        background: #e2e8f0;
+        color: #475569;
+    }
+
+    .leave-day-card.is-holiday .day-badge {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .leave-calendar-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        margin-top: 8px;
+        font-size: 0.73rem;
+        color: #64748b;
+    }
+
+    .leave-calendar-legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .legend-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .legend-dot.is-working {
+        background: #3b82f6;
+    }
+
+    .legend-dot.is-off {
+        background: #94a3b8;
+    }
+
+    .legend-dot.is-holiday {
+        background: #f59e0b;
+    }
+
+    .btn-calendar-expand {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        color: #475569;
+        border-radius: 6px;
+        width: 30px;
+        height: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.8rem;
+    }
+
+    .btn-calendar-expand:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+        border-color: #94a3b8;
+    }
+
+    .leave-calendar-strip.modal-strip {
+        max-height: 55vh;
+        padding: 16px;
+        gap: 12px;
+        background: #f8fafc;
+    }
+
+    .modal-strip .leave-day-card {
+        flex: 1 1 calc(16.66% - 12px);
+        min-width: 120px;
+        padding: 12px 8px;
+        border-radius: 9px;
+    }
+
+    .modal-strip .leave-day-card .day-name {
+        font-size: 0.78rem;
+        margin-bottom: 4px;
+    }
+
+    .modal-strip .leave-day-card .day-number {
+        font-size: 1.5rem;
+        margin-bottom: 4px;
+    }
+
+    .modal-strip .leave-day-card .day-month {
+        font-size: 0.72rem;
+        margin-bottom: 8px;
+    }
+
+    .modal-strip .leave-day-card .day-badge {
+        font-size: 0.68rem;
+        padding: 3px 6px;
+    }
+</style>
 
 @section Scripts
 {
@@ -288,7 +634,7 @@
             const leaveTypeSelect = document.getElementById('LeaveTypeId');
 
             const availableBirthdayLeaves =
-               Number("@(paidLeaveSnapshot?.BirthdayLeave.Available ?? 0)");
+                Number("@(paidLeaveSnapshot?.BirthdayLeave.Available ?? 0)");
             const halfDaySessionGroup = document.getElementById('halfDaySessionGroup');
 
             const availablePaidLeaves =
@@ -297,7 +643,9 @@
             function setSplitPreview(days) {
                 let preview = document.getElementById('leaveSplitPreview');
                 const previewText = document.getElementById('leaveSplitPreviewText');
-
+                const isEligibleForPaidLeave = @(isEligibleForPaidLeave.ToString().ToLower());
+                const availableCompOffDays = Number("@availableCompOffDays");
+            
                 if (!preview) {
                     return;
                 }
@@ -373,25 +721,69 @@
                     return;
                 }
 
-                        const selectedOption =
-            leaveTypeSelect.options[leaveTypeSelect.selectedIndex];
+                const selectedOption =
+                    leaveTypeSelect.options[leaveTypeSelect.selectedIndex];
 
-        const isBirthdayLeave =
-            selectedOption &&
-            selectedOption.dataset.leaveCode?.toUpperCase() === 'BDL';
+                const isBirthdayLeave =
+                    selectedOption &&
+                    selectedOption.dataset.leaveCode?.toUpperCase() === 'BDL';
 
-        if (isBirthdayLeave) {
-            const paidDays = Math.min(days, availableBirthdayLeaves);
-            const unpaidDays = Math.max(0, days - paidDays);
+                const isCompOff =
+                    selectedOption &&
+                    (selectedOption.dataset.leaveCode?.toUpperCase() === 'COMP' ||
+                        selectedOption.textContent?.toUpperCase().includes('COMP'));
 
-            renderSplitPreview(
-                paidDays,
-                unpaidDays,
-                'Birthday leave does not reduce regular paid leave balance.',
-                unpaidDays > 0 ? 'is-warning' : 'is-success');
+                // Non-Permanent / Ineligible employees: show requested working days without alarming unpaid warnings
+                if (!isEligibleForPaidLeave) {
+                    preview.classList.remove('is-empty', 'is-warning');
+                    preview.classList.add('is-success');
 
-            return;
-        }
+                    const values = document.createElement('div');
+                    values.className = 'leave-split-preview-values';
+
+                    if (isCompOff && availableCompOffDays > 0) {
+                        const compDays = Math.min(days, availableCompOffDays);
+                        const regDays = Math.max(0, days - compDays);
+
+                        const compChip = document.createElement('span');
+                        compChip.className = 'leave-split-chip leave-split-chip-paid';
+                        compChip.innerHTML = `<strong>${compDays}</strong><small>Comp Off</small>`;
+                        values.appendChild(compChip);
+
+                        if (regDays > 0) {
+                            const regChip = document.createElement('span');
+                            regChip.className = 'leave-split-chip leave-split-chip-paid';
+                            regChip.innerHTML = `<strong>${regDays}</strong><small>Regular Leave</small>`;
+                            values.appendChild(regChip);
+                        }
+                    } else {
+                        const daysChip = document.createElement('span');
+                        daysChip.className = 'leave-split-chip leave-split-chip-paid';
+                        daysChip.innerHTML = `<strong>${days}</strong><small>Working Day(s)</small>`;
+                        values.appendChild(daysChip);
+                    }
+
+                    previewText.replaceChildren(values);
+
+                    const noteElement = document.createElement('span');
+                    noteElement.className = 'leave-split-preview-note';
+                    noteElement.textContent = 'Registered on attendance register; no annual pool deduction.';
+                    previewText.appendChild(noteElement);
+                    return;
+                }
+                
+                if (isBirthdayLeave) {
+                    const paidDays = Math.min(days, availableBirthdayLeaves);
+                    const unpaidDays = Math.max(0, days - paidDays);
+
+                    renderSplitPreview(
+                        paidDays,
+                        unpaidDays,
+                        'Birthday leave does not reduce regular paid leave balance.',
+                        unpaidDays > 0 ? 'is-warning' : 'is-success');
+
+                    return;
+                }
 
                 const paidDays = Math.min(days, availablePaidLeaves);
                 const unpaidDays = Math.max(0, days - paidDays);
@@ -450,13 +842,82 @@
                     return;
                 }
 
-                const diffTime = toDate.getTime() - fromDate.getTime();
-                const diffDays = Math.floor(diffTime / 86400000) + 1;
+                estimatedDays.textContent = 'Calculating...';
 
-                estimatedDays.textContent =
-                    diffDays + (diffDays === 1 ? ' day' : ' days');
+                let url = `/LeaveApplication/CalculateDays?fromDate=${fromDateInput.value}&toDate=${toDateInput.value}&isHalfDay=${isHalfDay}`;
 
-                setSplitPreview(diffDays);
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        const calendarStrip = document.getElementById('leaveCalendarStrip');
+                        const breakdownSummary = document.getElementById('dayBreakdownSummary');
+
+                        if (data && data.success) {
+                            const workingDays = data.workingDays;
+                            let label = workingDays + (workingDays === 1 ? ' day' : ' days');
+                            if (data.nonWorkingDays > 0) {
+                                label += ` (${data.nonWorkingDays} off-day${data.nonWorkingDays === 1 ? '' : 's'} excluded)`;
+                            }
+                            estimatedDays.textContent = label;
+                            setSplitPreview(workingDays);
+
+                            // Render Day Tiles in Right Column & Fullscreen Modal
+                            if (data.days && data.days.length > 0) {
+                                const summaryText = `${data.totalCalendarDays} days (${workingDays} working, ${data.nonWorkingDays} excluded)`;
+                                breakdownSummary.textContent = summaryText;
+
+                                const modalSummary = document.getElementById('modalDayBreakdownSummary');
+                                if (modalSummary) modalSummary.textContent = summaryText;
+
+                                const cardsHtml = data.days.map(d => {
+                                    let cssClass = d.status === 'Working' ? 'is-working' : (d.status === 'Holiday' ? 'is-holiday' : 'is-off');
+                                    return `
+                                                                        <div class="leave-day-card ${cssClass}" title="${d.reason}">
+                                                                            <div class="day-name">${d.day}</div>
+                                                                            <div class="day-number">${d.date}</div>
+                                                                            <div class="day-month">${d.month}</div>
+                                                                            <div class="day-badge">${d.reason}</div>
+                                                                        </div>
+                                                                    `;
+                                }).join('');
+
+                                calendarStrip.innerHTML = cardsHtml;
+
+                                const modalStrip = document.getElementById('modalLeaveCalendarStrip');
+                                if (modalStrip) modalStrip.innerHTML = cardsHtml;
+                            } else {
+                                resetCalendarPreview();
+                            }
+                        } else {
+                            estimatedDays.textContent = data.message || 'Invalid range';
+                            setSplitPreview(0);
+                            resetCalendarPreview();
+                        }
+                    })
+                    .catch(() => {
+                        estimatedDays.textContent = '-';
+                        setSplitPreview(0);
+                        resetCalendarPreview();
+                    });
+
+                function resetCalendarPreview() {
+                    const calendarStrip = document.getElementById('leaveCalendarStrip');
+                    const breakdownSummary = document.getElementById('dayBreakdownSummary');
+                    const modalSummary = document.getElementById('modalDayBreakdownSummary');
+                    const modalStrip = document.getElementById('modalLeaveCalendarStrip');
+
+                    const emptyMsg = `
+                                                        <div class="leave-calendar-empty-state">
+                                                            <i class="bi bi-calendar-event text-muted"></i>
+                                                            <span>Select date range below to preview working days, week-offs, and holidays.</span>
+                                                        </div>
+                                                    `;
+
+                    if (breakdownSummary) breakdownSummary.textContent = 'Select date range below to preview daily breakdown';
+                    if (modalSummary) modalSummary.textContent = 'Daily breakdown of selected leave dates';
+                    if (calendarStrip) calendarStrip.innerHTML = emptyMsg;
+                    if (modalStrip) modalStrip.innerHTML = emptyMsg;
+                }
             }
 
             fromDateInput.addEventListener('change', updateEstimatedDays);

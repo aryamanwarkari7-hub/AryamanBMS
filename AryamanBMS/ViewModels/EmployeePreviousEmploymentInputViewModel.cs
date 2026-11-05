@@ -58,16 +58,14 @@ namespace AryamanBMS.ViewModels
         [StringLength(20)]
         public string? HRContactNumber { get; set; }
 
-        public IFormFile? ExperienceLetter { get; set; }
+        public List<IFormFile>? ExperienceLetters { get; set; } = new();
 
-        public IFormFile? RelievingLetter { get; set; }
+        public List<IFormFile>? RelievingLetters { get; set; } = new();
 
-        public EmployeeDocumentModel?
-            ExistingExperienceLetter
-        { get; set; }
+        public List<EmployeeDocumentModel> ExistingExperienceLetters
+        { get; set; } = new();
 
-        public EmployeeDocumentModel?
-            ExistingRelievingLetter
-        { get; set; }
+        public List<EmployeeDocumentModel> ExistingRelievingLetters
+        { get; set; } = new();
     }
 }

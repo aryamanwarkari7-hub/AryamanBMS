@@ -41,69 +41,122 @@
 
                 <div class="filter-form-row">
 
-                    <input type="text" name="searchText" value="@ViewBag.SearchText" class="app-input flex-grow-1"
-                           placeholder="Search by code, name, mobile or email" />
+                    <div class="form-group filter-field-wide">
+                        <label class="form-label">Search</label>
+                        <input type="text" name="searchText" value="@ViewBag.SearchText" class="app-input"
+                               placeholder="Search by code, name, mobile or email..." />
+                    </div>
 
-                    <select name="statusFilter" class="app-select">
+                    <div class="form-group">
+                        <label class="form-label">Department</label>
+                        <select name="departmentId" class="app-select">
+                            <option value="">All Departments</option>
+                            @if (ViewBag.Departments != null)
+                            {
+                                foreach (var dept in (List<DepartmentModel>)ViewBag.Departments)
+                                {
+                                    <option value="@dept.Id" selected="@(ViewBag.DepartmentId == dept.Id)">
+                                        @dept.DepartmentName
+                                    </option>
+                                }
+                            }
+                        </select>
+                    </div>
 
-                        @if ((string)ViewBag.StatusFilter == "Active")
-                        {
-                            <option value="Active" selected>Active</option>
-                        }
-                        else
-                        {
-                            <option value="Active">Active</option>
-                        }
+                    <div class="form-group">
+                        <label class="form-label">Designation</label>
+                        <select name="designationId" class="app-select">
+                            <option value="">All Designations</option>
+                            @if (ViewBag.Designations != null)
+                            {
+                                foreach (var desig in (List<DesignationModel>)ViewBag.Designations)
+                                {
+                                    <option value="@desig.Id" selected="@(ViewBag.DesignationId == desig.Id)">
+                                        @desig.DesignationName
+                                    </option>
+                                }
+                            }
+                        </select>
+                    </div>
 
-                        @if ((string)ViewBag.StatusFilter == "Inactive")
-                        {
-                            <option value="Inactive" selected>Inactive</option>
-                        }
-                        else
-                        {
-                            <option value="Inactive">Inactive</option>
-                        }
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select name="statusFilter" class="app-select">
+                            <option value="All" selected="@(ViewBag.StatusFilter == "All")">All Status</option>
+                            <option value="Active" selected="@(ViewBag.StatusFilter == "Active")">Active</option>
+                            <option value="Inactive" selected="@(ViewBag.StatusFilter == "Inactive")">Inactive</option>
+                        </select>
+                    </div>
 
-                        @if ((string)ViewBag.StatusFilter == "All")
-                        {
-                            <option value="All" selected>All</option>
-                        }
-                        else
-                        {
-                            <option value="All">All</option>
-                        }
+                    <div class="form-group">
+                        <label class="form-label">Employment Type</label>
+                        <select name="employmentType" class="app-select">
+                            <option value="">All Types</option>
+                            <option value="Permanent" selected="@(ViewBag.EmploymentType == "Permanent")">Permanent
+                            </option>
+                            <option value="Contract" selected="@(ViewBag.EmploymentType == "Contract")">Contract
+                            </option>
+                            <option value="Intern" selected="@(ViewBag.EmploymentType == "Intern")">Intern</option>
+                            <option value="Consultant" selected="@(ViewBag.EmploymentType == "Consultant")">Consultant
+                            </option>
+                        </select>
+                    </div>
 
-                    </select>
+                    <div class="form-group">
+                        <label class="form-label">User Account</label>
+                        <select name="userFilter" class="app-select">
+                            <option value="All" selected="@(ViewBag.UserFilter == "All")">All Users</option>
+                            <option value="Mapped" selected="@(ViewBag.UserFilter == "Mapped")">With Account</option>
+                            <option value="Unmapped" selected="@(ViewBag.UserFilter == "Unmapped")">Without Account
+                            </option>
+                        </select>
+                    </div>
 
-                    <select name="sortBy" class="app-select">
-                        <option value="EmployeeCode" selected="@(ViewBag.SortBy == "EmployeeCode")">
-                            Sort by Code
-                        </option>
-                        <option value="Name" selected="@(ViewBag.SortBy == "Name")">
-                            Sort by Name
-                        </option>
-                        <option value="Department" selected="@(ViewBag.SortBy == "Department")">
-                            Sort by Department
-                        </option>
-                        <option value="Designation" selected="@(ViewBag.SortBy == "Designation")">
-                            Sort by Designation
-                        </option>
-                        <option value="JoiningDate" selected="@(ViewBag.SortBy == "JoiningDate")">
-                            Sort by Joining Date
-                        </option>
-                        <option value="Status" selected="@(ViewBag.SortBy == "Status")">
-                            Sort by Status
-                        </option>
-                    </select>
+                    <div class="form-group">
+                        <label class="form-label">Joining From</label>
+                        <input type="date" name="joiningFrom"
+                               value="@(ViewBag.JoiningFrom != null ? ((DateTime)ViewBag.JoiningFrom).ToString("yyyy-MM-dd") : "")"
+                               class="app-input" />
+                    </div>
 
-                    <select name="sortOrder" class="app-select">
-                        <option value="asc" selected="@(ViewBag.SortOrder == "asc")">
-                            Ascending
-                        </option>
-                        <option value="desc" selected="@(ViewBag.SortOrder == "desc")">
-                            Descending
-                        </option>
-                    </select>
+                    <div class="form-group">
+                        <label class="form-label">Joining To</label>
+                        <input type="date" name="joiningTo"
+                               value="@(ViewBag.JoiningTo != null ? ((DateTime)ViewBag.JoiningTo).ToString("yyyy-MM-dd") : "")"
+                               class="app-input" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Sort By</label>
+                        <select name="sortBy" class="app-select">
+                            <option value="EmployeeCode" selected="@(ViewBag.SortBy == "EmployeeCode")">Code</option>
+                            <option value="Name" selected="@(ViewBag.SortBy == "Name")">Name</option>
+                            <option value="Department" selected="@(ViewBag.SortBy == "Department")">Department</option>
+                            <option value="Designation" selected="@(ViewBag.SortBy == "Designation")">Designation
+                            </option>
+                            <option value="JoiningDate" selected="@(ViewBag.SortBy == "JoiningDate")">Joining Date
+                            </option>
+                            <option value="Status" selected="@(ViewBag.SortBy == "Status")">Status</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Order</label>
+                        <select name="sortOrder" class="app-select">
+                            <option value="asc" selected="@(ViewBag.SortOrder == "asc")">Ascending</option>
+                            <option value="desc" selected="@(ViewBag.SortOrder == "desc")">Descending</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Per Page</label>
+                        <select name="pageSize" class="app-select">
+                            <option value="10" selected="@(ViewBag.PageSize == 10)">10</option>
+                            <option value="25" selected="@(ViewBag.PageSize == 25)">25</option>
+                            <option value="50" selected="@(ViewBag.PageSize == 50)">50</option>
+                            <option value="100" selected="@(ViewBag.PageSize == 100)">100</option>
+                        </select>
+                    </div>
 
                     <div class="filter-form-actions">
                         <button type="submit" class="btn-app btn-primary-app">

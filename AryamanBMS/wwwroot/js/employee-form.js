@@ -84,6 +84,11 @@ function initializeEmployeeDocumentValidation() {
                 ".document-empty-text"
             );
 
+            // Prevent injecting absolute overlays into 2-column grid inputs
+            if (!emptyText) {
+                return;
+            }
+
             // Temporary filename display
             const fileName = document.createElement("span");
 

@@ -126,8 +126,9 @@
     --font-3xl: 36px;
     --fw-normal: 400;
     --fw-medium: 500;
-    --fw-semibold: 600;
-    --fw-bold: 700;
+    --fw-semibold: 700;
+    --fw-bold: 900;
+
     /* ==========================================
        TRANSITIONS / LAYOUT
     ========================================== */

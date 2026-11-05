@@ -1,14 +1,12 @@
-﻿
-// ACADEMIC
-    let academicIndex =
-        Number(document.getElementById("addAcademic")?.dataset.initialIndex || 0);
+﻿// ACADEMIC
+let academicIndex =
+    Number(document.getElementById("addAcademic")?.dataset.initialIndex || 0);
 
-    document.getElementById("addAcademic")
-        .addEventListener("click", function () {
+document.getElementById("addAcademic")
+    .addEventListener("click", function () {
+        const index = academicIndex++;
 
-            const index = academicIndex++;
-
-            const html = `
+        const html = `
                 <div class="academic-item border rounded p-3 mb-3"
                      data-academic-id="">
 
@@ -142,373 +140,362 @@
 
                 </div>`;
 
-            document.getElementById("academicContainer")
-                .insertAdjacentHTML("beforeend", html);
-        });
+        document.getElementById("academicContainer")
+            .insertAdjacentHTML("beforeend", html);
+    });
 
-    document.addEventListener("click", function (event) {
+document.addEventListener("click", function (event) {
+    const button =
+        event.target.closest(".remove-academic");
 
-        const button =
-            event.target.closest(".remove-academic");
+    if (!button) {
+        return;
+    }
 
-        if (!button) {
+    const academicItem =
+        button.closest(".academic-item");
+
+    const academicId =
+        academicItem.dataset.academicId;
+
+    if (academicId) {
+        const hiddenInput =
+            document.createElement("input");
+
+        hiddenInput.type = "hidden";
+        hiddenInput.name = "RemovedAcademicIds";
+        hiddenInput.value = academicId;
+
+        document
+            .getElementById("removedAcademicIdsContainer")
+            .appendChild(hiddenInput);
+    }
+
+    academicItem.remove();
+});
+
+document.addEventListener("DOMContentLoaded", async function () {
+    const addressConfig =
+        document.getElementById("employeeAddressConfig");
+
+    const currentPermanentCity =
+        addressConfig?.dataset.currentPermanentCity || "";
+
+    const currentPermanentPin =
+        addressConfig?.dataset.currentPermanentPin || "";
+
+    const currentLocalCity =
+        addressConfig?.dataset.currentLocalCity || "";
+
+    const currentLocalPin =
+        addressConfig?.dataset.currentLocalPin || "";
+
+    async function loadCities(
+        stateDropdown,
+        cityDropdown,
+        selectedCity = "") {
+        cityDropdown.innerHTML =
+            '<option value="">Select City</option>';
+
+        const selectedState =
+            stateDropdown.options[
+            stateDropdown.selectedIndex
+            ];
+
+        const stateId =
+            selectedState?.dataset.stateId;
+
+        if (!stateId) {
+            cityDropdown.disabled = true;
             return;
         }
 
-        const academicItem =
-            button.closest(".academic-item");
+        const response = await fetch(
+            `/Location/GetCities?stateId=${stateId}`
+        );
 
-        const academicId =
-            academicItem.dataset.academicId;
-
-        if (academicId) {
-            const hiddenInput =
-                document.createElement("input");
-
-            hiddenInput.type = "hidden";
-            hiddenInput.name = "RemovedAcademicIds";
-            hiddenInput.value = academicId;
-
-            document
-                .getElementById("removedAcademicIdsContainer")
-                .appendChild(hiddenInput);
+        if (!response.ok) {
+            throw new Error("Unable to load cities.");
         }
 
-        academicItem.remove();
-    });
+        const cities = await response.json();
 
-    document.addEventListener("DOMContentLoaded", async function () {
+        cities.forEach(city => {
+            const option =
+                document.createElement("option");
 
-        const addressConfig =
-            document.getElementById("employeeAddressConfig");
+            option.value = city.name;
+            option.textContent = city.name;
+            option.dataset.cityId = city.id;
 
-        const currentPermanentCity =
-            addressConfig?.dataset.currentPermanentCity || "";
-
-        const currentPermanentPin =
-            addressConfig?.dataset.currentPermanentPin || "";
-
-        const currentLocalCity =
-            addressConfig?.dataset.currentLocalCity || "";
-
-        const currentLocalPin =
-            addressConfig?.dataset.currentLocalPin || "";
-
-        async function loadCities(
-            stateDropdown,
-            cityDropdown,
-            selectedCity = "") {
-
-            cityDropdown.innerHTML =
-                '<option value="">Select City</option>';
-
-            const selectedState =
-                stateDropdown.options[
-                    stateDropdown.selectedIndex
-                ];
-
-            const stateId =
-                selectedState?.dataset.stateId;
-
-            if (!stateId) {
-                cityDropdown.disabled = true;
-                return;
+            if (city.name === selectedCity) {
+                option.selected = true;
             }
 
-            const response = await fetch(
-                `/Location/GetCities?stateId=${stateId}`
-            );
+            cityDropdown.appendChild(option);
+        });
 
-            if (!response.ok) {
-                throw new Error("Unable to load cities.");
-            }
+        cityDropdown.disabled = false;
+    }
 
-            const cities = await response.json();
+    async function loadPincodes(
+        cityDropdown,
+        pinList,
+        pinInput,
+        selectedPin = "") {
+        pinList.innerHTML = "";
 
-            cities.forEach(city => {
-                const option =
-                    document.createElement("option");
+        const selectedCity =
+            cityDropdown.options[
+            cityDropdown.selectedIndex
+            ];
 
-                option.value = city.name;
-                option.textContent = city.name;
-                option.dataset.cityId = city.id;
+        const cityId =
+            selectedCity?.dataset.cityId;
 
-                if (city.name === selectedCity) {
-                    option.selected = true;
-                }
-
-                cityDropdown.appendChild(option);
-            });
-
-            cityDropdown.disabled = false;
+        if (!cityId) {
+            return;
         }
 
-        async function loadPincodes(
-            cityDropdown,
-            pinList,
-            pinInput,
-            selectedPin = "") {
+        const response = await fetch(
+            `/Location/GetPincodes?cityId=${cityId}`
+        );
 
-            pinList.innerHTML = "";
-
-            const selectedCity =
-                cityDropdown.options[
-                    cityDropdown.selectedIndex
-                ];
-
-            const cityId =
-                selectedCity?.dataset.cityId;
-
-            if (!cityId) {
-                return;
-            }
-
-            const response = await fetch(
-                `/Location/GetPincodes?cityId=${cityId}`
-            );
-
-            if (!response.ok) {
-                throw new Error("Unable to load PIN codes.");
-            }
-
-            const pincodes = await response.json();
-
-            pincodes.forEach(pin => {
-                const option =
-                    document.createElement("option");
-
-                option.value = pin.value;
-                option.label = pin.text;
-
-                pinList.appendChild(option);
-            });
-
-            if (selectedPin) {
-                pinInput.value = selectedPin;
-            }
+        if (!response.ok) {
+            throw new Error("Unable to load PIN codes.");
         }
 
-        function setupLocationSection(
-            stateId,
-            cityId,
-            pinInputId,
-            pinListId) {
+        const pincodes = await response.json();
 
-            const stateDropdown =
-                document.getElementById(stateId);
+        pincodes.forEach(pin => {
+            const option =
+                document.createElement("option");
 
-            const cityDropdown =
-                document.getElementById(cityId);
+            option.value = pin.value;
+            option.label = pin.text;
 
-            const pinInput =
-                document.getElementById(pinInputId);
+            pinList.appendChild(option);
+        });
 
-            const pinList =
-                document.getElementById(pinListId);
-
-            stateDropdown.addEventListener(
-                "change",
-                async function () {
-
-                    pinInput.value = "";
-                    pinList.innerHTML = "";
-
-                    try {
-                        await loadCities(
-                            stateDropdown,
-                            cityDropdown
-                        );
-                    }
-                    catch (error) {
-                        console.error(error);
-                        alert("Cities could not be loaded.");
-                    }
-                }
-            );
-
-            cityDropdown.addEventListener(
-                "change",
-                async function () {
-
-                    pinInput.value = "";
-
-                    try {
-                        await loadPincodes(
-                            cityDropdown,
-                            pinList,
-                            pinInput
-                        );
-                    }
-                    catch (error) {
-                        console.error(error);
-                        alert("PIN codes could not be loaded.");
-                    }
-                }
-            );
-
-            pinInput.addEventListener(
-                "input",
-                function () {
-
-                    this.value = this.value
-                        .replace(/\D/g, "")
-                        .slice(0, 6);
-                }
-            );
+        if (selectedPin) {
+            pinInput.value = selectedPin;
         }
+    }
 
-        const permanentState =
-            document.getElementById(
-                "permanentStateDropdown"
-            );
+    function setupLocationSection(
+        stateId,
+        cityId,
+        pinInputId,
+        pinListId) {
+        const stateDropdown =
+            document.getElementById(stateId);
 
-        const permanentCity =
-            document.getElementById(
-                "permanentCityDropdown"
-            );
+        const cityDropdown =
+            document.getElementById(cityId);
 
-        const permanentPin =
-            document.getElementById(
-                "permanentPinCodeInput"
-            );
+        const pinInput =
+            document.getElementById(pinInputId);
 
-        const permanentPinList =
-            document.getElementById(
-                "permanentPinCodeOptions"
-            );
+        const pinList =
+            document.getElementById(pinListId);
 
-        const localState =
-            document.getElementById(
-                "localStateDropdown"
-            );
+        stateDropdown.addEventListener(
+            "change",
+            async function () {
+                pinInput.value = "";
+                pinList.innerHTML = "";
 
-        const localCity =
-            document.getElementById(
-                "localCityDropdown"
-            );
+                try {
+                    await loadCities(
+                        stateDropdown,
+                        cityDropdown
+                    );
+                }
+                catch (error) {
+                    console.error(error);
+                    alert("Cities could not be loaded.");
+                }
+            }
+        );
 
-        const localPin =
-            document.getElementById(
-                "localPinCodeInput"
-            );
+        cityDropdown.addEventListener(
+            "change",
+            async function () {
+                pinInput.value = "";
 
-        const localPinList =
-            document.getElementById(
-                "localPinCodeOptions"
-            );
+                try {
+                    await loadPincodes(
+                        cityDropdown,
+                        pinList,
+                        pinInput
+                    );
+                }
+                catch (error) {
+                    console.error(error);
+                    alert("PIN codes could not be loaded.");
+                }
+            }
+        );
 
-        setupLocationSection(
-            "permanentStateDropdown",
-            "permanentCityDropdown",
-            "permanentPinCodeInput",
+        pinInput.addEventListener(
+            "input",
+            function () {
+                this.value = this.value
+                    .replace(/\D/g, "")
+                    .slice(0, 6);
+            }
+        );
+    }
+
+    const permanentState =
+        document.getElementById(
+            "permanentStateDropdown"
+        );
+
+    const permanentCity =
+        document.getElementById(
+            "permanentCityDropdown"
+        );
+
+    const permanentPin =
+        document.getElementById(
+            "permanentPinCodeInput"
+        );
+
+    const permanentPinList =
+        document.getElementById(
             "permanentPinCodeOptions"
         );
 
-        setupLocationSection(
-            "localStateDropdown",
-            "localCityDropdown",
-            "localPinCodeInput",
+    const localState =
+        document.getElementById(
+            "localStateDropdown"
+        );
+
+    const localCity =
+        document.getElementById(
+            "localCityDropdown"
+        );
+
+    const localPin =
+        document.getElementById(
+            "localPinCodeInput"
+        );
+
+    const localPinList =
+        document.getElementById(
             "localPinCodeOptions"
         );
 
-        try {
-            if (permanentState.value) {
-                await loadCities(
-                    permanentState,
-                    permanentCity,
-                    currentPermanentCity
-                );
+    setupLocationSection(
+        "permanentStateDropdown",
+        "permanentCityDropdown",
+        "permanentPinCodeInput",
+        "permanentPinCodeOptions"
+    );
 
-                await loadPincodes(
-                    permanentCity,
-                    permanentPinList,
-                    permanentPin,
-                    currentPermanentPin
-                );
-            }
+    setupLocationSection(
+        "localStateDropdown",
+        "localCityDropdown",
+        "localPinCodeInput",
+        "localPinCodeOptions"
+    );
 
-            if (localState.value) {
-                await loadCities(
-                    localState,
-                    localCity,
-                    currentLocalCity
-                );
+    try {
+        if (permanentState.value) {
+            await loadCities(
+                permanentState,
+                permanentCity,
+                currentPermanentCity
+            );
 
-                await loadPincodes(
-                    localCity,
-                    localPinList,
-                    localPin,
-                    currentLocalPin
-                );
-            }
-        }
-        catch (error) {
-            console.error(
-                "Saved address values could not be loaded.",
-                error
+            await loadPincodes(
+                permanentCity,
+                permanentPinList,
+                permanentPin,
+                currentPermanentPin
             );
         }
 
-        const sameAsPermanent =
-            document.getElementById(
-                "sameAsPermanent"
+        if (localState.value) {
+            await loadCities(
+                localState,
+                localCity,
+                currentLocalCity
             );
 
-        sameAsPermanent.addEventListener(
-            "change",
-            async function () {
-
-                if (!this.checked) {
-                    document.getElementById("localAddress").value = "";
-                    localState.value = "";
-
-                    localCity.innerHTML =
-                        '<option value="">Select City</option>';
-                    localCity.disabled = true;
-
-                    localPin.value = "";
-                    localPinList.innerHTML = "";
-
-                    return;
-                }
-
-                document.getElementById(
-                    "localAddress"
-                ).value =
-                    document.getElementById(
-                        "permanentAddress"
-                    ).value;
-
-                localState.value =
-                    permanentState.value;
-
-                await loadCities(
-                    localState,
-                    localCity,
-                    permanentCity.value
-                );
-
-                await loadPincodes(
-                    localCity,
-                    localPinList,
-                    localPin,
-                    permanentPin.value
-                );
-            }
+            await loadPincodes(
+                localCity,
+                localPinList,
+                localPin,
+                currentLocalPin
+            );
+        }
+    }
+    catch (error) {
+        console.error(
+            "Saved address values could not be loaded.",
+            error
         );
-    });
+    }
 
+    const sameAsPermanent =
+        document.getElementById(
+            "sameAsPermanent"
+        );
+
+    sameAsPermanent.addEventListener(
+        "change",
+        async function () {
+            if (!this.checked) {
+                document.getElementById("localAddress").value = "";
+                localState.value = "";
+
+                localCity.innerHTML =
+                    '<option value="">Select City</option>';
+                localCity.disabled = true;
+
+                localPin.value = "";
+                localPinList.innerHTML = "";
+
+                return;
+            }
+
+            document.getElementById(
+                "localAddress"
+            ).value =
+                document.getElementById(
+                    "permanentAddress"
+                ).value;
+
+            localState.value =
+                permanentState.value;
+
+            await loadCities(
+                localState,
+                localCity,
+                permanentCity.value
+            );
+
+            await loadPincodes(
+                localCity,
+                localPinList,
+                localPin,
+                permanentPin.value
+            );
+        }
+    );
+});
 
 // PREVIOUS EMPLOYMENT
 let previousEmploymentIndex =
     Number(document.getElementById("addPreviousEmployment")?.dataset.initialIndex || 0);
-    document
-        .getElementById("addPreviousEmployment")
-        .addEventListener("click", function () {
+document
+    .getElementById("addPreviousEmployment")
+    .addEventListener("click", function () {
+        const index = previousEmploymentIndex++;
 
-            const index = previousEmploymentIndex++;
-
-            const html = `
+        const html = `
                 <div class="previous-employment-item border rounded p-3 mb-3"
                      data-previous-employment-id="">
 
@@ -649,80 +636,86 @@ let previousEmploymentIndex =
 
                     <h6 class="mt-4 mb-3">Employment Documents</h6>
 
-                    <div class="form-grid-2">
+<div class="form-grid-2">
 
-                        <div class="form-group">
-                            <label class="form-label">Experience Letter</label>
-                            <input name="PreviousEmployments[${index}].ExperienceLetter"
-                                   type="file"
-                                   accept=".pdf,application/pdf"
-                                   class="form-control" />
-                        </div>
+    <div class="form-group">
+        <label class="form-label">Experience Letters</label>
 
-                        <div class="form-group">
-                            <label class="form-label">Relieving Letter</label>
-                            <input name="PreviousEmployments[${index}].RelievingLetter"
-                                   type="file"
-                                   accept=".pdf,application/pdf"
-                                   class="form-control" />
-                        </div>
+        <div class="experience-letter-inputs">
+            <input name="PreviousEmployments[${index}].ExperienceLetters"
+                   type="file"
+                   multiple
+                   accept=".pdf,application/pdf"
+                   class="form-control document-pdf-input" />
+        </div>
 
-                    </div>
+        <button type="button"
+                class="btn-app btn-secondary-app btn-sm mt-2 add-experience-letter-input">
+            + Add another file selection
+        </button>
+    </div>
 
-                    <button type="button"
-                            class="btn-app btn-danger-app remove-previous-employment mt-3">
+    <div class="form-group">
+        <label class="form-label">Relieving Letters</label>
 
-                        <i class="bi bi-trash"></i>
-                        Remove Previous Employment
+        <div class="relieving-letter-inputs">
+            <input name="PreviousEmployments[${index}].RelievingLetters"
+                   type="file"
+                   multiple
+                   accept=".pdf,application/pdf"
+                   class="form-control document-pdf-input" />
+        </div>
 
-                    </button>
+        <button type="button"
+                class="btn-app btn-secondary-app btn-sm mt-2 add-relieving-letter-input">
+            + Add another file selection
+        </button>
+    </div>
 
-                </div>`;
+</div>`;
 
-            document
-                .getElementById("previousEmploymentContainer")
-                .insertAdjacentHTML("beforeend", html);
-        });
-
-    document.addEventListener("click", function (event) {
-
-        const button =
-            event.target.closest(
-                ".remove-previous-employment"
-            );
-
-        if (!button) {
-            return;
-        }
-
-        const item =
-            button.closest(
-                ".previous-employment-item"
-            );
-
-        const employmentId =
-            item.dataset.previousEmploymentId;
-
-        if (employmentId) {
-            const hiddenInput =
-                document.createElement("input");
-
-            hiddenInput.type = "hidden";
-            hiddenInput.name =
-                "RemovedPreviousEmploymentIds";
-
-            hiddenInput.value = employmentId;
-
-            document
-                .getElementById(
-                    "removedPreviousEmploymentIdsContainer"
-                )
-                .appendChild(hiddenInput);
-        }
-
-        item.remove();
+        document
+            .getElementById("previousEmploymentContainer")
+            .insertAdjacentHTML("beforeend", html);
     });
 
+document.addEventListener("click", function (event) {
+    const button =
+        event.target.closest(
+            ".remove-previous-employment"
+        );
+
+    if (!button) {
+        return;
+    }
+
+    const item =
+        button.closest(
+            ".previous-employment-item"
+        );
+
+    const employmentId =
+        item.dataset.previousEmploymentId;
+
+    if (employmentId) {
+        const hiddenInput =
+            document.createElement("input");
+
+        hiddenInput.type = "hidden";
+        hiddenInput.name =
+            "RemovedPreviousEmploymentIds";
+
+        hiddenInput.value = employmentId;
+
+        document
+            .getElementById(
+                "removedPreviousEmploymentIdsContainer"
+            )
+            .appendChild(hiddenInput);
+    }
+
+    item.remove();
+});
 
 // ADDRESS DROPDOWNS
 
@@ -818,3 +811,59 @@ document.addEventListener("change", function (event) {
 });
 
 initializePreviousEmploymentLocations();
+
+// REPEATABLE PREVIOUS EMPLOYMENT FILE INPUTS
+
+document.addEventListener("click", function (event) {
+    const experienceButton =
+        event.target.closest(".add-experience-letter-input");
+
+    const relievingButton =
+        event.target.closest(".add-relieving-letter-input");
+
+    if (!experienceButton && !relievingButton) {
+        return;
+    }
+
+    const employmentItem =
+        event.target.closest(".previous-employment-item");
+
+    if (!employmentItem) {
+        return;
+    }
+
+    const indexInput =
+        employmentItem.querySelector('input[name="PreviousEmployments.Index"]');
+
+    if (!indexInput) {
+        return;
+    }
+
+    const index = indexInput.value;
+
+    const isExperience = Boolean(experienceButton);
+
+    const property = isExperience
+        ? "ExperienceLetters"
+        : "RelievingLetters";
+
+    const container = employmentItem.querySelector(
+        isExperience
+            ? ".experience-letter-inputs"
+            : ".relieving-letter-inputs"
+    );
+
+    if (!container) {
+        return;
+    }
+
+    const input = document.createElement("input");
+
+    input.type = "file";
+    input.name = `PreviousEmployments[${index}].${property}`;
+    input.multiple = true;
+    input.accept = ".pdf,application/pdf";
+    input.className = "form-control document-pdf-input mt-2";
+
+    container.appendChild(input);
+});

@@ -65,3 +65,34 @@
     opacity: 0;
     transform: translateY(-4px);
 }
+
+/* ==========================================
+   PERMANENT ON-PAGE CALLOUT (Never Disappears)
+========================================== */
+.info-callout {
+    background: var(--info-soft);
+    color: var(--info-soft-text);
+    border: 1px solid var(--info-soft-border);
+    border-radius: var(--radius-md);
+    padding: 14px 18px;
+    line-height: 1.5;
+}
+
+.info-callout-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: var(--fw-bold, 700);
+    font-size: var(--font-md, 0.95rem);
+    margin-bottom: 4px;
+}
+
+    .info-callout-header i {
+        font-size: 1.15rem;
+        flex-shrink: 0;
+    }
+
+.info-callout-body {
+    font-size: var(--font-sm, 0.875rem);
+    padding-left: 26px; /* Indents text directly under "Pro-Tip:" */
+}

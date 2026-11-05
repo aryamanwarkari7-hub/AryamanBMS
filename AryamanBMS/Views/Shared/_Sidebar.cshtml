@@ -291,7 +291,7 @@ currentController == "LeaveApplication" ||
         
     </div>
 
-    <div class="sidebar-fy">
+    <div class="sidebar-fy" id="sidebarFinancialYear">
         FY 2025-26 | PUNE,MH
     </div>
 
@@ -429,7 +429,7 @@ currentController == "LeaveApplication" ||
 
                     <div class="menu-group-left">
                         <i class="bi bi-person-workspace"></i>
-                        <span>HR ADMINISTRATION</span>
+                        <span>ADMINISTRATION</span>
                     </div>
 
                     <i class="bi bi-chevron-down"></i>
@@ -810,23 +810,20 @@ currentController == "LeaveApplication" ||
                                         @* ==========================================
                                     EMPLOYEE SALARY PAYSLIP
                                 ========================================== *@
-                                        <a asp-controller="Salary" asp-action="MyPayslip" class="submenu-item nested-item">
-
-                                            <i class="bi bi-receipt"></i>
-                                            <span>My Payslip</span>
-
-                                        </a>
+                                        <a asp-controller="Salary" asp-action="MyPayslip"
+                       class="submenu-item @(currentController == "Salary" && (currentAction == "MyPayslip" || currentAction == "Payslip") ? "active-menu" : "")">
+                        <i class="bi bi-receipt"></i>
+                        <span>My Payslip</span>
+                    </a>
 
                                         @* ==========================================
                                     EMPLOYEE SALARY HISTORY
                                 ========================================== *@
                                         <a asp-controller="Salary" asp-action="MySalary"
-                                           class="submenu-item nested-item @(currentController == "Salary" && currentAction == "MySalary" ? "active-menu" : "")">
-
-                                            <i class="bi bi-cash-stack"></i>
-                                            <span>My Salary</span>
-
-                                        </a>
+                       class="submenu-item @(currentController == "Salary" && currentAction == "MySalary" ? "active-menu" : "")">
+                        <i class="bi bi-cash-stack"></i>
+                        <span>My Salary</span>
+                    </a>
                                     }
 
                                 </div>
@@ -1066,7 +1063,7 @@ currentController == "LeaveApplication" ||
         }
 
         @* ==========================================
-           ACCOUNTS & FINANCE
+           ACCOUNTS 
         ========================================== *@
         @if (canAccessAccounts)
         {
@@ -1078,7 +1075,7 @@ currentController == "LeaveApplication" ||
 
                     <div class="menu-group-left">
                         <i class="bi bi-cash-stack"></i>
-                        <span>ACCOUNTS FINANCE</span>
+                        <span>ACCOUNTS </span>
                     </div>
 
                     <i class="bi bi-chevron-down"></i>
@@ -1373,131 +1370,161 @@ currentController == "LeaveApplication" ||
             </div>
         }
 
-        @* ============================================================
-           MY WORKSPACE
-           Personal attendance, leave, expense, calendar, project,
-           and asset links for mapped employees, including mapped
-           Admin/HR/Master users.
-        ============================================================ *@
-        @if (hasMyWorkspace)
-        {
-            <div class="menu-group">
-                <button class="menu-group-header @(isMyWorkspaceActive ? "active-menu" : "")" type="button"
-                        data-bs-toggle="collapse" data-bs-target="#myWorkspaceMenu"
-                        aria-expanded="@isMyWorkspaceActive.ToString().ToLower()">
+        
+@* ============================================================
+   MY WORKSPACE
+   Personal attendance, leave, expense, calendar, project,
+   and asset links for mapped employees, including mapped
+   Admin/HR/Master users.
+============================================================ *@
+@if (hasMyWorkspace)
+{
+    <div class="menu-group">
 
-                    <div class="menu-group-left">
-                        <i class="bi bi-person-workspace"></i>
-                        <span>MY WORKSPACE</span>
-                    </div>
+        <button class="menu-group-header @(isMyWorkspaceActive ? "active-menu" : "")" type="button"
+                data-bs-toggle="collapse" data-bs-target="#myWorkspaceMenu"
+                aria-expanded="@isMyWorkspaceActive.ToString().ToLower()">
 
-                    <i class="bi bi-chevron-down"></i>
-                </button>
+            <div class="menu-group-left">
+                <i class="bi bi-person-workspace"></i>
+                <span>MY WORKSPACE</span>
+            </div>
 
-                <div class="collapse @(isMyWorkspaceActive ? "show" : "")" id="myWorkspaceMenu"
-                     data-bs-parent="#sidebarAccordion">
+            <i class="bi bi-chevron-down"></i>
+        </button>
 
-                    <a asp-controller="Employee" asp-action="MyDashboard"
-                       class="submenu-item @(currentController == "Employee" && currentAction == "MyDashboard" ? "active-menu" : "")">
-                        <i class="bi bi-speedometer2"></i>
-                        <span>My Dashboard</span>
-                    </a>
+        <div class="collapse @(isMyWorkspaceActive ? "show" : "")" id="myWorkspaceMenu"
+             data-bs-parent="#sidebarAccordion">
 
-                    <a asp-controller="Employee" asp-action="Profile"
-                       class="submenu-item @(currentController == "Employee" && currentAction == "Profile" ? "active-menu" : "")">
-                        <i class="bi bi-person-badge"></i>
-                        <span>Employee Profile</span>
-                    </a>
+            <div class="submenu workspace-submenu">
 
-                    <a asp-controller="Attendance" asp-action="Index"
-                       class="submenu-item @(currentController == "Attendance" && currentAction == "Index" ? "active-menu" : "")">
-                        <i class="bi bi-clock"></i>
-                        <span>My Attendance</span>
-                    </a>
+                <a asp-controller="Employee" asp-action="MyDashboard"
+                   class="submenu-item nested-item @(currentController == "Employee" && currentAction == "MyDashboard" ? "active-menu" : "")">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>My Dashboard</span>
+                </a>
 
-                    <a asp-controller="Attendance" asp-action="MyMonthly"
-                       class="submenu-item @(currentController == "Attendance" && currentAction == "MyMonthly" ? "active-menu" : "")">
-                        <i class="bi bi-calendar3"></i>
-                        <span>My Monthly Attendance</span>
-                    </a>
+                <a asp-controller="Employee" asp-action="Profile"
+                   class="submenu-item nested-item @(currentController == "Employee" && currentAction == "Profile" ? "active-menu" : "")">
+                    <i class="bi bi-person-badge"></i>
+                    <span>Employee Profile</span>
+                </a>
 
-                    <a asp-controller="LeaveApplication" asp-action="Index" asp-route-mine="true"
-                       class="submenu-item @(currentController == "LeaveApplication" && Context.Request.Query["mine"] == "true" ? "active-menu" : "")">
-                        <i class="bi bi-calendar-event"></i>
-                        <span>My Leave Applications</span>
-                    </a>
+                <a asp-controller="Attendance" asp-action="Index"
+                   class="submenu-item nested-item @(currentController == "Attendance" && currentAction == "Index" ? "active-menu" : "")">
+                    <i class="bi bi-clock"></i>
+                    <span>My Attendance</span>
+                </a>
 
+                <a asp-controller="Attendance" asp-action="MyMonthly"
+                   class="submenu-item nested-item @(currentController == "Attendance" && currentAction == "MyMonthly" ? "active-menu" : "")">
+                    <i class="bi bi-calendar3"></i>
+                    <span>My Monthly Attendance</span>
+                </a>
+
+                <a asp-controller="LeaveApplication" asp-action="Index" asp-route-mine="true"
+                   class="submenu-item nested-item @(currentController == "LeaveApplication" && Context.Request.Query["mine"] == "true" ? "active-menu" : "")">
+                    <i class="bi bi-calendar-event"></i>
+                    <span>My Leave Applications</span>
+                </a>
+
+                @* ==========================================
+                   MY PAID LEAVE (Only for eligible staff)
+                ========================================== *@
+                @if (linkedEmployee == null || linkedEmployee.IsEligibleForPaidLeave)
+                {
                     <a asp-controller="LeaveApplication" asp-action="MyPaidLeaveBalance"
-                       class="submenu-item @(currentController == "LeaveApplication" && currentAction == "MyPaidLeaveBalance" ? "active-menu" : "")">
+                       class="submenu-item nested-item @(currentController == "LeaveApplication" && currentAction == "MyPaidLeaveBalance" ? "active-menu" : "")">
                         <i class="bi bi-wallet2"></i>
                         <span>My Paid Leave</span>
                     </a>
+                }
 
-                    <a asp-controller="CompOffCredit" asp-action="Index" asp-route-mine="true"
-                       class="submenu-item @(currentController == "CompOffCredit" && Context.Request.Query["mine"] == "true" ? "active-menu" : "")">
-                        <i class="bi bi-arrow-repeat"></i>
-                        <span>My Comp Off</span>
-                    </a>
+                @* ==========================================
+                   MY COMP OFF (Available to all)
+                ========================================== *@
+                <a asp-controller="CompOffCredit" asp-action="Index" asp-route-mine="true"
+                   class="submenu-item nested-item @(currentController == "CompOffCredit" && Context.Request.Query["mine"] == "true" ? "active-menu" : "")">
+                    <i class="bi bi-arrow-repeat"></i>
+                    <span>My Comp Off</span>
+                </a>
 
+                @* ==========================================
+                   PAYSLIP / STIPEND VOUCHER & SALARY
+                ========================================== *@
+                @if (linkedEmployee != null && linkedEmployee.IsStipend)
+                {
                     <a asp-controller="Salary" asp-action="MyPayslip"
-                       class="submenu-item @(currentController == "Salary" && (currentAction == "MyPayslip" || currentAction == "Payslip") ? "active-menu" : "")">
+                       class="submenu-item nested-item @(currentController == "Salary" && (currentAction == "MyPayslip" || currentAction == "Payslip") ? "active-menu" : "")">
+                        <i class="bi bi-receipt"></i>
+                        <span>My Stipend Voucher</span>
+                    </a>
+                }
+                else
+                {
+                    <a asp-controller="Salary" asp-action="MyPayslip"
+                       class="submenu-item nested-item @(currentController == "Salary" && (currentAction == "MyPayslip" || currentAction == "Payslip") ? "active-menu" : "")">
                         <i class="bi bi-receipt"></i>
                         <span>My Payslip</span>
                     </a>
 
                     <a asp-controller="Salary" asp-action="MySalary"
-                       class="submenu-item @(currentController == "Salary" && currentAction == "MySalary" ? "active-menu" : "")">
+                       class="submenu-item nested-item @(currentController == "Salary" && currentAction == "MySalary" ? "active-menu" : "")">
                         <i class="bi bi-cash-stack"></i>
                         <span>My Salary</span>
                     </a>
+                }
 
-                    <a asp-controller="ExpenseVoucher" asp-action="Index" asp-route-mine="true"
-                       class="submenu-item @(currentController == "ExpenseVoucher" ? "active-menu" : "")">
-                        <i class="bi bi-receipt"></i>
-                        <span>My Expenses</span>
-                    </a>
+                <a asp-controller="ExpenseVoucher" asp-action="Index" asp-route-mine="true"
+                   class="submenu-item nested-item @(currentController == "ExpenseVoucher" ? "active-menu" : "")">
+                    <i class="bi bi-receipt"></i>
+                    <span>My Expenses</span>
+                </a>
 
-                    <a asp-controller="Calendar" asp-action="Index" asp-route-mine="true"
-                       class="submenu-item @(currentController == "Calendar" ? "active-menu" : "")">
-                        <i class="bi bi-calendar3"></i>
-                        <span>My Calendar</span>
-                    </a>
+                <a asp-controller="Calendar" asp-action="Index" asp-route-mine="true"
+                   class="submenu-item nested-item @(currentController == "Calendar" ? "active-menu" : "")">
+                    <i class="bi bi-calendar3"></i>
+                    <span>My Calendar</span>
+                </a>
 
-                    <a asp-controller="Holiday" asp-action="Index"
-                       class="submenu-item @(currentController == "Holiday" ? "active-menu" : "")">
-                        <i class="bi bi-calendar-event"></i>
-                        <span>Holidays</span>
-                    </a>
+                <a asp-controller="Holiday" asp-action="Index"
+                   class="submenu-item nested-item @(currentController == "Holiday" ? "active-menu" : "")">
+                    <i class="bi bi-calendar-event"></i>
+                    <span>Holidays</span>
+                </a>
 
-                    <a asp-controller="Birthday" asp-action="Index"
-                       class="submenu-item @(currentController == "Birthday" ? "active-menu" : "")">
-                        <i class="bi bi-balloon"></i>
-                        <span>Birthdays</span>
-                    </a>
+                <a asp-controller="Birthday" asp-action="Index"
+                   class="submenu-item nested-item @(currentController == "Birthday" ? "active-menu" : "")">
+                    <i class="bi bi-balloon"></i>
+                    <span>Birthdays</span>
+                </a>
 
-                    <a asp-controller="EmployeeProject" asp-action="MyTasks"
-                       class="submenu-item @(currentController == "EmployeeProject" ? "active-menu" : "")">
+                <a asp-controller="EmployeeProject" asp-action="MyTasks"
+                   class="submenu-item nested-item @(currentController == "EmployeeProject" ? "active-menu" : "")">
+                    <i class="bi bi-kanban"></i>
+                    <span>My Project Tasks</span>
+                </a>
+
+                @if (isEmployeeOnly)
+                {
+                    <a asp-controller="Project" asp-action="Index"
+                       class="submenu-item nested-item @(currentController == "Project" ? "active-menu" : "")">
                         <i class="bi bi-kanban"></i>
-                        <span>My Project Tasks</span>
+                        <span>My Projects</span>
                     </a>
 
-                    @if (isEmployeeOnly)
-                    {
-                        <a asp-controller="Project" asp-action="Index"
-                           class="submenu-item @(currentController == "Project" ? "active-menu" : "")">
-                            <i class="bi bi-kanban"></i>
-                            <span>My Projects</span>
-                        </a>
+                    <a asp-controller="OfficeAsset" asp-action="MyAssets"
+                       class="submenu-item nested-item @(currentController == "OfficeAsset" ? "active-menu" : "")">
+                        <i class="bi bi-pc-display"></i>
+                        <span>My Assigned Assets</span>
+                    </a>
+                }
 
-                        <a asp-controller="OfficeAsset" asp-action="MyAssets"
-                           class="submenu-item @(currentController == "OfficeAsset" ? "active-menu" : "")">
-                            <i class="bi bi-pc-display"></i>
-                            <span>My Assigned Assets</span>
-                        </a>
-                    }
-                </div>
             </div>
-        }
+        </div>
+    </div>
+}
+
     </div>
 
     @* ============================================================
@@ -1542,9 +1569,9 @@ currentController == "LeaveApplication" ||
                     @role
                 </div>
 
-                <div class="user-activity-status">
+                @* <div class="user-activity-status">
                     @sidebarActivityStatus
-                </div>
+                </div> *@
 
             </div>
 

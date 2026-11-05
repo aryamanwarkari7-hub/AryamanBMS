@@ -28,8 +28,8 @@ namespace AryamanBMS.Controllers
         private readonly IEmployeeDocumentService _employeeDocumentService;
         private readonly INotificationService _notificationService;
         private readonly ILocationRepository _locationRepository;
-        private readonly IEmployeePreviousEmploymentRepository
-    _employeePreviousEmploymentRepository;
+
+        private readonly IEmployeePreviousEmploymentRepository _employeePreviousEmploymentRepository;
 
         public EmployeeController(
             IEmployeeRepository employeeRepository,
@@ -42,7 +42,8 @@ namespace AryamanBMS.Controllers
             IEmployeeDocumentService employeeDocumentService,
             INotificationService notificationService,
             ILocationRepository locationRepository,
-            IEmployeePreviousEmploymentRepository employeePreviousEmploymentRepository)
+            IEmployeePreviousEmploymentRepository employeePreviousEmploymentRepository
+        )
         {
             _employeeRepository = employeeRepository;
             _departmentRepository = departmentRepository;
@@ -59,66 +60,77 @@ namespace AryamanBMS.Controllers
 
         [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> Index(
-           string? searchText,
-           string statusFilter = "All",
-           string sortBy = "EmployeeCode",
-           string sortOrder = "asc",
-           int page = 1)
+            string? searchText,
+            string statusFilter = "All",
+            int? departmentId = null,
+            int? designationId = null,
+            string? employmentType = null,
+            string userFilter = "All",
+            DateTime? joiningFrom = null,
+            DateTime? joiningTo = null,
+            string sortBy = "EmployeeCode",
+            string sortOrder = "asc",
+            int page = 1,
+            int pageSize = 10
+        )
         {
-            const int pageSize = 5;
+            pageSize = pageSize <= 0 ? 10 : pageSize;
 
-            var allEmployees =
-                await _employeeRepository.GetAllAsync();
+            var allEmployees = await _employeeRepository.GetAllAsync();
 
             var employees = allEmployees.AsQueryable();
 
             ViewBag.TotalEmployees = allEmployees.Count();
-            ViewBag.ActiveEmployees =
-                allEmployees.Count(e => e.IsActive);
-            ViewBag.InactiveEmployees =
-                allEmployees.Count(e => !e.IsActive);
+            ViewBag.ActiveEmployees = allEmployees.Count(e => e.IsActive);
+            ViewBag.InactiveEmployees = allEmployees.Count(e => !e.IsActive);
 
+            // Populate filter dropdowns
+            ViewBag.Departments = await _departmentRepository
+                .Departments.OrderBy(d => d.DepartmentName)
+                .ToListAsync();
+
+            ViewBag.Designations = await _designationRepository
+                .Designations.OrderBy(d => d.DesignationName)
+                .ToListAsync();
+
+            // Search filter
             if (!string.IsNullOrWhiteSpace(searchText))
             {
                 searchText = searchText.Trim();
 
                 employees = employees.Where(e =>
-                    (!string.IsNullOrEmpty(e.EmployeeCode) &&
-                     e.EmployeeCode.Contains(
-                         searchText,
-                         StringComparison.OrdinalIgnoreCase)) ||
-
-                    (!string.IsNullOrEmpty(e.FirstName) &&
-                     e.FirstName.Contains(
-                         searchText,
-                         StringComparison.OrdinalIgnoreCase)) ||
-
-                    (!string.IsNullOrEmpty(e.MiddleName) &&
-                     e.MiddleName.Contains(
-                         searchText,
-                         StringComparison.OrdinalIgnoreCase)) ||
-
-                    (!string.IsNullOrEmpty(e.LastName) &&
-                     e.LastName.Contains(
-                         searchText,
-                         StringComparison.OrdinalIgnoreCase)) ||
-
-                    (!string.IsNullOrEmpty(e.OfficialEmail) &&
-                       e.OfficialEmail.Contains(
-                           searchText,
-                           StringComparison.OrdinalIgnoreCase)) ||
-                      
-                      (!string.IsNullOrEmpty(e.PersonalEmail) &&
-                       e.PersonalEmail.Contains(
-                           searchText,
-                           StringComparison.OrdinalIgnoreCase)) ||
-                      
-                      (!string.IsNullOrEmpty(e.MobileNumber) &&
-                       e.MobileNumber.Contains(
-                           searchText,
-                           StringComparison.OrdinalIgnoreCase)));
+                    (
+                        !string.IsNullOrEmpty(e.EmployeeCode)
+                        && e.EmployeeCode.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+                    )
+                    || (
+                        !string.IsNullOrEmpty(e.FirstName)
+                        && e.FirstName.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+                    )
+                    || (
+                        !string.IsNullOrEmpty(e.MiddleName)
+                        && e.MiddleName.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+                    )
+                    || (
+                        !string.IsNullOrEmpty(e.LastName)
+                        && e.LastName.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+                    )
+                    || (
+                        !string.IsNullOrEmpty(e.OfficialEmail)
+                        && e.OfficialEmail.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+                    )
+                    || (
+                        !string.IsNullOrEmpty(e.PersonalEmail)
+                        && e.PersonalEmail.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+                    )
+                    || (
+                        !string.IsNullOrEmpty(e.MobileNumber)
+                        && e.MobileNumber.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+                    )
+                );
             }
 
+            // Status filter
             if (statusFilter == "Active")
             {
                 employees = employees.Where(e => e.IsActive);
@@ -128,22 +140,79 @@ namespace AryamanBMS.Controllers
                 employees = employees.Where(e => !e.IsActive);
             }
 
-            bool descending =
-    string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
+            // Department filter
+            if (departmentId.HasValue && departmentId.Value > 0)
+            {
+                employees = employees.Where(e => e.DepartmentId == departmentId.Value);
+            }
+
+            // Designation filter
+            if (designationId.HasValue && designationId.Value > 0)
+            {
+                employees = employees.Where(e => e.DesignationId == designationId.Value);
+            }
+
+            // Employment Type filter
+            if (!string.IsNullOrWhiteSpace(employmentType) && employmentType != "All")
+            {
+                employees = employees.Where(e =>
+                    string.Equals(
+                        e.EmploymentType,
+                        employmentType,
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                );
+            }
+
+            // User Account mapping filter
+            if (userFilter == "Mapped")
+            {
+                employees = employees.Where(e => !string.IsNullOrEmpty(e.ApplicationUserId));
+            }
+            else if (userFilter == "Unmapped")
+            {
+                employees = employees.Where(e => string.IsNullOrEmpty(e.ApplicationUserId));
+            }
+
+            // Joining Date range filter
+            if (joiningFrom.HasValue)
+            {
+                employees = employees.Where(e => e.JoiningDate >= joiningFrom.Value.Date);
+            }
+
+            if (joiningTo.HasValue)
+            {
+                employees = employees.Where(e =>
+                    e.JoiningDate <= joiningTo.Value.Date.AddDays(1).AddTicks(-1)
+                );
+            }
+
+            // Sorting
+            bool descending = string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
 
             employees = sortBy switch
             {
                 "Name" => descending
-                    ? employees.OrderByDescending(e => e.FirstName).ThenByDescending(e => e.LastName)
+                    ? employees
+                        .OrderByDescending(e => e.FirstName)
+                        .ThenByDescending(e => e.LastName)
                     : employees.OrderBy(e => e.FirstName).ThenBy(e => e.LastName),
 
                 "Department" => descending
-                    ? employees.OrderByDescending(e => e.Department!=null? e.Department.DepartmentName:null)
-                    : employees.OrderBy(e => e.Department != null ? e.Department.DepartmentName : null),
+                    ? employees.OrderByDescending(e =>
+                        e.Department != null ? e.Department.DepartmentName : null
+                    )
+                    : employees.OrderBy(e =>
+                        e.Department != null ? e.Department.DepartmentName : null
+                    ),
 
                 "Designation" => descending
-             ? employees.OrderByDescending(e => e.Designation != null ? e.Designation.DesignationName : null)
-             : employees.OrderBy(e => e.Designation != null ? e.Designation.DesignationName : null),
+                    ? employees.OrderByDescending(e =>
+                        e.Designation != null ? e.Designation.DesignationName : null
+                    )
+                    : employees.OrderBy(e =>
+                        e.Designation != null ? e.Designation.DesignationName : null
+                    ),
 
                 "JoiningDate" => descending
                     ? employees.OrderByDescending(e => e.JoiningDate)
@@ -155,13 +224,12 @@ namespace AryamanBMS.Controllers
 
                 _ => descending
                     ? employees.OrderByDescending(e => e.EmployeeCode)
-                    : employees.OrderBy(e => e.EmployeeCode)
+                    : employees.OrderBy(e => e.EmployeeCode),
             };
 
             int totalRecords = employees.Count();
 
-            int totalPages = (int)Math.Ceiling(
-                totalRecords / (double)pageSize);
+            int totalPages = (int)Math.Ceiling(totalRecords / (double)pageSize);
 
             page = page < 1 ? 1 : page;
 
@@ -170,25 +238,53 @@ namespace AryamanBMS.Controllers
                 page = totalPages;
             }
 
-            var employeePage = employees
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
+            var employeePage = employees.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
-            var routeValues =
-                new Dictionary<string, string>();
+            var routeValues = new Dictionary<string, string>();
 
             if (!string.IsNullOrWhiteSpace(searchText))
             {
                 routeValues["searchText"] = searchText;
             }
 
-            if (!string.IsNullOrWhiteSpace(statusFilter))
+            if (!string.IsNullOrWhiteSpace(statusFilter) && statusFilter != "All")
             {
                 routeValues["statusFilter"] = statusFilter;
-                routeValues["sortBy"] = sortBy;
-                routeValues["sortOrder"] = sortOrder;
             }
+
+            if (departmentId.HasValue && departmentId.Value > 0)
+            {
+                routeValues["departmentId"] = departmentId.Value.ToString();
+            }
+
+            if (designationId.HasValue && designationId.Value > 0)
+            {
+                routeValues["designationId"] = designationId.Value.ToString();
+            }
+
+            if (!string.IsNullOrWhiteSpace(employmentType) && employmentType != "All")
+            {
+                routeValues["employmentType"] = employmentType;
+            }
+
+            if (!string.IsNullOrWhiteSpace(userFilter) && userFilter != "All")
+            {
+                routeValues["userFilter"] = userFilter;
+            }
+
+            if (joiningFrom.HasValue)
+            {
+                routeValues["joiningFrom"] = joiningFrom.Value.ToString("yyyy-MM-dd");
+            }
+
+            if (joiningTo.HasValue)
+            {
+                routeValues["joiningTo"] = joiningTo.Value.ToString("yyyy-MM-dd");
+            }
+
+            routeValues["sortBy"] = sortBy;
+            routeValues["sortOrder"] = sortOrder;
+            routeValues["pageSize"] = pageSize.ToString();
 
             var model = new PagedListViewModel<EmployeeModel>
             {
@@ -201,14 +297,21 @@ namespace AryamanBMS.Controllers
                     TotalRecords = totalRecords,
                     ControllerName = "Employee",
                     ActionName = nameof(Index),
-                    RouteValues = routeValues
-                }
+                    RouteValues = routeValues,
+                },
             };
 
             ViewBag.SearchText = searchText;
             ViewBag.StatusFilter = statusFilter;
+            ViewBag.DepartmentId = departmentId;
+            ViewBag.DesignationId = designationId;
+            ViewBag.EmploymentType = employmentType;
+            ViewBag.UserFilter = userFilter;
+            ViewBag.JoiningFrom = joiningFrom;
+            ViewBag.JoiningTo = joiningTo;
             ViewBag.SortBy = sortBy;
-            ViewBag.SortOrder = sortOrder; 
+            ViewBag.SortOrder = sortOrder;
+            ViewBag.PageSize = pageSize;
             ViewBag.TotalRecords = totalRecords;
 
             return View(model);
@@ -222,31 +325,17 @@ namespace AryamanBMS.Controllers
 
             var model = new EmployeeFormViewModel
             {
-                Employee = new EmployeeModel
-                {
-                    JoiningDate = DateTime.Today,
-                    IsActive = true
-                },
+                Employee = new EmployeeModel { JoiningDate = DateTime.Today, IsActive = true },
 
-                Academics = new List<EmployeeAcademicInputViewModel>
-                {
-                    new()
-                },
+                Academics = new List<EmployeeAcademicInputViewModel> { new() },
 
                 StatutoryDocuments = GetStatutoryDocumentInputs(),
 
                 JoiningDocuments = GetJoiningDocumentInputs(),
 
-                OtherJoiningDocuments = new List<EmployeeDocumentInputViewModel>
-                {
-                    new()
-                },
+                OtherJoiningDocuments = new List<EmployeeDocumentInputViewModel> { new() },
 
-                PreviousEmployments =
-                new List<EmployeePreviousEmploymentInputViewModel>
-                {
-                    new()
-                }
+                PreviousEmployments = new List<EmployeePreviousEmploymentInputViewModel> { new() },
             };
 
             return View(model);
@@ -282,56 +371,52 @@ namespace AryamanBMS.Controllers
                 }
             }
 
-            model.Academics = model.Academics
-                .Where(x => !IsBlankAcademicRow(x))
-                .ToList();
+            model.Academics = model.Academics.Where(x => !IsBlankAcademicRow(x)).ToList();
 
-            model.PreviousEmployments = model.PreviousEmployments
-                .Where(x => !IsBlankPreviousEmploymentRow(x))
+            model.PreviousEmployments = model
+                .PreviousEmployments.Where(x => !IsBlankPreviousEmploymentRow(x))
                 .ToList();
 
             var employee = model.Employee;
 
-            bool codeExists = await _employeeRepository.Employees
-                .AnyAsync(x => x.EmployeeCode == employee.EmployeeCode);
+            bool codeExists = await _employeeRepository.Employees.AnyAsync(x =>
+                x.EmployeeCode == employee.EmployeeCode
+            );
 
             if (codeExists)
             {
-                ModelState.AddModelError(
-                    "Employee.EmployeeCode",
-                    "Employee Code already exists.");
+                ModelState.AddModelError("Employee.EmployeeCode", "Employee Code already exists.");
             }
 
             if (employee.DateOfBirth > DateTime.Today)
             {
                 ModelState.AddModelError(
                     "Employee.DateOfBirth",
-                    "Date of Birth cannot be in future.");
+                    "Date of Birth cannot be in future."
+                );
             }
 
             if (employee.JoiningDate > DateTime.Today)
             {
                 ModelState.AddModelError(
                     "Employee.JoiningDate",
-                    "Joining Date cannot be in future.");
+                    "Joining Date cannot be in future."
+                );
             }
 
-            if (model.Academics.Count(x =>
-                    x.IsHighestQualification) > 1)
+            if (model.Academics.Count(x => x.IsHighestQualification) > 1)
             {
-                ModelState.AddModelError(
-                    "Academics",
-                    "Only one highest qualification is allowed.");
+                ModelState.AddModelError("Academics", "Only one highest qualification is allowed.");
             }
 
-            ValidateFixedPdfDocuments(model.StatutoryDocuments,
-                           "StatutoryDocuments");
+            ValidateFixedPdfDocuments(model.StatutoryDocuments, "StatutoryDocuments");
 
-            ValidateFixedPdfDocuments(model.JoiningDocuments,
-                             "JoiningDocuments");
+            ValidateFixedPdfDocuments(model.JoiningDocuments, "JoiningDocuments");
             ValidateOtherJoiningDocuments(model.OtherJoiningDocuments);
-            ValidateFixedPdfDocuments(BuildOtherJoiningDocumentInputs(model.OtherJoiningDocuments),
-                              "OtherJoiningDocuments");
+            ValidateFixedPdfDocuments(
+                BuildOtherJoiningDocumentInputs(model.OtherJoiningDocuments),
+                "OtherJoiningDocuments"
+            );
 
             for (int i = 0; i < model.Academics.Count; i++)
             {
@@ -341,44 +426,41 @@ namespace AryamanBMS.Controllers
                 {
                     ModelState.AddModelError(
                         $"Academics[{i}].QualificationLevel",
-                        "Qualification level is required when academic details are entered.");
+                        "Qualification level is required when academic details are entered."
+                    );
                 }
 
-                ValidateAcademicDocuments(
-                    academic.Documents,
-                    $"Academics[{i}].Documents");
+                ValidateAcademicDocuments(academic.Documents, $"Academics[{i}].Documents");
             }
 
-            model.PreviousEmployments ??=
-            new List<EmployeePreviousEmploymentInputViewModel>();
+            model.PreviousEmployments ??= new List<EmployeePreviousEmploymentInputViewModel>();
 
-            ValidatePreviousEmployments(
-                model.PreviousEmployments);
+            ValidatePreviousEmployments(model.PreviousEmployments);
 
             if (!ModelState.IsValid)
             {
-                model.StatutoryDocuments =
-                    RestoreDocumentInputs(
-                        model.StatutoryDocuments,
-                        GetStatutoryDocumentInputs());
+                model.StatutoryDocuments = RestoreDocumentInputs(
+                    model.StatutoryDocuments,
+                    GetStatutoryDocumentInputs()
+                );
 
-                model.JoiningDocuments =
-                    RestoreDocumentInputs(
-                        model.JoiningDocuments,
-                        GetJoiningDocumentInputs());
+                model.JoiningDocuments = RestoreDocumentInputs(
+                    model.JoiningDocuments,
+                    GetJoiningDocumentInputs()
+                );
 
                 await LoadDropdownsAsync();
 
                 return View(model);
             }
 
-            employee.EsicNo = string.IsNullOrWhiteSpace(employee.EsicNo) ? null
-        : employee.EsicNo.Trim();
+            employee.EsicNo = string.IsNullOrWhiteSpace(employee.EsicNo)
+                ? null
+                : employee.EsicNo.Trim();
 
             var storedFiles = new List<string>();
 
-            await using var transaction =
-                await _context.Database.BeginTransactionAsync();
+            await using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
             {
@@ -386,52 +468,56 @@ namespace AryamanBMS.Controllers
                 await _employeeRepository.SaveAsync();
 
                 var previousEmploymentPairs =
-                new List<(
-                    EmployeePreviousEmploymentInputViewModel Input,
-                    EmployeePreviousEmploymentModel Entity)>();
+                    new List<(
+                        EmployeePreviousEmploymentInputViewModel Input,
+                        EmployeePreviousEmploymentModel Entity
+                    )>();
 
                 foreach (var input in model.PreviousEmployments)
                 {
                     bool rowIsEmpty =
-                        string.IsNullOrWhiteSpace(input.CompanyName) &&
-                        !input.StartDate.HasValue &&
-                        !input.EndDate.HasValue &&
-                        input.ExperienceLetter == null &&
-                        input.RelievingLetter == null;
+                        string.IsNullOrWhiteSpace(input.CompanyName)
+                        && !input.StartDate.HasValue
+                        && !input.EndDate.HasValue
+                        && (
+                            input.ExperienceLetters == null
+                            || !input.ExperienceLetters.Any(f => f != null && f.Length > 0)
+                        )
+                        && (
+                            input.RelievingLetters == null
+                            || !input.RelievingLetters.Any(f => f != null && f.Length > 0)
+                        );
 
                     if (rowIsEmpty)
                     {
                         continue;
                     }
 
-                    var previousEmployment =
-                        new EmployeePreviousEmploymentModel
-                        {
-                            EmployeeId = employee.Id,
-                            CompanyName = input.CompanyName!.Trim(),
-                            Designation = input.Designation,
-                            Department = input.Department,
-                            EmploymentType = input.EmploymentType,
-                            StartDate = input.StartDate!.Value,
-                            EndDate = input.EndDate!.Value,
-                            LastSalary = input.LastSalary,
-                            ReasonForLeaving = input.ReasonForLeaving,
-                            CompanyAddress = input.CompanyAddress,
-                            CompanyCity = input.CompanyCity,
-                            CompanyState = input.CompanyState,
-                            CompanyPinCode = input.CompanyPinCode,
-                            CompanyWebsite = input.CompanyWebsite,
-                            HRContactName = input.HRContactName,
-                            HRContactEmail = input.HRContactEmail,
-                            HRContactNumber = input.HRContactNumber,
-                            CreatedOn = DateTime.Now
-                        };
+                    var previousEmployment = new EmployeePreviousEmploymentModel
+                    {
+                        EmployeeId = employee.Id,
+                        CompanyName = input.CompanyName!.Trim(),
+                        Designation = input.Designation,
+                        Department = input.Department,
+                        EmploymentType = input.EmploymentType,
+                        StartDate = input.StartDate!.Value,
+                        EndDate = input.EndDate!.Value,
+                        LastSalary = input.LastSalary,
+                        ReasonForLeaving = input.ReasonForLeaving,
+                        CompanyAddress = input.CompanyAddress,
+                        CompanyCity = input.CompanyCity,
+                        CompanyState = input.CompanyState,
+                        CompanyPinCode = input.CompanyPinCode,
+                        CompanyWebsite = input.CompanyWebsite,
+                        HRContactName = input.HRContactName,
+                        HRContactEmail = input.HRContactEmail,
+                        HRContactNumber = input.HRContactNumber,
+                        CreatedOn = DateTime.Now,
+                    };
 
-                    await _employeePreviousEmploymentRepository
-                        .AddAsync(previousEmployment);
+                    await _employeePreviousEmploymentRepository.AddAsync(previousEmployment);
 
-                    previousEmploymentPairs.Add(
-                        (input, previousEmployment));
+                    previousEmploymentPairs.Add((input, previousEmployment));
                 }
 
                 await _employeePreviousEmploymentRepository.SaveAsync();
@@ -440,26 +526,28 @@ namespace AryamanBMS.Controllers
 
                 foreach (var pair in previousEmploymentPairs)
                 {
-                    previousEmploymentDocumentCount +=
-                        await SavePreviousEmploymentDocumentAsync(
-                            pair.Input.ExperienceLetter,
-                            employee,
-                            pair.Entity.Id,
-                            "Experience Letter",
-                            storedFiles);
+                    previousEmploymentDocumentCount += await SavePreviousEmploymentDocumentsAsync(
+                        pair.Input.ExperienceLetters,
+                        employee,
+                        pair.Entity.Id,
+                        "Experience Letter",
+                        storedFiles
+                    );
 
-                    previousEmploymentDocumentCount +=
-                        await SavePreviousEmploymentDocumentAsync(
-                            pair.Input.RelievingLetter,
-                            employee,
-                            pair.Entity.Id,
-                            "Relieving Letter",
-                            storedFiles);
+                    previousEmploymentDocumentCount += await SavePreviousEmploymentDocumentsAsync(
+                        pair.Input.RelievingLetters,
+                        employee,
+                        pair.Entity.Id,
+                        "Relieving Letter",
+                        storedFiles
+                    );
                 }
 
                 var academicPairs =
-                    new List<(EmployeeAcademicInputViewModel Input,
-                              EmployeeAcademicModel Entity)>();
+                    new List<(
+                        EmployeeAcademicInputViewModel Input,
+                        EmployeeAcademicModel Entity
+                    )>();
 
                 foreach (var input in model.Academics)
                 {
@@ -480,8 +568,7 @@ namespace AryamanBMS.Controllers
                         ResultType = input.ResultType,
                         Score = input.Score,
                         Grade = input.Grade,
-                        IsHighestQualification =
-                            input.IsHighestQualification
+                        IsHighestQualification = input.IsHighestQualification,
                     };
 
                     await _employeeAcademicRepository.AddAsync(academic);
@@ -500,12 +587,12 @@ namespace AryamanBMS.Controllers
                             continue;
                         }
 
-                        var document =
-                            await _employeeDocumentService.SaveAsync(
-                                file,
-                                employee.EmployeeCode ?? $"EMP{employee.Id}",
-                                pair.Input.DocumentType,
-                                User.Identity?.Name);
+                        var document = await _employeeDocumentService.SaveAsync(
+                            file,
+                            employee.EmployeeCode ?? $"EMP{employee.Id}",
+                            pair.Input.DocumentType,
+                            User.Identity?.Name
+                        );
 
                         document.EmployeeId = employee.Id;
                         document.EmployeeAcademicId = pair.Entity.Id;
@@ -513,41 +600,41 @@ namespace AryamanBMS.Controllers
 
                         storedFiles.Add(document.StoragePath);
 
-                        await _employeeDocumentRepository
-                            .AddAsync(document);
+                        await _employeeDocumentRepository.AddAsync(document);
                     }
                 }
 
-                int statutoryUploadCount =
-                       await SaveFixedDocumentsAsync(
-                           model.StatutoryDocuments,
-                           employee,
-                           "Statutory",
-                           storedFiles);
+                int statutoryUploadCount = await SaveFixedDocumentsAsync(
+                    model.StatutoryDocuments,
+                    employee,
+                    "Statutory",
+                    storedFiles
+                );
 
-                int joiningUploadCount =
-                        await SaveFixedDocumentsAsync(
-                            model.JoiningDocuments,
-                            employee,
-                            "Joining",
-                            storedFiles);
+                int joiningUploadCount = await SaveFixedDocumentsAsync(
+                    model.JoiningDocuments,
+                    employee,
+                    "Joining",
+                    storedFiles
+                );
 
                 joiningUploadCount += await SaveFixedDocumentsAsync(
                     BuildOtherJoiningDocumentInputs(model.OtherJoiningDocuments),
                     employee,
                     "Joining",
-                    storedFiles);
+                    storedFiles
+                );
 
                 await _employeeDocumentRepository.SaveAsync();
                 await transaction.CommitAsync();
 
                 int totalUploadedDocuments =
-                 academicPairs.Sum(x =>
-                     x.Input.Documents?.Count(f =>
-                         f != null && f.Length > 0) ?? 0)
-                 + statutoryUploadCount
-                 + joiningUploadCount
-                 + previousEmploymentDocumentCount;
+                    academicPairs.Sum(x =>
+                        x.Input.Documents?.Count(f => f != null && f.Length > 0) ?? 0
+                    )
+                    + statutoryUploadCount
+                    + joiningUploadCount
+                    + previousEmploymentDocumentCount;
 
                 TempData["Success"] =
                     totalUploadedDocuments > 0
@@ -559,9 +646,10 @@ namespace AryamanBMS.Controllers
                     "Employee Profile Created",
                     "Your employee profile has been created.",
                     "EmployeeProfileCreated",
-                    "/Employee/Profile");
+                    "/Employee/Profile"
+                );
 
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Details), new { id = employee.Id });
             }
             catch (Exception ex)
             {
@@ -572,9 +660,7 @@ namespace AryamanBMS.Controllers
                     await _employeeDocumentService.DeleteAsync(path);
                 }
 
-                ModelState.AddModelError(
-                    "",
-                    $"Employee could not be created: {ex.Message}");
+                ModelState.AddModelError("", $"Employee could not be created: {ex.Message}");
 
                 await LoadDropdownsAsync();
 
@@ -586,87 +672,78 @@ namespace AryamanBMS.Controllers
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            var employee =
-                await _employeeRepository.GetByIdAsync(id);
+            var employee = await _employeeRepository.GetByIdAsync(id);
 
             if (employee == null)
             {
                 return NotFound();
             }
 
-            var academics =
-                await _employeeAcademicRepository.Academics
-                    .AsNoTracking()
-                    .Include(x => x.Documents)
-                    .Where(x => x.EmployeeId == id)
-                    .OrderBy(x => x.PassingYear)
-                    .Select(x => new EmployeeAcademicInputViewModel
-                    {
-                        Id = x.Id,
-                        QualificationLevel = x.QualificationLevel,
-                        CourseName = x.CourseName,
-                        Specialization = x.Specialization,
-                        InstituteName = x.InstituteName,
-                        BoardOrUniversity = x.BoardOrUniversity,
-                        PassingYear = x.PassingYear,
-                        ResultType = x.ResultType,
-                        Score = x.Score,
-                        Grade = x.Grade,
-                        IsHighestQualification =
-                            x.IsHighestQualification,
-                        ExistingDocuments = x.Documents.ToList()
-                    })
-                    .ToListAsync();
+            var academics = await _employeeAcademicRepository
+                .Academics.AsNoTracking()
+                .Include(x => x.Documents)
+                .Where(x => x.EmployeeId == id)
+                .OrderBy(x => x.PassingYear)
+                .Select(x => new EmployeeAcademicInputViewModel
+                {
+                    Id = x.Id,
+                    QualificationLevel = x.QualificationLevel,
+                    CourseName = x.CourseName,
+                    Specialization = x.Specialization,
+                    InstituteName = x.InstituteName,
+                    BoardOrUniversity = x.BoardOrUniversity,
+                    PassingYear = x.PassingYear,
+                    ResultType = x.ResultType,
+                    Score = x.Score,
+                    Grade = x.Grade,
+                    IsHighestQualification = x.IsHighestQualification,
+                    ExistingDocuments = x.Documents.ToList(),
+                })
+                .ToListAsync();
 
             if (!academics.Any())
             {
-                academics.Add(
-                    new EmployeeAcademicInputViewModel());
+                academics.Add(new EmployeeAcademicInputViewModel());
             }
 
-            var fixedDocuments = await _context.EmployeeDocuments
-                 .AsNoTracking()
-                 .Where(x =>
-                     x.EmployeeId == id &&
-                     x.EmployeeAcademicId == null)
-                 .ToListAsync();
+            var fixedDocuments = await _context
+                .EmployeeDocuments.AsNoTracking()
+                .Where(x => x.EmployeeId == id && x.EmployeeAcademicId == null)
+                .ToListAsync();
 
-            var previousEmployments =
-            await _employeePreviousEmploymentRepository
-                .PreviousEmployments
-                .AsNoTracking()
+            var previousEmployments = await _employeePreviousEmploymentRepository
+                .PreviousEmployments.AsNoTracking()
                 .Include(x => x.Documents)
                 .Where(x => x.EmployeeId == id)
                 .OrderByDescending(x => x.EndDate)
-                .Select(x =>
-                    new EmployeePreviousEmploymentInputViewModel
-                    {
-                        Id = x.Id,
-                        CompanyName = x.CompanyName,
-                        Designation = x.Designation,
-                        Department = x.Department,
-                        EmploymentType = x.EmploymentType,
-                        StartDate = x.StartDate,
-                        EndDate = x.EndDate,
-                        LastSalary = x.LastSalary,
-                        ReasonForLeaving = x.ReasonForLeaving,
-                        CompanyAddress = x.CompanyAddress,
-                        CompanyCity = x.CompanyCity,
-                        CompanyState = x.CompanyState,
-                        CompanyPinCode = x.CompanyPinCode,
-                        CompanyWebsite = x.CompanyWebsite,
-                        HRContactName = x.HRContactName,
-                        HRContactEmail = x.HRContactEmail,
-                        HRContactNumber = x.HRContactNumber,
+                .Select(x => new EmployeePreviousEmploymentInputViewModel
+                {
+                    Id = x.Id,
+                    CompanyName = x.CompanyName,
+                    Designation = x.Designation,
+                    Department = x.Department,
+                    EmploymentType = x.EmploymentType,
+                    StartDate = x.StartDate,
+                    EndDate = x.EndDate,
+                    LastSalary = x.LastSalary,
+                    ReasonForLeaving = x.ReasonForLeaving,
+                    CompanyAddress = x.CompanyAddress,
+                    CompanyCity = x.CompanyCity,
+                    CompanyState = x.CompanyState,
+                    CompanyPinCode = x.CompanyPinCode,
+                    CompanyWebsite = x.CompanyWebsite,
+                    HRContactName = x.HRContactName,
+                    HRContactEmail = x.HRContactEmail,
+                    HRContactNumber = x.HRContactNumber,
 
-                        ExistingExperienceLetter =
-                            x.Documents.FirstOrDefault(d =>
-                                d.DocumentType == "Experience Letter"),
+                    ExistingExperienceLetters = x
+                        .Documents.Where(d => d.DocumentType == "Experience Letter")
+                        .ToList(),
 
-                        ExistingRelievingLetter =
-                            x.Documents.FirstOrDefault(d =>
-                                d.DocumentType == "Relieving Letter")
-                    })
+                    ExistingRelievingLetters = x
+                        .Documents.Where(d => d.DocumentType == "Relieving Letter")
+                        .ToList(),
+                })
                 .ToListAsync();
 
             var model = new EmployeeFormViewModel
@@ -675,24 +752,24 @@ namespace AryamanBMS.Controllers
 
                 Academics = academics,
 
-                StatutoryDocuments =
-                BuildFixedDocumentInputs(
+                StatutoryDocuments = BuildFixedDocumentInputs(
                     GetStatutoryDocumentInputs(),
-                    fixedDocuments.Where(x =>
-                        x.DocumentCategory == "Statutory")),
+                    fixedDocuments.Where(x => x.DocumentCategory == "Statutory")
+                ),
 
-                JoiningDocuments =
-                BuildFixedDocumentInputs(
+                JoiningDocuments = BuildFixedDocumentInputs(
                     GetJoiningDocumentInputs(),
-                    fixedDocuments.Where(x =>
-                        x.DocumentCategory == "Joining")),
+                    fixedDocuments.Where(x => x.DocumentCategory == "Joining")
+                ),
 
                 OtherJoiningDocuments = BuildOtherJoiningDocumentInputs(
                     fixedDocuments.Where(x =>
-                        x.DocumentCategory == "Joining" &&
-                        x.DocumentType.StartsWith("Other Joining Document - "))),
+                        x.DocumentCategory == "Joining"
+                        && x.DocumentType.StartsWith("Other Joining Document - ")
+                    )
+                ),
 
-                PreviousEmployments = previousEmployments
+                PreviousEmployments = previousEmployments,
             };
 
             await LoadDropdownsAsync();
@@ -712,24 +789,19 @@ namespace AryamanBMS.Controllers
         {
             var inputEmployee = model.Employee;
 
-            model.PreviousEmployments ??=
-            new List<EmployeePreviousEmploymentInputViewModel>();
+            model.PreviousEmployments ??= new List<EmployeePreviousEmploymentInputViewModel>();
 
-            model.RemovedPreviousEmploymentIds ??=
-                new List<int>();
+            model.RemovedPreviousEmploymentIds ??= new List<int>();
 
-            var removedPreviousEmploymentIds =
-                model.RemovedPreviousEmploymentIds.ToHashSet();
+            var removedPreviousEmploymentIds = model.RemovedPreviousEmploymentIds.ToHashSet();
 
-            model.PreviousEmployments =
-                model.PreviousEmployments
-                    .Where(x =>
-                        !x.Id.HasValue ||
-                        !removedPreviousEmploymentIds.Contains(x.Id.Value))
-                    .ToList();
+            model.PreviousEmployments = model
+                .PreviousEmployments.Where(x =>
+                    !x.Id.HasValue || !removedPreviousEmploymentIds.Contains(x.Id.Value)
+                )
+                .ToList();
 
-            model.Academics ??=
-                new List<EmployeeAcademicInputViewModel>();
+            model.Academics ??= new List<EmployeeAcademicInputViewModel>();
 
             for (int i = 0; i < model.Academics.Count; i++)
             {
@@ -744,43 +816,35 @@ namespace AryamanBMS.Controllers
                 {
                     ModelState.AddModelError(
                         $"Academics[{i}].QualificationLevel",
-                        "Qualification level is required when academic details are entered.");
+                        "Qualification level is required when academic details are entered."
+                    );
                 }
 
-                ValidateAcademicDocuments(
-                    academic.Documents,
-                    $"Academics[{i}].Documents");
+                ValidateAcademicDocuments(academic.Documents, $"Academics[{i}].Documents");
             }
 
-            model.RemovedAcademicIds ??=
-                new List<int>();
+            model.RemovedAcademicIds ??= new List<int>();
 
-            var removedAcademicIds =
-                model.RemovedAcademicIds.ToHashSet();
+            var removedAcademicIds = model.RemovedAcademicIds.ToHashSet();
 
-            model.Academics = model.Academics
-                .Where(x =>
-                    !x.Id.HasValue ||
-                    !removedAcademicIds.Contains(x.Id.Value))
+            model.Academics = model
+                .Academics.Where(x => !x.Id.HasValue || !removedAcademicIds.Contains(x.Id.Value))
                 .ToList();
 
-            model.Academics = model.Academics
-                .Select((academic, index) => new
-                {
-                    Academic = academic,
-                    Index = index
-                })
+            model.Academics = model
+                .Academics.Select((academic, index) => new { Academic = academic, Index = index })
                 .GroupBy(x =>
-                    x.Academic.Id.HasValue
-                        ? $"Existing-{x.Academic.Id.Value}"
-                        : $"New-{x.Index}")
+                    x.Academic.Id.HasValue ? $"Existing-{x.Academic.Id.Value}" : $"New-{x.Index}"
+                )
                 .Select(x => x.First().Academic)
                 .ToList();
 
             for (int i = model.PreviousEmployments.Count - 1; i >= 0; i--)
             {
-                if (!model.PreviousEmployments[i].Id.HasValue &&
-                    IsBlankPreviousEmploymentRow(model.PreviousEmployments[i]))
+                if (
+                    !model.PreviousEmployments[i].Id.HasValue
+                    && IsBlankPreviousEmploymentRow(model.PreviousEmployments[i])
+                )
                 {
                     ModelState.Remove($"PreviousEmployments[{i}].CompanyName");
                     ModelState.Remove($"PreviousEmployments[{i}].StartDate");
@@ -792,8 +856,7 @@ namespace AryamanBMS.Controllers
 
             for (int i = model.Academics.Count - 1; i >= 0; i--)
             {
-                if (!model.Academics[i].Id.HasValue &&
-                    IsBlankAcademicRow(model.Academics[i]))
+                if (!model.Academics[i].Id.HasValue && IsBlankAcademicRow(model.Academics[i]))
                 {
                     ModelState.Remove($"Academics[{i}].QualificationLevel");
                     ModelState.Remove($"Academics[{i}].Documents");
@@ -802,116 +865,108 @@ namespace AryamanBMS.Controllers
                 }
             }
 
-            model.StatutoryDocuments ??=
-                new List<EmployeeDocumentInputViewModel>();
+            model.StatutoryDocuments ??= new List<EmployeeDocumentInputViewModel>();
 
-            model.JoiningDocuments ??=
-                new List<EmployeeDocumentInputViewModel>();
+            model.JoiningDocuments ??= new List<EmployeeDocumentInputViewModel>();
 
             RemoveBlankOtherJoiningDocuments(model);
 
             for (int i = 0; i < model.Academics.Count; i++)
             {
-                ModelState.Remove(
-                    $"Academics[{i}].ExistingDocuments");
+                ModelState.Remove($"Academics[{i}].ExistingDocuments");
             }
 
             for (int i = 0; i < model.StatutoryDocuments.Count; i++)
             {
-                ModelState.Remove(
-                    $"StatutoryDocuments[{i}].ExistingDocument");
+                ModelState.Remove($"StatutoryDocuments[{i}].ExistingDocuments");
             }
 
             for (int i = 0; i < model.JoiningDocuments.Count; i++)
             {
-                ModelState.Remove(
-                    $"JoiningDocuments[{i}].ExistingDocument");
+                ModelState.Remove($"JoiningDocuments[{i}].ExistingDocuments");
             }
 
             for (int i = 0; i < model.OtherJoiningDocuments.Count; i++)
             {
-                ModelState.Remove(
-                    $"OtherJoiningDocuments[{i}].ExistingDocument");
+                ModelState.Remove($"OtherJoiningDocuments[{i}].ExistingDocuments");
             }
 
-            var existingEmployee =
-                await _employeeRepository.GetByIdAsync(inputEmployee.Id);
+            var existingEmployee = await _employeeRepository.GetByIdAsync(inputEmployee.Id);
 
             if (existingEmployee == null)
             {
                 return NotFound();
             }
 
-            bool codeExists = await _employeeRepository.Employees
-                .AnyAsync(x =>
-                    x.EmployeeCode == inputEmployee.EmployeeCode &&
-                    x.Id != inputEmployee.Id);
+            bool codeExists = await _employeeRepository.Employees.AnyAsync(x =>
+                x.EmployeeCode == inputEmployee.EmployeeCode && x.Id != inputEmployee.Id
+            );
 
             if (codeExists)
             {
-                ModelState.AddModelError(
-                    "Employee.EmployeeCode",
-                    "Employee Code already exists.");
+                ModelState.AddModelError("Employee.EmployeeCode", "Employee Code already exists.");
             }
 
             if (inputEmployee.DateOfBirth > DateTime.Today)
             {
                 ModelState.AddModelError(
                     "Employee.DateOfBirth",
-                    "Date of Birth cannot be in future.");
+                    "Date of Birth cannot be in future."
+                );
             }
 
             if (inputEmployee.JoiningDate > DateTime.Today)
             {
                 ModelState.AddModelError(
                     "Employee.JoiningDate",
-                    "Joining Date cannot be in future.");
+                    "Joining Date cannot be in future."
+                );
             }
 
             if (!string.IsNullOrWhiteSpace(inputEmployee.ApplicationUserId))
             {
-                bool userMapped = await _employeeRepository.Employees
-                    .AnyAsync(x =>
-                        x.ApplicationUserId == inputEmployee.ApplicationUserId &&
-                        x.Id != inputEmployee.Id);
+                bool userMapped = await _employeeRepository.Employees.AnyAsync(x =>
+                    x.ApplicationUserId == inputEmployee.ApplicationUserId
+                    && x.Id != inputEmployee.Id
+                );
 
                 if (userMapped)
                 {
                     ModelState.AddModelError(
                         "Employee.ApplicationUserId",
-                        "Selected user is already assigned.");
+                        "Selected user is already assigned."
+                    );
                 }
             }
 
             model.Academics ??= new List<EmployeeAcademicInputViewModel>();
 
-            int highestQualificationCount =
-               model.Academics.Count(x =>
-               x.IsHighestQualification);
+            int highestQualificationCount = model.Academics.Count(x => x.IsHighestQualification);
 
             if (highestQualificationCount > 1)
             {
                 ModelState.AddModelError(
                     string.Empty,
-                    "Only one highest qualification is allowed.");
+                    "Only one highest qualification is allowed."
+                );
             }
-            ValidateFixedPdfDocuments(model.StatutoryDocuments,
-                  "StatutoryDocuments");
+            ValidateFixedPdfDocuments(model.StatutoryDocuments, "StatutoryDocuments");
 
-            ValidateFixedPdfDocuments(model.JoiningDocuments,
-                "JoiningDocuments");
+            ValidateFixedPdfDocuments(model.JoiningDocuments, "JoiningDocuments");
             ValidateOtherJoiningDocuments(model.OtherJoiningDocuments);
-            ValidateFixedPdfDocuments(BuildOtherJoiningDocumentInputs(model.OtherJoiningDocuments),
-                "OtherJoiningDocuments");
+            ValidateFixedPdfDocuments(
+                BuildOtherJoiningDocumentInputs(model.OtherJoiningDocuments),
+                "OtherJoiningDocuments"
+            );
 
             ValidatePreviousEmployments(model.PreviousEmployments);
 
             if (!ModelState.IsValid)
             {
-                model.Academics = model.Academics
-                    .Where(x =>
-                        !x.Id.HasValue ||
-                        !removedAcademicIds.Contains(x.Id.Value))
+                model.Academics = model
+                    .Academics.Where(x =>
+                        !x.Id.HasValue || !removedAcademicIds.Contains(x.Id.Value)
+                    )
                     .ToList();
 
                 await ReloadExistingDocumentsAsync(model);
@@ -925,43 +980,36 @@ namespace AryamanBMS.Controllers
             var newFilePaths = new List<string>();
             var deletedFilePaths = new List<string>();
 
-            await using var transaction =
-                await _context.Database.BeginTransactionAsync();
+            await using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
             {
-                inputEmployee.EsicNo =
-                  string.IsNullOrWhiteSpace(inputEmployee.EsicNo)
-                      ? null
-                      : inputEmployee.EsicNo.Trim();
+                inputEmployee.EsicNo = string.IsNullOrWhiteSpace(inputEmployee.EsicNo)
+                    ? null
+                    : inputEmployee.EsicNo.Trim();
 
-                _context.Entry(existingEmployee)
-                    .CurrentValues
-                    .SetValues(inputEmployee);
+                _context.Entry(existingEmployee).CurrentValues.SetValues(inputEmployee);
 
-                var existingAcademics =
-                    await _employeeAcademicRepository.Academics
-                        .Include(x => x.Documents)
-                        .Where(x => x.EmployeeId == inputEmployee.Id)
-                        .ToListAsync();
+                var existingAcademics = await _employeeAcademicRepository
+                    .Academics.Include(x => x.Documents)
+                    .Where(x => x.EmployeeId == inputEmployee.Id)
+                    .ToListAsync();
 
-                var existingPreviousEmployments =
-                   await _employeePreviousEmploymentRepository
-                       .PreviousEmployments
-                       .Include(x => x.Documents)
-                       .Where(x =>
-                           x.EmployeeId == inputEmployee.Id)
-                       .ToListAsync();
+                var existingPreviousEmployments = await _employeePreviousEmploymentRepository
+                    .PreviousEmployments.Include(x => x.Documents)
+                    .Where(x => x.EmployeeId == inputEmployee.Id)
+                    .ToListAsync();
 
-                var submittedPreviousEmploymentIds =
-                    model.PreviousEmployments
-                        .Where(x => x.Id.HasValue)
-                        .Select(x => x.Id!.Value)
-                        .ToHashSet();
+                var submittedPreviousEmploymentIds = model
+                    .PreviousEmployments.Where(x => x.Id.HasValue)
+                    .Select(x => x.Id!.Value)
+                    .ToHashSet();
 
-                foreach (var previousEmployment in
-                    existingPreviousEmployments.Where(x =>
-                        !submittedPreviousEmploymentIds.Contains(x.Id)))
+                foreach (
+                    var previousEmployment in existingPreviousEmployments.Where(x =>
+                        !submittedPreviousEmploymentIds.Contains(x.Id)
+                    )
+                )
                 {
                     foreach (var document in previousEmployment.Documents)
                     {
@@ -970,27 +1018,32 @@ namespace AryamanBMS.Controllers
                             deletedFilePaths.Add(document.StoragePath);
                         }
 
-                        await _employeeDocumentRepository
-                            .DeleteAsync(document);
+                        await _employeeDocumentRepository.DeleteAsync(document);
                     }
 
-                    await _employeePreviousEmploymentRepository
-                        .DeleteAsync(previousEmployment);
+                    await _employeePreviousEmploymentRepository.DeleteAsync(previousEmployment);
                 }
 
                 var previousEmploymentPairs =
-                new List<(
-                    EmployeePreviousEmploymentInputViewModel Input,
-                    EmployeePreviousEmploymentModel Entity)>();
+                    new List<(
+                        EmployeePreviousEmploymentInputViewModel Input,
+                        EmployeePreviousEmploymentModel Entity
+                    )>();
 
                 foreach (var input in model.PreviousEmployments)
                 {
                     bool rowIsEmpty =
-                        string.IsNullOrWhiteSpace(input.CompanyName) &&
-                        !input.StartDate.HasValue &&
-                        !input.EndDate.HasValue &&
-                        input.ExperienceLetter == null &&
-                        input.RelievingLetter == null;
+                        string.IsNullOrWhiteSpace(input.CompanyName)
+                        && !input.StartDate.HasValue
+                        && !input.EndDate.HasValue
+                        && (
+                            input.ExperienceLetters == null
+                            || !input.ExperienceLetters.Any(f => f != null && f.Length > 0)
+                        )
+                        && (
+                            input.RelievingLetters == null
+                            || !input.RelievingLetters.Any(f => f != null && f.Length > 0)
+                        );
 
                     if (rowIsEmpty)
                     {
@@ -1002,183 +1055,141 @@ namespace AryamanBMS.Controllers
                     if (input.Id.HasValue)
                     {
                         previousEmployment =
-                            existingPreviousEmployments
-                                .FirstOrDefault(x => x.Id == input.Id.Value)
+                            existingPreviousEmployments.FirstOrDefault(x => x.Id == input.Id.Value)
                             ?? throw new InvalidOperationException(
-                                "Previous employment record not found.");
+                                "Previous employment record not found."
+                            );
 
-                        previousEmployment.CompanyName =
-                            input.CompanyName!.Trim();
+                        previousEmployment.CompanyName = input.CompanyName!.Trim();
 
-                        previousEmployment.Designation =
-                            input.Designation;
+                        previousEmployment.Designation = input.Designation;
 
-                        previousEmployment.Department =
-                            input.Department;
+                        previousEmployment.Department = input.Department;
 
-                        previousEmployment.EmploymentType =
-                            input.EmploymentType;
+                        previousEmployment.EmploymentType = input.EmploymentType;
 
-                        previousEmployment.StartDate =
-                            input.StartDate!.Value;
+                        previousEmployment.StartDate = input.StartDate!.Value;
 
-                        previousEmployment.EndDate =
-                            input.EndDate!.Value;
+                        previousEmployment.EndDate = input.EndDate!.Value;
 
-                        previousEmployment.LastSalary =
-                            input.LastSalary;
+                        previousEmployment.LastSalary = input.LastSalary;
 
-                        previousEmployment.ReasonForLeaving =
-                            input.ReasonForLeaving;
+                        previousEmployment.ReasonForLeaving = input.ReasonForLeaving;
 
-                        previousEmployment.CompanyAddress =
-                            input.CompanyAddress;
+                        previousEmployment.CompanyAddress = input.CompanyAddress;
 
-                        previousEmployment.CompanyCity =
-                            input.CompanyCity;
+                        previousEmployment.CompanyCity = input.CompanyCity;
 
-                        previousEmployment.CompanyState =
-                            input.CompanyState;
+                        previousEmployment.CompanyState = input.CompanyState;
 
-                        previousEmployment.CompanyPinCode =
-                            input.CompanyPinCode;
+                        previousEmployment.CompanyPinCode = input.CompanyPinCode;
 
-                        previousEmployment.CompanyWebsite =
-                            input.CompanyWebsite;
+                        previousEmployment.CompanyWebsite = input.CompanyWebsite;
 
-                        previousEmployment.HRContactName =
-                            input.HRContactName;
+                        previousEmployment.HRContactName = input.HRContactName;
 
-                        previousEmployment.HRContactEmail =
-                            input.HRContactEmail;
+                        previousEmployment.HRContactEmail = input.HRContactEmail;
 
-                        previousEmployment.HRContactNumber =
-                            input.HRContactNumber;
+                        previousEmployment.HRContactNumber = input.HRContactNumber;
 
-                        previousEmployment.UpdatedOn =
-                            DateTime.Now;
+                        previousEmployment.UpdatedOn = DateTime.Now;
 
-                        await _employeePreviousEmploymentRepository
-                            .UpdateAsync(previousEmployment);
+                        await _employeePreviousEmploymentRepository.UpdateAsync(previousEmployment);
                     }
                     else
                     {
-                        previousEmployment =
-                            new EmployeePreviousEmploymentModel
-                            {
-                                EmployeeId = inputEmployee.Id,
+                        previousEmployment = new EmployeePreviousEmploymentModel
+                        {
+                            EmployeeId = inputEmployee.Id,
 
-                                CompanyName =
-                                    input.CompanyName!.Trim(),
+                            CompanyName = input.CompanyName!.Trim(),
 
-                                Designation =
-                                    input.Designation,
+                            Designation = input.Designation,
 
-                                Department =
-                                    input.Department,
+                            Department = input.Department,
 
-                                EmploymentType =
-                                    input.EmploymentType,
+                            EmploymentType = input.EmploymentType,
 
-                                StartDate =
-                                    input.StartDate!.Value,
+                            StartDate = input.StartDate!.Value,
 
-                                EndDate =
-                                    input.EndDate!.Value,
+                            EndDate = input.EndDate!.Value,
 
-                                LastSalary =
-                                    input.LastSalary,
+                            LastSalary = input.LastSalary,
 
-                                ReasonForLeaving =
-                                    input.ReasonForLeaving,
+                            ReasonForLeaving = input.ReasonForLeaving,
 
-                                CompanyAddress =
-                                    input.CompanyAddress,
+                            CompanyAddress = input.CompanyAddress,
 
-                                CompanyCity =
-                                    input.CompanyCity,
+                            CompanyCity = input.CompanyCity,
 
-                                CompanyState =
-                                    input.CompanyState,
+                            CompanyState = input.CompanyState,
 
-                                CompanyPinCode =
-                                    input.CompanyPinCode,
+                            CompanyPinCode = input.CompanyPinCode,
 
-                                CompanyWebsite =
-                                    input.CompanyWebsite,
+                            CompanyWebsite = input.CompanyWebsite,
 
-                                HRContactName =
-                                    input.HRContactName,
+                            HRContactName = input.HRContactName,
 
-                                HRContactEmail =
-                                    input.HRContactEmail,
+                            HRContactEmail = input.HRContactEmail,
 
-                                HRContactNumber =
-                                    input.HRContactNumber,
+                            HRContactNumber = input.HRContactNumber,
 
-                                CreatedOn =
-                                    DateTime.Now
-                            };
+                            CreatedOn = DateTime.Now,
+                        };
 
-                        await _employeePreviousEmploymentRepository
-                            .AddAsync(previousEmployment);
+                        await _employeePreviousEmploymentRepository.AddAsync(previousEmployment);
                     }
 
-                    previousEmploymentPairs.Add(
-                        (input, previousEmployment));
+                    previousEmploymentPairs.Add((input, previousEmployment));
                 }
 
-                await _employeePreviousEmploymentRepository
-                    .SaveAsync();
+                await _employeePreviousEmploymentRepository.SaveAsync();
 
                 int previousEmploymentDocumentCount = 0;
 
                 foreach (var pair in previousEmploymentPairs)
                 {
-                    previousEmploymentDocumentCount +=
-                        await ReplacePreviousEmploymentDocumentAsync(
-                            pair.Input.ExperienceLetter,
-                            existingEmployee,
-                            pair.Entity.Id,
-                            "Experience Letter",
-                            newFilePaths,
-                            deletedFilePaths);
+                    previousEmploymentDocumentCount += await ReplacePreviousEmploymentDocumentAsync(
+                        pair.Input.ExperienceLetters,
+                        existingEmployee,
+                        pair.Entity.Id,
+                        "Experience Letter",
+                        newFilePaths,
+                        deletedFilePaths
+                    );
 
-                    previousEmploymentDocumentCount +=
-                        await ReplacePreviousEmploymentDocumentAsync(
-                            pair.Input.RelievingLetter,
-                            existingEmployee,
-                            pair.Entity.Id,
-                            "Relieving Letter",
-                            newFilePaths,
-                            deletedFilePaths);
+                    previousEmploymentDocumentCount += await ReplacePreviousEmploymentDocumentAsync(
+                        pair.Input.RelievingLetters,
+                        existingEmployee,
+                        pair.Entity.Id,
+                        "Relieving Letter",
+                        newFilePaths,
+                        deletedFilePaths
+                    );
                 }
 
-                var submittedIds = model.Academics
-                     .Where(x =>
-                         x.Id.HasValue &&
-                         !removedAcademicIds.Contains(x.Id.Value))
-                     .Select(x => x.Id!.Value)
-                     .ToHashSet();
+                var submittedIds = model
+                    .Academics.Where(x => x.Id.HasValue && !removedAcademicIds.Contains(x.Id.Value))
+                    .Select(x => x.Id!.Value)
+                    .ToHashSet();
 
-                foreach (var academic in existingAcademics
-                    .Where(x => !submittedIds.Contains(x.Id)))
+                foreach (var academic in existingAcademics.Where(x => !submittedIds.Contains(x.Id)))
                 {
                     foreach (var document in academic.Documents)
                     {
                         deletedFilePaths.Add(document.StoragePath);
 
-                        await _employeeDocumentRepository
-                            .DeleteAsync(document);
+                        await _employeeDocumentRepository.DeleteAsync(document);
                     }
 
-                    await _employeeAcademicRepository
-                        .DeleteAsync(academic);
+                    await _employeeAcademicRepository.DeleteAsync(academic);
                 }
 
                 var academicPairs =
-                    new List<(EmployeeAcademicInputViewModel Input,
-                              EmployeeAcademicModel Entity)>();
+                    new List<(
+                        EmployeeAcademicInputViewModel Input,
+                        EmployeeAcademicModel Entity
+                    )>();
 
                 foreach (var input in model.Academics)
                 {
@@ -1190,53 +1201,44 @@ namespace AryamanBMS.Controllers
 
                     if (input.Id.HasValue)
                     {
-                        academic = existingAcademics
-                            .FirstOrDefault(x => x.Id == input.Id.Value)
-                            ?? throw new InvalidOperationException(
-                                "Academic record not found.");
+                        academic =
+                            existingAcademics.FirstOrDefault(x => x.Id == input.Id.Value)
+                            ?? throw new InvalidOperationException("Academic record not found.");
 
-                        academic.QualificationLevel =
-                            input.QualificationLevel ?? string.Empty;
+                        academic.QualificationLevel = input.QualificationLevel ?? string.Empty;
 
                         academic.CourseName = input.CourseName;
                         academic.Specialization = input.Specialization;
                         academic.InstituteName = input.InstituteName;
-                        academic.BoardOrUniversity =
-                            input.BoardOrUniversity;
+                        academic.BoardOrUniversity = input.BoardOrUniversity;
 
                         academic.PassingYear = input.PassingYear;
                         academic.ResultType = input.ResultType;
                         academic.Score = input.Score;
                         academic.Grade = input.Grade;
 
-                        academic.IsHighestQualification =
-                            input.IsHighestQualification;
+                        academic.IsHighestQualification = input.IsHighestQualification;
 
-                        await _employeeAcademicRepository
-                            .UpdateAsync(academic);
+                        await _employeeAcademicRepository.UpdateAsync(academic);
                     }
                     else
                     {
                         academic = new EmployeeAcademicModel
                         {
                             EmployeeId = inputEmployee.Id,
-                            QualificationLevel =
-                                input.QualificationLevel ?? string.Empty,
+                            QualificationLevel = input.QualificationLevel ?? string.Empty,
                             CourseName = input.CourseName,
                             Specialization = input.Specialization,
                             InstituteName = input.InstituteName,
-                            BoardOrUniversity =
-                                input.BoardOrUniversity,
+                            BoardOrUniversity = input.BoardOrUniversity,
                             PassingYear = input.PassingYear,
                             ResultType = input.ResultType,
                             Score = input.Score,
                             Grade = input.Grade,
-                            IsHighestQualification =
-                                input.IsHighestQualification
+                            IsHighestQualification = input.IsHighestQualification,
                         };
 
-                        await _employeeAcademicRepository
-                            .AddAsync(academic);
+                        await _employeeAcademicRepository.AddAsync(academic);
                     }
 
                     academicPairs.Add((input, academic));
@@ -1246,65 +1248,56 @@ namespace AryamanBMS.Controllers
 
                 foreach (var pair in academicPairs)
                 {
+                    var uploadedFiles = pair.Input.Documents ?? new List<IFormFile>();
 
-                    var uploadedFiles =
-                       pair.Input.Documents ??
-                       new List<IFormFile>();
-
-                    foreach (var file in
-                        pair.Input.Documents ?? new List<IFormFile>())
+                    foreach (var file in pair.Input.Documents ?? new List<IFormFile>())
                     {
                         if (file == null || file.Length == 0)
                         {
                             continue;
                         }
 
-                        var document =
-                            await _employeeDocumentService.SaveAsync(
-                                file,
-                                existingEmployee.EmployeeCode
-                                    ?? $"EMP{existingEmployee.Id}",
-                                pair.Input.DocumentType,
-                                User.Identity?.Name);
+                        var document = await _employeeDocumentService.SaveAsync(
+                            file,
+                            existingEmployee.EmployeeCode ?? $"EMP{existingEmployee.Id}",
+                            pair.Input.DocumentType,
+                            User.Identity?.Name
+                        );
 
-                        document.EmployeeId =
-                            existingEmployee.Id;
+                        document.EmployeeId = existingEmployee.Id;
 
-                        document.EmployeeAcademicId =
-                            pair.Entity.Id;
+                        document.EmployeeAcademicId = pair.Entity.Id;
 
-                        document.DocumentCategory =
-                            "Academic";
+                        document.DocumentCategory = "Academic";
 
-                        newFilePaths.Add(
-                            document.StoragePath);
+                        newFilePaths.Add(document.StoragePath);
 
-                        await _employeeDocumentRepository
-                            .AddAsync(document);
+                        await _employeeDocumentRepository.AddAsync(document);
                     }
                 }
 
-                int statutoryUploadCount =
-                    await ReplaceFixedDocumentsAsync(
-                        model.StatutoryDocuments,
-                        existingEmployee,
-                        "Statutory",
-                        newFilePaths,
-                        deletedFilePaths);
+                int statutoryUploadCount = await ReplaceFixedDocumentsAsync(
+                    model.StatutoryDocuments,
+                    existingEmployee,
+                    "Statutory",
+                    newFilePaths,
+                    deletedFilePaths
+                );
 
-                int joiningUploadCount =
-                    await ReplaceFixedDocumentsAsync(
-                        model.JoiningDocuments,
-                        existingEmployee,
-                        "Joining",
-                        newFilePaths,
-                        deletedFilePaths);
+                int joiningUploadCount = await ReplaceFixedDocumentsAsync(
+                    model.JoiningDocuments,
+                    existingEmployee,
+                    "Joining",
+                    newFilePaths,
+                    deletedFilePaths
+                );
 
                 joiningUploadCount += await SaveFixedDocumentsAsync(
                     BuildOtherJoiningDocumentInputs(model.OtherJoiningDocuments),
                     existingEmployee,
                     "Joining",
-                    newFilePaths);
+                    newFilePaths
+                );
 
                 await _employeeRepository.SaveAsync();
                 await _employeeAcademicRepository.SaveAsync();
@@ -1319,16 +1312,15 @@ namespace AryamanBMS.Controllers
                     }
                 }
 
-                int academicUploadCount =
-                     academicPairs.Sum(x =>
-                         x.Input.Documents?.Count(file =>
-                             file != null && file.Length > 0) ?? 0);
+                int academicUploadCount = academicPairs.Sum(x =>
+                    x.Input.Documents?.Count(file => file != null && file.Length > 0) ?? 0
+                );
 
                 int totalUploadedDocuments =
-                    academicUploadCount +
-                    statutoryUploadCount +
-                    joiningUploadCount +
-                    previousEmploymentDocumentCount;
+                    academicUploadCount
+                    + statutoryUploadCount
+                    + joiningUploadCount
+                    + previousEmploymentDocumentCount;
 
                 TempData["Success"] =
                     totalUploadedDocuments > 0
@@ -1343,11 +1335,10 @@ namespace AryamanBMS.Controllers
                         : "Your employee profile was updated.",
                     "EmployeeProfileUpdated",
                     "/Employee/Profile",
-                    allowDuplicate: true);
+                    allowDuplicate: true
+                );
 
-                return RedirectToAction(
-                    nameof(Details),
-                    new { id = existingEmployee.Id });
+                return RedirectToAction(nameof(Details), new { id = existingEmployee.Id });
             }
             catch (Exception ex)
             {
@@ -1358,9 +1349,7 @@ namespace AryamanBMS.Controllers
                     await _employeeDocumentService.DeleteAsync(path);
                 }
 
-                ModelState.AddModelError(
-                    "",
-                    $"Employee could not be updated: {ex.Message}");
+                ModelState.AddModelError("", $"Employee could not be updated: {ex.Message}");
 
                 await ReloadExistingDocumentsAsync(model);
                 await LoadExistingFixedDocumentsAsync(model);
@@ -1371,12 +1360,23 @@ namespace AryamanBMS.Controllers
             }
         }
 
+        private async Task<int> ReplacePreviousEmploymentDocumentAsync(
+            object experienceLetters,
+            EmployeeModel existingEmployee,
+            int id,
+            string v,
+            List<string> newFilePaths,
+            List<string> deletedFilePaths
+        )
+        {
+            throw new NotImplementedException();
+        }
+
         [HttpGet]
         [Authorize(Roles = "Admin,HR")]
         public IActionResult Delete(int id)
         {
-            var employee = _employeeRepository.Employees
-                .FirstOrDefault(e => e.Id == id);
+            var employee = _employeeRepository.Employees.FirstOrDefault(e => e.Id == id);
 
             if (employee == null)
             {
@@ -1391,8 +1391,7 @@ namespace AryamanBMS.Controllers
         [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var employee =
-                await _employeeRepository.GetByIdAsync(id);
+            var employee = await _employeeRepository.GetByIdAsync(id);
 
             if (employee == null)
             {
@@ -1404,8 +1403,7 @@ namespace AryamanBMS.Controllers
             await _employeeRepository.UpdateAsync(employee);
             await _employeeRepository.SaveAsync();
 
-            TempData["Success"] =
-                "Employee deactivated successfully.";
+            TempData["Success"] = "Employee deactivated successfully.";
 
             return RedirectToAction(nameof(Index));
         }
@@ -1413,56 +1411,47 @@ namespace AryamanBMS.Controllers
         [HttpGet]
         public JsonResult GetDesignations(int departmentId)
         {
-            var designations =
-                _designationRepository.Designations
-                .Where(d => d.DepartmentId == departmentId)
-                .Select(d => new
-                {
-                    id = d.Id,
-                    designationName = d.DesignationName
-                })
+            var designations = _designationRepository
+                .Designations.Where(d => d.DepartmentId == departmentId)
+                .Select(d => new { id = d.Id, designationName = d.DesignationName })
                 .ToList();
 
             return Json(designations);
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin,HR,Master")]    
+        [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> Details(int id)
         {
-            var employee =
-                await _employeeRepository.GetDetailsAsync(id);
+            var employee = await _employeeRepository.GetDetailsAsync(id);
 
             if (employee == null)
             {
                 return NotFound();
             }
 
-            var academics =
-                await _employeeAcademicRepository.Academics
-                    .AsNoTracking()
-                    .Include(x => x.Documents)
-                    .Where(x => x.EmployeeId == id)
-                    .OrderByDescending(x => x.PassingYear)
-                    .ToListAsync();
+            var academics = await _employeeAcademicRepository
+                .Academics.AsNoTracking()
+                .Include(x => x.Documents)
+                .Where(x => x.EmployeeId == id)
+                .OrderByDescending(x => x.PassingYear)
+                .ToListAsync();
 
-            var fixedDocuments =
-                await _employeeDocumentRepository.Documents
-                    .AsNoTracking()
-                    .Where(x =>
-                        x.EmployeeId == id &&
-                        x.EmployeeAcademicId == null &&
-                        x.EmployeePreviousEmploymentId == null)
-                    .ToListAsync();
+            var fixedDocuments = await _employeeDocumentRepository
+                .Documents.AsNoTracking()
+                .Where(x =>
+                    x.EmployeeId == id
+                    && x.EmployeeAcademicId == null
+                    && x.EmployeePreviousEmploymentId == null
+                )
+                .ToListAsync();
 
-            var previousEmployments =
-                await _employeePreviousEmploymentRepository
-                    .PreviousEmployments
-                    .AsNoTracking()
-                    .Include(x => x.Documents)
-                    .Where(x => x.EmployeeId == id)
-                    .OrderByDescending(x => x.EndDate)
-                    .ToListAsync();
+            var previousEmployments = await _employeePreviousEmploymentRepository
+                .PreviousEmployments.AsNoTracking()
+                .Include(x => x.Documents)
+                .Where(x => x.EmployeeId == id)
+                .OrderByDescending(x => x.EndDate)
+                .ToListAsync();
 
             var model = new EmployeeDetailsViewModel
             {
@@ -1477,7 +1466,7 @@ namespace AryamanBMS.Controllers
                     .Where(x => x.DocumentCategory == "Joining")
                     .ToList(),
 
-                PreviousEmployments = previousEmployments
+                PreviousEmployments = previousEmployments,
             };
 
             return View(model);
@@ -1485,97 +1474,102 @@ namespace AryamanBMS.Controllers
 
         private async Task LoadDropdownsAsync()
         {
-            ViewBag.Departments =
-                _departmentRepository.Departments
-                    .OrderBy(d => d.DepartmentName)
-                    .ToList();
+            ViewBag.Departments = _departmentRepository
+                .Departments.OrderBy(d => d.DepartmentName)
+                .ToList();
 
-            ViewBag.Designations =
-                _designationRepository.Designations
-                    .OrderBy(d => d.DesignationName)
-                    .ToList();
+            ViewBag.Designations = _designationRepository
+                .Designations.OrderBy(d => d.DesignationName)
+                .ToList();
 
-            ViewBag.Users =
-                _userManager.Users
-                    .Where(x => x.IsActive)
-                    .OrderBy(x => x.FullName)
-                    .ToList();
+            ViewBag.Users = _userManager
+                .Users.Where(x => x.IsActive)
+                .OrderBy(x => x.FullName)
+                .ToList();
 
-            ViewBag.States =
-                await _locationRepository
-                    .GetActiveStatesAsync();
+            ViewBag.States = await _locationRepository.GetActiveStatesAsync();
         }
 
-        private static List<EmployeeDocumentInputViewModel>
-             GetStatutoryDocumentInputs()
+        private static List<EmployeeDocumentInputViewModel> GetStatutoryDocumentInputs()
         {
             return new List<EmployeeDocumentInputViewModel>
             {
-               new() { DocumentType = "Aadhaar Card" },
-               new() { DocumentType = "PAN Card" },
-               new() { DocumentType = "ESIC Document" }
+                new() { DocumentType = "Aadhaar Card" },
+                new() { DocumentType = "PAN Card" },
+                new() { DocumentType = "ESIC Document" },
             };
         }
 
-        private static List<EmployeeDocumentInputViewModel>
-            GetJoiningDocumentInputs()
+        private static List<EmployeeDocumentInputViewModel> GetJoiningDocumentInputs()
         {
             return new List<EmployeeDocumentInputViewModel>
-    {
-        new() { DocumentType = "Resume / CV" },
-        new() { DocumentType = "Offer Letter" },
-        new() { DocumentType = "Appointment Letter" },
-        new() { DocumentType = "Joining Form" },
-        new() { DocumentType = "Relieving Letter" },
-        new() { DocumentType = "Experience Letter" },
-        new() { DocumentType = "Salary Slip" },
-        new() { DocumentType = "Bank Proof" },
-        new() { DocumentType = "Address Proof" },
-        new() { DocumentType = "Signed NDA" }
-    };
+            {
+                new() { DocumentType = "Resume / CV" },
+                new() { DocumentType = "Offer Letter" },
+                new() { DocumentType = "Appointment Letter" },
+                new() { DocumentType = "Joining Form" },
+                new() { DocumentType = "Relieving Letter" },
+                new() { DocumentType = "Experience Letter" },
+                new() { DocumentType = "Salary Slip" },
+                new() { DocumentType = "Bank Proof" },
+                new() { DocumentType = "Address Proof" },
+                new() { DocumentType = "Signed NDA" },
+            };
         }
 
-        private static List<EmployeeDocumentInputViewModel>
-            BuildOtherJoiningDocumentInputs(
-                IEnumerable<EmployeeDocumentInputViewModel>? inputs)
+        private static List<EmployeeDocumentInputViewModel> BuildOtherJoiningDocumentInputs(
+            IEnumerable<EmployeeDocumentInputViewModel>? inputs
+        )
         {
+            const string prefix = "Other Joining Document - ";
+
             return (inputs ?? Enumerable.Empty<EmployeeDocumentInputViewModel>())
-                .Where(input => input.File != null && input.File.Length > 0)
+                .Where(input =>
+                    input.Files != null && input.Files.Any(file => file != null && file.Length > 0)
+                )
                 .Select(input => new EmployeeDocumentInputViewModel
                 {
-                    DocumentType = $"Other Joining Document - {input.DocumentType?.Trim()}",
-                    File = input.File
+                    DocumentType = $"{prefix}{input.DocumentType?.Trim()}",
+                    Files = input.Files ?? new List<IFormFile>(),
                 })
                 .ToList();
         }
 
-        private static List<EmployeeDocumentInputViewModel>
-            BuildOtherJoiningDocumentInputs(
-                IEnumerable<EmployeeDocumentModel> documents)
+        private static List<EmployeeDocumentInputViewModel> BuildOtherJoiningDocumentInputs(
+            IEnumerable<EmployeeDocumentModel> documents
+        )
         {
             const string prefix = "Other Joining Document - ";
 
             return documents
                 .Where(document => document.DocumentType.StartsWith(prefix))
-                .OrderBy(document => document.UploadedOn)
-                .Select(document => new EmployeeDocumentInputViewModel
+                .GroupBy(document => document.DocumentType)
+                .OrderBy(group => group.Min(document => document.UploadedOn))
+                .Select(group => new EmployeeDocumentInputViewModel
                 {
-                    DocumentType = document.DocumentType[prefix.Length..],
-                    ExistingDocument = document
+                    DocumentType = group.Key[prefix.Length..],
+                    ExistingDocuments = group.OrderBy(document => document.UploadedOn).ToList(),
                 })
                 .ToList();
         }
 
         private void ValidateOtherJoiningDocuments(
-            IEnumerable<EmployeeDocumentInputViewModel>? documents)
+            IEnumerable<EmployeeDocumentInputViewModel>? documents
+        )
         {
-            foreach (var (document, index) in (documents ?? []).Select((item, index) => (item, index)))
+            foreach (
+                var (document, index) in (documents ?? []).Select((item, index) => (item, index))
+            )
             {
-                if (document.File?.Length > 0 && string.IsNullOrWhiteSpace(document.DocumentType))
+                bool hasFiles =
+                    document.Files?.Any(file => file != null && file.Length > 0) == true;
+
+                if (hasFiles && string.IsNullOrWhiteSpace(document.DocumentType))
                 {
                     ModelState.AddModelError(
                         $"OtherJoiningDocuments[{index}].DocumentType",
-                        "Enter a name for this document.");
+                        "Enter a name for this document."
+                    );
                 }
             }
         }
@@ -1588,14 +1582,15 @@ namespace AryamanBMS.Controllers
             {
                 var document = model.OtherJoiningDocuments[i];
 
-                if (!string.IsNullOrWhiteSpace(document.DocumentType) ||
-                    document.File?.Length > 0)
-                {
+                bool hasFiles =
+                    document.Files?.Any(file => file != null && file.Length > 0) == true;
+
+                if (!string.IsNullOrWhiteSpace(document.DocumentType) || hasFiles)
                     continue;
-                }
 
                 ModelState.Remove($"OtherJoiningDocuments[{i}].DocumentType");
-                ModelState.Remove($"OtherJoiningDocuments[{i}].File");
+                ModelState.Remove($"OtherJoiningDocuments[{i}].Files");
+
                 model.OtherJoiningDocuments.RemoveAt(i);
             }
         }
@@ -1605,8 +1600,8 @@ namespace AryamanBMS.Controllers
         [Authorize(Roles = "Admin,HR")]
         public IActionResult Export()
         {
-            var employees = _employeeRepository.Employees
-                .Include(e => e.Department)
+            var employees = _employeeRepository
+                .Employees.Include(e => e.Department)
                 .Include(e => e.Designation)
                 .OrderBy(e => e.EmployeeCode)
                 .ToList();
@@ -1627,8 +1622,7 @@ namespace AryamanBMS.Controllers
             var headerRange = worksheet.Range("A1:H1");
 
             headerRange.Style.Font.Bold = true;
-            headerRange.Style.Fill.BackgroundColor =
-                XLColor.LightBlue;
+            headerRange.Style.Fill.BackgroundColor = XLColor.LightBlue;
 
             worksheet.Cell(1, 1).Value = "Employee Code";
             worksheet.Cell(1, 2).Value = "Employee Name";
@@ -1643,39 +1637,30 @@ namespace AryamanBMS.Controllers
 
             foreach (var employee in employees)
             {
-                worksheet.Cell(row, 1).Value =
-                    employee.EmployeeCode;
+                worksheet.Cell(row, 1).Value = employee.EmployeeCode;
 
-                worksheet.Cell(row, 2).Value =
-    employee.FullName;
+                worksheet.Cell(row, 2).Value = employee.FullName;
 
-                worksheet.Cell(row, 3).Value =
-                    employee.Department?.DepartmentName;
+                worksheet.Cell(row, 3).Value = employee.Department?.DepartmentName;
 
-                worksheet.Cell(row, 4).Value =
-                    employee.Designation?.DesignationName;
+                worksheet.Cell(row, 4).Value = employee.Designation?.DesignationName;
 
-                worksheet.Cell(row, 5).Value =
-                    employee.MobileNumber;
+                worksheet.Cell(row, 5).Value = employee.MobileNumber;
 
-                worksheet.Cell(row, 6).Value =
-                    employee.OfficialEmail;
+                worksheet.Cell(row, 6).Value = employee.OfficialEmail;
 
                 if (employee.JoiningDate >= new DateTime(1900, 1, 1))
                 {
-                    worksheet.Cell(row, 7).Value =
-                        employee.JoiningDate;
+                    worksheet.Cell(row, 7).Value = employee.JoiningDate;
 
-                    worksheet.Cell(row, 7).Style.DateFormat.Format =
-                        "dd-MM-yyyy";
+                    worksheet.Cell(row, 7).Style.DateFormat.Format = "dd-MM-yyyy";
                 }
                 else
                 {
                     worksheet.Cell(row, 7).Value = "";
                 }
 
-                worksheet.Cell(row, 8).Value =
-                    employee.IsActive ? "Active" : "Inactive";
+                worksheet.Cell(row, 8).Value = employee.IsActive ? "Active" : "Inactive";
 
                 row++;
             }
@@ -1689,7 +1674,8 @@ namespace AryamanBMS.Controllers
             return File(
                 stream.ToArray(),
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                $"Employees_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+                $"Employees_{DateTime.Now:yyyyMMddHHmmss}.xlsx"
+            );
         }
 
         [Authorize(Roles = "Admin,HR")]
@@ -1700,14 +1686,13 @@ namespace AryamanBMS.Controllers
             DateTime nextMonth = monthStart.AddMonths(1);
             DateTime exitWindowEnd = today.AddDays(30);
 
-            int financialYearStartYear =
-                today.Month >= 4 ? today.Year : today.Year - 1;
+            int financialYearStartYear = today.Month >= 4 ? today.Year : today.Year - 1;
 
             DateTime fyStart = new(financialYearStartYear, 4, 1);
             DateTime fyEnd = fyStart.AddYears(1);
 
-            var employees = await _employeeRepository.Employees
-                .AsNoTracking()
+            var employees = await _employeeRepository
+                .Employees.AsNoTracking()
                 .Include(x => x.Department)
                 .Include(x => x.Designation)
                 .Include(x => x.Documents)
@@ -1716,45 +1701,50 @@ namespace AryamanBMS.Controllers
             var model = new EmployeeDashboardViewModel
             {
                 Today = today,
-                FinancialYear = $"{financialYearStartYear}-{(financialYearStartYear + 1).ToString()[2..]}"
+                FinancialYear =
+                    $"{financialYearStartYear}-{(financialYearStartYear + 1).ToString()[2..]}",
             };
 
             model.Headcount.TotalEmployees = employees.Count;
             model.Headcount.ActiveEmployees = employees.Count(x => x.IsActive);
             model.Headcount.InactiveEmployees = employees.Count(x => !x.IsActive);
             model.Headcount.JoinedThisMonth = employees.Count(x =>
-                x.JoiningDate >= monthStart &&
-                x.JoiningDate < nextMonth);
+                x.JoiningDate >= monthStart && x.JoiningDate < nextMonth
+            );
 
             model.Headcount.JoinedThisFinancialYear = employees.Count(x =>
-                x.JoiningDate >= fyStart &&
-                x.JoiningDate < fyEnd);
+                x.JoiningDate >= fyStart && x.JoiningDate < fyEnd
+            );
 
             model.Headcount.UpcomingExits = employees.Count(x =>
-                x.LastWorkingDate.HasValue &&
-                x.LastWorkingDate.Value >= today &&
-                x.LastWorkingDate.Value <= exitWindowEnd);
+                x.LastWorkingDate.HasValue
+                && x.LastWorkingDate.Value >= today
+                && x.LastWorkingDate.Value <= exitWindowEnd
+            );
 
-            model.Compliance.MissingPan = employees.Count(x =>
-                string.IsNullOrWhiteSpace(x.PanNo));
+            model.Compliance.MissingPan = employees.Count(x => string.IsNullOrWhiteSpace(x.PanNo));
 
             model.Compliance.MissingAadhaar = employees.Count(x =>
-                string.IsNullOrWhiteSpace(x.AadhaarNo));
+                string.IsNullOrWhiteSpace(x.AadhaarNo)
+            );
 
-            model.Compliance.MissingUan = employees.Count(x =>
-                string.IsNullOrWhiteSpace(x.UanNo));
+            model.Compliance.MissingUan = employees.Count(x => string.IsNullOrWhiteSpace(x.UanNo));
 
             model.Compliance.MissingEsic = employees.Count(x =>
-                string.IsNullOrWhiteSpace(x.EsicNo));
+                string.IsNullOrWhiteSpace(x.EsicNo)
+            );
 
             model.Compliance.MissingOfficialEmail = employees.Count(x =>
-                string.IsNullOrWhiteSpace(x.OfficialEmail));
+                string.IsNullOrWhiteSpace(x.OfficialEmail)
+            );
 
             model.Compliance.MissingMobileNumber = employees.Count(x =>
-                string.IsNullOrWhiteSpace(x.MobileNumber));
+                string.IsNullOrWhiteSpace(x.MobileNumber)
+            );
 
             model.Compliance.EmployeesWithoutDocuments = employees.Count(x =>
-                x.Documents == null || !x.Documents.Any());
+                x.Documents == null || !x.Documents.Any()
+            );
 
             model.DepartmentBuckets = BuildEmployeeBuckets(
                 employees
@@ -1764,41 +1754,42 @@ namespace AryamanBMS.Controllers
                     {
                         Label = x.Key,
                         Count = x.Count(),
-                        CssClass = "bucket-info"
+                        CssClass = "bucket-info",
                     })
                     .OrderByDescending(x => x.Count)
                     .Take(6)
-                    .ToList());
+                    .ToList()
+            );
 
             model.EmploymentTypeBuckets = BuildEmployeeBuckets(
                 employees
                     .Where(x => x.IsActive)
-                    .GroupBy(x => string.IsNullOrWhiteSpace(x.EmploymentType)
-                        ? "Not Set"
-                        : x.EmploymentType)
+                    .GroupBy(x =>
+                        string.IsNullOrWhiteSpace(x.EmploymentType) ? "Not Set" : x.EmploymentType
+                    )
                     .Select(x => new EmployeeDashboardBucket
                     {
                         Label = x.Key,
                         Count = x.Count(),
-                        CssClass = "bucket-success"
+                        CssClass = "bucket-success",
                     })
                     .OrderByDescending(x => x.Count)
-                    .ToList());
+                    .ToList()
+            );
 
             model.GenderBuckets = BuildEmployeeBuckets(
                 employees
                     .Where(x => x.IsActive)
-                    .GroupBy(x => string.IsNullOrWhiteSpace(x.Gender)
-                        ? "Not Set"
-                        : x.Gender)
+                    .GroupBy(x => string.IsNullOrWhiteSpace(x.Gender) ? "Not Set" : x.Gender)
                     .Select(x => new EmployeeDashboardBucket
                     {
                         Label = x.Key,
                         Count = x.Count(),
-                        CssClass = "bucket-warning"
+                        CssClass = "bucket-warning",
                     })
                     .OrderByDescending(x => x.Count)
-                    .ToList());
+                    .ToList()
+            );
 
             model.RecentEmployees = employees
                 .OrderByDescending(x => x.Id)
@@ -1808,9 +1799,10 @@ namespace AryamanBMS.Controllers
 
             model.UpcomingExits = employees
                 .Where(x =>
-                    x.LastWorkingDate.HasValue &&
-                    x.LastWorkingDate.Value >= today &&
-                    x.LastWorkingDate.Value <= exitWindowEnd)
+                    x.LastWorkingDate.HasValue
+                    && x.LastWorkingDate.Value >= today
+                    && x.LastWorkingDate.Value <= exitWindowEnd
+                )
                 .OrderBy(x => x.LastWorkingDate)
                 .Take(5)
                 .Select(x =>
@@ -1824,12 +1816,13 @@ namespace AryamanBMS.Controllers
 
             model.MissingComplianceEmployees = employees
                 .Where(x =>
-                    string.IsNullOrWhiteSpace(x.PanNo) ||
-                    string.IsNullOrWhiteSpace(x.AadhaarNo) ||
-                    string.IsNullOrWhiteSpace(x.UanNo) ||
-                    string.IsNullOrWhiteSpace(x.EsicNo) ||
-                    string.IsNullOrWhiteSpace(x.OfficialEmail) ||
-                    string.IsNullOrWhiteSpace(x.MobileNumber))
+                    string.IsNullOrWhiteSpace(x.PanNo)
+                    || string.IsNullOrWhiteSpace(x.AadhaarNo)
+                    || string.IsNullOrWhiteSpace(x.UanNo)
+                    || string.IsNullOrWhiteSpace(x.EsicNo)
+                    || string.IsNullOrWhiteSpace(x.OfficialEmail)
+                    || string.IsNullOrWhiteSpace(x.MobileNumber)
+                )
                 .OrderBy(x => x.EmployeeCode)
                 .Take(5)
                 .Select(x =>
@@ -1868,8 +1861,8 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var employee = await _employeeRepository.Employees
-                .AsNoTracking()
+            var employee = await _employeeRepository
+                .Employees.AsNoTracking()
                 .Include(x => x.Department)
                 .Include(x => x.Designation)
                 .FirstOrDefaultAsync(x => x.ApplicationUserId == user.Id);
@@ -1880,119 +1873,104 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction("Profile", "Account");
             }
 
-            bool isProjectManager = await _context.Projects
-                .AnyAsync(p =>
-                    p.ProjectManagerId == employee.Id &&
-                    p.IsActive);
+            bool isProjectManager = await _context.Projects.AnyAsync(p =>
+                p.ProjectManagerId == employee.Id && p.IsActive
+            );
 
-            var managedProjects = await _context.Projects
-                 .AsNoTracking()
-                 .Where(p =>
-                     p.ProjectManagerId == employee.Id &&
-                     p.IsActive)
-                 .OrderBy(p => p.ProjectCode)
-                 .ToListAsync();
+            var managedProjects = await _context
+                .Projects.AsNoTracking()
+                .Where(p => p.ProjectManagerId == employee.Id && p.IsActive)
+                .OrderBy(p => p.ProjectCode)
+                .ToListAsync();
 
-            var managedProjectIds = managedProjects
-                .Select(x => x.Id)
-                .ToList();
+            var managedProjectIds = managedProjects.Select(x => x.Id).ToList();
 
-            var managedProjectOpenTaskCounts = await _context.ProjectTasks
-                .AsNoTracking()
+            var managedProjectOpenTaskCounts = await _context
+                .ProjectTasks.AsNoTracking()
                 .Where(t =>
-                    t.IsActive &&
-                    managedProjectIds.Contains(t.ProjectId) &&
-                    t.Status != "Completed")
+                    t.IsActive && managedProjectIds.Contains(t.ProjectId) && t.Status != "Completed"
+                )
                 .GroupBy(t => t.ProjectId)
-                .ToDictionaryAsync(
-                    g => g.Key,
-                    g => g.Count());
-
+                .ToDictionaryAsync(g => g.Key, g => g.Count());
 
             var today = DateTime.Today;
             var monthStart = new DateTime(today.Year, today.Month, 1);
             var nextMonth = monthStart.AddMonths(1);
             var upcomingEnd = today.AddDays(14);
 
-            var todayAttendance = await _context.Attendances
-                .AsNoTracking()
+            var todayAttendance = await _context
+                .Attendances.AsNoTracking()
                 .FirstOrDefaultAsync(x =>
-                    x.EmployeeId == employee.Id &&
-                    x.AttendanceDate.Date == today);
+                    x.EmployeeId == employee.Id && x.AttendanceDate.Date == today
+                );
 
-            var latestSalary = await _context.SalaryRecords
-                .AsNoTracking()
+            var latestSalary = await _context
+                .SalaryRecords.AsNoTracking()
                 .Where(x => x.EmployeeId == employee.Id)
                 .OrderByDescending(x => x.Year)
                 .ThenByDescending(x => x.Month)
                 .FirstOrDefaultAsync();
 
-            var projectMemberships = await _context.ProjectMembers
-                .AsNoTracking()
+            var projectMemberships = await _context
+                .ProjectMembers.AsNoTracking()
                 .Include(x => x.Project)
                 .Where(x =>
-                    x.EmployeeId == employee.Id &&
-                    x.IsActive &&
-                    x.Project != null &&
-                    x.Project.IsActive)
+                    x.EmployeeId == employee.Id
+                    && x.IsActive
+                    && x.Project != null
+                    && x.Project.IsActive
+                )
                 .ToListAsync();
 
-            var projectIds = projectMemberships
-                .Select(x => x.ProjectId)
-                .Distinct()
-                .ToList();
+            var projectIds = projectMemberships.Select(x => x.ProjectId).Distinct().ToList();
 
-            var assignedTasks = await _context.ProjectTasks
-                .AsNoTracking()
+            var assignedTasks = await _context
+                .ProjectTasks.AsNoTracking()
                 .Include(x => x.Project)
-                .Where(x =>
-                    x.IsActive &&
-                    x.AssignedEmployeeId == employee.Id)
+                .Where(x => x.IsActive && x.AssignedEmployeeId == employee.Id)
                 .OrderBy(x => x.DueDate ?? DateTime.MaxValue)
                 .Take(6)
                 .ToListAsync();
 
-            var upcomingMeetings = await _context.ProjectMeetings
-                .AsNoTracking()
+            var upcomingMeetings = await _context
+                .ProjectMeetings.AsNoTracking()
                 .Include(x => x.Project)
                 .Include(x => x.Attendees)
                 .Where(x =>
-                    x.IsActive &&
-                    x.MeetingDate.Date >= today &&
-                    x.MeetingDate.Date <= upcomingEnd &&
-                    !string.Equals(x.MeetingStatus, "Cancelled") &&
-                    (
-                        projectIds.Contains(x.ProjectId) ||
-                        x.Attendees.Any(a => a.EmployeeId == employee.Id)
-                    ))
+                    x.IsActive
+                    && x.MeetingDate.Date >= today
+                    && x.MeetingDate.Date <= upcomingEnd
+                    && !string.Equals(x.MeetingStatus, "Cancelled")
+                    && (
+                        projectIds.Contains(x.ProjectId)
+                        || x.Attendees.Any(a => a.EmployeeId == employee.Id)
+                    )
+                )
                 .OrderBy(x => x.MeetingDate)
                 .ThenBy(x => x.StartTime)
                 .Take(6)
                 .ToListAsync();
 
-            
-
-            var compOffCredits = await _context.CompOffCredits
-                .AsNoTracking()
+            var compOffCredits = await _context
+                .CompOffCredits.AsNoTracking()
                 .Where(x => x.EmployeeId == employee.Id)
                 .ToListAsync();
 
             DateTime fyStart =
-    today.Month >= 4
-        ? new DateTime(today.Year, 4, 1)
-        : new DateTime(today.Year - 1, 4, 1);
+                today.Month >= 4
+                    ? new DateTime(today.Year, 4, 1)
+                    : new DateTime(today.Year - 1, 4, 1);
 
-            DateTime fyEnd =
-                fyStart.AddYears(1).AddDays(-1);
+            DateTime fyEnd = fyStart.AddYears(1).AddDays(-1);
 
             int monthsLate = 0;
 
             if (employee.JoiningDate.Date > fyStart.Date)
             {
                 monthsLate =
-                    ((employee.JoiningDate.Year - fyStart.Year) * 12) +
-                    employee.JoiningDate.Month -
-                    fyStart.Month;
+                    ((employee.JoiningDate.Year - fyStart.Year) * 12)
+                    + employee.JoiningDate.Month
+                    - fyStart.Month;
 
                 if (employee.JoiningDate.Day > 1)
                 {
@@ -2002,55 +1980,55 @@ namespace AryamanBMS.Controllers
                 monthsLate = Math.Min(Math.Max(monthsLate, 0), 12);
             }
 
-            decimal proratedPaidLeaveEntitlement =
-                Math.Max(0, 18m - (monthsLate * 1.5m));
+            decimal proratedPaidLeaveEntitlement = Math.Max(0, 18m - (monthsLate * 1.5m));
 
             decimal paidLeaveUsed =
-                await _context.LeaveApplications
-                    .AsNoTracking()
+                await _context
+                    .LeaveApplications.AsNoTracking()
                     .Include(x => x.LeaveType)
                     .Where(x =>
-                        x.EmployeeId == employee.Id &&
-                        x.Status == "Approved" &&
-                        x.FromDate.Date >= fyStart.Date &&
-                        x.FromDate.Date <= fyEnd.Date &&
-                        (
-                            x.LeaveType == null ||
-                            x.LeaveType.LeaveCode == null ||
-                            (
-                                x.LeaveType.LeaveCode != "COMP" &&
-                                x.LeaveType.LeaveCode != "BDL"
-                            )
-                        ))
-                    .SumAsync(x => (decimal?)x.PaidDays) ?? 0m;
+                        x.EmployeeId == employee.Id
+                        && x.Status == "Approved"
+                        && x.FromDate.Date >= fyStart.Date
+                        && x.FromDate.Date <= fyEnd.Date
+                        && (
+                            x.LeaveType == null
+                            || x.LeaveType.LeaveCode == null
+                            || (x.LeaveType.LeaveCode != "COMP" && x.LeaveType.LeaveCode != "BDL")
+                        )
+                    )
+                    .SumAsync(x => (decimal?)x.PaidDays)
+                ?? 0m;
 
             decimal pendingPaidLeaveRequested =
-                await _context.LeaveApplications
-                    .AsNoTracking()
+                await _context
+                    .LeaveApplications.AsNoTracking()
                     .Include(x => x.LeaveType)
                     .Where(x =>
-                        x.EmployeeId == employee.Id &&
-                        x.Status == "Pending" &&
-                        x.FromDate.Date >= fyStart.Date &&
-                        x.FromDate.Date <= fyEnd.Date &&
-                        (
-                            x.LeaveType == null ||
-                            x.LeaveType.LeaveCode == null ||
-                            (
-                                x.LeaveType.LeaveCode != "COMP" &&
-                                x.LeaveType.LeaveCode != "BDL"
-                            )
-                        ))
-                    .SumAsync(x => (decimal?)x.NumberOfDays) ?? 0m;
+                        x.EmployeeId == employee.Id
+                        && x.Status == "Pending"
+                        && x.FromDate.Date >= fyStart.Date
+                        && x.FromDate.Date <= fyEnd.Date
+                        && (
+                            x.LeaveType == null
+                            || x.LeaveType.LeaveCode == null
+                            || (x.LeaveType.LeaveCode != "COMP" && x.LeaveType.LeaveCode != "BDL")
+                        )
+                    )
+                    .SumAsync(x => (decimal?)x.NumberOfDays)
+                ?? 0m;
 
-            decimal balanceBeforePending =
-                Math.Max(0, proratedPaidLeaveEntitlement - paidLeaveUsed);
+            decimal balanceBeforePending = Math.Max(
+                0,
+                proratedPaidLeaveEntitlement - paidLeaveUsed
+            );
 
-            decimal pendingPaidLeaveReserved =
-                Math.Min(pendingPaidLeaveRequested, balanceBeforePending);
+            decimal pendingPaidLeaveReserved = Math.Min(
+                pendingPaidLeaveRequested,
+                balanceBeforePending
+            );
 
-            decimal paidLeaveBalance =
-                Math.Max(0, balanceBeforePending - pendingPaidLeaveReserved);
+            decimal paidLeaveBalance = Math.Max(0, balanceBeforePending - pendingPaidLeaveReserved);
 
             var model = new EmployeeMyDashboardViewModel
             {
@@ -2067,103 +2045,108 @@ namespace AryamanBMS.Controllers
                     Status = todayAttendance?.Status ?? "Not Marked",
                     CheckInTime = todayAttendance?.CheckInTime,
                     CheckOutTime = todayAttendance?.CheckOutTime,
-                    WorkingHours = todayAttendance?.WorkingHours ?? 0
+                    WorkingHours = todayAttendance?.WorkingHours ?? 0,
                 },
 
                 Leave = new EmployeeLeaveCard
                 {
                     PendingApplications = await _context.LeaveApplications.CountAsync(x =>
-                        x.EmployeeId == employee.Id &&
-                        x.Status == "Pending"),
+                        x.EmployeeId == employee.Id && x.Status == "Pending"
+                    ),
 
                     ApprovedThisMonth = await _context.LeaveApplications.CountAsync(x =>
-                        x.EmployeeId == employee.Id &&
-                        x.Status == "Approved" &&
-                        x.FromDate >= monthStart &&
-                        x.FromDate < nextMonth),
+                        x.EmployeeId == employee.Id
+                        && x.Status == "Approved"
+                        && x.FromDate >= monthStart
+                        && x.FromDate < nextMonth
+                    ),
 
                     AvailableBalance = paidLeaveBalance,
 
                     PendingPaidLeaveReserved = pendingPaidLeaveReserved,
 
                     PendingCompOff = await _context.CompOffCredits.CountAsync(x =>
-                        x.EmployeeId == employee.Id &&
-                        x.Status == "Pending"),
+                        x.EmployeeId == employee.Id && x.Status == "Pending"
+                    ),
 
                     AvailableCompOff = compOffCredits
-                        .Where(x =>
-                            x.Status == "Approved" &&
-                            x.ExpiryDate >= today)
-                        .Sum(x => x.CreditDays - x.UsedDays)
+                        .Where(x => x.Status == "Approved" && x.ExpiryDate >= today)
+                        .Sum(x => x.CreditDays - x.UsedDays),
                 },
 
-                Salary = latestSalary == null
-                    ? new EmployeeSalaryCard()
-                    : new EmployeeSalaryCard
+                Salary =
+                    latestSalary == null
+                        ? new EmployeeSalaryCard()
+                        : new EmployeeSalaryCard
+                        {
+                            SalaryRecordId = latestSalary.Id,
+                            Month = latestSalary.Month,
+                            Year = latestSalary.Year,
+                            NetSalary = latestSalary.NetSalary,
+                            PaymentStatus = latestSalary.PaymentStatus,
+                            IsPayslipReleased = latestSalary.IsPayslipReleased,
+                        },
+
+                AssignedTasks = assignedTasks
+                    .Select(x => new EmployeeDashboardTaskItem
                     {
-                        SalaryRecordId = latestSalary.Id,
-                        Month = latestSalary.Month,
-                        Year = latestSalary.Year,
-                        NetSalary = latestSalary.NetSalary,
-                        PaymentStatus = latestSalary.PaymentStatus,
-                        IsPayslipReleased = latestSalary.IsPayslipReleased
-                    },
+                        TaskId = x.Id,
+                        ProjectId = x.ProjectId,
+                        TaskTitle = x.TaskTitle,
+                        ProjectName = x.Project?.ProjectName,
+                        Status = x.Status,
+                        Priority = x.Priority,
+                        DueDate = x.DueDate,
+                        ProgressPercent = x.ProgressPercent,
+                        IsOverdue =
+                            x.DueDate.HasValue
+                            && x.DueDate.Value.Date < today
+                            && x.Status != "Completed",
+                    })
+                    .ToList(),
 
-                AssignedTasks = assignedTasks.Select(x => new EmployeeDashboardTaskItem
-                {
-                    TaskId = x.Id,
-                    ProjectId = x.ProjectId,
-                    TaskTitle = x.TaskTitle,
-                    ProjectName = x.Project?.ProjectName,
-                    Status = x.Status,
-                    Priority = x.Priority,
-                    DueDate = x.DueDate,
-                    ProgressPercent = x.ProgressPercent,
-                    IsOverdue =
-                        x.DueDate.HasValue &&
-                        x.DueDate.Value.Date < today &&
-                        x.Status != "Completed"
-                }).ToList(),
+                UpcomingMeetings = upcomingMeetings
+                    .Select(x => new EmployeeDashboardMeetingItem
+                    {
+                        MeetingId = x.Id,
+                        ProjectId = x.ProjectId,
+                        MeetingTitle = x.MeetingTitle,
+                        ProjectName = x.Project?.ProjectName,
+                        MeetingDate = x.MeetingDate,
+                        StartTime = x.StartTime,
+                        MeetingStatus = x.MeetingStatus,
+                    })
+                    .ToList(),
 
-                UpcomingMeetings = upcomingMeetings.Select(x => new EmployeeDashboardMeetingItem
-                {
-                    MeetingId = x.Id,
-                    ProjectId = x.ProjectId,
-                    MeetingTitle = x.MeetingTitle,
-                    ProjectName = x.Project?.ProjectName,
-                    MeetingDate = x.MeetingDate,
-                    StartTime = x.StartTime,
-                    MeetingStatus = x.MeetingStatus
-                }).ToList(),
-
-                MyProjects = projectMemberships.Select(x => new EmployeeDashboardProjectItem
-                {
-                    ProjectId = x.ProjectId,
-                    ProjectCode = x.Project?.ProjectCode ?? string.Empty,
-                    ProjectName = x.Project?.ProjectName ?? string.Empty,
-                    RoleInProject = x.RoleInProject,
-                    Status = x.Project?.Status ?? "-",
-                    OpenTaskCount = assignedTasks.Count(t =>
-                        t.ProjectId == x.ProjectId &&
-                        t.Status != "Completed")
-                }).ToList(),
+                MyProjects = projectMemberships
+                    .Select(x => new EmployeeDashboardProjectItem
+                    {
+                        ProjectId = x.ProjectId,
+                        ProjectCode = x.Project?.ProjectCode ?? string.Empty,
+                        ProjectName = x.Project?.ProjectName ?? string.Empty,
+                        RoleInProject = x.RoleInProject,
+                        Status = x.Project?.Status ?? "-",
+                        OpenTaskCount = assignedTasks.Count(t =>
+                            t.ProjectId == x.ProjectId && t.Status != "Completed"
+                        ),
+                    })
+                    .ToList(),
 
                 ManagedProjects = managedProjects
-    .Select(x => new EmployeeDashboardProjectItem
-    {
-        ProjectId = x.Id,
-        ProjectCode = x.ProjectCode,
-        ProjectName = x.ProjectName,
-        RoleInProject = "Project Manager",
-        Status = x.Status,
-        OpenTaskCount = managedProjectOpenTaskCounts
-            .GetValueOrDefault(x.Id, 0)
-    })
-    .ToList()
+                    .Select(x => new EmployeeDashboardProjectItem
+                    {
+                        ProjectId = x.Id,
+                        ProjectCode = x.ProjectCode,
+                        ProjectName = x.ProjectName,
+                        RoleInProject = "Project Manager",
+                        Status = x.Status,
+                        OpenTaskCount = managedProjectOpenTaskCounts.GetValueOrDefault(x.Id, 0),
+                    })
+                    .ToList(),
             };
-                
-                        return View(model);
-                    }
+
+            return View(model);
+        }
 
         [Authorize]
         [HttpGet]
@@ -2176,8 +2159,8 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var employee = await _employeeRepository.Employees
-                .Include(x => x.Department)
+            var employee = await _employeeRepository
+                .Employees.Include(x => x.Department)
                 .Include(x => x.Designation)
                 .Include(x => x.ApplicationUser)
                 .FirstOrDefaultAsync(x => x.ApplicationUserId == user.Id);
@@ -2196,8 +2179,8 @@ namespace AryamanBMS.Controllers
         [Authorize(Roles = "Admin,HR,Employee")]
         public async Task<IActionResult> DownloadDocument(int id)
         {
-            var document = await _employeeDocumentRepository.Documents
-                .AsNoTracking()
+            var document = await _employeeDocumentRepository
+                .Documents.AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id);
 
             if (document == null)
@@ -2205,9 +2188,7 @@ namespace AryamanBMS.Controllers
                 return NotFound();
             }
 
-            bool isAdminOrHr =
-                User.IsInRole("Admin") ||
-                User.IsInRole("HR");
+            bool isAdminOrHr = User.IsInRole("Admin") || User.IsInRole("HR");
 
             if (!isAdminOrHr)
             {
@@ -2218,13 +2199,11 @@ namespace AryamanBMS.Controllers
                     return Forbid();
                 }
 
-                var employee = await _employeeRepository.Employees
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(x =>
-                        x.ApplicationUserId == user.Id);
+                var employee = await _employeeRepository
+                    .Employees.AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.ApplicationUserId == user.Id);
 
-                if (employee == null ||
-                    document.EmployeeId != employee.Id)
+                if (employee == null || document.EmployeeId != employee.Id)
                 {
                     return Forbid();
                 }
@@ -2234,9 +2213,7 @@ namespace AryamanBMS.Controllers
 
             try
             {
-                filePath =
-                    _employeeDocumentService.GetAbsolutePath(
-                        document.StoragePath);
+                filePath = _employeeDocumentService.GetAbsolutePath(document.StoragePath);
             }
             catch (InvalidOperationException)
             {
@@ -2251,18 +2228,101 @@ namespace AryamanBMS.Controllers
             return PhysicalFile(
                 filePath,
                 document.ContentType ?? "application/octet-stream",
-                document.OriginalFileName);
+                document.OriginalFileName
+            );
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,HR")]
-        public async Task<IActionResult> DeleteDocument(
-          int id,
-          int employeeId)
+        public async Task<IActionResult> UploadDocumentAjax(
+            int employeeId,
+            string category,
+            string documentType,
+            IFormFile file
+        )
         {
-            var document = await _employeeDocumentRepository.Documents
-                .FirstOrDefaultAsync(x => x.Id == id);
+            if (file == null || file.Length == 0)
+            {
+                return Json(
+                    new { success = false, message = "Please select a valid file to upload." }
+                );
+            }
+
+            var employee = await _employeeRepository.GetByIdAsync(employeeId);
+            if (employee == null)
+            {
+                return Json(new { success = false, message = "Employee record not found." });
+            }
+
+            if (string.IsNullOrWhiteSpace(documentType))
+            {
+                return Json(new { success = false, message = "Document type name is required." });
+            }
+
+            try
+            {
+                string employeeCode = employee.EmployeeCode ?? $"EMP{employee.Id}";
+
+                var document = await _employeeDocumentService.SaveAsync(
+                    file,
+                    employeeCode,
+                    documentType.Trim(),
+                    User.Identity?.Name
+                );
+
+                document.EmployeeId = employee.Id;
+                document.DocumentCategory = category;
+
+                await _employeeDocumentRepository.AddAsync(document);
+                await _employeeDocumentRepository.SaveAsync();
+
+                await NotifyEmployeeUserAsync(
+                    employee.Id,
+                    "Document Uploaded",
+                    $"{document.DocumentType} document was uploaded to your profile.",
+                    "EmployeeDocumentUploaded",
+                    "/Employee/Profile",
+                    allowDuplicate: true
+                );
+
+                return Json(
+                    new
+                    {
+                        success = true,
+                        message = $"{document.DocumentType} uploaded successfully.",
+                        documentId = document.Id,
+                        fileName = document.OriginalFileName,
+                    }
+                );
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(
+                    $"[EmployeeController] Upload error for employee {employeeId}: {ex.Message}"
+                );
+                return Json(
+                    new
+                    {
+                        success = false,
+                        message = "An error occurred while uploading the file. Please try again.",
+                    }
+                );
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,HR")]
+        public async Task<IActionResult> DeleteDocument(int id, int employeeId)
+        {
+            var document = await _employeeDocumentRepository.Documents.FirstOrDefaultAsync(x =>
+                x.Id == id
+            );
 
             if (document == null)
             {
@@ -2276,8 +2336,7 @@ namespace AryamanBMS.Controllers
 
             try
             {
-                _employeeDocumentService.GetAbsolutePath(
-                    document.StoragePath);
+                _employeeDocumentService.GetAbsolutePath(document.StoragePath);
             }
             catch (InvalidOperationException)
             {
@@ -2291,8 +2350,7 @@ namespace AryamanBMS.Controllers
 
             await _employeeDocumentService.DeleteAsync(storagePath);
 
-            TempData["Success"] =
-                "Document deleted successfully.";
+            TempData["Success"] = "Document deleted successfully.";
 
             await NotifyEmployeeUserAsync(
                 employeeId,
@@ -2300,11 +2358,10 @@ namespace AryamanBMS.Controllers
                 $"{document.DocumentType} document was deleted from your profile.",
                 "EmployeeDocumentDeleted",
                 "/Employee/Profile",
-                allowDuplicate: true);
+                allowDuplicate: true
+            );
 
-            return RedirectToAction(
-                nameof(Edit),
-                new { id = employeeId });
+            return RedirectToAction(nameof(Details), new { id = employeeId });
         }
 
         private async Task NotifyEmployeeUserAsync(
@@ -2313,10 +2370,11 @@ namespace AryamanBMS.Controllers
             string message,
             string notificationType,
             string actionUrl,
-            bool allowDuplicate = false)
+            bool allowDuplicate = false
+        )
         {
-            var employee = await _employeeRepository.Employees
-                .AsNoTracking()
+            var employee = await _employeeRepository
+                .Employees.AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == employeeId);
 
             if (string.IsNullOrWhiteSpace(employee?.ApplicationUserId))
@@ -2324,12 +2382,15 @@ namespace AryamanBMS.Controllers
                 return;
             }
 
-            if (!allowDuplicate &&
-                await _notificationService.ExistsAsync(
+            if (
+                !allowDuplicate
+                && await _notificationService.ExistsAsync(
                     employee.ApplicationUserId,
                     notificationType,
                     "Employee",
-                    employeeId))
+                    employeeId
+                )
+            )
             {
                 return;
             }
@@ -2341,37 +2402,35 @@ namespace AryamanBMS.Controllers
                 notificationType,
                 "Employee",
                 employeeId,
-                actionUrl);
+                actionUrl
+            );
         }
 
         private async Task ReloadExistingDocumentsAsync(EmployeeFormViewModel model)
         {
-            foreach (var academic in model.Academics
-                .Where(x => x.Id.HasValue))
+            foreach (var academic in model.Academics.Where(x => x.Id.HasValue))
             {
-                academic.ExistingDocuments =
-                    await _employeeDocumentRepository.Documents
-                        .AsNoTracking()
-                        .Where(x =>
-                            x.EmployeeId == model.Employee.Id &&
-                            x.EmployeeAcademicId == academic.Id)
-                        .ToListAsync();
+                academic.ExistingDocuments = await _employeeDocumentRepository
+                    .Documents.AsNoTracking()
+                    .Where(x =>
+                        x.EmployeeId == model.Employee.Id && x.EmployeeAcademicId == academic.Id
+                    )
+                    .ToListAsync();
             }
         }
 
-        private static List<EmployeeDocumentInputViewModel>
-    RestoreDocumentInputs(
-        List<EmployeeDocumentInputViewModel>? submittedDocuments,
-        List<EmployeeDocumentInputViewModel> defaultDocuments)
+        private static List<EmployeeDocumentInputViewModel> RestoreDocumentInputs(
+            List<EmployeeDocumentInputViewModel>? submittedDocuments,
+            List<EmployeeDocumentInputViewModel> defaultDocuments
+        )
         {
-            submittedDocuments ??=
-                new List<EmployeeDocumentInputViewModel>();
+            submittedDocuments ??= new List<EmployeeDocumentInputViewModel>();
 
             foreach (var defaultDocument in defaultDocuments)
             {
-                var submittedDocument =
-                    submittedDocuments.FirstOrDefault(x =>
-                        x.DocumentType == defaultDocument.DocumentType);
+                var submittedDocument = submittedDocuments.FirstOrDefault(x =>
+                    x.DocumentType == defaultDocument.DocumentType
+                );
 
                 if (submittedDocument == null)
                 {
@@ -2382,146 +2441,185 @@ namespace AryamanBMS.Controllers
             return submittedDocuments;
         }
 
+        private bool HasValidFileSignature(IFormFile file, string extension)
+        {
+            if (file == null || file.Length == 0)
+                return false;
+
+            byte[] expectedSignature = extension.ToLowerInvariant() switch
+            {
+                ".pdf" => new byte[] { 0x25, 0x50, 0x44, 0x46, 0x2D },
+                ".jpg" or ".jpeg" => new byte[] { 0xFF, 0xD8, 0xFF },
+                ".png" => new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A },
+                _ => Array.Empty<byte>(),
+            };
+
+            if (expectedSignature.Length == 0 || file.Length < expectedSignature.Length)
+            {
+                return false;
+            }
+
+            using var stream = file.OpenReadStream();
+
+            byte[] actualSignature = new byte[expectedSignature.Length];
+            int totalBytesRead = 0;
+
+            while (totalBytesRead < actualSignature.Length)
+            {
+                int bytesRead = stream.Read(
+                    actualSignature,
+                    totalBytesRead,
+                    actualSignature.Length - totalBytesRead
+                );
+
+                if (bytesRead == 0)
+                    return false;
+
+                totalBytesRead += bytesRead;
+            }
+
+            return actualSignature.SequenceEqual(expectedSignature);
+        }
+
         private void ValidateFixedPdfDocuments(
-    List<EmployeeDocumentInputViewModel>? documents,
-    string modelKey)
+            List<EmployeeDocumentInputViewModel>? documents,
+            string modelKey
+        )
         {
             if (documents == null)
-            {
                 return;
-            }
 
             const long maximumFileSize = 5 * 1024 * 1024;
 
+            var allowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ".pdf",
+                ".jpg",
+                ".jpeg",
+                ".png",
+            };
+
             for (int i = 0; i < documents.Count; i++)
             {
-                var file = documents[i].File;
+                var input = documents[i];
 
-                if (file == null || file.Length == 0)
+                foreach (var file in input.Files ?? new List<IFormFile>())
                 {
-                    continue;
-                }
+                    if (file == null || file.Length == 0)
+                        continue;
 
-                var extension =
-                    Path.GetExtension(file.FileName).ToLowerInvariant();
+                    string fileKey = $"{modelKey}[{i}].Files";
+                    string extension = Path.GetExtension(file.FileName);
 
-                if (extension != ".pdf")
-                {
-                    ModelState.AddModelError(
-                        $"{modelKey}[{i}].File",
-                        $"{documents[i].DocumentType} must be a PDF file.");
-                }
+                    if (!allowedExtensions.Contains(extension))
+                    {
+                        ModelState.AddModelError(
+                            fileKey,
+                            $"{input.DocumentType} must be a PDF, JPG, JPEG or PNG file."
+                        );
+                        continue;
+                    }
 
-                if (!string.Equals(
-                        file.ContentType,
-                        "application/pdf",
-                        StringComparison.OrdinalIgnoreCase))
-                {
-                    ModelState.AddModelError(
-                        $"{modelKey}[{i}].File",
-                        $"{documents[i].DocumentType} has an invalid file type.");
-                }
+                    if (file.Length > maximumFileSize)
+                    {
+                        ModelState.AddModelError(
+                            fileKey,
+                            $"{input.DocumentType} cannot exceed 5 MB."
+                        );
+                        continue;
+                    }
 
-                if (file.Length > maximumFileSize)
-                {
-                    ModelState.AddModelError(
-                        $"{modelKey}[{i}].File",
-                        $"{documents[i].DocumentType} cannot exceed 5 MB.");
+                    if (!HasValidFileSignature(file, extension))
+                    {
+                        ModelState.AddModelError(
+                            fileKey,
+                            $"{input.DocumentType} does not contain a valid {extension.ToUpperInvariant()} file."
+                        );
+                    }
                 }
             }
         }
 
         private async Task<int> SaveFixedDocumentsAsync(
-    List<EmployeeDocumentInputViewModel>? documentInputs,
-    EmployeeModel employee,
-    string documentCategory,
-    List<string> storedFiles)
+            List<EmployeeDocumentInputViewModel>? documentInputs,
+            EmployeeModel employee,
+            string documentCategory,
+            List<string> storedFiles
+        )
         {
             if (documentInputs == null)
-            {
                 return 0;
-            }
 
             int uploadedCount = 0;
 
             foreach (var input in documentInputs)
             {
-                var file = input.File;
-
-                if (file == null || file.Length == 0)
+                foreach (var file in input.Files ?? new List<IFormFile>())
                 {
-                    continue;
-                }
+                    if (file == null || file.Length == 0)
+                        continue;
 
-                var document =
-                    await _employeeDocumentService.SaveAsync(
+                    var document = await _employeeDocumentService.SaveAsync(
                         file,
                         employee.EmployeeCode ?? $"EMP{employee.Id}",
                         input.DocumentType,
-                        User.Identity?.Name);
+                        User.Identity?.Name
+                    );
 
-                document.EmployeeId = employee.Id;
-                document.EmployeeAcademicId = null;
-                document.DocumentCategory = documentCategory;
+                    document.EmployeeId = employee.Id;
+                    document.EmployeeAcademicId = null;
+                    document.DocumentCategory = documentCategory;
 
-                storedFiles.Add(document.StoragePath);
+                    storedFiles.Add(document.StoragePath);
 
-                await _employeeDocumentRepository.AddAsync(document);
-
-                uploadedCount++;
+                    await _employeeDocumentRepository.AddAsync(document);
+                    uploadedCount++;
+                }
             }
 
             return uploadedCount;
         }
 
-        private static List<EmployeeDocumentInputViewModel>
-    BuildFixedDocumentInputs(
-        List<EmployeeDocumentInputViewModel> defaults,
-        IEnumerable<EmployeeDocumentModel> existingDocuments)
+        private static List<EmployeeDocumentInputViewModel> BuildFixedDocumentInputs(
+            List<EmployeeDocumentInputViewModel> defaults,
+            IEnumerable<EmployeeDocumentModel> existingDocuments
+        )
         {
             var existingList = existingDocuments.ToList();
 
             foreach (var item in defaults)
             {
-                item.ExistingDocument =
-                    existingList.FirstOrDefault(x =>
-                        x.DocumentType == item.DocumentType);
+                item.ExistingDocuments = existingList
+                    .Where(x => x.DocumentType == item.DocumentType)
+                    .ToList();
             }
 
             return defaults;
         }
 
-        private async Task LoadExistingFixedDocumentsAsync(
-    EmployeeFormViewModel model)
+        private async Task LoadExistingFixedDocumentsAsync(EmployeeFormViewModel model)
         {
-            var existingDocuments =
-                await _context.EmployeeDocuments
-                    .AsNoTracking()
-                    .Where(x =>
-                        x.EmployeeId == model.Employee.Id &&
-                        x.EmployeeAcademicId == null)
-                    .ToListAsync();
+            var existingDocuments = await _context
+                .EmployeeDocuments.AsNoTracking()
+                .Where(x => x.EmployeeId == model.Employee.Id && x.EmployeeAcademicId == null)
+                .ToListAsync();
 
-            model.StatutoryDocuments =
-                BuildFixedDocumentInputs(
-                    RestoreDocumentInputs(
-                        model.StatutoryDocuments,
-                        GetStatutoryDocumentInputs()),
-                    existingDocuments.Where(x =>
-                        x.DocumentCategory == "Statutory"));
+            model.StatutoryDocuments = BuildFixedDocumentInputs(
+                RestoreDocumentInputs(model.StatutoryDocuments, GetStatutoryDocumentInputs()),
+                existingDocuments.Where(x => x.DocumentCategory == "Statutory")
+            );
 
-            model.JoiningDocuments =
-                BuildFixedDocumentInputs(
-                    RestoreDocumentInputs(
-                        model.JoiningDocuments,
-                        GetJoiningDocumentInputs()),
-                    existingDocuments.Where(x =>
-                        x.DocumentCategory == "Joining"));
+            model.JoiningDocuments = BuildFixedDocumentInputs(
+                RestoreDocumentInputs(model.JoiningDocuments, GetJoiningDocumentInputs()),
+                existingDocuments.Where(x => x.DocumentCategory == "Joining")
+            );
 
             model.OtherJoiningDocuments = BuildOtherJoiningDocumentInputs(
                 existingDocuments.Where(x =>
-                    x.DocumentCategory == "Joining" &&
-                    x.DocumentType.StartsWith("Other Joining Document - ")));
+                    x.DocumentCategory == "Joining"
+                    && x.DocumentType.StartsWith("Other Joining Document - ")
+                )
+            );
 
             if (!model.OtherJoiningDocuments.Any())
             {
@@ -2534,67 +2632,15 @@ namespace AryamanBMS.Controllers
             EmployeeModel employee,
             string category,
             List<string> newlyStoredFiles,
-            List<string> deletedFilePaths)
+            List<string> deletedFilePaths
+        )
         {
-            if (inputs == null)
-            {
-                return 0;
-            }
-
-            int uploadedCount = 0;
-
-            foreach (var input in inputs)
-            {
-                if (input.File == null || input.File.Length == 0)
-                {
-                    continue;
-                }
-
-                var existingDocument =
-                    await _context.EmployeeDocuments
-                        .FirstOrDefaultAsync(x =>
-                            x.EmployeeId == employee.Id &&
-                            x.EmployeeAcademicId == null &&
-                            x.DocumentCategory == category &&
-                            x.DocumentType == input.DocumentType);
-
-                var newDocument =
-                    await _employeeDocumentService.SaveAsync(
-                        input.File,
-                        employee.EmployeeCode ?? $"EMP{employee.Id}",
-                        input.DocumentType,
-                        User.Identity?.Name);
-
-                newDocument.EmployeeId = employee.Id;
-                newDocument.EmployeeAcademicId = null;
-                newDocument.DocumentCategory = category;
-
-                newlyStoredFiles.Add(newDocument.StoragePath);
-
-                await _employeeDocumentRepository.AddAsync(
-                    newDocument);
-
-                if (existingDocument != null)
-                {
-                    if (!string.IsNullOrWhiteSpace(
-                            existingDocument.StoragePath))
-                    {
-                        deletedFilePaths.Add(
-                            existingDocument.StoragePath);
-                    }
-
-                    await _employeeDocumentRepository.DeleteAsync(
-                        existingDocument);
-                }
-
-                uploadedCount++;
-            }
-
-            return uploadedCount;
+            return await SaveFixedDocumentsAsync(inputs, employee, category, newlyStoredFiles);
         }
 
         private void ValidatePreviousEmployments(
-    List<EmployeePreviousEmploymentInputViewModel> employments)
+            List<EmployeePreviousEmploymentInputViewModel> employments
+        )
         {
             const long maximumFileSize = 5 * 1024 * 1024;
 
@@ -2602,246 +2648,210 @@ namespace AryamanBMS.Controllers
             {
                 var employment = employments[i];
 
+                bool hasExperienceFiles =
+                    employment.ExperienceLetters?.Any(file => file != null && file.Length > 0)
+                    == true;
+
+                bool hasRelievingFiles =
+                    employment.RelievingLetters?.Any(file => file != null && file.Length > 0)
+                    == true;
+
                 bool rowIsEmpty =
-                    string.IsNullOrWhiteSpace(employment.CompanyName) &&
-                    !employment.StartDate.HasValue &&
-                    !employment.EndDate.HasValue &&
-                    employment.ExperienceLetter == null &&
-                    employment.RelievingLetter == null;
+                    string.IsNullOrWhiteSpace(employment.CompanyName)
+                    && !employment.StartDate.HasValue
+                    && !employment.EndDate.HasValue
+                    && !hasExperienceFiles
+                    && !hasRelievingFiles;
 
                 if (rowIsEmpty)
+                    continue;
+
+                if (string.IsNullOrWhiteSpace(employment.CompanyName))
+                    ModelState.AddModelError(
+                        $"PreviousEmployments[{i}].CompanyName",
+                        "Company name is required."
+                    );
+
+                if (!employment.StartDate.HasValue)
+                    ModelState.AddModelError(
+                        $"PreviousEmployments[{i}].StartDate",
+                        "Start date is required."
+                    );
+
+                if (!employment.EndDate.HasValue)
+                    ModelState.AddModelError(
+                        $"PreviousEmployments[{i}].EndDate",
+                        "End date is required."
+                    );
+
+                if (
+                    employment.StartDate.HasValue
+                    && employment.EndDate.HasValue
+                    && employment.EndDate < employment.StartDate
+                )
                 {
+                    ModelState.AddModelError(
+                        $"PreviousEmployments[{i}].EndDate",
+                        "End date cannot be before start date."
+                    );
+                }
+
+                ValidatePreviousEmploymentPdfs(
+                    employment.ExperienceLetters,
+                    $"PreviousEmployments[{i}].ExperienceLetters",
+                    "Experience Letter",
+                    maximumFileSize
+                );
+
+                ValidatePreviousEmploymentPdfs(
+                    employment.RelievingLetters,
+                    $"PreviousEmployments[{i}].RelievingLetters",
+                    "Relieving Letter",
+                    maximumFileSize
+                );
+            }
+        }
+
+        private void ValidatePreviousEmploymentPdfs(
+            List<IFormFile>? files,
+            string modelKey,
+            string documentType,
+            long employmentIndex
+        )
+        {
+            if (files == null)
+                return;
+
+            const long maximumFileSize = 5 * 1024 * 1024;
+
+            foreach (var file in files)
+            {
+                if (file == null || file.Length == 0)
+                    continue;
+
+                if (file.Length > maximumFileSize)
+                {
+                    ModelState.AddModelError(modelKey, $"{documentType} cannot exceed 5 MB.");
                     continue;
                 }
 
-                if (string.IsNullOrWhiteSpace(employment.CompanyName))
+                string extension = Path.GetExtension(file.FileName);
+
+                if (!string.Equals(extension, ".pdf", StringComparison.OrdinalIgnoreCase))
                 {
-                    ModelState.AddModelError(
-                        $"PreviousEmployments[{i}].CompanyName",
-                        "Company name is required.");
+                    ModelState.AddModelError(modelKey, $"{documentType} must be a PDF file.");
+                    continue;
                 }
 
-                if (!employment.StartDate.HasValue)
+                if (!HasValidFileSignature(file, extension))
                 {
                     ModelState.AddModelError(
-                        $"PreviousEmployments[{i}].StartDate",
-                        "Start date is required.");
+                        modelKey,
+                        $"{documentType} does not contain a valid PDF file."
+                    );
                 }
-
-                if (!employment.EndDate.HasValue)
-                {
-                    ModelState.AddModelError(
-                        $"PreviousEmployments[{i}].EndDate",
-                        "End date is required.");
-                }
-
-                if (employment.StartDate.HasValue &&
-                    employment.EndDate.HasValue &&
-                    employment.EndDate < employment.StartDate)
-                {
-                    ModelState.AddModelError(
-                        $"PreviousEmployments[{i}].EndDate",
-                        "End date cannot be before start date.");
-                }
-
-                ValidatePreviousEmploymentPdf(
-                    employment.ExperienceLetter,
-                    $"PreviousEmployments[{i}].ExperienceLetter",
-                    "Experience Letter",
-                    maximumFileSize);
-
-                ValidatePreviousEmploymentPdf(
-                    employment.RelievingLetter,
-                    $"PreviousEmployments[{i}].RelievingLetter",
-                    "Relieving Letter",
-                    maximumFileSize);
             }
         }
 
-
-        private void ValidatePreviousEmploymentPdf(
-          IFormFile? file,
-          string modelKey,
-          string documentName,
-          long maximumFileSize)
+        private async Task<int> SavePreviousEmploymentDocumentsAsync(
+            List<IFormFile>? files,
+            EmployeeModel employee,
+            int previousEmploymentId,
+            string documentType,
+            List<string> storedFiles
+        )
         {
-            if (file == null || file.Length == 0)
+            int uploadedCount = 0;
+
+            foreach (var file in files ?? new List<IFormFile>())
             {
-                return;
-            }
+                if (file == null || file.Length == 0)
+                    continue;
 
-            string extension =
-                Path.GetExtension(file.FileName)
-                    .ToLowerInvariant();
-
-            if (extension != ".pdf")
-            {
-                ModelState.AddModelError(
-                    modelKey,
-                    $"{documentName} must be a PDF file.");
-            }
-
-            if (!string.Equals(
-                    file.ContentType,
-                    "application/pdf",
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                ModelState.AddModelError(
-                    modelKey,
-                    $"{documentName} has an invalid file type.");
-            }
-
-            if (file.Length > maximumFileSize)
-            {
-                ModelState.AddModelError(
-                    modelKey,
-                    $"{documentName} cannot exceed 5 MB.");
-            }
-        }
-
-        private async Task<int>
-    SavePreviousEmploymentDocumentAsync(
-        IFormFile? file,
-        EmployeeModel employee,
-        int previousEmploymentId,
-        string documentType,
-        List<string> storedFiles)
-        {
-            if (file == null || file.Length == 0)
-            {
-                return 0;
-            }
-
-            var document =
-                await _employeeDocumentService.SaveAsync(
+                var document = await _employeeDocumentService.SaveAsync(
                     file,
                     employee.EmployeeCode ?? $"EMP{employee.Id}",
                     documentType,
-                    User.Identity?.Name);
+                    User.Identity?.Name
+                );
 
-            document.EmployeeId = employee.Id;
-            document.EmployeeAcademicId = null;
-            document.EmployeePreviousEmploymentId =
-                previousEmploymentId;
+                document.EmployeeId = employee.Id;
+                document.EmployeeAcademicId = null;
+                document.EmployeePreviousEmploymentId = previousEmploymentId;
+                document.DocumentCategory = "PreviousEmployment";
 
-            document.DocumentCategory =
-                "PreviousEmployment";
+                storedFiles.Add(document.StoragePath);
 
-            storedFiles.Add(document.StoragePath);
+                await _employeeDocumentRepository.AddAsync(document);
+                uploadedCount++;
+            }
 
-            await _employeeDocumentRepository
-                .AddAsync(document);
-
-            return 1;
+            return uploadedCount;
         }
 
         private async Task ReloadExistingPreviousEmploymentDocumentsAsync(
-          EmployeeFormViewModel model)
+            EmployeeFormViewModel model
+        )
         {
-            model.PreviousEmployments ??=
-                new List<EmployeePreviousEmploymentInputViewModel>();
+            model.PreviousEmployments ??= new List<EmployeePreviousEmploymentInputViewModel>();
 
-            foreach (var employment in model.PreviousEmployments
-                .Where(x => x.Id.HasValue))
+            foreach (var employment in model.PreviousEmployments.Where(x => x.Id.HasValue))
             {
-                int employmentId = employment.Id.GetValueOrDefault();
+                int employmentId = employment.Id!.Value;
 
-                var documents =
-                    await _employeeDocumentRepository.Documents
-                        .AsNoTracking()
-                        .Where(x =>
-                            x.EmployeeId == model.Employee.Id &&
-                            x.EmployeePreviousEmploymentId ==
-                                employmentId &&
-                            x.DocumentCategory ==
-                                "PreviousEmployment")
-                        .ToListAsync();
+                var documents = await _employeeDocumentRepository
+                    .Documents.AsNoTracking()
+                    .Where(x =>
+                        x.EmployeeId == model.Employee.Id
+                        && x.EmployeePreviousEmploymentId == employmentId
+                        && x.DocumentCategory == "PreviousEmployment"
+                    )
+                    .ToListAsync();
 
-                employment.ExistingExperienceLetter =
-                    documents.FirstOrDefault(x =>
-                        x.DocumentType == "Experience Letter");
+                employment.ExistingExperienceLetters = documents
+                    .Where(x => x.DocumentType == "Experience Letter")
+                    .ToList();
 
-                employment.ExistingRelievingLetter =
-                    documents.FirstOrDefault(x =>
-                        x.DocumentType == "Relieving Letter");
+                employment.ExistingRelievingLetters = documents
+                    .Where(x => x.DocumentType == "Relieving Letter")
+                    .ToList();
             }
         }
 
         private async Task<int> ReplacePreviousEmploymentDocumentAsync(
-    IFormFile? file,
-    EmployeeModel employee,
-    int previousEmploymentId,
-    string documentType,
-    List<string> newFilePaths,
-    List<string> deletedFilePaths)
+            List<IFormFile>? files,
+            EmployeeModel employee,
+            int previousEmploymentId,
+            string documentType,
+            List<string> newFilePaths,
+            List<string> deletedFilePaths
+        )
         {
-            if (file == null || file.Length == 0)
-            {
-                return 0;
-            }
-
-            var existingDocument =
-                await _employeeDocumentRepository.Documents
-                    .FirstOrDefaultAsync(x =>
-                        x.EmployeeId == employee.Id &&
-                        x.EmployeePreviousEmploymentId ==
-                            previousEmploymentId &&
-                        x.DocumentCategory ==
-                            "PreviousEmployment" &&
-                        x.DocumentType == documentType);
-
-            var newDocument =
-                await _employeeDocumentService.SaveAsync(
-                    file,
-                    employee.EmployeeCode ?? $"EMP{employee.Id}",
-                    documentType,
-                    User.Identity?.Name);
-
-            newDocument.EmployeeId = employee.Id;
-            newDocument.EmployeeAcademicId = null;
-            newDocument.EmployeePreviousEmploymentId =
-                previousEmploymentId;
-            newDocument.DocumentCategory =
-                "PreviousEmployment";
-
-            newFilePaths.Add(newDocument.StoragePath);
-
-            await _employeeDocumentRepository
-                .AddAsync(newDocument);
-
-            if (existingDocument != null)
-            {
-                if (!string.IsNullOrWhiteSpace(
-                        existingDocument.StoragePath))
-                {
-                    deletedFilePaths.Add(
-                        existingDocument.StoragePath);
-                }
-
-                await _employeeDocumentRepository
-                    .DeleteAsync(existingDocument);
-            }
-
-            return 1;
+            return await SavePreviousEmploymentDocumentsAsync(
+                files,
+                employee,
+                previousEmploymentId,
+                documentType,
+                newFilePaths
+            );
         }
 
         private static List<EmployeeDashboardBucket> BuildEmployeeBuckets(
-             List<EmployeeDashboardBucket> buckets)
+            List<EmployeeDashboardBucket> buckets
+        )
         {
             int total = buckets.Sum(x => x.Count);
 
             foreach (var bucket in buckets)
             {
-                bucket.Percent = total == 0
-                    ? 0
-                    : Math.Round((decimal)bucket.Count * 100 / total, 2);
+                bucket.Percent =
+                    total == 0 ? 0 : Math.Round((decimal)bucket.Count * 100 / total, 2);
             }
 
             return buckets;
         }
 
-        private static EmployeeDashboardListItem ToEmployeeDashboardListItem(
-            EmployeeModel employee)
+        private static EmployeeDashboardListItem ToEmployeeDashboardListItem(EmployeeModel employee)
         {
             return new EmployeeDashboardListItem
             {
@@ -2850,57 +2860,60 @@ namespace AryamanBMS.Controllers
                 EmployeeName = employee.FullName,
                 Subtitle = employee.Department?.DepartmentName ?? "Unassigned",
                 Meta = employee.JoiningDate.ToString("dd-MMM-yyyy"),
-                Badge = employee.IsActive ? "Active" : "Inactive"
+                Badge = employee.IsActive ? "Active" : "Inactive",
             };
         }
 
         private static bool IsBlankAcademicRow(EmployeeAcademicInputViewModel academic)
         {
             bool hasDocument =
-                academic.Documents != null &&
-                academic.Documents.Any(x => x != null && x.Length > 0);
+                academic.Documents != null
+                && academic.Documents.Any(x => x != null && x.Length > 0);
 
-            return
-                string.IsNullOrWhiteSpace(academic.QualificationLevel) &&
-                string.IsNullOrWhiteSpace(academic.CourseName) &&
-                string.IsNullOrWhiteSpace(academic.Specialization) &&
-                string.IsNullOrWhiteSpace(academic.InstituteName) &&
-                string.IsNullOrWhiteSpace(academic.BoardOrUniversity) &&
-                !academic.PassingYear.HasValue &&
-                string.IsNullOrWhiteSpace(academic.ResultType) &&
-                !academic.Score.HasValue &&
-                string.IsNullOrWhiteSpace(academic.Grade) &&
-                !academic.IsHighestQualification &&
-                !hasDocument;
+            return string.IsNullOrWhiteSpace(academic.QualificationLevel)
+                && string.IsNullOrWhiteSpace(academic.CourseName)
+                && string.IsNullOrWhiteSpace(academic.Specialization)
+                && string.IsNullOrWhiteSpace(academic.InstituteName)
+                && string.IsNullOrWhiteSpace(academic.BoardOrUniversity)
+                && !academic.PassingYear.HasValue
+                && string.IsNullOrWhiteSpace(academic.ResultType)
+                && !academic.Score.HasValue
+                && string.IsNullOrWhiteSpace(academic.Grade)
+                && !academic.IsHighestQualification
+                && !hasDocument;
         }
 
         private static bool IsBlankPreviousEmploymentRow(
-            EmployeePreviousEmploymentInputViewModel employment)
+            EmployeePreviousEmploymentInputViewModel employment
+        )
         {
-            return
-                string.IsNullOrWhiteSpace(employment.CompanyName) &&
-                string.IsNullOrWhiteSpace(employment.Designation) &&
-                string.IsNullOrWhiteSpace(employment.Department) &&
-                string.IsNullOrWhiteSpace(employment.EmploymentType) &&
-                !employment.StartDate.HasValue &&
-                !employment.EndDate.HasValue &&
-                !employment.LastSalary.HasValue &&
-                string.IsNullOrWhiteSpace(employment.ReasonForLeaving) &&
-                string.IsNullOrWhiteSpace(employment.CompanyAddress) &&
-                string.IsNullOrWhiteSpace(employment.CompanyCity) &&
-                string.IsNullOrWhiteSpace(employment.CompanyState) &&
-                string.IsNullOrWhiteSpace(employment.CompanyPinCode) &&
-                string.IsNullOrWhiteSpace(employment.CompanyWebsite) &&
-                string.IsNullOrWhiteSpace(employment.HRContactName) &&
-                string.IsNullOrWhiteSpace(employment.HRContactEmail) &&
-                string.IsNullOrWhiteSpace(employment.HRContactNumber) &&
-                employment.ExperienceLetter == null &&
-                employment.RelievingLetter == null;
+            return string.IsNullOrWhiteSpace(employment.CompanyName)
+                && string.IsNullOrWhiteSpace(employment.Designation)
+                && string.IsNullOrWhiteSpace(employment.Department)
+                && string.IsNullOrWhiteSpace(employment.EmploymentType)
+                && !employment.StartDate.HasValue
+                && !employment.EndDate.HasValue
+                && !employment.LastSalary.HasValue
+                && string.IsNullOrWhiteSpace(employment.ReasonForLeaving)
+                && string.IsNullOrWhiteSpace(employment.CompanyAddress)
+                && string.IsNullOrWhiteSpace(employment.CompanyCity)
+                && string.IsNullOrWhiteSpace(employment.CompanyState)
+                && string.IsNullOrWhiteSpace(employment.CompanyPinCode)
+                && string.IsNullOrWhiteSpace(employment.CompanyWebsite)
+                && string.IsNullOrWhiteSpace(employment.HRContactName)
+                && string.IsNullOrWhiteSpace(employment.HRContactEmail)
+                && string.IsNullOrWhiteSpace(employment.HRContactNumber)
+                && (
+                    employment.ExperienceLetters == null
+                    || !employment.ExperienceLetters.Any(f => f != null && f.Length > 0)
+                )
+                && (
+                    employment.RelievingLetters == null
+                    || !employment.RelievingLetters.Any(f => f != null && f.Length > 0)
+                );
         }
 
-        private void ValidateAcademicDocuments(
-            List<IFormFile>? files,
-            string modelKey)
+        private void ValidateAcademicDocuments(List<IFormFile>? files, string modelKey)
         {
             if (files == null || !files.Any())
             {
@@ -2909,13 +2922,13 @@ namespace AryamanBMS.Controllers
 
             const long maximumFileSize = 5 * 1024 * 1024;
 
-            string[] allowedExtensions =
+            var allowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
-        ".pdf",
-        ".jpg",
-        ".jpeg",
-        ".png"
-    };
+                ".pdf",
+                ".jpg",
+                ".jpeg",
+                ".png",
+            };
 
             foreach (var file in files)
             {
@@ -2924,24 +2937,35 @@ namespace AryamanBMS.Controllers
                     continue;
                 }
 
-                string extension =
-                    Path.GetExtension(file.FileName).ToLowerInvariant();
+                string extension = Path.GetExtension(file.FileName);
 
                 if (!allowedExtensions.Contains(extension))
                 {
                     ModelState.AddModelError(
                         modelKey,
-                        "Academic documents must be PDF, JPG, JPEG or PNG files.");
+                        "Academic documents must be PDF, JPG, JPEG or PNG files."
+                    );
+
+                    continue;
                 }
 
                 if (file.Length > maximumFileSize)
                 {
+                    ModelState.AddModelError(modelKey, "Academic document cannot exceed 5 MB.");
+
+                    continue;
+                }
+
+                if (!HasValidFileSignature(file, extension))
+                {
                     ModelState.AddModelError(
                         modelKey,
-                        "Academic document cannot exceed 5 MB.");
+                        $"Academic document does not contain a valid {extension.ToUpperInvariant()} file."
+                    );
                 }
             }
         }
-        #endregion
+
+        #endregion Actions
     }
 }

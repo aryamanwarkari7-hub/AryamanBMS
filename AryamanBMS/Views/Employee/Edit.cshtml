@@ -24,8 +24,7 @@
         <h1 class="module-title">Edit Employee</h1>
         <p class="module-subtitle">Update employee information</p>
     </div>
-    <a asp-action="Index"
-       class="btn-app btn-secondary-app">
+    <a asp-action="Index" class="btn-app btn-secondary-app">
         Back
     </a>
 </div>
@@ -38,13 +37,13 @@
 
     @if (!ViewData.ModelState.IsValid)
     {
-        <div asp-validation-summary="All"
-             class="app-alert app-alert-danger mb-3">
+        <div asp-validation-summary="All" class="app-alert app-alert-danger mb-3">
         </div>
     }
 
     <div class="app-alert app-alert-info mb-3">
-        Only basic employee details are mandatory. Documents, academic details and previous employment details are optional.
+        Only basic employee details are mandatory. Documents, academic details and previous employment details are
+        optional.
     </div>
 
 
@@ -80,8 +79,7 @@
                         <option value="Female">Female</option>
                         <option value="Other">Other</option>
                     </select>
-                    <span asp-validation-for="Employee.Gender"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Employee.Gender" class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
@@ -96,11 +94,9 @@
                 <div class="form-group">
                     <label class="form-label">Middle Name</label>
 
-                    <input asp-for="Employee.MiddleName"
-                           class="app-input" />
+                    <input asp-for="Employee.MiddleName" class="app-input" />
 
-                    <span asp-validation-for="Employee.MiddleName"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Employee.MiddleName" class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
@@ -115,8 +111,7 @@
                 <div class="form-group">
                     <label class="form-label">Date Of Birth</label>
                     <input asp-for="Employee.DateOfBirth" type="date" class="app-input" />
-                    <span asp-validation-for="Employee.DateOfBirth"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Employee.DateOfBirth" class="validation-message"></span>
                 </div>
 
             </div>
@@ -137,8 +132,7 @@
                         <span class="text-danger">*</span>
                     </label>
                     <input asp-for="Employee.JoiningDate" type="date" class="app-input" />
-                    <span asp-validation-for="Employee.JoiningDate"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Employee.JoiningDate" class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
@@ -153,10 +147,11 @@
                         <option value="Intern">Intern</option>
                         <option value="Consultant">Consultant</option>
                     </select>
-                    <span asp-validation-for="Employee.EmploymentType"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Employee.EmploymentType" class="validation-message"></span>
                 </div>
 
+                
+                
                 <div class="form-group">
                     <label class="form-label required">
                         Department
@@ -171,23 +166,36 @@
                             </option>
                         }
                     </select>
-                    <span asp-validation-for="Employee.DepartmentId"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Employee.DepartmentId" class="validation-message"></span>
                 </div>
+
+                <div class="form-group col-12 mt-2">
+                    <label class="form-label text-muted d-block mb-2">Provisions & Benefits</label>
+                    <div class="d-flex flex-wrap gap-4">
+                        <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
+                            <input type="checkbox" asp-for="Employee.IsEligibleForPaidLeave" id="chkPaidLeave"
+                                   class="form-check-input" />
+                            <span>Annual Paid Leave Pool (18 days/FY)</span>
+                        </label>
+                        <label class="d-flex align-items-center gap-2" style="cursor: pointer;">
+                            <input type="checkbox" asp-for="Employee.IsStipend" id="chkStipend"
+                                   class="form-check-input" />
+                            <span>Stipend (No Component Breakdown)</span>
+                        </label>
+                    </div>
+                </div>
+
 
                 <div class="form-group">
                     <label class="form-label required">
                         Designation
                         <span class="text-danger">*</span>
                     </label>
-                    <select asp-for="Employee.DesignationId"
-                            id="designationDropdown"
-                            class="app-select"
+                    <select asp-for="Employee.DesignationId" id="designationDropdown" class="app-select"
                             data-selected-designation-id="@Model.Employee.DesignationId">
                         <option value="">Select Designation</option>
                     </select>
-                    <span asp-validation-for="Employee.DesignationId"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Employee.DesignationId" class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
@@ -210,8 +218,7 @@
                         <option value="true">Active</option>
                         <option value="false">Inactive</option>
                     </select>
-                    <span asp-validation-for="Employee.IsActive"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Employee.IsActive" class="validation-message"></span>
                 </div>
 
             </div>
@@ -262,31 +269,24 @@
 
                 <div class="col-md-12">
 
-                    <label asp-for="Employee.PermanentAddress"
-                           class="form-label">
+                    <label asp-for="Employee.PermanentAddress" class="form-label">
                         Permanent Address
                     </label>
 
-                    <textarea asp-for="Employee.PermanentAddress"
-                              id="permanentAddress"
-                              class="app-textarea"
+                    <textarea asp-for="Employee.PermanentAddress" id="permanentAddress" class="app-textarea"
                               rows="3"></textarea>
 
-                    <span asp-validation-for="Employee.PermanentAddress"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Employee.PermanentAddress" class="validation-message"></span>
 
                 </div>
 
                 <div class="col-md-4">
 
-                    <label asp-for="Employee.State"
-                           class="form-label">
+                    <label asp-for="Employee.State" class="form-label">
                         Permanent State
                     </label>
 
-                    <select asp-for="Employee.State"
-                            id="permanentStateDropdown"
-                            class="app-select">
+                    <select asp-for="Employee.State" id="permanentStateDropdown" class="app-select">
 
                         <option value="">Select State</option>
 
@@ -294,16 +294,13 @@
                         {
                             if (state.StateName == currentPermanentState)
                             {
-                                <option value="@state.StateName"
-                                        data-state-id="@state.Id"
-                                        selected>
+                                <option value="@state.StateName" data-state-id="@state.Id" selected>
                                     @state.StateName
                                 </option>
                             }
                             else
                             {
-                                <option value="@state.StateName"
-                                        data-state-id="@state.Id">
+                                <option value="@state.StateName" data-state-id="@state.Id">
                                     @state.StateName
                                 </option>
                             }
@@ -311,51 +308,38 @@
 
                     </select>
 
-                    <span asp-validation-for="Employee.State"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Employee.State" class="validation-message"></span>
 
                 </div>
 
                 <div class="col-md-4">
 
-                    <label asp-for="Employee.City"
-                           class="form-label">
+                    <label asp-for="Employee.City" class="form-label">
                         Permanent City
                     </label>
 
-                    <select asp-for="Employee.City"
-                            id="permanentCityDropdown"
-                            class="app-select"
-                            disabled>
+                    <select asp-for="Employee.City" id="permanentCityDropdown" class="app-select" disabled>
 
                         <option value="">Select City</option>
 
                     </select>
 
-                    <span asp-validation-for="Employee.City"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Employee.City" class="validation-message"></span>
 
                 </div>
 
                 <div class="col-md-4">
 
-                    <label asp-for="Employee.PinCode"
-                           class="form-label">
+                    <label asp-for="Employee.PinCode" class="form-label">
                         Permanent PIN Code
                     </label>
 
-                    <input asp-for="Employee.PinCode"
-                           id="permanentPinCodeInput"
-                           list="permanentPinCodeOptions"
-                           class="app-input"
-                           maxlength="6"
-                           inputmode="numeric"
-                           placeholder="Select or type PIN code" />
+                    <input asp-for="Employee.PinCode" id="permanentPinCodeInput" list="permanentPinCodeOptions"
+                           class="app-input" maxlength="6" inputmode="numeric" placeholder="Select or type PIN code" />
 
                     <datalist id="permanentPinCodeOptions"></datalist>
 
-                    <span asp-validation-for="Employee.PinCode"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Employee.PinCode" class="validation-message"></span>
 
                 </div>
 
@@ -365,12 +349,9 @@
 
             <div class="d-flex align-items-center gap-2 mb-3">
 
-                <input type="checkbox"
-                       id="sameAsPermanent"
-                       class="form-check-input" />
+                <input type="checkbox" id="sameAsPermanent" class="form-check-input" />
 
-                <label for="sameAsPermanent"
-                       class="form-check-label">
+                <label for="sameAsPermanent" class="form-check-label">
 
                     Local address is same as permanent address
 
@@ -384,31 +365,24 @@
 
                 <div class="col-md-12">
 
-                    <label asp-for="Employee.LocalAddress"
-                           class="form-label">
+                    <label asp-for="Employee.LocalAddress" class="form-label">
                         Local Address
                     </label>
 
-                    <textarea asp-for="Employee.LocalAddress"
-                              id="localAddress"
-                              class="app-textarea"
+                    <textarea asp-for="Employee.LocalAddress" id="localAddress" class="app-textarea"
                               rows="3"></textarea>
 
-                    <span asp-validation-for="Employee.LocalAddress"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Employee.LocalAddress" class="validation-message"></span>
 
                 </div>
 
                 <div class="col-md-4">
 
-                    <label asp-for="Employee.LocalState"
-                           class="form-label">
+                    <label asp-for="Employee.LocalState" class="form-label">
                         Local State
                     </label>
 
-                    <select asp-for="Employee.LocalState"
-                            id="localStateDropdown"
-                            class="app-select">
+                    <select asp-for="Employee.LocalState" id="localStateDropdown" class="app-select">
 
                         <option value="">Select State</option>
 
@@ -416,16 +390,13 @@
                         {
                             if (state.StateName == currentLocalState)
                             {
-                                <option value="@state.StateName"
-                                        data-state-id="@state.Id"
-                                        selected>
+                                <option value="@state.StateName" data-state-id="@state.Id" selected>
                                     @state.StateName
                                 </option>
                             }
                             else
                             {
-                                <option value="@state.StateName"
-                                        data-state-id="@state.Id">
+                                <option value="@state.StateName" data-state-id="@state.Id">
                                     @state.StateName
                                 </option>
                             }
@@ -433,51 +404,38 @@
 
                     </select>
 
-                    <span asp-validation-for="Employee.LocalState"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Employee.LocalState" class="validation-message"></span>
 
                 </div>
 
                 <div class="col-md-4">
 
-                    <label asp-for="Employee.LocalCity"
-                           class="form-label">
+                    <label asp-for="Employee.LocalCity" class="form-label">
                         Local City
                     </label>
 
-                    <select asp-for="Employee.LocalCity"
-                            id="localCityDropdown"
-                            class="app-select"
-                            disabled>
+                    <select asp-for="Employee.LocalCity" id="localCityDropdown" class="app-select" disabled>
 
                         <option value="">Select City</option>
 
                     </select>
 
-                    <span asp-validation-for="Employee.LocalCity"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Employee.LocalCity" class="validation-message"></span>
 
                 </div>
 
                 <div class="col-md-4">
 
-                    <label asp-for="Employee.LocalPinCode"
-                           class="form-label">
+                    <label asp-for="Employee.LocalPinCode" class="form-label">
                         Local PIN Code
                     </label>
 
-                    <input asp-for="Employee.LocalPinCode"
-                           id="localPinCodeInput"
-                           list="localPinCodeOptions"
-                           class="app-input"
-                           maxlength="6"
-                           inputmode="numeric"
-                           placeholder="Select or type PIN code" />
+                    <input asp-for="Employee.LocalPinCode" id="localPinCodeInput" list="localPinCodeOptions"
+                           class="app-input" maxlength="6" inputmode="numeric" placeholder="Select or type PIN code" />
 
                     <datalist id="localPinCodeOptions"></datalist>
 
-                    <span asp-validation-for="Employee.LocalPinCode"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Employee.LocalPinCode" class="validation-message"></span>
 
                 </div>
 
@@ -498,15 +456,13 @@
                 <div class="form-group">
                     <label class="form-label">Emergency Contact Name</label>
                     <input asp-for="Employee.EmergencyContact" class="app-input" />
-                    <span asp-validation-for="Employee.EmergencyContact"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Employee.EmergencyContact" class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Emergency Contact Number</label>
                     <input asp-for="Employee.EmergencyPhone" class="app-input" />
-                    <span asp-validation-for="Employee.EmergencyPhone"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Employee.EmergencyPhone" class="validation-message"></span>
                 </div>
 
             </div>
@@ -523,29 +479,21 @@
 
                 <div class="form-group">
                     <label class="form-label">Aadhaar Number</label>
-                    <input asp-for="Employee.AadhaarNo"
-                           class="app-input"
-                           maxlength="12"
-                           inputmode="numeric"
+                    <input asp-for="Employee.AadhaarNo" class="app-input" maxlength="12" inputmode="numeric"
                            placeholder="Enter 12-digit Aadhaar number" />
                     <span asp-validation-for="Employee.AadhaarNo" class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">PAN Number</label>
-                    <input asp-for="Employee.PanNo"
-                           class="app-input"
-                           maxlength="10"
+                    <input asp-for="Employee.PanNo" class="app-input" maxlength="10"
                            placeholder="Enter 10-character PAN number" />
                     <span asp-validation-for="Employee.PanNo" class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">UAN Number</label>
-                    <input asp-for="Employee.UanNo"
-                           class="app-input"
-                           maxlength="12"
-                           inputmode="numeric"
+                    <input asp-for="Employee.UanNo" class="app-input" maxlength="12" inputmode="numeric"
                            placeholder="Enter 12-digit UAN number" />
                     <span asp-validation-for="Employee.UanNo" class="validation-message"></span>
                 </div>
@@ -553,242 +501,224 @@
                 <div class="form-group">
                     <label class="form-label">ESIC Number</label>
 
-                    <input asp-for="Employee.EsicNo"
-                           class="app-input"
-                           maxlength="10"
-                           inputmode="numeric"
-                           pattern="[0-9]{10}"
-                           placeholder="Enter 10-digit ESIC number" />
+                    <input asp-for="Employee.EsicNo" class="app-input" maxlength="10" inputmode="numeric"
+                           pattern="[0-9]{10}" placeholder="Enter 10-digit ESIC number" />
 
-                    <span asp-validation-for="Employee.EsicNo"
-                          class="validation-message"></span>
+                    <span asp-validation-for="Employee.EsicNo" class="validation-message"></span>
                 </div>
 
+            </div>
+
+            <!-- Elevated Vault Notice Card with Direct Vault Link -->
+            <div class="vault-notice-card">
+                <div class="vault-notice-icon">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <div class="vault-notice-content">
+                    <div class="vault-notice-header">
+                        <span class="vault-notice-title">Document Scans & Proofs</span>
+                        <span class="vault-notice-badge">Document Vault</span>
+                    </div>
+                    <p class="vault-notice-text">
+                        Scans of Aadhaar, PAN, Bank Cheque, and Certificates are securely managed in the
+                        <strong>Document Vault</strong> on the Employee Details page.
+                    </p>
+                </div>
+                <a asp-action="Details" asp-route-id="@Model.Employee.Id" target="_blank"
+                   class="btn-app btn-secondary-app btn-sm text-nowrap">
+                    <i class="bi bi-box-arrow-up-right me-1"></i> Open Vault
+                </a>
             </div>
         </div>
     </div>
 
-    <div class="app-card">
-
+    @* <div class="app-card">
         <div class="card-header">
             <h5 class="card-title">Statutory Documents</h5>
         </div>
 
         <div class="card-body">
-
-            @for (int i = 0;
-                        i < Model.StatutoryDocuments.Count;
-                        i++)
+            @for (int i = 0; i < Model.StatutoryDocuments.Count; i++)
             {
                 <div class="row align-items-center border-bottom py-3">
-
                     <div class="col-md-3">
-
-                        <input asp-for="StatutoryDocuments[i].DocumentType"
-                               type="hidden" />
-
+                        <input asp-for="StatutoryDocuments[i].DocumentType" type="hidden" />
                         <label class="form-label mb-0">
                             @Model.StatutoryDocuments[i].DocumentType
                         </label>
-
                     </div>
 
                     <div class="col-md-5">
-
-                        <input asp-for="StatutoryDocuments[i].File"
-                               type="file"
-                               accept=".pdf,application/pdf"
-                               class="form-control document-pdf-input" />
-
-                        <span asp-validation-for="StatutoryDocuments[i].File"
-                              class="validation-message"></span>
-
+                        <input asp-for="StatutoryDocuments[i].Files" type="file" multiple accept=".pdf,.jpg,.jpeg,.png"
+                               class="form-control" />
+                        <span asp-validation-for="StatutoryDocuments[i].Files" class="validation-message"></span>
                     </div>
 
                     <div class="col-md-4">
-
-                        @if (Model.StatutoryDocuments[i].ExistingDocument != null)
+                        @if (Model.StatutoryDocuments[i].ExistingDocuments.Any())
                         {
-                            <div class="d-flex align-items-center gap-2">
+                            @foreach (var document in Model.StatutoryDocuments[i].ExistingDocuments)
+                            {
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <span class="text-success">
+                                        <i class="bi bi-file-earmark"></i>
+                                        @document.OriginalFileName
+                                    </span>
 
-                                <span class="text-success">
-                                    <i class="bi bi-file-earmark-pdf"></i>
+                                    <a asp-action="DownloadDocument" asp-route-id="@document.Id"
+                                       class="btn-app btn-primary-app btn-icon" title="Download">
+                                        <i class="bi bi-download"></i>
+                                    </a>
 
-                                    @Model.StatutoryDocuments[i].ExistingDocument!.OriginalFileName
-                                </span>
-
-                                <a asp-action="DownloadDocument"
-                                   asp-route-id="@Model.StatutoryDocuments[i].ExistingDocument!.Id"
-                                   class="btn-app btn-primary-app btn-icon"
-                                   title="Download">
-
-                                    <i class="bi bi-download"></i>
-
-                                </a>
-
-                                <button type="submit"
-                                        asp-action="DeleteDocument"
-                                        asp-route-id="@Model.StatutoryDocuments[i].ExistingDocument!.Id"
-                                        asp-route-employeeId="@Model.Employee.Id"
-                                        formmethod="post"
-                                        formnovalidate
-                                        class="btn-app btn-danger-app btn-icon"
-                                        onclick="return confirm('Delete this document?');">
-
-                                    <i class="bi bi-trash"></i>
-
-                                </button>
-
-                            </div>
+                                    <button type="submit" asp-action="DeleteDocument" asp-route-id="@document.Id"
+                                            asp-route-employeeId="@Model.Employee.Id" formmethod="post" formnovalidate
+                                            class="btn-app btn-danger-app btn-icon" onclick="return confirm('Delete this document?');">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            }
                         }
                         else
                         {
-                            
-                                <span class="text-muted document-empty-text">
-                                    No document uploaded
-                                </span>
-                            
+                            <span class="text-muted document-empty-text">
+                                No document uploaded
+                            </span>
                         }
-
                     </div>
-
                 </div>
             }
-
         </div>
-
     </div>
     <div class="app-card">
-
         <div class="card-header">
             <h5 class="card-title">Joining Documents</h5>
         </div>
 
         <div class="card-body">
-
-            @for (int i = 0;
-                        i < Model.JoiningDocuments.Count;
-                        i++)
+            @for (int i = 0; i < Model.JoiningDocuments.Count; i++)
             {
                 <div class="row align-items-center border-bottom py-3">
-
                     <div class="col-md-3">
-
-                        <input asp-for="JoiningDocuments[i].DocumentType"
-                               type="hidden" />
-
-                        <strong>
-                            @Model.JoiningDocuments[i].DocumentType
-                        </strong>
-
+                        <input asp-for="JoiningDocuments[i].DocumentType" type="hidden" />
+                        <strong>@Model.JoiningDocuments[i].DocumentType</strong>
                     </div>
 
                     <div class="col-md-5">
-
-                        <input asp-for="JoiningDocuments[i].File"
-                               type="file"
-                               accept=".pdf,application/pdf"
-                               class="form-control document-pdf-input" />
-
-                        <span asp-validation-for="JoiningDocuments[i].File"
-                              class="validation-message"></span>
-
+                        <input asp-for="JoiningDocuments[i].Files" type="file" multiple accept=".pdf,.jpg,.jpeg,.png"
+                               class="form-control" />
+                        <span asp-validation-for="JoiningDocuments[i].Files" class="validation-message"></span>
                     </div>
 
                     <div class="col-md-4">
-
-                        @if (Model.JoiningDocuments[i].ExistingDocument != null)
+                        @if (Model.JoiningDocuments[i].ExistingDocuments.Any())
                         {
-                            <div class="d-flex align-items-center gap-2">
+                            @foreach (var document in Model.JoiningDocuments[i].ExistingDocuments)
+                            {
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <span class="text-success">
+                                        <i class="bi bi-file-earmark"></i>
+                                        @document.OriginalFileName
+                                    </span>
 
-                                <span class="text-success">
-                                    <i class="bi bi-file-earmark-pdf"></i>
+                                    <a asp-action="DownloadDocument" asp-route-id="@document.Id"
+                                       class="btn-app btn-primary-app btn-icon" title="Download">
+                                        <i class="bi bi-download"></i>
+                                    </a>
 
-                                    @(Model.JoiningDocuments[i]
-                                                                .ExistingDocument!
-                                                                .OriginalFileName)
-                                </span>
-
-                                <a asp-action="DownloadDocument"
-                                   asp-route-id="@Model.JoiningDocuments[i].ExistingDocument!.Id"
-                                   class="btn-app btn-primary-app btn-icon"
-                                   title="Download">
-
-                                    <i class="bi bi-download"></i>
-
-                                </a>
-
-                                <button type="submit"
-                                        asp-action="DeleteDocument"
-                                        asp-route-id="@Model.JoiningDocuments[i].ExistingDocument!.Id"
-                                        asp-route-employeeId="@Model.Employee.Id"
-                                        formmethod="post"
-                                        formnovalidate
-                                        class="btn-app btn-danger-app btn-icon"
-                                        onclick="return confirm('Delete this document?');">
-
-                                    <i class="bi bi-trash"></i>
-
-                                </button>
-
-                            </div>
+                                    <button type="submit" asp-action="DeleteDocument" asp-route-id="@document.Id"
+                                            asp-route-employeeId="@Model.Employee.Id" formmethod="post" formnovalidate
+                                            class="btn-app btn-danger-app btn-icon" onclick="return confirm('Delete this document?');">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            }
                         }
                         else
                         {
-                           
-                                <span class="text-muted document-empty-text">
-                                    No document uploaded
-                                </span>
+                            <span class="text-muted document-empty-text">
+                                No document uploaded
+                            </span>
                         }
-
                     </div>
-
                 </div>
             }
+
+            <hr class="my-3" />
+
+            <h6 class="mb-3">Other Joining Documents</h6>
 
             <div id="otherJoiningDocumentsContainer">
                 @if (!Model.OtherJoiningDocuments.Any())
                 {
                     Model.OtherJoiningDocuments.Add(new EmployeeDocumentInputViewModel());
                 }
+
                 @for (int i = 0; i < Model.OtherJoiningDocuments.Count; i++)
                 {
                     <div class="row align-items-center border-bottom py-3 other-joining-document-row">
                         <div class="col-md-3">
-                            <label asp-for="OtherJoiningDocuments[i].DocumentType" class="form-label mb-0">Other Joining Document Name</label>
+                            <label asp-for="OtherJoiningDocuments[i].DocumentType" class="form-label mb-0">
+                                Other Joining Document Name
+                            </label>
                         </div>
+
                         <div class="col-md-5">
-                            <input asp-for="OtherJoiningDocuments[i].DocumentType" class="form-control mb-2" maxlength="70" placeholder="e.g. Background verification" />
-                            <span asp-validation-for="OtherJoiningDocuments[i].DocumentType" class="validation-message"></span>
-                            <input asp-for="OtherJoiningDocuments[i].File" type="file" accept=".pdf,application/pdf" class="form-control document-pdf-input" />
-                            <span asp-validation-for="OtherJoiningDocuments[i].File" class="validation-message"></span>
-                            @if (Model.OtherJoiningDocuments[i].ExistingDocument == null)
+                            <input asp-for="OtherJoiningDocuments[i].DocumentType" class="form-control mb-2" maxlength="70"
+                                   placeholder="e.g. Background verification" />
+
+                            <span asp-validation-for="OtherJoiningDocuments[i].DocumentType"
+                                  class="validation-message"></span>
+
+                            <input asp-for="OtherJoiningDocuments[i].Files" type="file" multiple
+                                   accept=".pdf,.jpg,.jpeg,.png" class="form-control" />
+
+                            <span asp-validation-for="OtherJoiningDocuments[i].Files" class="validation-message"></span>
+
+                            @if (!Model.OtherJoiningDocuments[i].ExistingDocuments.Any())
                             {
-                                <button type="button" class="btn-app btn-danger-app btn-sm mt-2 remove-other-joining-document">Remove</button>
+                                <button type="button" class="btn-app btn-danger-app btn-sm mt-2 remove-other-joining-document">
+                                    Remove
+                                </button>
                             }
                         </div>
+
                         <div class="col-md-4">
-                            @if (Model.OtherJoiningDocuments[i].ExistingDocument != null)
+                            @foreach (var document in Model.OtherJoiningDocuments[i].ExistingDocuments)
                             {
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="text-success"><i class="bi bi-file-earmark-pdf"></i> @Model.OtherJoiningDocuments[i].ExistingDocument!.OriginalFileName</span>
-                                    <a asp-action="DownloadDocument" asp-route-id="@Model.OtherJoiningDocuments[i].ExistingDocument!.Id" class="btn-app btn-primary-app btn-icon" title="Download"><i class="bi bi-download"></i></a>
-                                    <button type="submit" asp-action="DeleteDocument" asp-route-id="@Model.OtherJoiningDocuments[i].ExistingDocument!.Id" asp-route-employeeId="@Model.Employee.Id" formmethod="post" formnovalidate class="btn-app btn-danger-app btn-icon" onclick="return confirm('Delete this document?');"><i class="bi bi-trash"></i></button>
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <span class="text-success">
+                                        <i class="bi bi-file-earmark"></i>
+                                        @document.OriginalFileName
+                                    </span>
+
+                                    <a asp-action="DownloadDocument" asp-route-id="@document.Id"
+                                       class="btn-app btn-primary-app btn-icon" title="Download">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+
+                                    <button type="submit" asp-action="DeleteDocument" asp-route-id="@document.Id"
+                                            asp-route-employeeId="@Model.Employee.Id" formmethod="post" formnovalidate
+                                            class="btn-app btn-danger-app btn-icon"
+                                            onclick="return confirm('Delete this document?');">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 </div>
                             }
                         </div>
                     </div>
                 }
             </div>
-            <button type="button" id="addOtherJoiningDocument" class="btn-app btn-secondary-app mt-3">+ Add document</button>
+
+            <button type="button" id="addOtherJoiningDocument" class="btn-app btn-secondary-app mt-3">
+                + Add document
+            </button>
 
             <small class="text-muted d-block mt-3">
-                Uploading a new PDF replaces the previous document.
+                New uploads are added to existing documents. Existing documents are retained unless individually
+                deleted.
             </small>
-
         </div>
-
-    </div>
+    </div> *@
 
     <div class="app-card">
 
@@ -796,19 +726,19 @@
 
             <h5 class="card-title">Previous Employment</h5>
 
-            <div class="app-alert app-alert-info mb-3">
-                Academic details are optional. Qualification level is required only when academic details are entered.
-            </div>
+            
 
-            <button type="button"
-                    id="addPreviousEmployment"
-                    data-initial-index="@Model.PreviousEmployments.Count"
+            <button type="button" id="addPreviousEmployment" data-initial-index="@Model.PreviousEmployments.Count"
                     class="btn-app btn-primary-app">
                 <i class="bi bi-plus-lg"></i>
                 Add Previous Employment
             </button>
 
         </div>
+
+        @* <div class="app-alert app-alert-info m-2">
+            Academic details are optional. Qualification level is required only when academic details are entered.
+        </div> *@
 
         <div class="card-body">
 
@@ -821,20 +751,16 @@
                     <div class="previous-employment-item border rounded p-3 mb-3"
                          data-previous-employment-id="@Model.PreviousEmployments[i].Id">
 
-                        <input type="hidden"
-                               name="PreviousEmployments.Index"
-                               value="@i" />
+                        <input type="hidden" name="PreviousEmployments.Index" value="@i" />
 
-                        <input asp-for="PreviousEmployments[i].Id"
-                               type="hidden" />
+                        <input asp-for="PreviousEmployments[i].Id" type="hidden" />
 
                         <div class="form-grid-2">
 
                             <div class="form-group">
                                 <label class="form-label">Company Name</label>
 
-                                <input asp-for="PreviousEmployments[i].CompanyName"
-                                       class="app-input" />
+                                <input asp-for="PreviousEmployments[i].CompanyName" class="app-input" />
 
                                 <span asp-validation-for="PreviousEmployments[i].CompanyName"
                                       class="validation-message"></span>
@@ -843,22 +769,19 @@
                             <div class="form-group">
                                 <label class="form-label">Designation</label>
 
-                                <input asp-for="PreviousEmployments[i].Designation"
-                                       class="app-input" />
+                                <input asp-for="PreviousEmployments[i].Designation" class="app-input" />
                             </div>
 
                             <div class="form-group">
                                 <label class="form-label">Department</label>
 
-                                <input asp-for="PreviousEmployments[i].Department"
-                                       class="app-input" />
+                                <input asp-for="PreviousEmployments[i].Department" class="app-input" />
                             </div>
 
                             <div class="form-group">
                                 <label class="form-label">Employment Type</label>
 
-                                <select asp-for="PreviousEmployments[i].EmploymentType"
-                                        class="app-select">
+                                <select asp-for="PreviousEmployments[i].EmploymentType" class="app-select">
 
                                     <option value="">Select Employment Type</option>
                                     <option value="Permanent">Permanent</option>
@@ -872,9 +795,7 @@
                             <div class="form-group">
                                 <label class="form-label">Start Date</label>
 
-                                <input asp-for="PreviousEmployments[i].StartDate"
-                                       type="date"
-                                       class="app-input" />
+                                <input asp-for="PreviousEmployments[i].StartDate" type="date" class="app-input" />
 
                                 <span asp-validation-for="PreviousEmployments[i].StartDate"
                                       class="validation-message"></span>
@@ -883,44 +804,34 @@
                             <div class="form-group">
                                 <label class="form-label">End Date</label>
 
-                                <input asp-for="PreviousEmployments[i].EndDate"
-                                       type="date"
-                                       class="app-input" />
+                                <input asp-for="PreviousEmployments[i].EndDate" type="date" class="app-input" />
 
-                                <span asp-validation-for="PreviousEmployments[i].EndDate"
-                                      class="validation-message"></span>
+                                <span asp-validation-for="PreviousEmployments[i].EndDate" class="validation-message"></span>
                             </div>
 
                             <div class="form-group">
                                 <label class="form-label">Last Salary</label>
 
-                                <input asp-for="PreviousEmployments[i].LastSalary"
-                                       type="number"
-                                       step="0.01"
-                                       min="0"
+                                <input asp-for="PreviousEmployments[i].LastSalary" type="number" step="0.01" min="0"
                                        class="app-input" />
                             </div>
 
                             <div class="form-group">
                                 <label class="form-label">Reason For Leaving</label>
 
-                                <input asp-for="PreviousEmployments[i].ReasonForLeaving"
-                                       class="app-input" />
+                                <input asp-for="PreviousEmployments[i].ReasonForLeaving" class="app-input" />
                             </div>
 
                             <div class="form-group">
                                 <label class="form-label">Company Website</label>
 
-                                <input asp-for="PreviousEmployments[i].CompanyWebsite"
-                                       type="url"
-                                       class="app-input" />
+                                <input asp-for="PreviousEmployments[i].CompanyWebsite" type="url" class="app-input" />
                             </div>
 
                             <div class="form-group">
                                 <label class="form-label">Company Address</label>
 
-                                <textarea asp-for="PreviousEmployments[i].CompanyAddress"
-                                          rows="2"
+                                <textarea asp-for="PreviousEmployments[i].CompanyAddress" rows="2"
                                           class="app-textarea"></textarea>
                             </div>
 
@@ -933,8 +844,7 @@
 
                                     @foreach (var state in ViewBag.States)
                                     {
-                                        <option value="@state.StateName"
-                                                data-state-id="@state.Id">
+                                        <option value="@state.StateName" data-state-id="@state.Id">
                                             @state.StateName
                                         </option>
                                     }
@@ -946,8 +856,7 @@
 
                                 <select asp-for="PreviousEmployments[i].CompanyCity"
                                         class="app-select previous-company-city"
-                                        data-selected-city="@Model.PreviousEmployments[i].CompanyCity"
-                                        disabled>
+                                        data-selected-city="@Model.PreviousEmployments[i].CompanyCity" disabled>
                                     <option value="">Select City</option>
                                 </select>
                             </div>
@@ -955,9 +864,7 @@
                             <div class="form-group">
                                 <label class="form-label">Company PIN Code</label>
 
-                                <input asp-for="PreviousEmployments[i].CompanyPinCode"
-                                       maxlength="6"
-                                       inputmode="numeric"
+                                <input asp-for="PreviousEmployments[i].CompanyPinCode" maxlength="6" inputmode="numeric"
                                        class="app-input previous-company-pin" />
                             </div>
 
@@ -970,16 +877,13 @@
                             <div class="form-group">
                                 <label class="form-label">HR Contact Name</label>
 
-                                <input asp-for="PreviousEmployments[i].HRContactName"
-                                       class="app-input" />
+                                <input asp-for="PreviousEmployments[i].HRContactName" class="app-input" />
                             </div>
 
                             <div class="form-group">
                                 <label class="form-label">HR Contact Email</label>
 
-                                <input asp-for="PreviousEmployments[i].HRContactEmail"
-                                       type="email"
-                                       class="app-input" />
+                                <input asp-for="PreviousEmployments[i].HRContactEmail" type="email" class="app-input" />
 
                                 <span asp-validation-for="PreviousEmployments[i].HRContactEmail"
                                       class="validation-message"></span>
@@ -988,115 +892,13 @@
                             <div class="form-group">
                                 <label class="form-label">HR Contact Number</label>
 
-                                <input asp-for="PreviousEmployments[i].HRContactNumber"
-                                       maxlength="20"
-                                       class="app-input" />
+                                <input asp-for="PreviousEmployments[i].HRContactNumber" maxlength="20" class="app-input" />
                             </div>
 
                         </div>
 
-                        <h6 class="mt-4 mb-3">Employment Documents</h6>
-
-                        <div class="form-grid-2">
-
-                            <div class="form-group">
-                                <label class="form-label">Experience Letter</label>
-
-                                <input asp-for="PreviousEmployments[i].ExperienceLetter"
-                                       type="file"
-                                       accept=".pdf,application/pdf"
-                                       class="form-control document-pdf-input" />
-
-                                <span asp-validation-for="PreviousEmployments[i].ExperienceLetter"
-                                      class="validation-message"></span>
-
-                                @if (Model.PreviousEmployments[i].ExistingExperienceLetter != null)
-                                {
-                                    <div class="d-flex align-items-center gap-2 mt-2">
-
-                                        <span class="text-success">
-                                            <i class="bi bi-file-earmark-pdf"></i>
-                                            @(Model.PreviousEmployments[i]
-                                                                                .ExistingExperienceLetter!
-                                                                                .OriginalFileName)
-                                        </span>
-
-                                        <a asp-action="DownloadDocument"
-                                           asp-route-id="@Model.PreviousEmployments[i].ExistingExperienceLetter!.Id"
-                                           class="btn-app btn-primary-app btn-icon"
-                                           title="Download">
-
-                                            <i class="bi bi-download"></i>
-
-                                        </a>
-
-                                        <button type="submit"
-                                                asp-action="DeleteDocument"
-                                                asp-route-id="@Model.PreviousEmployments[i].ExistingExperienceLetter!.Id"
-                                                asp-route-employeeId="@Model.Employee.Id"
-                                                formmethod="post"
-                                                formnovalidate
-                                                class="btn-app btn-danger-app btn-icon"
-                                                onclick="return confirm('Delete Experience Letter?');">
-
-                                            <i class="bi bi-trash"></i>
-
-                                        </button>
-
-                                    </div>
-                                }
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label">Relieving Letter</label>
-
-                                <input asp-for="PreviousEmployments[i].RelievingLetter"
-                                       type="file"
-                                       accept=".pdf,application/pdf"
-                                       class="form-control document-pdf-input" />
-
-                                <span asp-validation-for="PreviousEmployments[i].RelievingLetter"
-                                      class="validation-message"></span>
-
-                                @if (Model.PreviousEmployments[i].ExistingRelievingLetter != null)
-                                {
-                                    <div class="d-flex align-items-center gap-2 mt-2">
-
-                                        <span class="text-success">
-                                            <i class="bi bi-file-earmark-pdf"></i>
-                                            @(Model.PreviousEmployments[i].ExistingExperienceLetter!.OriginalFileName)
-                                        </span>
-
-                                        <a asp-action="DownloadDocument"
-                                           asp-route-id="@Model.PreviousEmployments[i].ExistingRelievingLetter!.Id"
-                                           class="btn-app btn-primary-app btn-icon"
-                                           title="Download">
-
-                                            <i class="bi bi-download"></i>
-
-                                        </a>
-
-                                        <button type="submit"
-                                                asp-action="DeleteDocument"
-                                                asp-route-id="@Model.PreviousEmployments[i].ExistingRelievingLetter!.Id"
-                                                asp-route-employeeId="@Model.Employee.Id"
-                                                formmethod="post"
-                                                formnovalidate
-                                                class="btn-app btn-danger-app btn-icon"
-                                                onclick="return confirm('Delete Relieving Letter?');">
-
-                                            <i class="bi bi-trash"></i>
-
-                                        </button>
-
-                                    </div>
-                                }
-                            </div>
-
-                        </div>
-
-                        <button type="button"
-                                class="btn-app btn-danger-app remove-previous-employment mt-3">
+                        
+                        <button type="button" class="btn-app btn-danger-app remove-previous-employment mt-3">
 
                             <i class="bi bi-trash"></i>
                             Remove Previous Employment
@@ -1117,13 +919,9 @@
         <div class="card-header d-flex justify-content-between align-items-center">
 
             <h5 class="card-title">Academic Information</h5>
-            <div class="app-alert app-alert-info mb-3">
-                Academic details are optional. Qualification level is required only when academic details are entered.
-            </div>
+            
 
-            <button type="button"
-                    id="addAcademic"
-                    data-initial-index="@Model.Academics.Count"
+            <button type="button" id="addAcademic" data-initial-index="@Model.Academics.Count"
                     class="btn-app btn-primary-app">
 
                 <i class="bi bi-plus-lg"></i>
@@ -1133,22 +931,21 @@
 
         </div>
 
+        @* <div class="app-alert app-alert-info m-2">
+            Academic details are optional. Qualification level is required only when academic details are entered.
+        </div> *@
+
         <div class="card-body">
 
             <div id="academicContainer">
 
                 @for (int i = 0; i < Model.Academics.Count; i++)
                 {
-                    <div class="academic-item border rounded p-3 mb-3"
-                         data-academic-id="@Model.Academics[i].Id"
-                        >
+                    <div class="academic-item border rounded p-3 mb-3" data-academic-id="@Model.Academics[i].Id">
 
-                        <input type="hidden"
-                               name="Academics.Index"
-                               value="@i" />
+                        <input type="hidden" name="Academics.Index" value="@i" />
 
-                        <input asp-for="Academics[i].Id"
-                               type="hidden" />
+                        <input asp-for="Academics[i].Id" type="hidden" />
 
                         <div class="form-grid-2">
 
@@ -1157,8 +954,7 @@
                                     <span class="text-danger">*</span>
                                 </label>
 
-                                <select asp-for="Academics[i].QualificationLevel"
-                                        class="app-select">
+                                <select asp-for="Academics[i].QualificationLevel" class="app-select">
 
                                     <option value="">Select Qualification</option>
                                     <option>10th</option>
@@ -1175,40 +971,33 @@
 
                             <div class="form-group">
                                 <label class="form-label">Course Name</label>
-                                <input asp-for="Academics[i].CourseName"
-                                       class="app-input" />
+                                <input asp-for="Academics[i].CourseName" class="app-input" />
                             </div>
 
                             <div class="form-group">
                                 <label class="form-label">Specialization</label>
-                                <input asp-for="Academics[i].Specialization"
-                                       class="app-input" />
+                                <input asp-for="Academics[i].Specialization" class="app-input" />
                             </div>
 
                             <div class="form-group">
                                 <label class="form-label">Institute</label>
-                                <input asp-for="Academics[i].InstituteName"
-                                       class="app-input" />
+                                <input asp-for="Academics[i].InstituteName" class="app-input" />
                             </div>
 
                             <div class="form-group">
                                 <label class="form-label">Board / University</label>
-                                <input asp-for="Academics[i].BoardOrUniversity"
-                                       class="app-input" />
+                                <input asp-for="Academics[i].BoardOrUniversity" class="app-input" />
                             </div>
 
                             <div class="form-group">
                                 <label class="form-label">Passing Year</label>
-                                <input asp-for="Academics[i].PassingYear"
-                                       type="number"
-                                       class="app-input" />
+                                <input asp-for="Academics[i].PassingYear" type="number" class="app-input" />
                             </div>
 
                             <div class="form-group">
                                 <label class="form-label">Result Type</label>
 
-                                <select asp-for="Academics[i].ResultType"
-                                        class="app-select">
+                                <select asp-for="Academics[i].ResultType" class="app-select">
 
                                     <option value="">Select Result Type</option>
                                     <option>Percentage</option>
@@ -1220,23 +1009,18 @@
 
                             <div class="form-group">
                                 <label class="form-label">Score</label>
-                                <input asp-for="Academics[i].Score"
-                                       type="number"
-                                       step="0.01"
-                                       class="app-input" />
+                                <input asp-for="Academics[i].Score" type="number" step="0.01" class="app-input" />
                             </div>
 
                             <div class="form-group">
                                 <label class="form-label">Grade</label>
-                                <input asp-for="Academics[i].Grade"
-                                       class="app-input" />
+                                <input asp-for="Academics[i].Grade" class="app-input" />
                             </div>
 
                             <div class="form-group">
                                 <label class="form-label">Document Type</label>
 
-                                <select asp-for="Academics[i].DocumentType"
-                                        class="app-select">
+                                <select asp-for="Academics[i].DocumentType" class="app-select">
 
                                     <option>Marksheet</option>
                                     <option>Degree Certificate</option>
@@ -1246,25 +1030,7 @@
                                 </select>
                             </div>
 
-                            <div class="form-group">
-                                <label class="form-label">Upload New Documents</label>
-
-                                <input asp-for="Academics[i].Documents"
-                                       type="file"
-                                       multiple
-                                       accept=".pdf,.jpg,.jpeg,.png"
-                                       class="form-control" />
-
-                                <span asp-validation-for="Academics[i].Documents"
-                                      class="validation-message"></span>
-
-                                @if (Model.Academics[i].ExistingDocuments.Any())
-                                {
-                                    <small class="text-muted d-block mt-1">
-                                        Leave blank to keep the existing document(s).
-                                    </small>
-                                }
-                            </div>
+                            
 
                             <div class="form-group">
                                 <label>
@@ -1275,64 +1041,11 @@
 
                         </div>
 
-                        @if (Model.Academics[i].ExistingDocuments.Any())
-                        {
-                            <div class="mt-3">
-
-                                <label class="form-label">
-                                    Existing Documents
-                                </label>
-
-                                @foreach (var document in
-                                                        Model.Academics[i].ExistingDocuments)
-                                {
-                                    <div class="d-flex align-items-center
-                                                    justify-content-between
-                                                    border rounded p-2 mb-2">
-
-                                        <div>
-                                            <i class="bi bi-file-earmark"></i>
-                                            @document.OriginalFileName
-                                        </div>
-
-                                        <div class="d-flex gap-2">
-
-                                            <a asp-action="DownloadDocument"
-                                               asp-route-id="@document.Id"
-                                               class="btn-app btn-primary-app btn-icon"
-                                               title="Download document">
-
-                                                <i class="bi bi-download"></i>
-
-                                            </a>
-
-                                            <button type="submit"
-                                                    asp-action="DeleteDocument"
-                                                    asp-route-id="@document.Id"
-                                                    asp-route-employeeId="@Model.Employee.Id"
-                                                    formmethod="post"
-                                                    formnovalidate
-                                                    class="btn-app btn-danger-app btn-icon"
-                                                    title="Delete document"
-                                                    onclick="return confirm('Delete this document?');">
-
-                                                <i class="bi bi-trash"></i>
-
-                                            </button>
-
-                                        </div>
-
-                                    </div>
-                                }
-
-                            </div>
-                        }
-
-                        <button type="button"
-                                class="btn-app btn-danger-app remove-academic mt-3">
+                        
+                        <button type="button" class="btn-app btn-danger-app remove-academic mt-3">
 
                             <i class="bi bi-trash"></i>
-                            Remove
+                            Remove Qualification
 
                         </button>
 
@@ -1359,8 +1072,7 @@
 
 </form>
 
-<div id="employeeAddressConfig"
-     data-current-permanent-city="@(Model.Employee.City ?? "")"
+<div id="employeeAddressConfig" data-current-permanent-city="@(Model.Employee.City ?? "")"
      data-current-permanent-pin="@(Model.Employee.PinCode ?? "")"
      data-current-local-city="@(Model.Employee.LocalCity ?? "")"
      data-current-local-pin="@(Model.Employee.LocalPinCode ?? "")">
@@ -1371,8 +1083,7 @@
 
     @foreach (var state in ViewBag.States)
     {
-        <option value="@state.StateName"
-                data-state-id="@state.Id">
+        <option value="@state.StateName" data-state-id="@state.Id">
             @state.StateName
         </option>
     }

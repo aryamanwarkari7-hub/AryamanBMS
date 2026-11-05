@@ -102,3 +102,28 @@ document.addEventListener("click", function (event) {
             });
     }, 0);
 });
+
+
+// YEAR AUTOMATIC on Sidebar
+
+document.addEventListener("DOMContentLoaded", function () {
+    const financialYearElement =
+        document.getElementById("sidebarFinancialYear");
+
+    // Sidebar may not exist on every page.
+    if (!financialYearElement) {
+        return;
+    }
+
+    const today = new Date();
+    const currentYear = today.getFullYear();
+
+    const startYear = today.getMonth() >= 3
+        ? currentYear
+        : currentYear - 1;
+
+    const endYear = startYear + 1;
+
+    financialYearElement.textContent =
+        `FY ${startYear}-${String(endYear).slice(-2)} | PUNE,MH`;
+});

@@ -6,8 +6,9 @@ namespace AryamanBMS.ViewModels
     {
         public string DocumentType { get; set; } = string.Empty;
 
-        public IFormFile? File { get; set; }
+        public List<IFormFile>? Files { get; set; } = new();
 
-        public EmployeeDocumentModel? ExistingDocument { get; set; }
+        public List<EmployeeDocumentModel> ExistingDocuments
+        { get; set; } = new();
     }
 }

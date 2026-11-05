@@ -125,6 +125,10 @@ namespace AryamanBMS.Models
 
         public string? EmploymentType { get; set; }
         // Permanent / Contract / Intern / Consultant
+        [Display(Name = "Annual Paid Leave Pool (18 days/FY)")]
+        public bool IsEligibleForPaidLeave { get; set; } = true;
+        [Display(Name = "Stipend (No Salary Breakdown)")]
+        public bool IsStipend { get; set; } = false;
 
         // ==========================
         // Relationships

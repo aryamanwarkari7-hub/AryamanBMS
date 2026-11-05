@@ -4,7 +4,7 @@
 
 .app-card {
     margin: var(--space-md) var(--space-lg);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-xl);
 }
 
 .app-card,
@@ -32,6 +32,8 @@
     gap: var(--space-md);
     background: linear-gradient( 180deg, rgba(248, 250, 252, 0.96), rgba(255, 255, 255, 0.98) );
     margin-top: 0;
+    text-transform:uppercase;
+    font-size:var(--font-md);
 }
 
     .card-header::before {
@@ -39,7 +41,7 @@
         position: absolute;
         left: var(--space-xl);
         bottom: -1px;
-        width: 52px;
+        width: 75px;
         height: 2px;
         border-radius: var(--radius-pill);
         background: var(--primary-color);
@@ -47,7 +49,7 @@
 
 .card-title {
     margin: 0;
-    font-size: 17px;
+    font-size: var(--font-md);
     font-weight: var(--fw-bold);
     color: var(--text-primary);
     letter-spacing: 0;
@@ -57,8 +59,10 @@
 .card-subtitle {
     margin-top: 3px;
     font-size: var(--font-sm);
+    font-weight: var(--fw-semibold);
     color: var(--text-secondary);
     line-height: 1.35;
+    text-transform:capitalize;
 }
 
 .card-heading {
@@ -195,6 +199,118 @@
         border-top: 1px solid rgba(148, 163, 184, 0.24);
         background: var(--card-bg);
     }
+
+/* ==========================================
+   VAULT NOTICE CARD
+========================================== */
+
+.vault-notice-card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: 16px 20px;
+    margin-top: var(--space-lg);
+    background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);
+    border: 1px solid rgba(37, 99, 235, 0.22);
+    border-left: 4px solid var(--primary-color);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.06);
+}
+
+.vault-notice-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    background: #ffffff;
+    border: 1px solid rgba(37, 99, 235, 0.25);
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-color);
+    font-size: 1.35rem;
+    flex-shrink: 0;
+}
+
+.vault-notice-content {
+    flex-grow: 1;
+}
+
+.vault-notice-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.vault-notice-title {
+    font-size: var(--font-md);
+    font-weight: var(--fw-bold);
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.vault-notice-badge {
+    font-size: 0.7rem;
+    font-weight: var(--fw-semibold);
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--primary-color);
+    border: 1px solid rgba(37, 99, 235, 0.2);
+}
+
+.vault-notice-text {
+    font-size: var(--font-md);
+    color: #475569;
+    line-height: 1.45;
+    margin: 0;
+}
+
+    .vault-notice-text strong {
+        color: var(--text-primary);
+        font-weight: var(--fw-semibold);
+    }
+
+/* ==========================================
+   NESTED DOCUMENT ATTACHMENT BOX
+========================================== */
+
+.entry-doc-box {
+    margin-top: var(--space-md);
+    padding: 14px 16px;
+    background: #f8fafc;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    border-radius: var(--radius-md);
+}
+
+.entry-doc-box-title {
+    font-size: var(--font-sm);
+    font-weight: var(--fw-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-sm);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+    .entry-doc-box-title i {
+        color: var(--primary-color);
+        font-size: 1.1rem;
+    }
+
+.existing-doc-chip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 12px;
+    background: #ffffff;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    border-radius: var(--radius-sm);
+    font-size: 0.825rem;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
 
 /* ==========================================
    CARD RESPONSIVENESS

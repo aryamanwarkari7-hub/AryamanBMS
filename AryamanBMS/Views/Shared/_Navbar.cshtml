@@ -64,12 +64,12 @@
 
     <div class="navbar-left">
 
-        <h4 class="page-title">
-            @ViewData["Title"]
-        </h4>
+        
+       
 
-        <div class="page-subtitle">
-            Welcome, @userName
+        <div class="navbar-welcome">
+            Welcome,
+            <span class="navbar-welcome-name">System Administrator</span>
         </div>
 
     </div>
@@ -133,13 +133,13 @@
         
             <div class="dropdown-menu dropdown-menu-end activity-status-menu">
         
-                <div class="activity-menu-header">
+                @* <div class="activity-menu-header">
         
                     <strong>@userName</strong>
         
                     <span>@activityStatus</span>
         
-                </div>
+                </div> *@
         
                 <form asp-controller="Account"
                       asp-action="UpdateActivityStatus"
@@ -191,7 +191,7 @@
         
                 <a asp-controller="Account"
                    asp-action="Profile"
-                   class="dropdown-item">
+                   class="dropdown-item profile-item">
         
                     <i class="bi bi-person-circle"></i>
         
@@ -209,7 +209,7 @@
                     <button type="submit"
                             class="dropdown-item navbar-logout-item">
         
-                        <i class="bi bi-box-arrow-right"></i>
+                        <i class="bi bi-door-open"></i>
         
                         Logout
         
