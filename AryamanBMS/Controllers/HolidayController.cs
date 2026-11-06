@@ -1,14 +1,12 @@
-
-using AryamanBMS.Services.Interface;
 using AryamanBMS.Models;
+using AryamanBMS.Repositories.Interfaces;
+using AryamanBMS.Services.Interface;
 using AryamanBMS.Services.Interfaces;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-
-using AryamanBMS.Repositories.Interfaces;
 
 namespace AryamanBMS.Controllers
 {
@@ -28,7 +26,8 @@ namespace AryamanBMS.Controllers
             IHolidayExcelImportService holidayExcelImportService,
             IWebHostEnvironment webHostEnvironment,
             UserManager<ApplicationUserModel> userManager,
-            INotificationService notificationService)
+            INotificationService notificationService
+        )
         {
             _holidayRepository = holidayRepository;
             _holidayExcelImportService = holidayExcelImportService;
@@ -43,26 +42,23 @@ namespace AryamanBMS.Controllers
             string? status,
             string sortBy = "HolidayDate",
             string sortOrder = "asc",
-            int page = 1)
+            int page = 1
+        )
         {
             const int pageSize = 12;
 
             bool canManageHolidays =
-                User.IsInRole("Admin") ||
-                User.IsInRole("HR") ||
-                User.IsInRole("Master");
+                User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("Master");
             int selectedYear = year ?? DateTime.Today.Year;
-            string selectedStatus = canManageHolidays &&
-                        !string.IsNullOrWhiteSpace(status)
-                ? status
-                : "Active";
+            string selectedStatus =
+                canManageHolidays && !string.IsNullOrWhiteSpace(status) ? status : "Active";
 
             sortBy = sortBy switch
             {
                 "HolidayName" => "HolidayName",
                 "HolidayType" => "HolidayType",
                 "Status" => "Status",
-                _ => "HolidayDate"
+                _ => "HolidayDate",
             };
 
             sortOrder = string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase)
@@ -75,20 +71,19 @@ namespace AryamanBMS.Controllers
             ViewBag.CanManageHolidays = canManageHolidays;
 
             var result = await _holidayRepository.GetPagedAsync(
-    selectedYear,
-    month,
-    selectedStatus,
-    sortBy,
-    sortOrder,
-    page,
-    pageSize);
+                selectedYear,
+                month,
+                selectedStatus,
+                sortBy,
+                sortOrder,
+                page,
+                pageSize
+            );
 
             int totalRecords = result.TotalRecords;
 
-            int totalPages = totalRecords == 0
-                ? 1
-                : (int)Math.Ceiling(
-                    totalRecords / (double)pageSize);
+            int totalPages =
+                totalRecords == 0 ? 1 : (int)Math.Ceiling(totalRecords / (double)pageSize);
 
             page = Math.Clamp(page, 1, totalPages);
 
@@ -121,16 +116,13 @@ namespace AryamanBMS.Controllers
             }
 
             await NotifyHolidayImportUsersAsync(
-                result.HasErrors
-                    ? "Holiday Import Failed"
-                    : "Holiday Import Completed",
+                result.HasErrors ? "Holiday Import Failed" : "Holiday Import Completed",
                 result.HasErrors
                     ? $"Holiday import completed with {result.Errors.Count} error(s). {result.Message}"
                     : result.Message,
-                result.HasErrors
-                    ? "HolidayImportFailed"
-                    : "HolidayImportSucceeded",
-                year);
+                result.HasErrors ? "HolidayImportFailed" : "HolidayImportSucceeded",
+                year
+            );
 
             return RedirectToAction(nameof(Index), new { year });
         }
@@ -142,11 +134,10 @@ namespace AryamanBMS.Controllers
             string selectedStatus = string.IsNullOrWhiteSpace(status) ? "All" : status;
 
             var holidays = await _holidayRepository.GetForExportAsync(
-    selectedYear,
-    month,
-    selectedStatus);
-
-
+                selectedYear,
+                month,
+                selectedStatus
+            );
 
             using var workbook = new XLWorkbook();
             var worksheet = workbook.Worksheets.Add("Holiday Register");
@@ -190,9 +181,9 @@ namespace AryamanBMS.Controllers
             return File(
                 stream.ToArray(),
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                fileName);
+                fileName
+            );
         }
-
 
         [Authorize(Roles = "Admin,HR,Master")]
         public IActionResult DownloadTemplate()
@@ -200,7 +191,8 @@ namespace AryamanBMS.Controllers
             var templatePath = Path.Combine(
                 _webHostEnvironment.WebRootPath,
                 "templates",
-                "HolidayTemplate.xlsx");
+                "HolidayTemplate.xlsx"
+            );
 
             if (!System.IO.File.Exists(templatePath))
             {
@@ -213,14 +205,16 @@ namespace AryamanBMS.Controllers
             return PhysicalFile(
                 templatePath,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "HolidayTemplate.xlsx");
+                "HolidayTemplate.xlsx"
+            );
         }
 
         private async Task NotifyHolidayImportUsersAsync(
             string title,
             string message,
             string notificationType,
-            int year)
+            int year
+        )
         {
             var recipients = new Dictionary<string, ApplicationUserModel>();
 
@@ -241,8 +235,187 @@ namespace AryamanBMS.Controllers
                     notificationType,
                     "HolidayImport",
                     year,
-                    $"/Holiday?year={year}");
+                    $"/Holiday?year={year}"
+                );
             }
+        }
+
+        public class ConfirmHolidayRequest
+        {
+            public int HolidayId { get; set; }
+            public string Action { get; set; } = "confirm"; // "confirm", "shift", "cancel"
+            public DateTime? NewDate { get; set; }
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin,HR,Master")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfirmOrShiftHoliday(
+            [FromBody] ConfirmHolidayRequest request
+        )
+        {
+            if (request == null || request.HolidayId <= 0)
+            {
+                return Json(new { success = false, message = "Invalid holiday request." });
+            }
+
+            var holiday = await _holidayRepository.GetByIdAsync(request.HolidayId);
+            if (holiday == null)
+            {
+                return Json(new { success = false, message = "Holiday not found." });
+            }
+
+            var currentUserId = _userManager.GetUserId(User);
+
+            if (string.Equals(request.Action, "cancel", StringComparison.OrdinalIgnoreCase))
+            {
+                holiday.IsActive = false;
+                holiday.UpdatedOn = DateTime.Now;
+                await _holidayRepository.SaveAsync();
+
+                return Json(
+                    new
+                    {
+                        success = true,
+                        message = $"Holiday '{holiday.HolidayName}' has been cancelled.",
+                    }
+                );
+            }
+
+            if (string.Equals(request.Action, "shift", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!request.NewDate.HasValue)
+                {
+                    return Json(
+                        new { success = false, message = "Please select a valid new date." }
+                    );
+                }
+
+                var newDate = request.NewDate.Value.Date;
+                var existingOther = await _holidayRepository.GetByDateAsync(newDate);
+                if (
+                    existingOther != null
+                    && existingOther.HolidayId != holiday.HolidayId
+                    && existingOther.IsActive
+                )
+                {
+                    return Json(
+                        new
+                        {
+                            success = false,
+                            message = $"A holiday '{existingOther.HolidayName}' already exists on {newDate:dd-MMM-yyyy}.",
+                        }
+                    );
+                }
+
+                holiday.HolidayDate = newDate;
+                holiday.DayName = newDate.ToString(
+                    "dddd",
+                    System.Globalization.CultureInfo.InvariantCulture
+                );
+                holiday.MonthName = newDate.ToString("MMM");
+                holiday.IsConfirmed = true;
+                holiday.ConfirmedOn = DateTime.Now;
+                holiday.ConfirmedBy = currentUserId;
+                holiday.UpdatedOn = DateTime.Now;
+                await _holidayRepository.SaveAsync();
+
+                return Json(
+                    new
+                    {
+                        success = true,
+                        message = $"Holiday '{holiday.HolidayName}' shifted to {newDate:dddd, dd-MMM-yyyy} and confirmed!",
+                    }
+                );
+            }
+
+            // Default: Confirm as-is
+            holiday.IsConfirmed = true;
+            holiday.ConfirmedOn = DateTime.Now;
+            holiday.ConfirmedBy = currentUserId;
+            holiday.UpdatedOn = DateTime.Now;
+            await _holidayRepository.SaveAsync();
+
+            return Json(
+                new
+                {
+                    success = true,
+                    message = $"Holiday '{holiday.HolidayName}' on {holiday.HolidayDate:dddd, dd-MMM-yyyy} confirmed!",
+                }
+            );
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin,HR,Master")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddHoliday(
+            DateTime holidayDate,
+            string holidayName,
+            string holidayType = "Office Holiday"
+        )
+        {
+            if (string.IsNullOrWhiteSpace(holidayName))
+            {
+                TempData["Error"] = "Holiday name is required.";
+                return RedirectToAction(nameof(Index), new { year = holidayDate.Year });
+            }
+
+            var date = holidayDate.Date;
+            var existing = await _holidayRepository.GetByDateAsync(date);
+
+            if (existing != null && existing.IsActive)
+            {
+                TempData["Error"] =
+                    $"A holiday '{existing.HolidayName}' already exists on {date:dd-MMM-yyyy}.";
+                return RedirectToAction(nameof(Index), new { year = date.Year });
+            }
+
+            var currentUserId = _userManager.GetUserId(User);
+
+            if (existing != null && !existing.IsActive)
+            {
+                existing.HolidayName = holidayName.Trim();
+                existing.HolidayType = holidayType.Trim();
+                existing.DayName = date.ToString(
+                    "dddd",
+                    System.Globalization.CultureInfo.InvariantCulture
+                );
+                existing.MonthName = date.ToString("MMM");
+                existing.IsActive = true;
+                existing.IsConfirmed = true;
+                existing.ConfirmedOn = DateTime.Now;
+                existing.ConfirmedBy = currentUserId;
+                existing.UpdatedOn = DateTime.Now;
+            }
+            else
+            {
+                await _holidayRepository.AddAsync(
+                    new HolidayModel
+                    {
+                        HolidayDate = date,
+                        HolidayName = holidayName.Trim(),
+                        DayName = date.ToString(
+                            "dddd",
+                            System.Globalization.CultureInfo.InvariantCulture
+                        ),
+                        MonthName = date.ToString("MMM"),
+                        HolidayType = string.IsNullOrWhiteSpace(holidayType)
+                            ? "Office Holiday"
+                            : holidayType.Trim(),
+                        IsActive = true,
+                        IsConfirmed = true,
+                        ConfirmedOn = DateTime.Now,
+                        ConfirmedBy = currentUserId,
+                        CreatedOn = DateTime.Now,
+                    }
+                );
+            }
+
+            await _holidayRepository.SaveAsync();
+
+            TempData["Success"] =
+                $"Holiday '{holidayName}' added successfully for {date:dd-MMM-yyyy}!";
+            return RedirectToAction(nameof(Index), new { year = date.Year });
         }
         #endregion
     }

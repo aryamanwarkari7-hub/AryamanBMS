@@ -9,6 +9,7 @@
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -17,8 +18,7 @@
     @*Bootsrap*@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     @*Bootsrap Icons*@
-    <link rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     @*Css Links*@
     <link rel="stylesheet" href="~/css/variables.css" asp-append-version="true" />
@@ -45,8 +45,8 @@
     <link rel="stylesheet" href="~/css/components/page-header.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/components/tables.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/components/badges.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/components/alerts.css" asp-append-version="true"/>
-    <link rel="stylesheet" href="~/css/components/avatar.css" asp-append-version="true"/>
+    <link rel="stylesheet" href="~/css/components/alerts.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/components/avatar.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/modules/payslip-print.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/modules/invoice-print.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/modules/detail-pages.css" asp-append-version="true" />
@@ -57,6 +57,7 @@
 
     <link rel="stylesheet" href="~/AryamanBMS.styles.css" asp-append-version="true" />
 </head>
+
 <body>
 
     <div class="app-layout">
@@ -106,19 +107,32 @@
 
             @if (TempData["BirthdayCelebrationMessage"] != null)
             {
-                <div id="birthdayCelebrationData"
-                     data-name="@TempData["BirthdayCelebrationName"]"
-                     data-message="@TempData["BirthdayCelebrationMessage"]"
-                     hidden>
+                <div id="birthdayCelebrationData" data-name="@TempData["BirthdayCelebrationName"]"
+                     data-message="@TempData["BirthdayCelebrationMessage"]" hidden>
+                </div>
+            }
+
+            @if (TempData["HolidayPopupName"] != null)
+            {
+                <div id="holidayCelebrationData" data-name="@TempData["HolidayPopupName"]"
+                     data-date="@TempData["HolidayPopupDate"]" data-day="@TempData["HolidayPopupDay"]"
+                     data-type="@TempData["HolidayPopupType"]" hidden>
+                </div>
+            }
+
+            @if (TempData["AdminHolidayConfirmId"] != null)
+            {
+                <div id="adminHolidayConfirmData" data-id="@TempData["AdminHolidayConfirmId"]"
+                     data-name="@TempData["AdminHolidayConfirmName"]" data-date="@TempData["AdminHolidayConfirmDate"]"
+                     data-display-date="@TempData["AdminHolidayConfirmDisplayDate"]"
+                     data-day="@TempData["AdminHolidayConfirmDay"]" data-type="@TempData["AdminHolidayConfirmType"]" hidden>
                 </div>
             }
 
             @if (TempData["EmployeeWelcomeMessage"] != null)
             {
-                <div id="employeeWelcomeData"
-                     data-name="@TempData["EmployeeWelcomeName"]"
-                     data-message="@TempData["EmployeeWelcomeMessage"]"
-                     data-photo="@TempData["EmployeeWelcomePhoto"]"
+                <div id="employeeWelcomeData" data-name="@TempData["EmployeeWelcomeName"]"
+                     data-message="@TempData["EmployeeWelcomeMessage"]" data-photo="@TempData["EmployeeWelcomePhoto"]"
                      hidden>
                 </div>
             }
@@ -128,7 +142,7 @@
         </div>
         
 
-    </div>    
+    </div>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     @if (User.Identity?.IsAuthenticated == true)
@@ -144,17 +158,19 @@
                 .ToLowerInvariant();
 
         <script>
-            window.aryamanAppBasePath = "@Url.Content("~/")";
-            window.aryamanNotificationPreferences = {
-                toast: @Html.Raw(enableToast),
-                sound: @Html.Raw(enableSound)
-            };
+                window.aryamanAppBasePath = "@Url.Content("~/")";
+                window.aryamanNotificationPreferences = {
+                    toast: @Html.Raw(enableToast),
+                    sound: @Html.Raw(enableSound)
+                                            };
         </script>
         <script src="~/lib/signalr/signalr.min.js" asp-append-version="true"></script>
         <script src="~/js/notification-realtime.js" asp-append-version="true"></script>
     }
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="~/js/birthday-celebration.js" asp-append-version="true"></script>
+    <script src="~/js/holiday-celebration.js" asp-append-version="true"></script>
+    <script src="~/js/admin-holiday-confirm.js" asp-append-version="true"></script>
     <script src="~/js/employee-welcome.js" asp-append-version="true"></script>
 
     @* /* Profile cropper */ *@
@@ -166,4 +182,5 @@
         <script src="~/js/activity-heartbeat.js" asp-append-version="true"></script>
     }
 </body>
+
 </html>

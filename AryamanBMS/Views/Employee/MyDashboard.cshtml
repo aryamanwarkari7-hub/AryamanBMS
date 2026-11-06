@@ -24,16 +24,12 @@
     </div>
 
     <div class="module-header-actions">
-        <a asp-controller="Employee"
-           asp-action="Profile"
-           class="btn-app btn-secondary-app">
+        <a asp-controller="Employee" asp-action="Profile" class="btn-app btn-secondary-app">
             <i class="bi bi-person"></i>
             My Profile
         </a>
 
-        <a asp-controller="Attendance"
-           asp-action="Index"
-           class="btn-app btn-primary-app">
+        <a asp-controller="Attendance" asp-action="Index" class="btn-app btn-primary-app">
             <i class="bi bi-clock"></i>
             Mark Attendance
         </a>
@@ -42,8 +38,21 @@
 
 <div class="dashboard-grid">
     <div class="stats-card">
-        <div class="stats-label">Today's' Attendance Status</div>
-        <div class="stats-number">@Model.Attendance.Status</div>
+        <div class="stats-label">
+            @* <i class="bi bi-fingerprint text-primary"></i> *@
+            Today's Attendance Status
+        </div>
+        <div class="stats-number">
+            @if (string.Equals(Model.Attendance.Status, "Present", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(Model.Attendance.Status, "P", StringComparison.OrdinalIgnoreCase))
+            {
+                <span class="badge-success">Present</span>
+            }
+            else
+            {
+                <span class="badge-warning">@Model.Attendance.Status</span>
+            }
+        </div>
     </div>
 
     <div class="stats-card">
@@ -51,10 +60,20 @@
         <div class="stats-number">@workingHoursText</div>
     </div>
 
-    <div class="stats-card">
-        <div class="stats-label">Annual Paid Leave Balance</div>
-        <div class="stats-number">@Model.Leave.AvailableBalance.ToString("0.##")</div>
-    </div>
+    @if (string.Equals(Model.EmploymentType, "Permanent", StringComparison.OrdinalIgnoreCase))
+    {
+        <div class="stats-card">
+            <div class="stats-label">Annual Paid Leave Balance</div>
+            <div class="stats-number">@Model.Leave.AvailableBalance.ToString("0.##")</div>
+        </div>
+    }
+    else
+    {
+        <div class="stats-card">
+            <div class="stats-label">Available Comp Off</div>
+            <div class="stats-number">@Model.Leave.AvailableCompOff.ToString("0.##")</div>
+        </div>
+    }
 
     <div class="stats-card">
         <div class="stats-label">Open Project Tasks</div>
@@ -91,33 +110,41 @@
     <div class="app-card dashboard-section-card">
         <div class="card-header">
             <h5 class="card-title">Leave & Comp Off</h5>
+            <div class="card-actions">
+                <a asp-controller="LeaveApplication" asp-action="Apply" class="btn-app btn-primary-app btn-sm-app">
+                    <i class="bi bi-plus-lg"></i> Apply Leave
+                </a>
+            </div>
         </div>
 
         <div class="card-body">
             <div class="profile-stack">
                 <div class="profile-info-row">
                     <span><i class="bi bi-calendar-event"></i> Pending Leaves</span>
-                    <strong>@Model.Leave.PendingApplications</strong>
+                    <span class="badge-warning">@Model.Leave.PendingApplications</span>
                 </div>
 
-                <div class="profile-info-row">
-                    <span><i class="bi bi-calendar2-check"></i> Annual Paid Leave Balance</span>
-                    <strong>@Model.Leave.AvailableBalance.ToString("0.##")</strong>
-                </div>
+                @if (string.Equals(Model.EmploymentType, "Permanent", StringComparison.OrdinalIgnoreCase))
+                {
+                    <div class="profile-info-row">
+                        <span><i class="bi bi-calendar2-check"></i> Annual Paid Leave Balance</span>
+                        <span class="badge-primary">@Model.Leave.AvailableBalance.ToString("0.##")</span>
+                    </div>
 
-                <div class="profile-info-row">
-                    <span><i class="bi bi-hourglass-split"></i> Pending Approval</span>
-                    <strong>@Model.Leave.PendingPaidLeaveReserved.ToString("0.##")</strong>
-                </div>
+                    <div class="profile-info-row">
+                        <span><i class="bi bi-hourglass-split"></i> Pending Approval</span>
+                        <span class="badge-neutral">@Model.Leave.PendingPaidLeaveReserved.ToString("0.##")</span>
+                    </div>
+                }
 
                 <div class="profile-info-row">
                     <span><i class="bi bi-calendar-check"></i> Approved This Month</span>
-                    <strong>@Model.Leave.ApprovedThisMonth</strong>
+                    <span class="badge-success">@Model.Leave.ApprovedThisMonth</span>
                 </div>
 
                 <div class="profile-info-row">
                     <span><i class="bi bi-arrow-repeat"></i> Available Comp Off</span>
-                    <strong>@Model.Leave.AvailableCompOff.ToString("0.##")</strong>
+                    <span class="badge-info">@Model.Leave.AvailableCompOff.ToString("0.##")</span>
                 </div>
             </div>
         </div>
@@ -126,178 +153,219 @@
     <div class="app-card dashboard-section-card dashboard-finance-card">
         <div class="card-header">
             <h5 class="card-title">Latest Salary</h5>
+            @if (Model.Salary.IsPayslipReleased && Model.Salary.SalaryRecordId.HasValue)
+            {
+                <div class="card-actions">
+                    <a asp-controller="Salary" asp-action="Payslip" asp-route-id="@Model.Salary.SalaryRecordId"
+                       class="btn-app btn-secondary-app btn-sm-app">
+                        <i class="bi bi-file-earmark-pdf"></i>
+                        Payslip
+                    </a>
+                </div>
+            }
         </div>
 
         <div class="card-body">
-            <div class="profile-stack">
-                <div class="profile-info-row">
+            <div class="dashboard-metric-grid finance-grid">
+                <div class="dashboard-metric">
                     <span><i class="bi bi-calendar3"></i> Monthly Period</span>
-                    <strong>
-                        @(Model.Salary.Month.HasValue ? $"{Model.Salary.Month:00}/{Model.Salary.Year}" : "-")
-                    </strong>
-                </div>
+                    <strong>@(Model.Salary.Month.HasValue ? $"{Model.Salary.Month:00}/{Model.Salary.Year}" :
+                                                                                                                                                                                                               "-")</strong>
+                    </div>
 
-                <div class="profile-info-row">
-                    <span><i class="bi bi-cash-stack"></i> Salary after Deductions</span>
-                    <strong>₹@Model.Salary.NetSalary.ToString("N0")</strong>
-                </div>
+                    <div class="dashboard-metric">
+                        <span><i class="bi bi-cash-stack"></i> Salary after Deductions</span>
+                        <strong>₹@Model.Salary.NetSalary.ToString("N0")</strong>
+                    </div>
 
-                <div class="profile-info-row">
-                    <span><i class="bi bi-bank"></i> Payment Status</span>
-                    <strong>@Model.Salary.PaymentStatus</strong>
-                </div>
+                    <div class="dashboard-metric">
+                        <span><i class="bi bi-bank"></i> Payment Status</span>
+                        <strong>
+                            @if (string.Equals(Model.Salary.PaymentStatus, "Paid", StringComparison.OrdinalIgnoreCase))
+                            {
+                                <span class="badge-success">Paid</span>
+                            }
+                            else
+                            {
+                                <span class="badge-warning">@Model.Salary.PaymentStatus</span>
+                            }
+                        </strong>
+                    </div>
 
-                <div class="profile-info-row">
-                    <span><i class="bi bi-receipt"></i> Payslip Status</span>
-                    <strong>@(Model.Salary.IsPayslipReleased ? "Released" : "Not Released")</strong>
+                    <div class="dashboard-metric">
+                        <span><i class="bi bi-receipt"></i> Payslip Status</span>
+                        <strong>
+                            @if (Model.Salary.IsPayslipReleased)
+                            {
+                                <span class="badge-info">Released</span>
+                            }
+                            else
+                            {
+                                <span class="badge-neutral">Not Released</span>
+                            }
+                        </strong>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<div class="main-dashboard-layout">
-    <div class="app-card dashboard-section-card">
-        <div class="card-header">
-            <h5 class="card-title">Assigned Tasks</h5>
-        </div>
-
-        <div class="card-body">
-            @if (!Model.AssignedTasks.Any())
-            {
-                <div class="empty-state">No assigned tasks.</div>
-            }
-            else
-            {
-                foreach (var task in Model.AssignedTasks)
-                {
-                    <a asp-controller="EmployeeProject"
-                       asp-action="TaskDetails"
-                       asp-route-id="@task.TaskId"
-                       class="dashboard-list-link">
-                        <span>
-                            <strong>@task.TaskTitle</strong>
-                            <small>@task.ProjectName</small>
-                        </span>
-
-                        @if (task.IsOverdue)
-                        {
-                            <span class="badge-danger">Overdue</span>
-                        }
-                        else
-                        {
-                            <span class="badge-info">@task.Status</span>
-                        }
-                    </a>
-                }
-            }
-        </div>
-    </div>
-
-    <div class="app-card dashboard-section-card">
-        <div class="card-header">
-            <h5 class="card-title">Upcoming Meetings</h5>
-        </div>
-
-        <div class="card-body">
-            @if (!Model.UpcomingMeetings.Any())
-            {
-                <div class="empty-state">No upcoming meetings.</div>
-            }
-            else
-            {
-                foreach (var meeting in Model.UpcomingMeetings)
-                {
-                    <a asp-controller="MOM"
-                       asp-action="Details"
-                       asp-route-id="@meeting.MeetingId"
-                       class="dashboard-list-link">
-                        <span>
-                            <strong>@meeting.MeetingTitle</strong>
-                            <small>@meeting.ProjectName</small>
-                        </span>
-
-                        <span class="badge-info">
-                            @meeting.MeetingDate.ToString("dd-MMM")
-                        </span>
-                    </a>
-                }
-            }
-        </div>
-    </div>
-
-    <div class="app-card dashboard-section-card dashboard-finance-card">
-        <div class="card-header">
-            <h5 class="card-title">Assigned Projects</h5>
-        </div>
-
-        <div class="card-body">
-            @if (!Model.MyProjects.Any())
-            {
-                <div class="empty-state">No active project assignments.</div>
-            }
-            else
-            {
-                foreach (var project in Model.MyProjects)
-                {
-                    <a asp-controller="Project"
-                       asp-action="Dashboard"
-                       asp-route-id="@project.ProjectId"
-                       class="dashboard-list-link">
-                        <span>
-                            <strong>@project.ProjectName</strong>
-                            <small>@project.ProjectCode - @project.RoleInProject</small>
-                        </span>
-
-                        <span class="badge-info">@project.Status</span>
-                    </a>
-                }
-            }
-        </div>
-    </div>
-    @if (Model.IsProjectManager)
-    {
-        <div class="app-card dashboard-section-card dashboard-finance-card">
-
+    <div class="main-dashboard-layout">
+        <div class="app-card dashboard-section-card">
             <div class="card-header">
-                <h5 class="card-title">Managed Projects</h5>
+                <h5 class="card-title">Assigned Tasks</h5>
             </div>
 
             <div class="card-body">
-
-                @if (!Model.ManagedProjects.Any())
+                @if (!Model.AssignedTasks.Any())
                 {
-                    <div class="empty-state">
-                        No managed projects.
-                    </div>
+                    <div class="empty-state">No assigned tasks.</div>
                 }
                 else
                 {
-                    foreach (var project in Model.ManagedProjects)
+                    foreach (var task in Model.AssignedTasks)
                     {
-                        <a asp-controller="Project"
-                           asp-action="Dashboard"
-                           asp-route-id="@project.ProjectId"
+                        <a asp-controller="EmployeeProject" asp-action="TaskDetails" asp-route-id="@task.TaskId"
                            class="dashboard-list-link">
-
                             <span>
-                                <strong>@project.ProjectName</strong>
-                                <small>
-                                    @project.ProjectCode
-                                    · @project.OpenTaskCount Open Tasks
-                                </small>
+                                <strong>@task.TaskTitle</strong>
+                                <small><i class="bi bi-folder2"></i> @task.ProjectName</small>
+                               
                             </span>
 
-                            <span class="badge-info">
-                                @project.Status
-                            </span>
-
+                            @if (task.IsOverdue)
+                            {
+                                <span class="badge-danger">Overdue</span>
+                            }
+                            else if (task.Status == "Completed")
+                            {
+                                <span class="badge-success">Completed</span>
+                            }
+                            else
+                            {
+                                <span class="badge-info">@task.Status</span>
+                            }
                         </a>
                     }
                 }
+            </div>
+        </div>
 
+        <div class="app-card dashboard-section-card">
+            <div class="card-header">
+                <h5 class="card-title">Upcoming Meetings</h5>
             </div>
 
+            <div class="card-body">
+                @if (!Model.UpcomingMeetings.Any())
+                {
+                    <div class="empty-state">No upcoming meetings.</div>
+                }
+                else
+                {
+                    foreach (var meeting in Model.UpcomingMeetings)
+                    {
+                        <a asp-controller="MOM" asp-action="Details" asp-route-id="@meeting.MeetingId" class="dashboard-list-link">
+                            <span>
+                                <strong>@meeting.MeetingTitle</strong>
+                                <small>@meeting.ProjectName</small>
+                            </span>
+
+                            <span class="badge-info">
+                                @meeting.MeetingDate.ToString("dd-MMM")
+                            </span>
+                        </a>
+                    }
+                }
+            </div>
         </div>
-    }
-</div>
+
+        @if (Model.IsProjectManager)
+        {
+            <div class="app-card dashboard-section-card">
+                <div class="card-header">
+                    <h5 class="card-title">Assigned Projects</h5>
+                </div>
+
+                <div class="card-body">
+                    @if (!Model.MyProjects.Any())
+                    {
+                        <div class="empty-state">No active project assignments.</div>
+                    }
+                    else
+                    {
+                        foreach (var project in Model.MyProjects)
+                        {
+                            <a asp-controller="Project" asp-action="Dashboard" asp-route-id="@project.ProjectId"
+                               class="dashboard-list-link">
+                                <span>
+                                    <strong>@project.ProjectName</strong>
+                                    <small>@project.ProjectCode - @project.RoleInProject</small>
+                                </span>
+
+                                <span class="badge-info">@project.Status</span>
+                            </a>
+                        }
+                    }
+                </div>
+            </div>
+
+            <div class="app-card dashboard-section-card">
+                <div class="card-header">
+                    <h5 class="card-title">Managed Projects</h5>
+                </div>
+
+                <div class="card-body">
+                    @if (!Model.ManagedProjects.Any())
+                    {
+                        <div class="empty-state">No managed projects.</div>
+                    }
+                    else
+                    {
+                        foreach (var project in Model.ManagedProjects)
+                        {
+                            <a asp-controller="Project" asp-action="Dashboard" asp-route-id="@project.ProjectId"
+                               class="dashboard-list-link">
+                                <span>
+                                    <strong>@project.ProjectName</strong>
+                                    <small>@project.ProjectCode · @project.OpenTaskCount Open Tasks</small>
+                                </span>
+
+                                <span class="badge-info">@project.Status</span>
+                            </a>
+                        }
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="app-card dashboard-section-card dashboard-finance-card">
+                <div class="card-header">
+                    <h5 class="card-title">Assigned Projects</h5>
+                </div>
+
+                <div class="card-body">
+                    @if (!Model.MyProjects.Any())
+                    {
+                        <div class="empty-state">No active project assignments.</div>
+                    }
+                    else
+                    {
+                        foreach (var project in Model.MyProjects)
+                        {
+                            <a asp-controller="Project" asp-action="Dashboard" asp-route-id="@project.ProjectId"
+                               class="dashboard-list-link">
+                                <span>
+                                    <strong>@project.ProjectName</strong>
+                                    <small>@project.ProjectCode - @project.RoleInProject</small>
+                                </span>
+
+                                <span class="badge-info">@project.Status</span>
+                            </a>
+                        }
+                    }
+                </div>
+            </div>
+        }
+    </div>

@@ -1,4 +1,5 @@
-﻿using AryamanBMS.Data;
+﻿using AryamanBMS.Business.Interfaces;
+using AryamanBMS.Data;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interfaces;
@@ -8,8 +9,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
-using AryamanBMS.Business.Interfaces;
 
 namespace AryamanBMS.Controllers
 {
@@ -41,7 +40,8 @@ namespace AryamanBMS.Controllers
             ILogger<AccountController> logger,
             ILoginHistoryService loginHistoryService,
             IPasswordChangeLogService passwordChangeLogService,
-            ApplicationDbContext context)
+            ApplicationDbContext context
+        )
         {
             _signInManager = signInManager;
             _userManager = userManager;
@@ -69,14 +69,17 @@ namespace AryamanBMS.Controllers
 
                 if (user != null)
                 {
-                    if (string.IsNullOrWhiteSpace(user.ActivityStatus) ||
-                        user.ActivityStatus == "Offline")
+                    if (
+                        string.IsNullOrWhiteSpace(user.ActivityStatus)
+                        || user.ActivityStatus == "Offline"
+                    )
                     {
                         await SetActivityStatusAsync(
-                           user,
-                           "Available",
-                           message: null,
-                           isManual: false);
+                            user,
+                            "Available",
+                            message: null,
+                            isManual: false
+                        );
                     }
 
                     return await RedirectByRoleAsync(user);
@@ -98,11 +101,9 @@ namespace AryamanBMS.Controllers
                 return View(model);
             }
 
-            string attemptedUserName =
-                model.UserName?.Trim() ?? string.Empty;
+            string attemptedUserName = model.UserName?.Trim() ?? string.Empty;
 
-            var user =
-                await _userManager.FindByNameAsync(attemptedUserName);
+            var user = await _userManager.FindByNameAsync(attemptedUserName);
 
             if (user == null)
             {
@@ -110,11 +111,10 @@ namespace AryamanBMS.Controllers
                     attemptedUserName: attemptedUserName,
                     eventType: "UnknownUser",
                     isSuccessful: false,
-                    failureReason: "No user account matched the supplied username.");
+                    failureReason: "No user account matched the supplied username."
+                );
 
-                ModelState.AddModelError(
-                    "",
-                    "Invalid username or password.");
+                ModelState.AddModelError("", "Invalid username or password.");
 
                 return View(model);
             }
@@ -126,19 +126,22 @@ namespace AryamanBMS.Controllers
                     eventType: "InactiveAccount",
                     isSuccessful: false,
                     userId: user.Id,
-                    failureReason: "Login attempted using an inactive account.");
+                    failureReason: "Login attempted using an inactive account."
+                );
 
                 ModelState.AddModelError(
                     "",
-                    "Your account is inactive. Please contact the administrator.");
+                    "Your account is inactive. Please contact the administrator."
+                );
 
                 return View(model);
             }
 
             var result = await _signInManager.CheckPasswordSignInAsync(
-                          user,
-                          model.Password,
-                          lockoutOnFailure: true);
+                user,
+                model.Password,
+                lockoutOnFailure: true
+            );
 
             if (result.Succeeded)
             {
@@ -146,36 +149,32 @@ namespace AryamanBMS.Controllers
                 // for this user account.
                 await _userManager.UpdateSecurityStampAsync(user);
 
-                await _signInManager.SignInAsync(
-                    user,
-                    isPersistent: model.RememberMe);
+                await _signInManager.SignInAsync(user, isPersistent: model.RememberMe);
             }
 
             if (result.Succeeded)
             {
-                bool alreadyLoggedToday =
-                    await _loginHistoryService
-                        .HasSuccessfulLoginTodayAsync(user.Id);
+                bool alreadyLoggedToday = await _loginHistoryService.HasSuccessfulLoginTodayAsync(
+                    user.Id
+                );
 
                 if (!alreadyLoggedToday)
                 {
                     await RecordLoginHistorySafeAsync(
-                        attemptedUserName:
-                            user.UserName ?? attemptedUserName,
+                        attemptedUserName: user.UserName ?? attemptedUserName,
                         eventType: "Login",
                         isSuccessful: true,
-                        userId: user.Id);
+                        userId: user.Id
+                    );
 
                     await NotifyAdminsOfLoginAsync(user);
                 }
 
-                await SetActivityStatusAsync(
-                    user,
-                    "Available",
-                    message: null,
-                    isManual: false);
+                await SetActivityStatusAsync(user, "Available", message: null, isManual: false);
 
                 await PrepareBirthdayCelebrationAsync(user);
+                await PrepareUpcomingHolidayPopupAsync(user);
+                await PrepareAdminHolidayConfirmationAsync(user);
                 await SetEmployeeLoginWelcomeMessageAsync(user);
 
                 return await RedirectByRoleAsync(user);
@@ -188,12 +187,13 @@ namespace AryamanBMS.Controllers
                     eventType: "AccountLocked",
                     isSuccessful: false,
                     userId: user.Id,
-                    failureReason:
-                        "Account locked after repeated failed login attempts.");
+                    failureReason: "Account locked after repeated failed login attempts."
+                );
 
                 ModelState.AddModelError(
                     "",
-                    "This account has been temporarily locked due to multiple failed entry attempts. Please wait 15 minutes.");
+                    "This account has been temporarily locked due to multiple failed entry attempts. Please wait 15 minutes."
+                );
 
                 return View(model);
             }
@@ -203,11 +203,10 @@ namespace AryamanBMS.Controllers
                 eventType: "InvalidPassword",
                 isSuccessful: false,
                 userId: user.Id,
-                failureReason: "Invalid password supplied.");
+                failureReason: "Invalid password supplied."
+            );
 
-            ModelState.AddModelError(
-                "",
-                "Invalid username or password.");
+            ModelState.AddModelError("", "Invalid username or password.");
 
             return View(model);
         }
@@ -261,7 +260,8 @@ namespace AryamanBMS.Controllers
             // Security Check: Guarding against unauthorized access or inactive employee profiles
             if (user == null || !user.IsActive)
             {
-                TempData["SuccessMessage"] = "If an active workspace profile is linked, verification tracking instructions have been generated.";
+                TempData["SuccessMessage"] =
+                    "If an active workspace profile is linked, verification tracking instructions have been generated.";
                 return RedirectToAction(nameof(ForgotPassword));
             }
 
@@ -270,20 +270,25 @@ namespace AryamanBMS.Controllers
 
             // 3. Associate it directly with your custom ResetPassword action
             // This perfectly binds to your ResetPasswordViewModel properties when the link is clicked
-            var callbackUrl = Url.Action("ResetPassword", "Account",
+            var callbackUrl = Url.Action(
+                "ResetPassword",
+                "Account",
                 new { userId = user.Id, token = token },
-                protocol: Request.Scheme);
+                protocol: Request.Scheme
+            );
 
             if (_webHostEnvironment.IsDevelopment())
             {
                 _logger.LogInformation(
                     "ARYAMAN BMS development reset link generated: {ResetLink}",
-                    callbackUrl);
+                    callbackUrl
+                );
 
                 TempData["DebugResetLink"] = callbackUrl;
             }
 
-            TempData["SuccessMessage"] = "If an active workspace profile is linked, verification tracking instructions have been generated.";
+            TempData["SuccessMessage"] =
+                "If an active workspace profile is linked, verification tracking instructions have been generated.";
             return RedirectToAction(nameof(ForgotPassword));
         }
 
@@ -303,24 +308,20 @@ namespace AryamanBMS.Controllers
 
             var roles = await _userManager.GetRolesAsync(user);
 
-            var employee = await _employeeRepository.Employees
-                .AsNoTracking()
+            var employee = await _employeeRepository
+                .Employees.AsNoTracking()
                 .Include(x => x.Department)
                 .Include(x => x.Designation)
                 .FirstOrDefaultAsync(x => x.ApplicationUserId == user.Id);
 
-            string displayName =
-                employee?.FullName ??
-                user.FullName ??
-                user.UserName ??
-                "User";
+            string displayName = employee?.FullName ?? user.FullName ?? user.UserName ?? "User";
 
             var model = new AccountProfileViewModel
             {
                 User = user,
                 Employee = employee,
                 RoleName = roles.FirstOrDefault() ?? "-",
-                Initials = BuildInitials(displayName)
+                Initials = BuildInitials(displayName),
             };
 
             return View(model);
@@ -328,7 +329,10 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UploadProfilePhoto(IFormFile? profilePhoto, string? croppedProfilePhoto)
+        public async Task<IActionResult> UploadProfilePhoto(
+            IFormFile? profilePhoto,
+            string? croppedProfilePhoto
+        )
         {
             var user = await _userManager.GetUserAsync(User);
 
@@ -344,19 +348,15 @@ namespace AryamanBMS.Controllers
 
                 if (commaIndex >= 0)
                 {
-                    string metadata =
-                        croppedProfilePhoto[..commaIndex];
+                    string metadata = croppedProfilePhoto[..commaIndex];
 
-                    if (metadata.StartsWith(
-                        "data:",
-                        StringComparison.OrdinalIgnoreCase))
+                    if (metadata.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
                     {
                         int separatorIndex = metadata.IndexOf(';');
 
                         if (separatorIndex > 5)
                         {
-                            declaredContentType =
-                                metadata[5..separatorIndex];
+                            declaredContentType = metadata[5..separatorIndex];
                         }
                     }
 
@@ -371,8 +371,7 @@ namespace AryamanBMS.Controllers
                 }
                 catch (FormatException)
                 {
-                    TempData["Error"] =
-                        "Profile photo data is invalid.";
+                    TempData["Error"] = "Profile photo data is invalid.";
 
                     return RedirectToAction(nameof(Profile));
                 }
@@ -385,18 +384,23 @@ namespace AryamanBMS.Controllers
                     return RedirectToAction(nameof(Profile));
                 }
 
-                if (!TryGetAllowedImageType(
-                    bytes,
-                    out string croppedExtension,
-                    out string croppedContentType) ||
-                    (!string.IsNullOrWhiteSpace(declaredContentType) &&
-                     !string.Equals(
-                         declaredContentType,
-                         croppedContentType,
-                         StringComparison.OrdinalIgnoreCase)))
+                if (
+                    !TryGetAllowedImageType(
+                        bytes,
+                        out string croppedExtension,
+                        out string croppedContentType
+                    )
+                    || (
+                        !string.IsNullOrWhiteSpace(declaredContentType)
+                        && !string.Equals(
+                            declaredContentType,
+                            croppedContentType,
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                    )
+                )
                 {
-                    TempData["Error"] =
-                        "Only valid JPG, PNG or WEBP profile photos are allowed.";
+                    TempData["Error"] = "Only valid JPG, PNG or WEBP profile photos are allowed.";
 
                     return RedirectToAction(nameof(Profile));
                 }
@@ -404,23 +408,19 @@ namespace AryamanBMS.Controllers
                 string croppedFolderPath = Path.Combine(
                     _webHostEnvironment.WebRootPath,
                     "uploads",
-                    "profile-photos");
+                    "profile-photos"
+                );
 
                 Directory.CreateDirectory(croppedFolderPath);
 
                 string croppedFileName = $"{user.Id}{croppedExtension}";
-                string croppedFullPath = Path.Combine(
-                    croppedFolderPath,
-                    croppedFileName);
+                string croppedFullPath = Path.Combine(croppedFolderPath, croppedFileName);
 
-                DeleteExistingProfilePhotoFiles(
-                    croppedFolderPath,
-                    user.Id);
+                DeleteExistingProfilePhotoFiles(croppedFolderPath, user.Id);
 
                 await System.IO.File.WriteAllBytesAsync(croppedFullPath, bytes);
 
-                user.ProfilePhotoPath =
-                    BuildProfilePhotoUrl(croppedFileName);
+                user.ProfilePhotoPath = BuildProfilePhotoUrl(croppedFileName);
 
                 var croppedResult = await _userManager.UpdateAsync(user);
 
@@ -466,13 +466,9 @@ namespace AryamanBMS.Controllers
                 uploadedBytes = memoryStream.ToArray();
             }
 
-            if (!TryGetAllowedImageType(
-                uploadedBytes,
-                out string detectedExtension,
-                out _))
+            if (!TryGetAllowedImageType(uploadedBytes, out string detectedExtension, out _))
             {
-                TempData["Error"] =
-                    "Uploaded profile photo content is not valid.";
+                TempData["Error"] = "Uploaded profile photo content is not valid.";
 
                 return RedirectToAction(nameof(Profile));
             }
@@ -480,7 +476,8 @@ namespace AryamanBMS.Controllers
             string folderPath = Path.Combine(
                 _webHostEnvironment.WebRootPath,
                 "uploads",
-                "profile-photos");
+                "profile-photos"
+            );
 
             Directory.CreateDirectory(folderPath);
 
@@ -488,13 +485,9 @@ namespace AryamanBMS.Controllers
 
             string fullPath = Path.Combine(folderPath, fileName);
 
-            DeleteExistingProfilePhotoFiles(
-                folderPath,
-                user.Id);
+            DeleteExistingProfilePhotoFiles(folderPath, user.Id);
 
-            await System.IO.File.WriteAllBytesAsync(
-                fullPath,
-                uploadedBytes);
+            await System.IO.File.WriteAllBytesAsync(fullPath, uploadedBytes);
 
             user.ProfilePhotoPath = BuildProfilePhotoUrl(fileName);
 
@@ -513,45 +506,47 @@ namespace AryamanBMS.Controllers
         private static bool TryGetAllowedImageType(
             byte[] bytes,
             out string extension,
-            out string contentType)
+            out string contentType
+        )
         {
             extension = string.Empty;
             contentType = string.Empty;
 
-            if (bytes.Length >= 3 &&
-                bytes[0] == 0xFF &&
-                bytes[1] == 0xD8 &&
-                bytes[2] == 0xFF)
+            if (bytes.Length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF)
             {
                 extension = ".jpg";
                 contentType = "image/jpeg";
                 return true;
             }
 
-            if (bytes.Length >= 8 &&
-                bytes[0] == 0x89 &&
-                bytes[1] == 0x50 &&
-                bytes[2] == 0x4E &&
-                bytes[3] == 0x47 &&
-                bytes[4] == 0x0D &&
-                bytes[5] == 0x0A &&
-                bytes[6] == 0x1A &&
-                bytes[7] == 0x0A)
+            if (
+                bytes.Length >= 8
+                && bytes[0] == 0x89
+                && bytes[1] == 0x50
+                && bytes[2] == 0x4E
+                && bytes[3] == 0x47
+                && bytes[4] == 0x0D
+                && bytes[5] == 0x0A
+                && bytes[6] == 0x1A
+                && bytes[7] == 0x0A
+            )
             {
                 extension = ".png";
                 contentType = "image/png";
                 return true;
             }
 
-            if (bytes.Length >= 12 &&
-                bytes[0] == 0x52 &&
-                bytes[1] == 0x49 &&
-                bytes[2] == 0x46 &&
-                bytes[3] == 0x46 &&
-                bytes[8] == 0x57 &&
-                bytes[9] == 0x45 &&
-                bytes[10] == 0x42 &&
-                bytes[11] == 0x50)
+            if (
+                bytes.Length >= 12
+                && bytes[0] == 0x52
+                && bytes[1] == 0x49
+                && bytes[2] == 0x46
+                && bytes[3] == 0x46
+                && bytes[8] == 0x57
+                && bytes[9] == 0x45
+                && bytes[10] == 0x42
+                && bytes[11] == 0x50
+            )
             {
                 extension = ".webp";
                 contentType = "image/webp";
@@ -566,16 +561,11 @@ namespace AryamanBMS.Controllers
             return $"/uploads/profile-photos/{fileName}?v={DateTime.UtcNow.Ticks}";
         }
 
-        private static void DeleteExistingProfilePhotoFiles(
-            string folderPath,
-            string userId)
+        private static void DeleteExistingProfilePhotoFiles(string folderPath, string userId)
         {
             foreach (string extension in new[] { ".jpg", ".jpeg", ".png", ".webp" })
             {
-                string existingPath =
-                    Path.Combine(
-                        folderPath,
-                        $"{userId}{extension}");
+                string existingPath = Path.Combine(folderPath, $"{userId}{extension}");
 
                 if (System.IO.File.Exists(existingPath))
                 {
@@ -587,10 +577,9 @@ namespace AryamanBMS.Controllers
         private static string BuildInitials(string name)
         {
             return string.Join(
-                "",
-                name.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                    .Take(2)
-                    .Select(x => x[0]))
+                    "",
+                    name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(x => x[0])
+                )
                 .ToUpperInvariant();
         }
 
@@ -602,8 +591,7 @@ namespace AryamanBMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ChangePassword(
-            ChangePasswordViewModel model)
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
         {
             if (!ModelState.IsValid)
             {
@@ -620,14 +608,12 @@ namespace AryamanBMS.Controllers
             var result = await _userManager.ChangePasswordAsync(
                 user!,
                 model.CurrentPassword,
-                model.NewPassword);
+                model.NewPassword
+            );
 
             if (result.Succeeded)
             {
-                await LogPasswordChangeAsync(
-                    user,
-                    user,
-                    "SelfChange");
+                await LogPasswordChangeAsync(user, user, "SelfChange");
 
                 var admins = await _userManager.GetUsersInRoleAsync("Admin");
                 var hrUsers = await _userManager.GetUsersInRoleAsync("HR");
@@ -653,11 +639,11 @@ namespace AryamanBMS.Controllers
                         "Security",
                         "PasswordChangeLog",
                         null,
-                        Url.Action("Index", "PasswordChangeLog"));
+                        Url.Action("Index", "PasswordChangeLog")
+                    );
                 }
 
-                TempData["Success"] =
-                    "Password changed successfully.";
+                TempData["Success"] = "Password changed successfully.";
 
                 return RedirectToAction("Profile");
             }
@@ -695,7 +681,7 @@ namespace AryamanBMS.Controllers
             {
                 UserId = userId,
                 Token = token,
-                UserName = user.UserName ?? string.Empty
+                UserName = user.UserName ?? string.Empty,
             };
 
             return View(model);
@@ -722,7 +708,11 @@ namespace AryamanBMS.Controllers
             }
 
             // 2. Perform the secure reset using the single-use token and the new password
-            var result = await _userManager.ResetPasswordAsync(user, model.Token, model.NewPassword);
+            var result = await _userManager.ResetPasswordAsync(
+                user,
+                model.Token,
+                model.NewPassword
+            );
 
             if (result.Succeeded)
             {
@@ -730,10 +720,7 @@ namespace AryamanBMS.Controllers
                 await _userManager.ResetAccessFailedCountAsync(user);
 
                 // Record the password reset event.
-                await LogPasswordChangeAsync(
-                    user,
-                    null,
-                    "PasswordReset");
+                await LogPasswordChangeAsync(user, null, "PasswordReset");
 
                 TempData["Success"] =
                     "Your password has been successfully reset. Please log in with your new credentials.";
@@ -756,13 +743,13 @@ namespace AryamanBMS.Controllers
         {
             var roles = await _userManager.GetRolesAsync(user);
 
-            if (!roles.Contains("Admin") &&
-                (roles.Contains("Employee") ||
-                 roles.Contains("HR") ||
-                 roles.Contains("Master")))
+            if (
+                !roles.Contains("Admin")
+                && (roles.Contains("Employee") || roles.Contains("HR") || roles.Contains("Master"))
+            )
             {
-                var employee = await _employeeRepository.Employees
-                    .AsNoTracking()
+                var employee = await _employeeRepository
+                    .Employees.AsNoTracking()
                     .FirstOrDefaultAsync(x => x.ApplicationUserId == user.Id);
 
                 if (employee == null)
@@ -770,11 +757,11 @@ namespace AryamanBMS.Controllers
                     return RedirectToAction("Index", "Attendance");
                 }
 
-                bool attendanceMarked = await _attendanceRepository.Attendances
-                    .AsNoTracking()
+                bool attendanceMarked = await _attendanceRepository
+                    .Attendances.AsNoTracking()
                     .AnyAsync(x =>
-                        x.EmployeeId == employee.Id &&
-                        x.AttendanceDate.Date == DateTime.Today);
+                        x.EmployeeId == employee.Id && x.AttendanceDate.Date == DateTime.Today
+                    );
 
                 if (!attendanceMarked)
                 {
@@ -787,32 +774,28 @@ namespace AryamanBMS.Controllers
             return RedirectToAction("Index", "Dashboard");
         }
 
-        private async Task SetEmployeeLoginWelcomeMessageAsync(
-            ApplicationUserModel user)
+        private async Task SetEmployeeLoginWelcomeMessageAsync(ApplicationUserModel user)
         {
             var roles = await _userManager.GetRolesAsync(user);
 
-            if (!roles.Contains("Employee") ||
-                roles.Contains("Admin") ||
-                roles.Contains("HR") ||
-                roles.Contains("Master"))
+            if (
+                !roles.Contains("Employee")
+                || roles.Contains("Admin")
+                || roles.Contains("HR")
+                || roles.Contains("Master")
+            )
             {
                 return;
             }
 
-            var employee = await _employeeRepository.Employees
-                .AsNoTracking()
+            var employee = await _employeeRepository
+                .Employees.AsNoTracking()
                 .FirstOrDefaultAsync(x => x.ApplicationUserId == user.Id);
 
-            string displayName =
-                employee?.FullName ??
-                user.FullName ??
-                user.UserName ??
-                "Employee";
+            string displayName = employee?.FullName ?? user.FullName ?? user.UserName ?? "Employee";
 
             TempData["EmployeeWelcomeName"] = displayName;
-            TempData["EmployeeWelcomeMessage"] =
-                "Welcome back to your workspace.";
+            TempData["EmployeeWelcomeMessage"] = "Welcome back to your workspace.";
 
             if (!string.IsNullOrWhiteSpace(user.ProfilePhotoPath))
             {
@@ -820,21 +803,80 @@ namespace AryamanBMS.Controllers
             }
         }
 
-        private static readonly HashSet<string> AllowedActivityStatuses =
-          new(StringComparer.OrdinalIgnoreCase)
-    {
-        "Available",
-        "Busy",
-        "Away",
-        "Do Not Disturb",
-        "Offline"
-    };
+        private async Task PrepareUpcomingHolidayPopupAsync(ApplicationUserModel loggedInUser)
+        {
+            var holidayRepo = HttpContext.RequestServices.GetService<IHolidayRepository>();
+            if (holidayRepo == null)
+                return;
+
+            var tomorrow = DateTime.Today.AddDays(1);
+            // Only show celebration popup if the holiday has been confirmed!
+            var holidays = await holidayRepo.GetActiveConfirmedInRangeAsync(tomorrow, tomorrow);
+            var holiday = holidays.FirstOrDefault();
+
+            if (holiday == null)
+                return;
+
+            TempData["HolidayPopupName"] = holiday.HolidayName;
+            TempData["HolidayPopupDate"] = tomorrow.ToString("dddd, dd MMMM yyyy");
+            TempData["HolidayPopupDay"] = tomorrow.ToString("dddd");
+            TempData["HolidayPopupType"] = string.IsNullOrWhiteSpace(holiday.HolidayType)
+                ? "Office Holiday"
+                : holiday.HolidayType;
+        }
+
+        private async Task PrepareAdminHolidayConfirmationAsync(ApplicationUserModel loggedInUser)
+        {
+            var roles = await _userManager.GetRolesAsync(loggedInUser);
+            if (
+                !roles.Any(r =>
+                    r.Equals("Admin", StringComparison.OrdinalIgnoreCase)
+                    || r.Equals("HR", StringComparison.OrdinalIgnoreCase)
+                    || r.Equals("Master", StringComparison.OrdinalIgnoreCase)
+                )
+            )
+            {
+                return;
+            }
+
+            var holidayRepo = HttpContext.RequestServices.GetService<IHolidayRepository>();
+            if (holidayRepo == null)
+                return;
+
+            // Check if any unconfirmed holiday falls within the next 2 days
+            var unconfirmedHolidays = await holidayRepo.GetUpcomingUnconfirmedHolidaysAsync(2);
+            var target = unconfirmedHolidays.FirstOrDefault();
+
+            if (target == null)
+                return;
+
+            TempData["AdminHolidayConfirmId"] = target.HolidayId;
+            TempData["AdminHolidayConfirmName"] = target.HolidayName;
+            TempData["AdminHolidayConfirmDate"] = target.HolidayDate.ToString("yyyy-MM-dd");
+            TempData["AdminHolidayConfirmDisplayDate"] = target.HolidayDate.ToString(
+                "dddd, dd-MMM-yyyy"
+            );
+            TempData["AdminHolidayConfirmDay"] = target.DayName;
+            TempData["AdminHolidayConfirmType"] = target.HolidayType;
+        }
+
+        private static readonly HashSet<string> AllowedActivityStatuses = new(
+            StringComparer.OrdinalIgnoreCase
+        )
+        {
+            "Available",
+            "Busy",
+            "Away",
+            "Do Not Disturb",
+            "Offline",
+        };
 
         private async Task SetActivityStatusAsync(
-          ApplicationUserModel user,
-          string status,
-          string? message = null,
-          bool isManual = false)
+            ApplicationUserModel user,
+            string status,
+            string? message = null,
+            bool isManual = false
+        )
         {
             if (!AllowedActivityStatuses.Contains(status))
             {
@@ -843,22 +885,15 @@ namespace AryamanBMS.Controllers
             }
 
             bool allowsStatusMessage =
-                status.Equals(
-                    "Busy",
-                    StringComparison.OrdinalIgnoreCase) ||
-                status.Equals(
-                    "Do Not Disturb",
-                    StringComparison.OrdinalIgnoreCase);
+                status.Equals("Busy", StringComparison.OrdinalIgnoreCase)
+                || status.Equals("Do Not Disturb", StringComparison.OrdinalIgnoreCase);
 
             var now = DateTime.Now;
 
             user.ActivityStatus = status;
 
             user.ActivityStatusMessage =
-                allowsStatusMessage &&
-                !string.IsNullOrWhiteSpace(message)
-                    ? message.Trim()
-                    : null;
+                allowsStatusMessage && !string.IsNullOrWhiteSpace(message) ? message.Trim() : null;
 
             user.ActivityStatusUpdatedOn = now;
             user.LastSeenOn = now;
@@ -872,7 +907,8 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> UpdateActivityStatus(
             string activityStatus,
             string? activityStatusMessage,
-            string? returnUrl = null)
+            string? returnUrl = null
+        )
         {
             var user = await _userManager.GetUserAsync(User);
 
@@ -888,23 +924,14 @@ namespace AryamanBMS.Controllers
             }
 
             bool isManual =
-                activityStatus.Equals(
-                    "Busy",
-                    StringComparison.OrdinalIgnoreCase) ||
-                activityStatus.Equals(
-                    "Do Not Disturb",
-                    StringComparison.OrdinalIgnoreCase);
+                activityStatus.Equals("Busy", StringComparison.OrdinalIgnoreCase)
+                || activityStatus.Equals("Do Not Disturb", StringComparison.OrdinalIgnoreCase);
 
-            await SetActivityStatusAsync(
-                user,
-                activityStatus,
-                activityStatusMessage,
-                isManual);
+            await SetActivityStatusAsync(user, activityStatus, activityStatusMessage, isManual);
 
             TempData["Success"] = "Activity status updated.";
 
-            if (!string.IsNullOrWhiteSpace(returnUrl) &&
-                Url.IsLocalUrl(returnUrl))
+            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
             {
                 return LocalRedirect(returnUrl);
             }
@@ -927,20 +954,24 @@ namespace AryamanBMS.Controllers
 
             user.LastSeenOn = now;
 
-            if (!user.IsActivityStatusManual &&
-                !string.Equals(
+            if (
+                !user.IsActivityStatusManual
+                && !string.Equals(
                     user.ActivityStatus,
                     "Offline",
-                    StringComparison.OrdinalIgnoreCase))
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
             {
-                string requiredStatus = isActive
-                    ? "Available"
-                    : "Away";
+                string requiredStatus = isActive ? "Available" : "Away";
 
-                if (!string.Equals(
-                    user.ActivityStatus,
-                    requiredStatus,
-                    StringComparison.OrdinalIgnoreCase))
+                if (
+                    !string.Equals(
+                        user.ActivityStatus,
+                        requiredStatus,
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                )
                 {
                     user.ActivityStatus = requiredStatus;
                     user.ActivityStatusMessage = null;
@@ -954,41 +985,34 @@ namespace AryamanBMS.Controllers
             {
                 return StatusCode(
                     StatusCodes.Status500InternalServerError,
-                    new
-                    {
-                        message = "Activity status could not be updated."
-                    });
+                    new { message = "Activity status could not be updated." }
+                );
             }
 
-            return Ok(new
-            {
-                status = user.ActivityStatus,
-                lastSeenOn = user.LastSeenOn,
-                isManual = user.IsActivityStatusManual
-            });
+            return Ok(
+                new
+                {
+                    status = user.ActivityStatus,
+                    lastSeenOn = user.LastSeenOn,
+                    isManual = user.IsActivityStatusManual,
+                }
+            );
         }
 
-        private async Task NotifyAdminsOfLoginAsync(
-    ApplicationUserModel loggedInUser)
+        private async Task NotifyAdminsOfLoginAsync(ApplicationUserModel loggedInUser)
         {
             try
             {
-                var admins =
-                    await _userManager.GetUsersInRoleAsync("Admin");
+                var admins = await _userManager.GetUsersInRoleAsync("Admin");
 
-                string displayName =
-                    !string.IsNullOrWhiteSpace(loggedInUser.FullName)
-                        ? loggedInUser.FullName
-                        : loggedInUser.UserName ?? "User";
+                string displayName = !string.IsNullOrWhiteSpace(loggedInUser.FullName)
+                    ? loggedInUser.FullName
+                    : loggedInUser.UserName ?? "User";
 
                 string ipAddress =
-                    HttpContext.Connection.RemoteIpAddress?
-                        .MapToIPv4()
-                        .ToString()
-                    ?? "Unknown IP";
+                    HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString() ?? "Unknown IP";
 
-                string loginTime =
-                    DateTime.Now.ToString("dd MMM yyyy, hh:mm tt");
+                string loginTime = DateTime.Now.ToString("dd MMM yyyy, hh:mm tt");
 
                 foreach (var admin in admins)
                 {
@@ -1006,13 +1030,12 @@ namespace AryamanBMS.Controllers
                     await _notificationService.CreateAsync(
                         userId: admin.Id,
                         title: "User Logged In",
-                        message:
-                            $"{displayName} logged in on " +
-                            $"{loginTime} from {ipAddress}.",
+                        message: $"{displayName} logged in on " + $"{loginTime} from {ipAddress}.",
                         notificationType: "Login",
                         referenceType: "ApplicationUser",
                         referenceId: null,
-                        actionUrl: "/User/Index");
+                        actionUrl: "/User/Index"
+                    );
                 }
             }
             catch (Exception ex)
@@ -1020,62 +1043,54 @@ namespace AryamanBMS.Controllers
                 _logger.LogError(
                     ex,
                     "Admin login notification failed for user {UserId}.",
-                loggedInUser.Id);
+                    loggedInUser.Id
+                );
             }
         }
 
-        private async Task PrepareBirthdayCelebrationAsync(
-            ApplicationUserModel loggedInUser)
+        private async Task PrepareBirthdayCelebrationAsync(ApplicationUserModel loggedInUser)
         {
-            var employee =
-                await _employeeRepository.Employees
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(x =>
-                        x.ApplicationUserId == loggedInUser.Id &&
-                        x.IsActive &&
-                        x.DateOfBirth.HasValue);
+            var employee = await _employeeRepository
+                .Employees.AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.ApplicationUserId == loggedInUser.Id && x.IsActive && x.DateOfBirth.HasValue
+                );
 
-            if (employee?.DateOfBirth == null ||
-                !IsBirthdayToday(employee.DateOfBirth.Value, DateTime.Today))
+            if (
+                employee?.DateOfBirth == null
+                || !IsBirthdayToday(employee.DateOfBirth.Value, DateTime.Today)
+            )
             {
                 return;
             }
 
-            TempData["BirthdayCelebrationName"] =
-                employee.FullName;
+            TempData["BirthdayCelebrationName"] = employee.FullName;
 
             TempData["BirthdayCelebrationMessage"] =
                 $"Happy birthday, {employee.FullName}. Wishing you a wonderful day and a fantastic year ahead.";
         }
 
-        private static bool IsBirthdayToday(
-            DateTime dateOfBirth,
-            DateTime today)
+        private static bool IsBirthdayToday(DateTime dateOfBirth, DateTime today)
         {
-            if (dateOfBirth.Month == 2 &&
-                dateOfBirth.Day == 29 &&
-                !DateTime.IsLeapYear(today.Year))
+            if (dateOfBirth.Month == 2 && dateOfBirth.Day == 29 && !DateTime.IsLeapYear(today.Year))
             {
-                return today.Month == 2 &&
-                    today.Day == 28;
+                return today.Month == 2 && today.Day == 28;
             }
 
-            return dateOfBirth.Month == today.Month &&
-                dateOfBirth.Day == today.Day;
+            return dateOfBirth.Month == today.Month && dateOfBirth.Day == today.Day;
         }
 
         private string GetOrCreateDeviceId()
         {
-            if (Request.Cookies.TryGetValue(
-                DeviceIdCookieName,
-                out string? existingDeviceId) &&
-                !string.IsNullOrWhiteSpace(existingDeviceId))
+            if (
+                Request.Cookies.TryGetValue(DeviceIdCookieName, out string? existingDeviceId)
+                && !string.IsNullOrWhiteSpace(existingDeviceId)
+            )
             {
                 return existingDeviceId;
             }
 
-            string deviceId =
-                $"DEV-{Guid.NewGuid():N}";
+            string deviceId = $"DEV-{Guid.NewGuid():N}";
 
             Response.Cookies.Append(
                 DeviceIdCookieName,
@@ -1085,10 +1100,10 @@ namespace AryamanBMS.Controllers
                     HttpOnly = true,
                     Secure = Request.IsHttps,
                     SameSite = SameSiteMode.Lax,
-                    Expires = DateTimeOffset.UtcNow
-                        .AddDays(DeviceIdCookieDays),
-                    IsEssential = true
-                });
+                    Expires = DateTimeOffset.UtcNow.AddDays(DeviceIdCookieDays),
+                    IsEssential = true,
+                }
+            );
 
             return deviceId;
         }
@@ -1098,18 +1113,15 @@ namespace AryamanBMS.Controllers
             string eventType,
             bool isSuccessful,
             string? userId = null,
-            string? failureReason = null)
+            string? failureReason = null
+        )
         {
             try
             {
                 string ipAddress =
-                    HttpContext.Connection.RemoteIpAddress?
-                        .MapToIPv4()
-                        .ToString()
-                    ?? "Unknown";
+                    HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString() ?? "Unknown";
 
-                string userAgent =
-                    Request.Headers.UserAgent.ToString();
+                string userAgent = Request.Headers.UserAgent.ToString();
 
                 string deviceId = GetOrCreateDeviceId();
 
@@ -1119,28 +1131,31 @@ namespace AryamanBMS.Controllers
                 }
 
                 await _loginHistoryService.RecordAsync(
-     attemptedUserName: attemptedUserName,
-     eventType: eventType,
-     isSuccessful: isSuccessful,
-     userId: userId,
-     failureReason: failureReason,
-     ipAddress: ipAddress,
-     userAgent: userAgent,
-     deviceId: deviceId);
+                    attemptedUserName: attemptedUserName,
+                    eventType: eventType,
+                    isSuccessful: isSuccessful,
+                    userId: userId,
+                    failureReason: failureReason,
+                    ipAddress: ipAddress,
+                    userAgent: userAgent,
+                    deviceId: deviceId
+                );
             }
             catch (Exception ex)
             {
                 _logger.LogError(
                     ex,
                     "Login history could not be recorded for {UserName}.",
-                    attemptedUserName);
+                    attemptedUserName
+                );
             }
         }
 
         private async Task LogPasswordChangeAsync(
-    ApplicationUserModel targetUser,
-    ApplicationUserModel? changedByUser,
-    string changeType)
+            ApplicationUserModel targetUser,
+            ApplicationUserModel? changedByUser,
+            string changeType
+        )
         {
             await _passwordChangeLogService.RecordAsync(
                 userId: targetUser.Id,
@@ -1150,7 +1165,8 @@ namespace AryamanBMS.Controllers
                 changedByUserName: changedByUser?.UserName,
                 changeType: changeType,
                 ipAddress: HttpContext.Connection.RemoteIpAddress?.ToString(),
-                userAgent: Request.Headers.UserAgent.ToString());
+                userAgent: Request.Headers.UserAgent.ToString()
+            );
         }
 
         #endregion Helpers

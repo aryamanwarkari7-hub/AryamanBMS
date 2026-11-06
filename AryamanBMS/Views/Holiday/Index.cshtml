@@ -1,4 +1,5 @@
-﻿@model List<AryamanBMS.Models.HolidayModel>
+﻿@Html.AntiForgeryToken()
+@model List<AryamanBMS.Models.HolidayModel>
 
 @{
     ViewData["Title"] = "Holiday Register";
@@ -43,7 +44,131 @@
     bool canManageHolidays =
     ViewBag.CanManageHolidays is bool canManage &&
     canManage;
+
+    (string icon, string bgGradient, string iconColor) GetHolidayTheme(string name)
+    {
+        name = name?.ToLowerInvariant() ?? "";
+        if (name.Contains("diwali") || name.Contains("deepawali"))
+            return ("bi-lamp-fill", "linear-gradient(135deg, #fef3c7, #fde68a)", "#d97706");
+        if (name.Contains("holi") || name.Contains("dhulivandan"))
+            return ("bi-palette-fill", "linear-gradient(135deg, #fce7f3, #fbcfe8)", "#db2777");
+        if (name.Contains("eid") || name.Contains("ramzan") || name.Contains("bakri"))
+            return ("bi-moon-stars-fill", "linear-gradient(135deg, #dcfce7, #bbf7d0)", "#16a34a");
+        if (name.Contains("republic") || name.Contains("independence") || name.Contains("gandhi"))
+            return ("bi-flag-fill", "linear-gradient(135deg, #ffedd5, #fed7aa)", "#ea580c");
+        if (name.Contains("christmas"))
+            return ("bi-tree-fill", "linear-gradient(135deg, #fee2e2, #fecaca)", "#dc2626");
+        if (name.Contains("new year"))
+            return ("bi-stars", "linear-gradient(135deg, #ede9fe, #ddd6fe)", "#7c3aed");
+        if (name.Contains("ganesh"))
+            return ("bi-sun-fill", "linear-gradient(135deg, #ffedd5, #fde68a)", "#d97706");
+        if (name.Contains("labor") || name.Contains("labour") || name.Contains("may day"))
+            return ("bi-hammer", "linear-gradient(135deg, #f1f5f9, #e2e8f0)", "#475569");
+        if (name.Contains("mahavir") || name.Contains("buddha") || name.Contains("purnima"))
+            return ("bi-flower1", "linear-gradient(135deg, #ecfdf5, #a7f3d0)", "#059669");
+
+        return ("bi-calendar-heart-fill", "linear-gradient(135deg, #e0f2fe, #bae6fd)", "#0284c7");
+    }
 }
+
+<style>
+    .holiday-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+        gap: 20px;
+        padding: 20px 0;
+    }
+
+    .holiday-card {
+        background: linear-gradient(135deg, rgba(240, 249, 255, 0.65) 0%, rgba(254, 242, 242, 0.40) 50%, rgba(254, 243, 199, 0.45) 100%), #ffffff;
+        border: 1px solid rgba(226, 232, 240, 0.85);
+        border-radius: 20px;
+        padding: 22px;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.03);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 160px;
+    }
+
+    .holiday-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
+        border-color: rgba(186, 230, 253, 0.9);
+    }
+
+    /* Ensure content stays in front */
+    .holiday-card>* {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Subtle celebratory holiday watermark */
+    /* Holiday-relevant Leisure Sun, Umbrella & Celebration Sparkles Watermark */
+    .holiday-card::after {
+        content: "";
+        position: absolute;
+        right: 14px;
+        bottom: 8px;
+        width: 115px;
+        height: 100px;
+        pointer-events: none;
+        opacity: 0.15;
+        /* Subtle low opacity */
+        background-repeat: no-repeat;
+        background-size: contain;
+        background-position: right bottom;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 110'%3E%3C!-- Golden Holiday Sun --%3E%3Ccircle cx='86' cy='28' r='14' fill='%23f59e0b'/%3E%3Cpath d='M86 8 L86 4 M86 48 L86 52 M66 28 L62 28 M106 28 L110 28 M72 14 L69 11 M100 42 L103 45 M72 42 L69 45 M100 14 L103 11' stroke='%23f59e0b' stroke-width='2' stroke-linecap='round'/%3E%3C!-- Leisure Holiday Parasol / Umbrella --%3E%3Cpath d='M25 82 C25 54 65 54 65 82 Z' fill='%230284c7'/%3E%3Cpath d='M38 58 C35 70 35 78 35 82 C45 82 45 70 45 58 Z' fill='%2338bdf8'/%3E%3Cline x1='45' y1='82' x2='45' y2='104' stroke='%2364748b' stroke-width='3' stroke-linecap='round'/%3E%3C!-- Celebration Sparkles / Starbursts --%3E%3Cpath d='M24 24 L26 18 L32 15 L26 12 L24 6 L22 12 L16 15 L22 18 Z' fill='%23ef4444' opacity='0.85'/%3E%3Cpath d='M100 78 L101 74 L105 72 L101 70 L100 66 L99 70 L95 72 L99 74 Z' fill='%2310b981' opacity='0.85'/%3E%3Ccircle cx='92' cy='90' r='3' fill='%23f59e0b' opacity='0.6'/%3E%3C/svg%3E");
+        z-index: 0;
+        transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    /* Elevates nicely on hover */
+    .holiday-card:hover::after {
+        opacity: 0.25;
+        transform: scale(1.05);
+    }
+
+    .holiday-icon-box {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+        color: #0284c7;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+        box-shadow: 0 4px 10px rgba(2, 132, 199, 0.15);
+    }
+
+    /* Translucent Highlighted Holiday Date Pill */
+    .holiday-date-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 9999px;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+        background: linear-gradient(135deg, rgba(2, 132, 199, 0.88) 0%, rgba(3, 105, 161, 0.88) 100%);
+        backdrop-filter: blur(4px);
+        color: #ffffff;
+        box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        transition: transform 0.2s ease;
+    }
+
+    .holiday-card:hover .holiday-date-pill {
+        transform: scale(1.03);
+    }
+</style>
 
 <div class="module-header">
     <div>
@@ -181,16 +306,115 @@
 }
 
 <div class="app-card">
-    <div class="card-body">
-        <div class="card-header">
-            <div class="card-heading">
-                <h2 class="card-title">Holiday List</h2>
-                <p class="card-subtitle">@totalRecords holiday(s) found.</p>
-            </div>
+    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div class="card-heading">
+            <h2 class="card-title">Holiday List</h2>
+            <p class="card-subtitle">@totalRecords holiday(s) found.</p>
         </div>
 
-        <div class="card-body p-0">
-            <div class="table-responsive">
+        <div class="d-flex align-items-center gap-2">
+            <!-- View Switcher -->
+            <div class="btn-group" role="group">
+                <button type="button" class="btn-app btn-outline-app btn-sm-app active" id="btnHolidayCards"
+                        onclick="switchHolidayView('cards')">
+                    <i class="bi bi-grid-fill"></i> Cards
+                </button>
+                <button type="button" class="btn-app btn-outline-app btn-sm-app" id="btnHolidayTable"
+                        onclick="switchHolidayView('table')">
+                    <i class="bi bi-table"></i> Table
+                </button>
+            </div>
+
+            @if (canManageHolidays)
+            {
+                <button type="button" class="btn-app btn-primary-app btn-sm-app" data-bs-toggle="modal"
+                        data-bs-target="#addHolidayModal">
+                    <i class="bi bi-plus-lg"></i>
+                    Add Holiday
+                </button>
+            }
+        </div>
+    </div>
+
+    <div class="card-body">
+        @if (!Model.Any())
+        {
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-calendar-x fs-1 d-block mb-2 text-secondary"></i>
+                <h5>No holidays found</h5>
+                <p class="small">No office holidays recorded for the selected period.</p>
+            </div>
+        }
+        else
+        {
+            <!-- Cards View (Default) -->
+            <div id="holidayCardsView" class="holiday-grid">
+                @foreach (var item in Model)
+                {
+                    <div class="holiday-card">
+                        <!-- Top Row: Icon, Title & Date Pill -->
+                        <div class="d-flex align-items-start justify-content-between gap-2 mb-3">
+                            <div class="d-flex align-items-center gap-3">
+                                @{
+                                    var theme = GetHolidayTheme(item.HolidayName);
+                                }
+                                <div class="holiday-icon-box"
+                                     style="background: @theme.bgGradient; color: @theme.iconColor; box-shadow: 0 4px 10px rgba(0,0,0,0.06);">
+                                    <i class="bi @theme.icon"></i>
+                                </div>
+                                <div>
+                                    <h5 class="fw-bold mb-1 text-dark" style="font-size: 16px;">@item.HolidayName</h5>
+                                    <span class="badge-neutral">
+                                        @item.HolidayType
+                                    </span>
+                                </div>
+                            </div>
+                            <span class="holiday-date-pill">
+                                <i class="bi bi-calendar3"></i> @item.HolidayDate.ToString("dd MMM") (@item.DayName)
+                            </span>
+                        </div>
+
+                        <!-- Bottom Row: Badges & Actions -->
+                        <div class="d-flex align-items-center justify-content-between pt-2 border-top">
+                            <div class="d-flex gap-2 align-items-center">
+                                @if (!item.IsActive)
+                                {
+                                    <span class="badge-danger">
+                                        <i class="bi bi-x-circle me-1"></i> Cancelled
+                                    </span>
+                                }
+                                <span class="@(item.IsConfirmed ? "badge-success" : "badge-warning")">
+                                    <i class="bi @(item.IsConfirmed ? "bi-shield-check" : "bi-clock-history") me-1"></i>
+                                    @(item.IsConfirmed ? "Confirmed" : "Pending")
+                                </span>
+                            </div>
+
+                            @if (canManageHolidays)
+                            {
+                                <div class="table-actions d-inline-flex gap-1 justify-content-end">
+                                    @if (!item.IsConfirmed && item.IsActive)
+                                    {
+                                        <button type="button" class="btn-app btn-icon btn-success-app js-quick-confirm-holiday"
+                                                data-id="@item.HolidayId" data-name="@item.HolidayName"
+                                                data-date="@item.HolidayDate.ToString("dddd, dd-MMM-yyyy")" title="Confirm Holiday">
+                                            <i class="bi bi-check-lg"></i>
+                                        </button>
+                                    }
+                                    <button type="button" class="btn-app btn-icon btn-secondary-app js-open-shift-modal"
+                                            data-id="@item.HolidayId" data-name="@item.HolidayName"
+                                            data-date="@item.HolidayDate.ToString("yyyy-MM-dd")"
+                                            data-display-date="@item.HolidayDate.ToString("dddd, dd-MMM-yyyy")" title="Shift / Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Table View (Hidden by default) -->
+            <div id="holidayTableView" class="table-responsive d-none">
                 <table class="app-table mb-0">
                     <thead>
                         <tr>
@@ -201,45 +425,134 @@
                             <th>Holiday Name</th>
                             <th>Type</th>
                             <th>Status</th>
+                            <th>Confirmation</th>
+                            @if (canManageHolidays)
+                            {
+                                <th class="text-end">Actions</th>
+                            }
                         </tr>
                     </thead>
-
                     <tbody>
-                        @if (!Model.Any())
+                        @for (int index = 0; index < Model.Count; index++)
                         {
+                            var item = Model[index];
+                            int serialNumber = ((currentPage - 1) * pageSize) + index + 1;
                             <tr>
-                                <td colspan="7" class="text-center text-muted py-4">
-                                    No holidays found.
+                                <td>@serialNumber</td>
+                                <td>@item.HolidayDate.ToString("dd-MMM-yyyy")</td>
+                                <td>@item.DayName</td>
+                                <td>@item.MonthName</td>
+                                <td>@item.HolidayName</td>
+                                <td>@item.HolidayType</td>
+                                <td>
+                                    <span class="@(item.IsActive ? "badge-success" : "badge-danger")">
+                                        @(item.IsActive ? "Active" : "Inactive")
+                                    </span>
                                 </td>
-                            </tr>
-                        }
-                        else
-                        {
-                            for (int index = 0; index < Model.Count; index++)
-                            {
-                                var item = Model[index];
-                                int serialNumber = ((currentPage - 1) * pageSize) + index + 1;
-
-                                <tr>
-                                    <td>@serialNumber</td>
-                                    <td>@item.HolidayDate.ToString("dd-MMM-yyyy")</td>
-                                    <td>@item.DayName</td>
-                                    <td>@item.MonthName</td>
-                                    <td>@item.HolidayName</td>
-                                    <td>@item.HolidayType</td>
-                                    <td>
-                                        <span class="status-badge @(item.IsActive ? "success" : "muted")">
-                                            @(item.IsActive ? "Active" : "Inactive")
-                                        </span>
+                                <td>
+                                    <span class="@(item.IsConfirmed ? "badge-success" : "badge-warning")">
+                                        @(item.IsConfirmed ? "Confirmed" : "Pending")
+                                    </span>
+                                </td>
+                                @if (canManageHolidays)
+                                {
+                                    <td class="text-end">
+                                        <div class="table-actions d-inline-flex gap-1 justify-content-end">
+                                            @if (!item.IsConfirmed && item.IsActive)
+                                            {
+                                                <button type="button" class="btn-app btn-icon btn-success-app js-quick-confirm-holiday"
+                                                        data-id="@item.HolidayId" data-name="@item.HolidayName"
+                                                        data-date="@item.HolidayDate.ToString("dddd, dd-MMM-yyyy")" title="Confirm Holiday">
+                                                    <i class="bi bi-check-lg"></i>
+                                                </button>
+                                            }
+                                            <button type="button" class="btn-app btn-icon btn-secondary-app js-open-shift-modal"
+                                                    data-id="@item.HolidayId" data-name="@item.HolidayName"
+                                                    data-date="@item.HolidayDate.ToString("yyyy-MM-dd")"
+                                                    data-display-date="@item.HolidayDate.ToString("dddd, dd-MMM-yyyy")"
+                                                    title="Shift / Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                        </div>
                                     </td>
-                                </tr>
-                            }
+                                }
+                            </tr>
                         }
                     </tbody>
                 </table>
             </div>
 
             <partial name="_Pagination" model="pagination" />
-        </div>
+        }
     </div>
 </div>
+
+<script>
+    function switchHolidayView(view) {
+        const cardsEl = document.getElementById("holidayCardsView");
+        const tableEl = document.getElementById("holidayTableView");
+        const btnCards = document.getElementById("btnHolidayCards");
+        const btnTable = document.getElementById("btnHolidayTable");
+
+        if (!cardsEl || !tableEl) return;
+
+        if (view === 'table') {
+            cardsEl.classList.add("d-none");
+            tableEl.classList.remove("d-none");
+            btnTable.classList.add("active");
+            btnCards.classList.remove("active");
+        } else {
+            tableEl.classList.add("d-none");
+            cardsEl.classList.remove("d-none");
+            btnCards.classList.add("active");
+            btnTable.classList.remove("active");
+        }
+    }
+</script>
+
+<!-- Add Holiday Modal -->
+<div class="modal fade" id="addHolidayModal" tabindex="-1" aria-labelledby="addHolidayModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content"
+             style="border-radius: 22px; border: none; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden;">
+            <form asp-action="AddHoliday" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header" style="padding: 20px 24px; border-bottom: 1px solid #f1f5f9;">
+                    <h5 class="modal-title fw-bold text-dark" id="addHolidayModalLabel">
+                        <i class="bi bi-calendar-plus text-primary me-2"></i>Add New Holiday
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding: 24px;">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark">Holiday Date <span
+                            class="text-danger">*</span></label>
+                            <input type="date" name="holidayDate" class="app-input"
+                                   value="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-dark">Holiday Name <span
+                                class="text-danger">*</span></label>
+                                <input type="text" name="holidayName" class="app-input"
+                                       placeholder="e.g. Independence Day, Company Anniversary" required maxlength="160" />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-dark">Holiday Type</label>
+                                <select name="holidayType" class="app-input">
+                                    <option value="Office Holiday" selected>Office Holiday</option>
+                                    <option value="Restricted Holiday">Restricted Holiday</option>
+                                    <option value="Optional Holiday">Optional Holiday</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid #f1f5f9;">
+                            <button type="button" class="btn-app btn-secondary-app btn-sm-app"
+                                    data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn-app btn-primary-app btn-sm-app">
+                                <i class="bi bi-check-lg"></i> Save Holiday
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>

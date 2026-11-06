@@ -14,7 +14,6 @@
 
         public bool IsProjectManager { get; set; }
 
-
         public EmployeeTodayAttendanceCard Attendance { get; set; } = new();
 
         public EmployeeLeaveCard Leave { get; set; } = new();
@@ -28,6 +27,7 @@
         public List<EmployeeDashboardProjectItem> MyProjects { get; set; } = new();
 
         public List<EmployeeDashboardProjectItem> ManagedProjects { get; set; } = new();
+        public string? EmploymentType { get; internal set; }
     }
 
     public class EmployeeTodayAttendanceCard

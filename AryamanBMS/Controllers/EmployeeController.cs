@@ -2037,6 +2037,7 @@ namespace AryamanBMS.Controllers
                 EmployeeCode = employee.EmployeeCode ?? string.Empty,
                 DepartmentName = employee.Department?.DepartmentName,
                 DesignationName = employee.Designation?.DesignationName,
+                EmploymentType = employee.EmploymentType,
                 IsProjectManager = isProjectManager,
 
                 Attendance = new EmployeeTodayAttendanceCard

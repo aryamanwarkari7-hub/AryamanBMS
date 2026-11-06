@@ -1,10 +1,9 @@
 ﻿using System.Globalization;
-
 using AryamanBMS.Models;
+using AryamanBMS.Repositories.Interfaces;
 using AryamanBMS.Services.Interface;
 using AryamanBMS.ViewModels;
 using ClosedXML.Excel;
-using AryamanBMS.Repositories.Interfaces;
 
 namespace AryamanBMS.Services
 {
@@ -14,8 +13,7 @@ namespace AryamanBMS.Services
 
         private readonly IHolidayRepository _holidayRepository;
 
-        public HolidayExcelImportService(
-    IHolidayRepository holidayRepository)
+        public HolidayExcelImportService(IHolidayRepository holidayRepository)
         {
             _holidayRepository = holidayRepository;
         }
@@ -58,103 +56,166 @@ namespace AryamanBMS.Services
             {
                 var worksheet = workbook.Worksheets.First();
 
-                int headerRow = FindHeaderRow(worksheet);
+                var headerMap = FindHeaderMapping(worksheet);
 
-                if (headerRow == 0)
+                if (headerMap == null || headerMap.DateCol == 0 || headerMap.NameCol == 0)
                 {
-                    result.Errors.Add("Holiday template header not found. Expected columns: Month, Date, Day, Festival.");
+                    result.Errors.Add(
+                        "Holiday header not found. Excel must contain columns for 'Date' and 'Holiday Name' (or 'Festival')."
+                    );
                     return result;
                 }
 
-                int startRow = headerRow + 1;
+                int startRow = headerMap.RowNumber + 1;
                 int lastRow = worksheet.LastRowUsed()?.RowNumber() ?? 0;
 
                 var seenDates = new HashSet<DateTime>();
 
                 for (int row = startRow; row <= lastRow; row++)
                 {
-                    string month = worksheet.Cell(row, 1).GetString().Trim();
-                    string dateText = worksheet.Cell(row, 2).GetString().Trim();
-                    string day = worksheet.Cell(row, 3).GetString().Trim();
-                    string festival = worksheet.Cell(row, 4).GetString().Trim();
+                    var dateCell = worksheet.Cell(row, headerMap.DateCol);
+                    var nameCell = worksheet.Cell(row, headerMap.NameCol);
 
-                    if (festival.Contains("Prepared By", StringComparison.OrdinalIgnoreCase) ||
-                         month.Contains("Prepared By", StringComparison.OrdinalIgnoreCase) ||
-                         day.Contains("Verified By", StringComparison.OrdinalIgnoreCase) ||
-                         festival.Contains("Passed By", StringComparison.OrdinalIgnoreCase))
+                    string holidayName = nameCell.GetString().Trim();
+
+                    // Detect signature/summary footer rows
+                    if (
+                        holidayName.Contains("Prepared By", StringComparison.OrdinalIgnoreCase)
+                        || holidayName.Contains("Verified By", StringComparison.OrdinalIgnoreCase)
+                        || holidayName.Contains("Passed By", StringComparison.OrdinalIgnoreCase)
+                    )
                     {
                         break;
                     }
 
-                    if (string.IsNullOrWhiteSpace(dateText) &&
-                        string.IsNullOrWhiteSpace(festival))
+                    if (dateCell.IsEmpty() && string.IsNullOrWhiteSpace(holidayName))
                     {
                         continue;
                     }
 
-                    if (string.IsNullOrWhiteSpace(dateText) ||
-                        string.IsNullOrWhiteSpace(festival))
+                    if (dateCell.IsEmpty() || string.IsNullOrWhiteSpace(holidayName))
                     {
-                        result.Errors.Add($"Row {row}: Date and Festival are required.");
+                        result.Errors.Add($"Row {row}: Date and Holiday Name are required.");
                         continue;
                     }
 
-                    if (!DateTime.TryParseExact(
-                            dateText,
+                    // Flexible date parsing: supports Excel Date types, yyyy-MM-dd, dd-MM-yyyy, dd.MM.yyyy, etc.
+                    DateTime holidayDate;
+                    if (dateCell.DataType == XLDataType.DateTime)
+                    {
+                        holidayDate = dateCell.GetDateTime().Date;
+                    }
+                    else if (dateCell.TryGetValue(out DateTime parsedDt))
+                    {
+                        holidayDate = parsedDt.Date;
+                    }
+                    else
+                    {
+                        string dateText = dateCell.GetString().Trim();
+                        string[] dateFormats = new[]
+                        {
+                            "yyyy-MM-dd",
                             "dd.MM.yyyy",
-                            CultureInfo.InvariantCulture,
-                            DateTimeStyles.None,
-                            out DateTime holidayDate))
-                    {
-                        result.Errors.Add($"Row {row}: Invalid date '{dateText}'. Use dd.MM.yyyy.");
-                        continue;
+                            "dd-MM-yyyy",
+                            "dd/MM/yyyy",
+                            "d-MMM-yyyy",
+                            "dd-MMM-yyyy",
+                            "d-MMMM-yyyy",
+                            "dd-MMMM-yyyy",
+                            "MM/dd/yyyy",
+                        };
+
+                        if (
+                            !DateTime.TryParseExact(
+                                dateText,
+                                dateFormats,
+                                CultureInfo.InvariantCulture,
+                                DateTimeStyles.None,
+                                out holidayDate
+                            )
+                            && !DateTime.TryParse(
+                                dateText,
+                                CultureInfo.CurrentCulture,
+                                DateTimeStyles.None,
+                                out holidayDate
+                            )
+                        )
+                        {
+                            result.Errors.Add(
+                                $"Row {row}: Invalid date '{dateText}'. Use yyyy-MM-dd, dd-MM-yyyy, or Excel date."
+                            );
+                            continue;
+                        }
                     }
 
                     holidayDate = holidayDate.Date;
 
                     if (!seenDates.Add(holidayDate))
                     {
-                        result.Errors.Add($"Row {row}: Duplicate holiday date '{dateText}' in uploaded file.");
+                        result.Errors.Add(
+                            $"Row {row}: Duplicate holiday date '{holidayDate:yyyy-MM-dd}' in uploaded file."
+                        );
                         continue;
                     }
+
+                    string month =
+                        headerMap.MonthCol > 0
+                            ? worksheet.Cell(row, headerMap.MonthCol).GetString().Trim()
+                            : string.Empty;
+                    string day =
+                        headerMap.DayCol > 0
+                            ? worksheet.Cell(row, headerMap.DayCol).GetString().Trim()
+                            : string.Empty;
+                    string holidayType =
+                        headerMap.TypeCol > 0
+                            ? worksheet.Cell(row, headerMap.TypeCol).GetString().Trim()
+                            : "Office Holiday";
+                    string status =
+                        headerMap.StatusCol > 0
+                            ? worksheet.Cell(row, headerMap.StatusCol).GetString().Trim()
+                            : "Active";
+
+                    if (string.IsNullOrWhiteSpace(holidayType))
+                    {
+                        holidayType = "Office Holiday";
+                    }
+
+                    bool isActive = !status.Equals("Inactive", StringComparison.OrdinalIgnoreCase);
 
                     var expectedDay = holidayDate.ToString("dddd", CultureInfo.InvariantCulture);
-
-                    if (!string.IsNullOrWhiteSpace(day) &&
-                        !string.Equals(day, expectedDay, StringComparison.OrdinalIgnoreCase))
-                    {
-                        result.Errors.Add($"Row {row}: Day '{day}' does not match date. Expected '{expectedDay}'.");
-                        continue;
-                    }
 
                     var existing = await _holidayRepository.GetByDateAsync(holidayDate);
 
                     if (existing == null)
                     {
-                        await _holidayRepository.AddAsync(new HolidayModel
-                        {
-                            HolidayDate = holidayDate,
-                            HolidayName = festival,
-                            MonthName = string.IsNullOrWhiteSpace(month)
-                                ? holidayDate.ToString("MMM")
-                                : month,
-                            DayName = expectedDay,
-                            HolidayType = "Office Holiday",
-                            IsActive = true,
-                            CreatedOn = DateTime.Now
-                        });
+                        await _holidayRepository.AddAsync(
+                            new HolidayModel
+                            {
+                                HolidayDate = holidayDate,
+                                HolidayName = holidayName,
+                                MonthName = string.IsNullOrWhiteSpace(month)
+                                    ? holidayDate.ToString("MMM")
+                                    : month,
+                                DayName = expectedDay,
+                                HolidayType = holidayType,
+                                IsActive = isActive,
+                                IsConfirmed = holidayDate.Date < DateTime.Today,
+                                CreatedOn = DateTime.Now,
+                            }
+                        );
 
                         result.AddedCount++;
                     }
                     else
                     {
-                        existing.HolidayName = festival;
+                        existing.HolidayName = holidayName;
                         existing.MonthName = string.IsNullOrWhiteSpace(month)
                             ? holidayDate.ToString("MMM")
                             : month;
                         existing.DayName = expectedDay;
-                        existing.HolidayType = "Office Holiday";
-                        existing.IsActive = true;
+                        existing.HolidayType = holidayType;
+                        existing.IsActive = isActive;
+                        existing.IsConfirmed = holidayDate.Date < DateTime.Today;
                         existing.UpdatedOn = DateTime.Now;
 
                         result.UpdatedCount++;
@@ -167,27 +228,74 @@ namespace AryamanBMS.Services
             return result;
         }
 
-        private static int FindHeaderRow(IXLWorksheet worksheet)
+        private class HolidayHeaderMapping
         {
-            int lastRow = worksheet.LastRowUsed()?.RowNumber() ?? 0;
+            public int RowNumber { get; set; }
+            public int DateCol { get; set; }
+            public int NameCol { get; set; }
+            public int MonthCol { get; set; }
+            public int DayCol { get; set; }
+            public int TypeCol { get; set; }
+            public int StatusCol { get; set; }
+        }
+
+        private static HolidayHeaderMapping? FindHeaderMapping(IXLWorksheet worksheet)
+        {
+            int lastRow = Math.Min(worksheet.LastRowUsed()?.RowNumber() ?? 0, 15);
 
             for (int row = 1; row <= lastRow; row++)
             {
-                string col1 = worksheet.Cell(row, 1).GetString().Trim();
-                string col2 = worksheet.Cell(row, 2).GetString().Trim();
-                string col3 = worksheet.Cell(row, 3).GetString().Trim();
-                string col4 = worksheet.Cell(row, 4).GetString().Trim();
+                var mapping = new HolidayHeaderMapping { RowNumber = row };
+                int lastCol = worksheet.Row(row).LastCellUsed()?.Address.ColumnNumber ?? 0;
 
-                if (col1.Equals("Month", StringComparison.OrdinalIgnoreCase) &&
-                    col2.Equals("Date", StringComparison.OrdinalIgnoreCase) &&
-                    col3.Equals("Day", StringComparison.OrdinalIgnoreCase) &&
-                    col4.Equals("Festival", StringComparison.OrdinalIgnoreCase))
+                for (int col = 1; col <= lastCol; col++)
                 {
-                    return row;
+                    string header = worksheet.Cell(row, col).GetString().Trim();
+
+                    if (
+                        header.Equals("Date", StringComparison.OrdinalIgnoreCase)
+                        || header.Equals("Holiday Date", StringComparison.OrdinalIgnoreCase)
+                    )
+                    {
+                        mapping.DateCol = col;
+                    }
+                    else if (
+                        header.Equals("Holiday Name", StringComparison.OrdinalIgnoreCase)
+                        || header.Equals("Holiday", StringComparison.OrdinalIgnoreCase)
+                        || header.Equals("Festival", StringComparison.OrdinalIgnoreCase)
+                        || header.Equals("Occasion", StringComparison.OrdinalIgnoreCase)
+                    )
+                    {
+                        mapping.NameCol = col;
+                    }
+                    else if (header.Equals("Month", StringComparison.OrdinalIgnoreCase))
+                    {
+                        mapping.MonthCol = col;
+                    }
+                    else if (header.Equals("Day", StringComparison.OrdinalIgnoreCase))
+                    {
+                        mapping.DayCol = col;
+                    }
+                    else if (
+                        header.Equals("Type", StringComparison.OrdinalIgnoreCase)
+                        || header.Equals("Holiday Type", StringComparison.OrdinalIgnoreCase)
+                    )
+                    {
+                        mapping.TypeCol = col;
+                    }
+                    else if (header.Equals("Status", StringComparison.OrdinalIgnoreCase))
+                    {
+                        mapping.StatusCol = col;
+                    }
+                }
+
+                if (mapping.DateCol > 0 && mapping.NameCol > 0)
+                {
+                    return mapping;
                 }
             }
 
-            return 0;
+            return null;
         }
     }
 }

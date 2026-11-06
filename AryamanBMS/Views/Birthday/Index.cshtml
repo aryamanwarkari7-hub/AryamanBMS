@@ -2,29 +2,250 @@
 @model List<AryamanBMS.ViewModels.BirthdayListItemViewModel>
 
 @{
-    ViewData["Title"] = "Birthdays";
+    ViewData["Title"] = "Birthday Directory";
 
-    int? selectedMonth =
-        ViewBag.Month is int monthValue
-            ? monthValue
-            : null;
+    int? selectedMonth = ViewBag.Month is int monthValue ? monthValue : null;
 
     string GetMonthName(int month) =>
-        CultureInfo.CurrentCulture
-            .DateTimeFormat
-            .GetMonthName(month);
+        CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(month);
 
     string selectedMonthName = selectedMonth.HasValue
         ? GetMonthName(selectedMonth.Value)
         : "Full Year";
+
+    string GetInitials(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "EM";
+        var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1) return parts[0].Substring(0, Math.Min(2, parts[0].Length)).ToUpper();
+        return $"{parts[0][0]}{parts[^1][0]}".ToUpper();
+    }
 }
+
+<style>
+    .birthday-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 20px;
+        padding: 20px 0;
+    }
+
+    .birthday-card {
+        background: linear-gradient(135deg, rgba(240, 249, 255, 0.65) 0%, rgba(254, 242, 242, 0.45) 50%, rgba(253, 242, 248, 0.65) 100%), #ffffff;
+        border: 1px solid rgba(226, 232, 240, 0.85);
+        border-radius: 20px;
+        padding: 20px 22px;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.03);
+    }
+
+    /* Ensure card content stays sharply on top */
+    .birthday-card>* {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Wrapper that anchors the balloons directly behind the pill */
+    .birthday-date-wrapper {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 2px;
+        margin-right: 6px;
+    }
+
+    /* Red, Blue & Yellow Balloons floating directly behind the pill */
+    .birthday-date-wrapper::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -54%);
+        width: 135px;
+        height: 115px;
+        pointer-events: none;
+        opacity: 0.28;
+        /* Clear, vibrant and festive */
+        background-repeat: no-repeat;
+        background-size: contain;
+        background-position: center;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 110'%3E%3C!-- Blue Balloon (Left) --%3E%3Cellipse cx='38' cy='46' rx='20' ry='26' fill='%230284c7' transform='rotate(-12 38 46)'/%3E%3Cpath d='M35 72 L38 76 L33 76 Z' fill='%230284c7'/%3E%3Cpath d='M36 76 Q30 88 40 102' stroke='%2394a3b8' stroke-width='1.5' fill='none'/%3E%3C!-- Yellow Balloon (Right) --%3E%3Cellipse cx='82' cy='48' rx='20' ry='26' fill='%23eab308' transform='rotate(14 82 48)'/%3E%3Cpath d='M83 74 L86 78 L81 78 Z' fill='%23eab308'/%3E%3Cpath d='M84 78 Q88 88 78 102' stroke='%2394a3b8' stroke-width='1.5' fill='none'/%3E%3C!-- Red Balloon (Center) --%3E%3Cellipse cx='58' cy='36' rx='23' ry='29' fill='%23ef4444'/%3E%3Cpath d='M58 65 L61 69 L55 69 Z' fill='%23ef4444'/%3E%3Cpath d='M58 69 Q60 84 58 102' stroke='%2394a3b8' stroke-width='1.5' fill='none'/%3E%3C!-- Highlights --%3E%3Cellipse cx='52' cy='25' rx='4' ry='8' fill='%23ffffff' opacity='0.6' transform='rotate(-20 52 25)'/%3E%3Cellipse cx='33' cy='35' rx='3' ry='7' fill='%23ffffff' opacity='0.5' transform='rotate(-25 33 35)'/%3E%3Cellipse cx='78' cy='38' rx='3' ry='7' fill='%23ffffff' opacity='0.5' transform='rotate(5 78 38)'/%3E%3C/svg%3E");
+        z-index: 0;
+        transition: transform 0.25s ease, opacity 0.25s ease;
+    }
+
+    /* Balloons float up slightly on hover */
+    .birthday-card:hover .birthday-date-wrapper::before {
+        transform: translate(-50%, -60%) scale(1.08);
+        opacity: 0.42;
+    }
+
+    .birthday-card.is-today .birthday-date-wrapper::before {
+        opacity: 0.48;
+        transform: translate(-50%, -58%) scale(1.1);
+    }
+
+    /* Slightly enhances on hover */
+    .birthday-card:hover::after {
+        opacity: 0.20;
+        transform: scale(1.05);
+    }
+
+    .birthday-date-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 9999px;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+
+        /* 👇 Adjust the last number (0.85 = 85% opacity, 0.70 = 70%, 1.0 = solid) */
+        background: linear-gradient(135deg, rgba(2, 132, 199, 0.85) 0%, rgba(3, 105, 161, 0.85) 100%);
+        backdrop-filter: blur(4px);
+        /* Adds a smooth frosted glass effect */
+
+        color: #ffffff;
+        box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    @keyframes
+    pulseToday {
+
+        0%,
+        100% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.05);
+            box-shadow: 0 6px 18px rgba(236, 72, 153, 0.55);
+        }
+    }
+
+    /* Upcoming within 7 days */
+    .birthday-date-pill.is-upcoming-pill {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        box-shadow: 0 4px 12px rgba(217, 119, 6, 0.30);
+    }
+
+    /* Extra celebration prominence if today is their birthday */
+    .birthday-card.is-today::after {
+        opacity: 0.30;
+        transform: scale(1.08);
+    }
+
+    .birthday-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
+        border-color: rgba(186, 230, 253, 0.9);
+    }
+
+    /* Special highlight for today's birthday */
+    .birthday-card.is-today {
+        background: linear-gradient(135deg, rgba(253, 242, 248, 0.9) 0%, rgba(254, 243, 199, 0.65) 50%, rgba(255, 241, 242, 0.9) 100%), #ffffff;
+        border: 2px solid #ec4899;
+        box-shadow: 0 14px 30px rgba(236, 72, 153, 0.18);
+    }
+
+    .birthday-card.is-today::after {
+        content: "\F17B";
+        /* bi-award / celebration */
+        color: rgba(236, 72, 153, 0.07);
+    }
+
+   
+
+    .birthday-avatar-box {
+        width: 54px;
+        height: 54px;
+        border-radius: 50%;
+        overflow: hidden;
+        background: linear-gradient(135deg, #0284c7, #38bdf8);
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 18px;
+        flex-shrink: 0;
+        box-shadow: 0 6px 14px rgba(2, 132, 199, 0.25);
+    }
+
+    .birthday-avatar-box.avatar-today {
+        background: linear-gradient(135deg, #ec4899, #f43f5e);
+        box-shadow: 0 6px 14px rgba(236, 72, 153, 0.35);
+    }
+
+    .birthday-avatar-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .birthday-calendar-badge {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 6px 14px;
+        text-align: center;
+        min-width: 68px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+    }
+
+    .birthday-calendar-badge .cal-month {
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: #0284c7;
+        line-height: 1;
+    }
+
+    .birthday-calendar-badge .cal-day {
+        font-size: 22px;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.1;
+        margin-top: 2px;
+    }
+
+    .birthday-pill-today {
+        background: linear-gradient(135deg, #ec4899, #f43f5e);
+        color: #ffffff;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 12px;
+        border-radius: 9999px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        box-shadow: 0 4px 10px rgba(244, 63, 94, 0.28);
+    }
+
+    .birthday-pill-upcoming {
+        background: #fef3c7;
+        color: #b45309;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 9999px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+</style>
 
 <div class="module-header">
     <div>
         <h1 class="module-title">Birthday Directory</h1>
-        <p class="module-subtitle">
-            Celebrate upcoming team birthdays.
-        </p>
+        <p class="module-subtitle">Celebrate upcoming team birthdays.</p>
     </div>
 </div>
 
@@ -32,9 +253,7 @@
     <div class="card-header">
         <div class="card-heading">
             <h2 class="card-title">@selectedMonthName Birthdays</h2>
-            <p class="card-subtitle">
-                Choose a month to view team birthdays.
-            </p>
+            <p class="card-subtitle">Filter team birthdays by month.</p>
         </div>
     </div>
 
@@ -43,84 +262,183 @@
             <div class="col-md-4">
                 <label class="form-label" for="month">Month</label>
                 <select id="month" name="month" class="app-input">
-                    <option value="" selected="@(!selectedMonth.HasValue)">
-                        Full Year
-                    </option>
-                    @for (int month = 1; month <= 12; month++)
+                    <option value="" selected="@(!selectedMonth.HasValue)">Full Year</option>
+                    @for (int m = 1; m <= 12; m++)
                     {
-                        <option value="@month" selected="@(selectedMonth == month)">
-                            @GetMonthName(month)
-                        </option>
+                        <option value="@m" selected="@(selectedMonth == m)">@GetMonthName(m)</option>
                     }
                 </select>
             </div>
 
             <div class="col-md-3 d-flex gap-2">
-    <button type="submit"
-            class="btn-app btn-primary-app flex-fill">
-        <i class="bi bi-funnel"></i>
-        Apply
-    </button>
-
-    <a asp-action="Index"
-       class="btn-app btn-secondary-app">
-        <i class="bi bi-arrow-clockwise"></i>
-        Reset
-    </a>
-</div>
+                <button type="submit" class="btn-app btn-primary-app flex-fill">
+                    <i class="bi bi-funnel"></i> Apply
+                </button>
+                <a asp-action="Index" class="btn-app btn-secondary-app">
+                    <i class="bi bi-arrow-clockwise"></i> Reset
+                </a>
+            </div>
         </form>
     </div>
 </div>
 
 <div class="app-card">
-    <div class="card-header">
+    <div class="card-header d-flex justify-content-between align-items-center">
         <div class="card-heading">
             <h2 class="card-title">@selectedMonthName Birthdays</h2>
-            <p class="card-subtitle">
-                @Model.Count team member(s) with birthdays this month.
-            </p>
+            <p class="card-subtitle">@Model.Count team member(s) found.</p>
+        </div>
+
+        <div class="btn-group" role="group">
+            <button type="button" class="btn-app btn-outline-app btn-sm-app active" id="btnViewCards"
+                    onclick="switchView('cards')">
+                <i class="bi bi-grid-fill"></i> Cards
+            </button>
+            <button type="button" class="btn-app btn-outline-app btn-sm-app" id="btnViewTable"
+                    onclick="switchView('table')">
+                <i class="bi bi-table"></i> Table
+            </button>
         </div>
     </div>
 
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="app-table mb-0">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Employee Name</th>
-                        <th>Birthday</th>
-                    </tr>
-                </thead>
+    <div class="card-body">
+        @if (!Model.Any())
+        {
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-balloon fs-1 d-block mb-2 text-secondary"></i>
+                <h5>No birthdays found</h5>
+                <p class="small">No team members have birthdays recorded for this period.</p>
+            </div>
+        }
+        else
+        {
+            <!-- Cards View -->
+            <div id="birthdayCardsView" class="birthday-grid">
+                @foreach (var item in Model)
+                {
+                    var displayDate = new DateTime(2000, item.Month, item.Day);
+                    string monthShort = displayDate.ToString("MMM");
+                    string dayNum = item.Day.ToString();
 
-                <tbody>
-                    @if (!Model.Any())
-                    {
-                        <tr>
-                            <td colspan="3" class="text-center text-muted py-4">
-                                No birthdays found for this month.
-                            </td>
-                        </tr>
+                    <div class="birthday-card @(item.IsToday ? "is-today" : "")">
+                        <div class="d-flex align-items-center justify-content-between gap-3">
+                            <!-- Left: Avatar + Name + Department -->
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="birthday-avatar-box @(item.IsToday ? "avatar-today" : "")">
+                                    @if (!string.IsNullOrWhiteSpace(item.ProfilePhotoPath))
+                                    {
+                                        <img src="@item.ProfilePhotoPath" alt="@item.EmployeeName" />
+                                    }
+                                    else
+                                    {
+                                        <span>@GetInitials(item.EmployeeName)</span>
+                                    }
+                                </div>
+                                <div>
+                                    <h5 class="fw-bold mb-1 text-dark" style="font-size: 16px; line-height: 1.25;">
+                                        @item.EmployeeName</h5>
+                                        <span class="text-muted small d-block">
+                                            @(string.IsNullOrWhiteSpace(item.DepartmentName) ? "Team Member" : item.DepartmentName)
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Right: Emphasized Date Pill -->
+                                <!-- Right: Emphasized Date Pill with Balloons -->
+                                <div class="birthday-date-wrapper flex-shrink-0">
+                                    @if (item.IsToday)
+                                    {
+                                        <span class="birthday-date-pill is-today-pill" title="Today is their birthday!">
+                                            🎉 @displayDate.ToString("dd MMMM")
+                                        </span>
+                                    }
+                                    else if (item.DaysUntil > 0 && item.DaysUntil <= 7)
+                                    {
+                                        <span class="birthday-date-pill is-upcoming-pill" title="In @item.DaysUntil days">
+                                            🎂 @displayDate.ToString("dd MMMM")
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="birthday-date-pill">
+                                            <i class="bi bi-calendar-event me-1"></i> @displayDate.ToString("dd MMMM")
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
                     }
-                    else
-                    {
-                        for (int index = 0; index < Model.Count; index++)
-                        {
-                            var item = Model[index];
-                            var displayDate = new DateTime(
-                                2000,
-                                item.Month,
-                                item.Day);
+                </div>
 
+                <!-- Table View (Hidden by default) -->
+                <div id="birthdayTableView" class="table-responsive d-none">
+                    <table class="app-table mb-0">
+                        <thead>
                             <tr>
-                                <td>@(index + 1)</td>
-                                <td>@item.EmployeeName</td>
-                                <td>@displayDate.ToString("dd MMMM")</td>
+                                <th>#</th>
+                                <th>Employee Name</th>
+                                <th>Department</th>
+                                <th>Designation</th>
+                                <th>Birthday</th>
+                                <th>Status</th>
                             </tr>
-                        }
-                    }
-                </tbody>
-            </table>
+                        </thead>
+                        <tbody>
+                            @for (int index = 0; index < Model.Count; index++)
+                            {
+                                var item = Model[index];
+                                var displayDate = new DateTime(2000, item.Month, item.Day);
+                                <tr>
+                                    <td>@(index + 1)</td>
+                                    <td><strong>@item.EmployeeName</strong></td>
+                                    <td>@(item.DepartmentName ?? "-")</td>
+                                    <td>@(item.DesignationName ?? "-")</td>
+                                    <td>@displayDate.ToString("dd MMMM")</td>
+                                    <td>
+                                        @if (item.IsToday)
+                                        {
+                                            <span class="status-badge success">Today 🎉</span>
+                                        }
+                                        else if (item.DaysUntil <= 7)
+                                        {
+                                            <span class="status-badge warning">In @item.DaysUntil days</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">Upcoming</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
         </div>
     </div>
-</div>
+
+    <script>
+        function switchView(view) {
+            const cardsEl = document.getElementById("birthdayCardsView");
+            const tableEl = document.getElementById("birthdayTableView");
+            const btnCards = document.getElementById("btnViewCards");
+            const btnTable = document.getElementById("btnViewTable");
+
+            if (!cardsEl || !tableEl) return;
+
+            if (view === 'table') {
+                cardsEl.classList.add("d-none");
+                tableEl.classList.remove("d-none");
+                btnTable.classList.add("active");
+                btnCards.classList.remove("active");
+            } else {
+                tableEl.classList.add("d-none");
+                cardsEl.classList.remove("d-none");
+                btnCards.classList.add("active");
+                btnTable.classList.remove("active");
+            }
+        }
+    </script>
+@functions {
+    private object keyframes;
+}

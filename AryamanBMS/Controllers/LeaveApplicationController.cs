@@ -1600,7 +1600,7 @@ namespace AryamanBMS.Controllers
 
             var employeesQuery = _employeeRepository
                 .Employees.AsNoTracking()
-                .Where(x => x.IsActive);
+                .Where(x => x.IsActive && x.EmploymentType == "Permanent");
 
             if (!string.IsNullOrWhiteSpace(searchText))
             {

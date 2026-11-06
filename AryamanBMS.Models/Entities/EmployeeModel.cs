@@ -18,14 +18,13 @@ namespace AryamanBMS.Models
         public string? LastName { get; set; }
 
         [NotMapped]
-        public string FullName => string.Join(" ",
-        new[]
-        {
-            FirstName,
-            MiddleName,
-            LastName
-        }
-        .Where(name => !string.IsNullOrWhiteSpace(name)));
+        public string FullName =>
+            string.Join(
+                " ",
+                new[] { FirstName, MiddleName, LastName }.Where(name =>
+                    !string.IsNullOrWhiteSpace(name)
+                )
+            );
 
         //public string? Email { get; set; }
 
@@ -73,9 +72,7 @@ namespace AryamanBMS.Models
         public string? State { get; set; }
 
         [StringLength(6)]
-        [RegularExpression(
-         @"^[0-9]{6}$",
-         ErrorMessage = "PIN code must contain exactly 6 digits.")]
+        [RegularExpression(@"^[0-9]{6}$", ErrorMessage = "PIN code must contain exactly 6 digits.")]
         public string? PinCode { get; set; }
 
         public string? LocalAddress { get; set; }
@@ -87,7 +84,8 @@ namespace AryamanBMS.Models
         [StringLength(6)]
         [RegularExpression(
             @"^[0-9]{6}$",
-            ErrorMessage = "Local PIN code must contain exactly 6 digits.")]
+            ErrorMessage = "Local PIN code must contain exactly 6 digits."
+        )]
         public string? LocalPinCode { get; set; }
 
         // ==========================
@@ -113,10 +111,15 @@ namespace AryamanBMS.Models
         public string? UanNo { get; set; }
 
         [Display(Name = "ESIC Number")]
-        [StringLength(10, MinimumLength = 10,
-            ErrorMessage = "ESIC Number must contain exactly 10 digits.")]
-        [RegularExpression(@"^[0-9]{10}$",
-            ErrorMessage = "ESIC Number must contain exactly 10 digits.")]
+        [StringLength(
+            10,
+            MinimumLength = 10,
+            ErrorMessage = "ESIC Number must contain exactly 10 digits."
+        )]
+        [RegularExpression(
+            @"^[0-9]{10}$",
+            ErrorMessage = "ESIC Number must contain exactly 10 digits."
+        )]
         public string? EsicNo { get; set; }
 
         // ==========================
@@ -124,9 +127,17 @@ namespace AryamanBMS.Models
         // ==========================
 
         public string? EmploymentType { get; set; }
+
         // Permanent / Contract / Intern / Consultant
+        private bool _isEligibleForPaidLeave = true;
+
         [Display(Name = "Annual Paid Leave Pool (18 days/FY)")]
-        public bool IsEligibleForPaidLeave { get; set; } = true;
+        public bool IsEligibleForPaidLeave
+        {
+            get => string.Equals(EmploymentType, "Permanent", StringComparison.OrdinalIgnoreCase);
+            set => _isEligibleForPaidLeave = value;
+        }
+
         [Display(Name = "Stipend (No Salary Breakdown)")]
         public bool IsStipend { get; set; } = false;
 
@@ -142,29 +153,23 @@ namespace AryamanBMS.Models
 
         public ApplicationUserModel? ApplicationUser { get; set; }
 
-        // Leave 
-        public ICollection<LeaveApplicationModel>
-        LeaveApplications
-        { get; set; } = new List<LeaveApplicationModel>();
+        // Leave
+        public ICollection<LeaveApplicationModel> LeaveApplications { get; set; } =
+            new List<LeaveApplicationModel>();
 
-        public ICollection<LeaveBalanceModel>
-        LeaveBalances
-        { get; set; } = new List<LeaveBalanceModel>();
+        public ICollection<LeaveBalanceModel> LeaveBalances { get; set; } =
+            new List<LeaveBalanceModel>();
 
         // Document Uploads and Records
-        public ICollection<EmployeeAcademicModel> AcademicRecords { get; set; }
-        = new List<EmployeeAcademicModel>();
+        public ICollection<EmployeeAcademicModel> AcademicRecords { get; set; } =
+            new List<EmployeeAcademicModel>();
 
-        public ICollection<EmployeeDocumentModel> Documents { get; set; }
-            = new List<EmployeeDocumentModel>();
+        public ICollection<EmployeeDocumentModel> Documents { get; set; } =
+            new List<EmployeeDocumentModel>();
 
-        public ICollection<EmployeePreviousEmploymentModel>
-            PreviousEmployments
-        { get; set; }
-        = new List<EmployeePreviousEmploymentModel>();
+        public ICollection<EmployeePreviousEmploymentModel> PreviousEmployments { get; set; } =
+            new List<EmployeePreviousEmploymentModel>();
 
-
-        public ICollection<ProjectModel> ManagedProjects { get; set; }
-         = new List<ProjectModel>();
+        public ICollection<ProjectModel> ManagedProjects { get; set; } = new List<ProjectModel>();
     }
 }

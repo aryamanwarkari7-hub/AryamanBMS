@@ -25,6 +25,12 @@ namespace AryamanBMS.Models
 
         public bool IsActive { get; set; } = true;
 
+        public bool IsConfirmed { get; set; } = true;
+        public DateTime? ConfirmedOn { get; set; }
+
+        [StringLength(450)]
+        public string? ConfirmedBy { get; set; }
+
         public DateTime CreatedOn { get; set; } = DateTime.Now;
 
         public DateTime? UpdatedOn { get; set; }
