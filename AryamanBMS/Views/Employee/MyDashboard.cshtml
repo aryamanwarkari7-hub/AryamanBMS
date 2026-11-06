@@ -150,19 +150,39 @@
         </div>
     </div>
 
+    @{
+        bool isStipend = !string.Equals(Model.EmploymentType, "Permanent", StringComparison.OrdinalIgnoreCase);
+    }
+
     <div class="app-card dashboard-section-card dashboard-finance-card">
         <div class="card-header">
-            <h5 class="card-title">Latest Salary</h5>
-            @if (Model.Salary.IsPayslipReleased && Model.Salary.SalaryRecordId.HasValue)
-            {
-                <div class="card-actions">
+            <h5 class="card-title">
+                <i class="bi @(isStipend ? "bi-receipt" : "bi-wallet2")"></i>
+                @(isStipend ? "Latest Stipend" : "Latest Salary")
+            </h5>
+
+            <div class="card-actions">
+                @if (Model.Salary.IsPayslipReleased && Model.Salary.SalaryRecordId.HasValue)
+                {
                     <a asp-controller="Salary" asp-action="Payslip" asp-route-id="@Model.Salary.SalaryRecordId"
-                       class="btn-app btn-secondary-app btn-sm-app">
-                        <i class="bi bi-file-earmark-pdf"></i>
-                        Payslip
+                       class="btn-app btn-primary-app btn-sm-app">
+                        <i class="bi bi-file-earmark-pdf"></i> @(isStipend ? "View Voucher" : "View Payslip")
                     </a>
-                </div>
-            }
+                }
+
+                @if (isStipend)
+                {
+                    <a asp-controller="Salary" asp-action="MyPayslip" class="btn-app btn-secondary-app btn-sm-app">
+                        <i class="bi bi-receipt"></i> My Stipend Voucher
+                    </a>
+                }
+                else
+                {
+                    <a asp-controller="Salary" asp-action="MySalary" class="btn-app btn-secondary-app btn-sm-app">
+                        <i class="bi bi-cash-stack"></i> My Salary
+                    </a>
+                }
+            </div>
         </div>
 
         <div class="card-body">
@@ -170,11 +190,11 @@
                 <div class="dashboard-metric">
                     <span><i class="bi bi-calendar3"></i> Monthly Period</span>
                     <strong>@(Model.Salary.Month.HasValue ? $"{Model.Salary.Month:00}/{Model.Salary.Year}" :
-                                                                                                                                                                                                               "-")</strong>
+                                                                                                           "-")</strong>
                     </div>
 
                     <div class="dashboard-metric">
-                        <span><i class="bi bi-cash-stack"></i> Salary after Deductions</span>
+                        <span><i class="bi bi-cash-stack"></i> @(isStipend ? "Stipend after Deductions" : "Salary after Deductions")</span>
                         <strong>₹@Model.Salary.NetSalary.ToString("N0")</strong>
                     </div>
 
@@ -193,7 +213,7 @@
                     </div>
 
                     <div class="dashboard-metric">
-                        <span><i class="bi bi-receipt"></i> Payslip Status</span>
+                        <span><i class="bi bi-receipt"></i> @(isStipend ? "Voucher Status" : "Payslip Status")</span>
                         <strong>
                             @if (Model.Salary.IsPayslipReleased)
                             {
@@ -208,9 +228,8 @@
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="main-dashboard-layout">
+
         <div class="app-card dashboard-section-card">
             <div class="card-header">
                 <h5 class="card-title">Assigned Tasks</h5>
