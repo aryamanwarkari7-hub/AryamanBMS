@@ -1031,6 +1031,12 @@ currentController == "LeaveApplication" ||
                                             <i class="bi bi-activity"></i>
                                             <span>Task Updates</span>
                                         </a>
+
+                                        <a asp-controller="DailyWorkReport" asp-action="Index"
+                                           class="submenu-item nested-item @(currentController == "DailyWorkReport" && Context.Request.Query["mine"] != "true" ? "active-menu" : "")">
+                                            <i class="bi bi-journal-check"></i>
+                                            <span>Daily Work Reports</span>
+                                        </a>
                                     }
 
                                     @* ==========================================
@@ -1404,6 +1410,12 @@ currentController == "LeaveApplication" ||
                            class="submenu-item nested-item @(currentController == "Attendance" && currentAction == "Index" ? "active-menu" : "")">
                             <i class="bi bi-clock"></i>
                             <span>My Attendance</span>
+                        </a>
+
+                        <a asp-controller="DailyWorkReport" asp-action="Index" asp-route-mine="true"
+                           class="submenu-item nested-item @(currentController == "DailyWorkReport" && Context.Request.Query["mine"] == "true" ? "active-menu" : "")">
+                            <i class="bi bi-journal-text"></i>
+                            <span>Daily Work Report</span>
                         </a>
 
                         <a asp-controller="Attendance" asp-action="MyMonthly"

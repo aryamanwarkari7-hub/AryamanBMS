@@ -1,0 +1,259 @@
+@model List<DailyWorkReportModel>
+
+@{
+    ViewData["Title"] = "Daily Work Reports";
+    bool isAdminOrManager = ViewBag.IsAdminOrManager == true;
+    bool isMine = ViewBag.IsMine == true;
+    bool IsRealIssue(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return false;
+        var t = text.Trim();
+        return t != "-" && t != "--" && t != "—" && t != "–"
+            && !t.Equals("NA", StringComparison.OrdinalIgnoreCase)
+            && !t.Equals("N/A", StringComparison.OrdinalIgnoreCase)
+            && !t.Equals("None", StringComparison.OrdinalIgnoreCase)
+            && !t.Equals("Nil", StringComparison.OrdinalIgnoreCase)
+            && !t.Equals("No", StringComparison.OrdinalIgnoreCase);
+    }
+}
+
+<div class="module-header">
+    <div>
+        <h1 class="module-title">DAILY WORK REPORTS</h1>
+        <p class="module-subtitle">Track daily activity logs, hours logged, and upcoming planning.</p>
+    </div>
+    <div class="module-header-actions">
+        <a asp-action="ExportExcel" asp-route-fromDate="@ViewBag.FromDate" asp-route-toDate="@ViewBag.ToDate"
+           asp-route-employeeId="@ViewBag.SelectedEmployeeId" asp-route-projectId="@ViewBag.SelectedProjectId"
+           class="btn-app btn-success-app">
+            <i class="bi bi-file-earmark-excel"></i> Export to Excel
+        </a>
+
+        <a asp-action="Create" asp-route-mine="@(isMine ? "true" : null)" class="btn-app btn-primary-app">
+            <i class="bi bi-plus-circle"></i> New Daily Report
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="app-card mb-3">
+    <div class="card-body p-3">
+        <form method="get" class="filter-row">
+            @if (isMine)
+            {
+                <input type="hidden" name="mine" value="true" />
+            }
+
+            <div class="form-group filter-field">
+                <label class="form-label">From Date</label>
+                <input type="date" name="fromDate" value="@ViewBag.FromDate" class="app-input" />
+            </div>
+
+            <div class="form-group filter-field">
+                <label class="form-label">To Date</label>
+                <input type="date" name="toDate" value="@ViewBag.ToDate" class="app-input" />
+            </div>
+
+            @if (isAdminOrManager && ViewBag.Employees != null)
+            {
+                <div class="form-group filter-field">
+                    <label class="form-label">Employee</label>
+                    <select name="employeeId" class="app-select">
+                        <option value="">All Employees</option>
+                        @foreach (var emp in ViewBag.Employees)
+                        {
+                            <option value="@emp.Id" selected="@(ViewBag.SelectedEmployeeId == emp.Id)">@emp.Name</option>
+                        }
+                    </select>
+                </div>
+            }
+
+            @if (ViewBag.Projects != null)
+            {
+                <div class="form-group filter-field">
+                    <label class="form-label">Project</label>
+                    <select name="projectId" class="app-select">
+                        <option value="">All Projects</option>
+                        @foreach (var p in ViewBag.Projects)
+                        {
+                            <option value="@p.Id" selected="@(ViewBag.SelectedProjectId == p.Id)">@p.ProjectName</option>
+                        }
+                    </select>
+                </div>
+            }
+
+            <div class="filter-actions d-flex gap-2">
+                <button type="submit" class="btn-app btn-primary-app">
+                    <i class="bi bi-filter"></i> Apply Filter
+                </button>
+                <a asp-action="Index" asp-route-mine="@(isMine ? "true" : null)" class="btn-app btn-secondary-app"
+                   title="Reset all filters">
+                    <i class="bi bi-arrow-clockwise"></i> Reset
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Unified Register Table (Matches Photo 1 Exactly) -->
+<div class="app-card table-card">
+    <div class="card-header">
+        <h5 class="card-title">Daily Work Report Register</h5>
+    </div>
+
+    <div class="card-body">
+        @if (Model == null || !Model.Any())
+        {
+            <div class="empty-state py-5 text-center">
+                <i class="bi bi-calendar-x fs-1 text-muted d-block mb-3"></i>
+                <p class="mb-0 text-muted">No daily work reports found for selected criteria.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="app-table">
+                    <thead>
+                        <tr>
+                            <th class="dwr-col-date">Date</th>
+                            @if (isAdminOrManager)
+                            {
+                                <th class="dwr-col-emp">Employee</th>
+                            }
+                            <th class="dwr-col-project">Projects</th>
+                            <th>Activities Logged</th>
+                            <th class="dwr-col-hours text-center">Planned Hours</th>
+                            <th class="dwr-col-hours text-center">Actual Hours</th>
+                            <th class="dwr-col-priority text-center">Tomorrow's Plan</th>
+                            <th class="dwr-col-issues text-center">Issues / Blockers</th>
+                            <th class="dwr-col-hours text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var report in Model.OrderByDescending(r => r.ReportDate))
+                        {
+                            var details = report.WorkDetails ?? new List<DailyWorkReportDetailModel>();
+                            var distinctProjects = details
+                                .Select(d => d.ProjectName)
+                                .Where(p => !string.IsNullOrWhiteSpace(p))
+                                .Distinct()
+                                .ToList();
+
+                            var hasIssues = details.Any(d => IsRealIssue(d.Issues));
+                            var issueCount = details.Count(d => IsRealIssue(d.Issues));
+
+                            <tr>
+                                <td>
+                                    <strong>@report.ReportDate.ToString("dd-MMM-yyyy")</strong>
+                                </td>
+
+                                @if (isAdminOrManager)
+                                {
+                                    <td>
+                                        <strong>@(report.Employee != null ? $"{report.Employee.FirstName}                                {report.Employee.LastName}" : "Employee")</strong>
+                                    </td>
+                                }
+
+                                <td>
+                                    @if (distinctProjects.Any())
+                                    {
+                                        foreach (var proj in distinctProjects)
+                                        {
+                                            <span class="badge-neutral mb-1">@proj</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+
+                                <td>
+                                    @if (report.WorkDetails != null && report.WorkDetails.Any())
+                                    {
+                                        <div class="d-flex flex-column gap-1">
+                                            @foreach (var detail in report.WorkDetails.Take(2))
+                                            {
+                                                <div>
+                                                    <strong class="text-dark">@detail.Activity</strong>
+                                                    @if (!string.IsNullOrWhiteSpace(detail.Description))
+                                                    {
+                                                        <small
+                                                        class="text-muted d-block text-truncate dwr-desc-truncate">@detail.Description</small>
+                                                    }
+                                                </div>
+                                            }
+                                            @if (report.WorkDetails.Count > 2)
+                                            {
+                                                <small class="text-primary fw-semibold">+@(report.WorkDetails.Count - 2) more...</small>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+
+                                <td class="text-center text-muted">
+                                    @report.TotalPlannedHours.ToString("N2") hrs
+                                </td>
+
+                                <td class="text-center">
+                                    <strong class="text-success">@report.TotalActualHours.ToString("N2") hrs</strong>
+                                </td>
+
+                                <td class="text-center">
+                                    @if (report.NextDayPlans != null && report.NextDayPlans.Any())
+                                    {
+                                        <span class="badge-info">@report.NextDayPlans.Count Tasks</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+
+                                <td class="text-center">
+                                    @if (hasIssues)
+                                    {
+                                        <span class="badge-danger">
+                                            <i class="bi bi-exclamation-triangle me-1"></i> @issueCount Issue(s)
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+
+                                <td class="text-end">
+                                    <div class="table-actions">
+                                        <a asp-action="Details" asp-route-id="@report.DailyWorkReportId"
+                                           asp-route-mine="@(isMine ? "true" : null)" class="btn-app btn-icon btn-primary-app"
+                                           title="View Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a asp-action="Edit" asp-route-id="@report.DailyWorkReportId"
+                                           asp-route-mine="@(isMine ? "true" : null)"
+                                           class="btn-app btn-icon btn-secondary-app" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form asp-action="Delete" asp-route-id="@report.DailyWorkReportId"
+                                              asp-route-mine="@(isMine ? "true" : null)" method="post"
+                                              onsubmit="return confirm('Delete this daily report?');" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn-app btn-icon btn-danger-app" title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

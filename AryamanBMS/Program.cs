@@ -124,6 +124,13 @@ builder.Services.AddDbContext<CompanyDocumentDbContext>(options =>
         ServerVersion.AutoDetect(connectionString));
 });
 
+builder.Services.AddDbContext<DailyWorkReportDbContext>(options =>
+{
+    options.UseMySql(
+        connectionString,
+        ServerVersion.AutoDetect(connectionString));
+});
+
 // Attendance working-day configuration
 builder.Services.Configure<WorkingDayOptions>(
     builder.Configuration.GetSection("Attendance"));
@@ -280,6 +287,10 @@ builder.Services.AddScoped<IEsicRepository, EsicRepository>();
 builder.Services.AddScoped<IPtRepository, PtRepository>();
 builder.Services.AddScoped<INoticeRepository, NoticeRepository>();
 builder.Services.AddScoped<IProposalTemplateRepository,ProposalTemplateRepository>();
+
+// Daily Work Report repository and service
+builder.Services.AddScoped<IDailyWorkReportRepository, DailyWorkReportRepository>();
+builder.Services.AddScoped<IDailyWorkReportService, DailyWorkReportService>();
 
 // =============================
 // APPLICATION SERVICES
