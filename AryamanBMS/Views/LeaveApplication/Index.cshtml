@@ -77,7 +77,8 @@
                     <strong>@leaveOverview.ApprovedThisMonth</strong>
                 </a>
 
-                <a asp-action="Index" asp-route-dashboardFilter="rejected-this-month" class="dashboard-metric metric-danger">
+                <a asp-action="Index" asp-route-dashboardFilter="rejected-this-month"
+                   class="dashboard-metric metric-danger">
                     <span>Rejected This Month</span>
                     <strong>@leaveOverview.RejectedThisMonth</strong>
                 </a>
@@ -92,7 +93,8 @@
                     <strong>@leaveOverview.UpcomingLeaves</strong>
                 </a>
 
-                <a asp-action="Index" asp-route-dashboardFilter="cancellation-pending" class="dashboard-metric metric-danger">
+                <a asp-action="Index" asp-route-dashboardFilter="cancellation-pending"
+                   class="dashboard-metric metric-danger">
                     <span>Cancellation Requests</span>
                     <strong>@leaveOverview.CancellationRequests</strong>
                 </a>
@@ -135,9 +137,7 @@
 
             @if (!string.IsNullOrWhiteSpace(dashboardFilterLabel))
             {
-                <input type="hidden"
-                       name="dashboardFilter"
-                       value="@dashboardFilter" />
+                <input type="hidden" name="dashboardFilter" value="@dashboardFilter" />
             }
 
             <div class="filter-form-row">
@@ -474,18 +474,18 @@
 
                                                 <input type="hidden" name="id" value="@item.Id" />
 
-                                                <button type="submit" class="btn-app btn-secondary-app btn-icon" title="Cancel"
+                                                <button type="submit" class="btn-app btn-danger-app btn-icon" title="Cancel"
                                                         aria-label="Cancel leave"
                                                         onclick="return confirm('Cancel this leave application?');">
 
-                                                    <i class="bi bi-slash-circle"></i>
+                                                    <i class="bi bi-x-circle"></i>
 
                                                 </button>
 
                                             </form>
                                         }
 
-                                        @if (isAdminOrHr && 
+                                        @if (isAdminOrHr &&
                                              item.Status == "Approved" &&
                                              item.CancellationStatus == "Pending")
                                         {

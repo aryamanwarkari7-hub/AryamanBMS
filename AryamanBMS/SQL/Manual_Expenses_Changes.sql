@@ -107,3 +107,7 @@ CREATE TABLE IF NOT EXISTS tablevendorpayment (
     KEY IX_tablevendorpayment_VendorId (VendorId),
     KEY IX_tablevendorpayment_ExpenseVoucherId (ExpenseVoucherId)
 );
+
+-- GST Liability Type (Forward Charge, Reverse Charge (RCM), No GST)
+ALTER TABLE tableexpensevouchers 
+ADD COLUMN GstLiabilityType VARCHAR(30) NOT NULL DEFAULT 'Forward Charge';

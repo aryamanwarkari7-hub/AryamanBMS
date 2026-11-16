@@ -7,3 +7,10 @@
 @{
     await Html.RenderPartialAsync("Create", Model);
 }
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script src="~/js/expense-voucher-form.js" asp-append-version="true"></script>
+}

@@ -50,6 +50,9 @@ namespace AryamanBMS.Models
         [Column(TypeName = "decimal(5,2)")]
         public decimal GSTRate { get; set; } = 0m;
 
+        [StringLength(30)]
+        public string GstLiabilityType { get; set; } = "Forward Charge";
+
         public bool IsInterState { get; set; }
 
         [Column(TypeName = "decimal(12,2)")]
@@ -231,11 +234,11 @@ namespace AryamanBMS.Models
         public DateTime? RejectedOn { get; set; }
 
         [ValidateNever]
-        public virtual ICollection<ExpenseVoucherDocumentModel> Documents { get; set; }
-            = new List<ExpenseVoucherDocumentModel>();
+        public virtual ICollection<ExpenseVoucherDocumentModel> Documents { get; set; } =
+            new List<ExpenseVoucherDocumentModel>();
 
         [ValidateNever]
-        public virtual ICollection<VendorPaymentModel> VendorPayments { get; set; }
-            = new List<VendorPaymentModel>();
+        public virtual ICollection<VendorPaymentModel> VendorPayments { get; set; } =
+            new List<VendorPaymentModel>();
     }
 }

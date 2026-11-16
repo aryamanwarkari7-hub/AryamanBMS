@@ -1,20 +1,28 @@
+using System.Text.RegularExpressions;
 using AryamanBMS.Business.Interfaces;
 using AryamanBMS.Models;
 using AryamanBMS.Repositories.Interfaces;
-using System.Text.RegularExpressions;
 
 namespace AryamanBMS.Business.Services;
 
 public class ExpenseVoucherCreateService : IExpenseVoucherCreateService
 {
     private static readonly decimal[] AllowedGstRates = [0m, 5m, 12m, 18m, 28m];
-    private static readonly Regex GstinRegex = new(@"^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+    private static readonly Regex GstinRegex = new(
+        @"^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant
+    );
     private readonly IExpenseVoucherRepository _voucherRepository;
     private readonly IExpenseCategoryRepository _categoryRepository;
     private readonly IVendorRepository _vendorRepository;
     private readonly IGstSnapshotRepository _gstSnapshotRepository;
 
-    public ExpenseVoucherCreateService(IExpenseVoucherRepository voucherRepository, IExpenseCategoryRepository categoryRepository, IVendorRepository vendorRepository, IGstSnapshotRepository gstSnapshotRepository)
+    public ExpenseVoucherCreateService(
+        IExpenseVoucherRepository voucherRepository,
+        IExpenseCategoryRepository categoryRepository,
+        IVendorRepository vendorRepository,
+        IGstSnapshotRepository gstSnapshotRepository
+    )
     {
         _voucherRepository = voucherRepository;
         _categoryRepository = categoryRepository;
@@ -27,75 +35,364 @@ public class ExpenseVoucherCreateService : IExpenseVoucherCreateService
         return await ValidateInternalAsync(voucher, null);
     }
 
-    public async Task<ExpenseVoucherCreateValidationData> ValidateForUpdateAsync(ExpenseVoucherModel voucher, ExpenseVoucherModel existingVoucher)
+    public async Task<ExpenseVoucherCreateValidationData> ValidateForUpdateAsync(
+        ExpenseVoucherModel voucher,
+        ExpenseVoucherModel existingVoucher
+    )
     {
         return await ValidateInternalAsync(voucher, existingVoucher);
     }
 
-    private async Task<ExpenseVoucherCreateValidationData> ValidateInternalAsync(ExpenseVoucherModel voucher, ExpenseVoucherModel? existingVoucher)
+    private async Task<ExpenseVoucherCreateValidationData> ValidateInternalAsync(
+        ExpenseVoucherModel voucher,
+        ExpenseVoucherModel? existingVoucher
+    )
     {
         Normalize(voucher);
         var category = await _categoryRepository.GetByIdAsync(voucher.ExpenseCategoryId);
         var errors = new Dictionary<string, string>();
-        if (category == null) errors[nameof(voucher.ExpenseCategoryId)] = "Selected category does not exist.";
-        else if (voucher.GSTRate == 0 && category.DefaultGSTRate > 0) voucher.GSTRate = category.DefaultGSTRate;
 
-        foreach (var error in Validate(voucher)) errors[error.Key] = error.Value;
+        if (category == null)
+        {
+            errors[nameof(voucher.ExpenseCategoryId)] = "Selected category does not exist.";
+        }
+        else if (
+            voucher.GSTRate == 0
+            && category.DefaultGSTRate > 0
+            && voucher.GstLiabilityType != "No GST"
+        )
+        {
+            voucher.GSTRate = category.DefaultGSTRate;
+        }
 
-        var snapshot = await _gstSnapshotRepository.GetByMonthYearAsync(voucher.VoucherDate.Month, voucher.VoucherDate.Year);
-        if (snapshot?.Status is FinancialConstants.GstSnapshotStatus.Filed or FinancialConstants.GstSnapshotStatus.Locked || snapshot?.IsFiledPeriodLocked == true)
-            errors[nameof(voucher.VoucherDate)] = "This GST period is filed or locked. Reopen the GST period before changing expenses.";
+        foreach (var error in Validate(voucher))
+        {
+            errors[error.Key] = error.Value;
+        }
 
-        if (!string.IsNullOrWhiteSpace(voucher.InvoiceNumber) && await _voucherRepository.VendorInvoiceExistsAsync(voucher.VendorId, voucher.VendorGSTIN, voucher.InvoiceNumber, existingVoucher?.FinancialYear ?? voucher.FinancialYear, existingVoucher?.ExpenseVoucherId))
-            errors[nameof(voucher.InvoiceNumber)] = "This vendor invoice number already exists for the vendor.";
+        var snapshot = await _gstSnapshotRepository.GetByMonthYearAsync(
+            voucher.VoucherDate.Month,
+            voucher.VoucherDate.Year
+        );
+        if (
+            snapshot?.Status
+                is FinancialConstants.GstSnapshotStatus.Filed
+                    or FinancialConstants.GstSnapshotStatus.Locked
+            || snapshot?.IsFiledPeriodLocked == true
+        )
+        {
+            errors[nameof(voucher.VoucherDate)] =
+                "This GST period is filed or locked. Reopen the GST period before changing expenses.";
+        }
+
+        if (
+            !string.IsNullOrWhiteSpace(voucher.InvoiceNumber)
+            && await _voucherRepository.VendorInvoiceExistsAsync(
+                voucher.VendorId,
+                voucher.VendorGSTIN,
+                voucher.InvoiceNumber,
+                existingVoucher?.FinancialYear ?? voucher.FinancialYear,
+                existingVoucher?.ExpenseVoucherId
+            )
+        )
+        {
+            errors[nameof(voucher.InvoiceNumber)] =
+                "This vendor invoice number already exists for the vendor.";
+        }
 
         return new ExpenseVoucherCreateValidationData { Category = category, Errors = errors };
     }
 
-    public async Task CreateAsync(ExpenseVoucherModel voucher, ExpenseCategoryModel? category, string userId, string financialYear)
+    public async Task CreateAsync(
+        ExpenseVoucherModel voucher,
+        ExpenseCategoryModel? category,
+        string userId,
+        string financialYear
+    )
     {
         CalculateGst(voucher);
         voucher.CreatedByUserId = userId;
         voucher.Status = FinancialConstants.ExpenseVoucherStatus.Draft;
         voucher.FinancialYear = financialYear;
+
         if (voucher.VendorId.HasValue)
         {
             var vendor = await _vendorRepository.GetActiveByIdAsync(voucher.VendorId.Value);
-            if (vendor != null) { voucher.VendorName = vendor.VendorName; voucher.VendorGSTIN = vendor.GSTIN; voucher.VendorStateCode = vendor.StateCode; if (string.IsNullOrWhiteSpace(voucher.PlaceOfSupplyStateCode)) voucher.PlaceOfSupplyStateCode = vendor.StateCode; if (!voucher.IsGstStateOverride && !string.IsNullOrWhiteSpace(voucher.CompanyStateCode) && !string.IsNullOrWhiteSpace(voucher.PlaceOfSupplyStateCode)) voucher.IsInterState = voucher.CompanyStateCode != voucher.PlaceOfSupplyStateCode; }
+            if (vendor != null)
+            {
+                voucher.VendorName = vendor.VendorName;
+                voucher.VendorGSTIN = vendor.GSTIN;
+                voucher.VendorStateCode = vendor.StateCode;
+
+                if (string.IsNullOrWhiteSpace(voucher.PlaceOfSupplyStateCode))
+                    voucher.PlaceOfSupplyStateCode = vendor.StateCode;
+
+                if (
+                    !voucher.IsGstStateOverride
+                    && !string.IsNullOrWhiteSpace(voucher.CompanyStateCode)
+                    && !string.IsNullOrWhiteSpace(voucher.PlaceOfSupplyStateCode)
+                )
+                    voucher.IsInterState =
+                        voucher.CompanyStateCode != voucher.PlaceOfSupplyStateCode;
+            }
         }
-        if (category != null) { voucher.GLAccountCode = category.GLAccountCode; voucher.PayableGLAccountCode = category.PayableGLAccountCode; voucher.InputGSTGLAccountCode = category.InputGSTGLAccountCode; if (string.IsNullOrWhiteSpace(voucher.ExpenseClassification)) voucher.ExpenseClassification = category.ExpenseType; voucher.ITCStatus = voucher.ITCEligible ? voucher.ITCStatus : "Not Applicable"; }
+
+        if (category != null)
+        {
+            voucher.GLAccountCode = category.GLAccountCode;
+            voucher.PayableGLAccountCode = category.PayableGLAccountCode;
+            voucher.InputGSTGLAccountCode = category.InputGSTGLAccountCode;
+
+            if (string.IsNullOrWhiteSpace(voucher.ExpenseClassification))
+                voucher.ExpenseClassification = category.ExpenseType;
+
+            voucher.ITCStatus = voucher.ITCEligible ? voucher.ITCStatus : "Not Applicable";
+        }
+
         voucher.PaidAmount = Math.Round(voucher.PaidAmount, 2, MidpointRounding.AwayFromZero);
         voucher.BalanceAmount = Math.Max(voucher.TotalAmount - voucher.PaidAmount, 0);
-        voucher.PaymentStatus = voucher.PaidAmount <= 0 ? FinancialConstants.PaymentStatus.Unpaid : voucher.BalanceAmount <= 0 ? FinancialConstants.PaymentStatus.Paid : FinancialConstants.PaymentStatus.PartiallyPaid;
+        voucher.PaymentStatus =
+            voucher.PaidAmount <= 0 ? FinancialConstants.PaymentStatus.Unpaid
+            : voucher.BalanceAmount <= 0 ? FinancialConstants.PaymentStatus.Paid
+            : FinancialConstants.PaymentStatus.PartiallyPaid;
+
         await _voucherRepository.CreateWithSequenceAsync(voucher);
     }
 
-    public async Task UpdateAsync(ExpenseVoucherModel existingVoucher, ExpenseVoucherModel voucher, ExpenseCategoryModel? category)
+    public async Task UpdateAsync(
+        ExpenseVoucherModel existingVoucher,
+        ExpenseVoucherModel voucher,
+        ExpenseCategoryModel? category
+    )
     {
-        existingVoucher.ExpenseCategoryId = voucher.ExpenseCategoryId; existingVoucher.VoucherDate = voucher.VoucherDate; existingVoucher.Description = voucher.Description; existingVoucher.BusinessPurpose = voucher.BusinessPurpose; existingVoucher.BeneficiaryName = voucher.BeneficiaryName; existingVoucher.SupportingReference = voucher.SupportingReference; existingVoucher.Amount = voucher.Amount; existingVoucher.GSTRate = voucher.GSTRate; existingVoucher.IsInterState = voucher.IsInterState; existingVoucher.CompanyStateCode = voucher.CompanyStateCode; existingVoucher.VendorStateCode = voucher.VendorStateCode; existingVoucher.PlaceOfSupplyStateCode = voucher.PlaceOfSupplyStateCode; existingVoucher.IsGstStateOverride = voucher.IsGstStateOverride; existingVoucher.GstStateOverrideReason = voucher.GstStateOverrideReason; existingVoucher.VendorId = voucher.VendorId; existingVoucher.VendorName = voucher.VendorName; existingVoucher.VendorGSTIN = voucher.VendorGSTIN; existingVoucher.InvoiceNumber = voucher.InvoiceNumber; existingVoucher.VendorInvoiceDate = voucher.VendorInvoiceDate; existingVoucher.ITCEligible = voucher.ITCEligible; existingVoucher.ITCStatus = voucher.ITCStatus; existingVoucher.ProjectId = voucher.ProjectId; existingVoucher.DepartmentId = voucher.DepartmentId; existingVoucher.CostCentreId = voucher.CostCentreId; existingVoucher.ExpenseClassification = voucher.ExpenseClassification; existingVoucher.IsEmployeeReimbursement = voucher.IsEmployeeReimbursement; existingVoucher.ReimbursementEmployeeId = voucher.ReimbursementEmployeeId; existingVoucher.ReimbursementStatus = voucher.ReimbursementStatus; existingVoucher.Remarks = voucher.Remarks;
+        existingVoucher.ExpenseCategoryId = voucher.ExpenseCategoryId;
+        existingVoucher.VoucherDate = voucher.VoucherDate;
+        existingVoucher.Description = voucher.Description;
+        existingVoucher.BusinessPurpose = voucher.BusinessPurpose;
+        existingVoucher.BeneficiaryName = voucher.BeneficiaryName;
+        existingVoucher.SupportingReference = voucher.SupportingReference;
+        existingVoucher.Amount = voucher.Amount;
+        existingVoucher.GstLiabilityType = voucher.GstLiabilityType;
+        existingVoucher.GSTRate = voucher.GSTRate;
+        existingVoucher.IsInterState = voucher.IsInterState;
+        existingVoucher.CompanyStateCode = voucher.CompanyStateCode;
+        existingVoucher.VendorStateCode = voucher.VendorStateCode;
+        existingVoucher.PlaceOfSupplyStateCode = voucher.PlaceOfSupplyStateCode;
+        existingVoucher.IsGstStateOverride = voucher.IsGstStateOverride;
+        existingVoucher.GstStateOverrideReason = voucher.GstStateOverrideReason;
+        existingVoucher.VendorId = voucher.VendorId;
+        existingVoucher.VendorName = voucher.VendorName;
+        existingVoucher.VendorGSTIN = voucher.VendorGSTIN;
+        existingVoucher.InvoiceNumber = voucher.InvoiceNumber;
+        existingVoucher.VendorInvoiceDate = voucher.VendorInvoiceDate;
+        existingVoucher.ITCEligible = voucher.ITCEligible;
+        existingVoucher.ITCStatus = voucher.ITCStatus;
+        existingVoucher.ProjectId = voucher.ProjectId;
+        existingVoucher.DepartmentId = voucher.DepartmentId;
+        existingVoucher.CostCentreId = voucher.CostCentreId;
+        existingVoucher.ExpenseClassification = voucher.ExpenseClassification;
+        existingVoucher.IsEmployeeReimbursement = voucher.IsEmployeeReimbursement;
+        existingVoucher.ReimbursementEmployeeId = voucher.ReimbursementEmployeeId;
+        existingVoucher.ReimbursementStatus = voucher.ReimbursementStatus;
+        existingVoucher.Remarks = voucher.Remarks;
+
         await ApplyDefaultsAndSaveAsync(existingVoucher, category);
     }
 
-    private async Task ApplyDefaultsAndSaveAsync(ExpenseVoucherModel voucher, ExpenseCategoryModel? category)
+    private async Task ApplyDefaultsAndSaveAsync(
+        ExpenseVoucherModel voucher,
+        ExpenseCategoryModel? category
+    )
     {
-        CalculateGst(voucher); if (voucher.VendorId.HasValue) { var vendor = await _vendorRepository.GetActiveByIdAsync(voucher.VendorId.Value); if (vendor != null) { voucher.VendorName = vendor.VendorName; voucher.VendorGSTIN = vendor.GSTIN; voucher.VendorStateCode = vendor.StateCode; if (string.IsNullOrWhiteSpace(voucher.PlaceOfSupplyStateCode)) voucher.PlaceOfSupplyStateCode = vendor.StateCode; if (!voucher.IsGstStateOverride && !string.IsNullOrWhiteSpace(voucher.CompanyStateCode) && !string.IsNullOrWhiteSpace(voucher.PlaceOfSupplyStateCode)) voucher.IsInterState = voucher.CompanyStateCode != voucher.PlaceOfSupplyStateCode; } } if (category != null) { voucher.GLAccountCode = category.GLAccountCode; voucher.PayableGLAccountCode = category.PayableGLAccountCode; voucher.InputGSTGLAccountCode = category.InputGSTGLAccountCode; if (string.IsNullOrWhiteSpace(voucher.ExpenseClassification)) voucher.ExpenseClassification = category.ExpenseType; voucher.ITCStatus = voucher.ITCEligible ? voucher.ITCStatus : "Not Applicable"; } voucher.PaidAmount = Math.Round(voucher.PaidAmount, 2, MidpointRounding.AwayFromZero); voucher.BalanceAmount = Math.Max(voucher.TotalAmount - voucher.PaidAmount, 0); voucher.PaymentStatus = voucher.PaidAmount <= 0 ? FinancialConstants.PaymentStatus.Unpaid : voucher.BalanceAmount <= 0 ? FinancialConstants.PaymentStatus.Paid : FinancialConstants.PaymentStatus.PartiallyPaid; await _voucherRepository.UpdateAsync(voucher); await _voucherRepository.SaveAsync();
+        CalculateGst(voucher);
+
+        if (voucher.VendorId.HasValue)
+        {
+            var vendor = await _vendorRepository.GetActiveByIdAsync(voucher.VendorId.Value);
+            if (vendor != null)
+            {
+                voucher.VendorName = vendor.VendorName;
+                voucher.VendorGSTIN = vendor.GSTIN;
+                voucher.VendorStateCode = vendor.StateCode;
+
+                if (string.IsNullOrWhiteSpace(voucher.PlaceOfSupplyStateCode))
+                    voucher.PlaceOfSupplyStateCode = vendor.StateCode;
+
+                if (
+                    !voucher.IsGstStateOverride
+                    && !string.IsNullOrWhiteSpace(voucher.CompanyStateCode)
+                    && !string.IsNullOrWhiteSpace(voucher.PlaceOfSupplyStateCode)
+                )
+                    voucher.IsInterState =
+                        voucher.CompanyStateCode != voucher.PlaceOfSupplyStateCode;
+            }
+        }
+
+        if (category != null)
+        {
+            voucher.GLAccountCode = category.GLAccountCode;
+            voucher.PayableGLAccountCode = category.PayableGLAccountCode;
+            voucher.InputGSTGLAccountCode = category.InputGSTGLAccountCode;
+
+            if (string.IsNullOrWhiteSpace(voucher.ExpenseClassification))
+                voucher.ExpenseClassification = category.ExpenseType;
+
+            voucher.ITCStatus = voucher.ITCEligible ? voucher.ITCStatus : "Not Applicable";
+        }
+
+        voucher.PaidAmount = Math.Round(voucher.PaidAmount, 2, MidpointRounding.AwayFromZero);
+        voucher.BalanceAmount = Math.Max(voucher.TotalAmount - voucher.PaidAmount, 0);
+        voucher.PaymentStatus =
+            voucher.PaidAmount <= 0 ? FinancialConstants.PaymentStatus.Unpaid
+            : voucher.BalanceAmount <= 0 ? FinancialConstants.PaymentStatus.Paid
+            : FinancialConstants.PaymentStatus.PartiallyPaid;
+
+        await _voucherRepository.UpdateAsync(voucher);
+        await _voucherRepository.SaveAsync();
     }
 
     private static Dictionary<string, string> Validate(ExpenseVoucherModel v)
     {
         var e = new Dictionary<string, string>();
-        if (v.Amount <= 0) e[nameof(v.Amount)] = "Amount must be greater than zero.";
-        if (v.VoucherDate.Date > DateTime.Today) e[nameof(v.VoucherDate)] = "Voucher date cannot be in the future.";
-        if (!AllowedGstRates.Contains(v.GSTRate)) e[nameof(v.GSTRate)] = "GST rate must be 0%, 5%, 12%, 18% or 28%.";
-        if (!string.IsNullOrWhiteSpace(v.VendorGSTIN) && !GstinRegex.IsMatch(v.VendorGSTIN)) e[nameof(v.VendorGSTIN)] = "Enter a valid 15-character GSTIN.";
-        bool registered = v.ExpensePartyType == "Registered Vendor"; bool small = v.ExpensePartyType is "Unregistered Vendor" or "One-Time Vendor" or "Employee Reimbursement" or "Petty Cash";
-        if (registered && !v.VendorId.HasValue) e[nameof(v.VendorId)] = "Vendor is required for registered vendor expenses.";
-        if (small) { v.VendorId = null; v.VendorGSTIN = null; v.GSTRate = 0; v.ITCEligible = false; v.ITCStatus = "Not Applicable"; v.Gstr2BMatchStatus = "Not Applicable"; v.Gstr2BMatchedOn = null; v.Gstr2BMatchedByUserId = null; v.Gstr2BMismatchReason = null; v.ITCClaimMonth = null; v.ITCClaimYear = null; v.InputGSTGLAccountCode = null; if (string.IsNullOrWhiteSpace(v.VendorName) && string.IsNullOrWhiteSpace(v.BeneficiaryName)) e[nameof(v.VendorName)] = "Vendor or payee name is required."; }
-        if (v.ITCEligible) { if (v.GSTRate <= 0) e[nameof(v.ITCEligible)] = "ITC cannot be claimed when GST rate is zero."; if (string.IsNullOrWhiteSpace(v.VendorGSTIN)) e[nameof(v.VendorGSTIN)] = "Vendor GSTIN is required when ITC is eligible."; if (string.IsNullOrWhiteSpace(v.InvoiceNumber)) e[nameof(v.InvoiceNumber)] = "Vendor invoice number is required when ITC is eligible."; }
+
+        if (v.Amount <= 0)
+            e[nameof(v.Amount)] = "Amount must be greater than zero.";
+
+        if (v.VoucherDate.Date > DateTime.Today)
+            e[nameof(v.VoucherDate)] = "Voucher date cannot be in the future.";
+
+        if (!AllowedGstRates.Contains(v.GSTRate))
+            e[nameof(v.GSTRate)] = "GST rate must be 0%, 5%, 12%, 18% or 28%.";
+
+        if (!string.IsNullOrWhiteSpace(v.VendorGSTIN) && !GstinRegex.IsMatch(v.VendorGSTIN))
+            e[nameof(v.VendorGSTIN)] = "Enter a valid 15-character GSTIN.";
+
+        bool isRegistered = v.ExpensePartyType == "Registered Vendor";
+
+        if (isRegistered && !v.VendorId.HasValue)
+            e[nameof(v.VendorId)] = "Vendor is required for registered vendor expenses.";
+
+        if (
+            !isRegistered
+            && string.IsNullOrWhiteSpace(v.VendorName)
+            && string.IsNullOrWhiteSpace(v.BeneficiaryName)
+        )
+            e[nameof(v.VendorName)] = "Vendor or payee name is required.";
+
+        if (string.Equals(v.GstLiabilityType, "No GST", StringComparison.OrdinalIgnoreCase))
+        {
+            v.GSTRate = 0;
+            v.ITCEligible = false;
+            v.ITCStatus = "Not Applicable";
+            v.Gstr2BMatchStatus = "Not Applicable";
+        }
+        else if (
+            string.Equals(
+                v.GstLiabilityType,
+                "Reverse Charge (RCM)",
+                StringComparison.OrdinalIgnoreCase
+            )
+        )
+        {
+            if (v.GSTRate <= 0)
+                e[nameof(v.GSTRate)] =
+                    "Specify an applicable GST rate (e.g. 5% or 18%) for Reverse Charge (RCM).";
+        }
+        else // Forward Charge
+        {
+            if (v.ITCEligible)
+            {
+                if (v.GSTRate <= 0)
+                    e[nameof(v.ITCEligible)] = "ITC cannot be claimed when GST rate is zero.";
+
+                if (string.IsNullOrWhiteSpace(v.VendorGSTIN))
+                    e[nameof(v.VendorGSTIN)] = "Vendor GSTIN is required when ITC is claimed.";
+
+                if (string.IsNullOrWhiteSpace(v.InvoiceNumber))
+                    e[nameof(v.InvoiceNumber)] =
+                        "Vendor invoice number is required when ITC is claimed.";
+            }
+        }
+
         return e;
     }
 
-    private static void Normalize(ExpenseVoucherModel v) { v.Description = v.Description?.Trim() ?? string.Empty; v.ExpensePartyType = string.IsNullOrWhiteSpace(v.ExpensePartyType) ? "Registered Vendor" : v.ExpensePartyType.Trim(); v.VendorName = NormalizeOptional(v.VendorName); v.VendorGSTIN = NormalizeOptional(v.VendorGSTIN, true); v.InvoiceNumber = NormalizeOptional(v.InvoiceNumber, true); v.Remarks = NormalizeOptional(v.Remarks); v.BusinessPurpose = NormalizeOptional(v.BusinessPurpose); v.BeneficiaryName = NormalizeOptional(v.BeneficiaryName); v.SupportingReference = NormalizeOptional(v.SupportingReference); }
-    private static string? NormalizeOptional(string? value, bool uppercase = false) { if (string.IsNullOrWhiteSpace(value)) return null; value = value.Trim(); return uppercase ? value.ToUpperInvariant() : value; }
-    private static void CalculateGst(ExpenseVoucherModel v) { v.Amount = Math.Round(v.Amount, 2, MidpointRounding.AwayFromZero); v.GSTRate = Math.Round(v.GSTRate, 2, MidpointRounding.AwayFromZero); v.TaxableAmount = v.Amount; if (v.GSTRate <= 0) { v.CGSTAmount = v.SGSTAmount = v.IGSTAmount = v.TotalGSTAmount = 0; v.TotalAmount = v.Amount; return; } var total = Math.Round(v.Amount * v.GSTRate / 100, 2, MidpointRounding.AwayFromZero); if (v.IsInterState) { v.CGSTAmount = v.SGSTAmount = 0; v.IGSTAmount = total; } else { var cgst = Math.Round(total / 2, 2, MidpointRounding.AwayFromZero); v.CGSTAmount = cgst; v.SGSTAmount = total - cgst; v.IGSTAmount = 0; } v.TotalGSTAmount = total; v.TotalAmount = Math.Round(v.Amount + total, 2, MidpointRounding.AwayFromZero); }
+    private static void Normalize(ExpenseVoucherModel v)
+    {
+        v.Description = v.Description?.Trim() ?? string.Empty;
+        v.ExpensePartyType = string.IsNullOrWhiteSpace(v.ExpensePartyType)
+            ? "Registered Vendor"
+            : v.ExpensePartyType.Trim();
+        v.GstLiabilityType = string.IsNullOrWhiteSpace(v.GstLiabilityType)
+            ? "Forward Charge"
+            : v.GstLiabilityType.Trim();
+        v.VendorName = NormalizeOptional(v.VendorName);
+        v.VendorGSTIN = NormalizeOptional(v.VendorGSTIN, true);
+        v.InvoiceNumber = NormalizeOptional(v.InvoiceNumber, true);
+        v.Remarks = NormalizeOptional(v.Remarks);
+        v.BusinessPurpose = NormalizeOptional(v.BusinessPurpose);
+        v.BeneficiaryName = NormalizeOptional(v.BeneficiaryName);
+        v.SupportingReference = NormalizeOptional(v.SupportingReference);
+    }
+
+    private static string? NormalizeOptional(string? value, bool uppercase = false)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+        value = value.Trim();
+        return uppercase ? value.ToUpperInvariant() : value;
+    }
+
+    private static void CalculateGst(ExpenseVoucherModel v)
+    {
+        v.Amount = Math.Round(v.Amount, 2, MidpointRounding.AwayFromZero);
+        v.GSTRate = Math.Round(v.GSTRate, 2, MidpointRounding.AwayFromZero);
+        v.TaxableAmount = v.Amount;
+
+        if (
+            string.Equals(v.GstLiabilityType, "No GST", StringComparison.OrdinalIgnoreCase)
+            || v.GSTRate <= 0
+        )
+        {
+            v.CGSTAmount = v.SGSTAmount = v.IGSTAmount = v.TotalGSTAmount = 0;
+            v.TotalAmount = v.Amount;
+            return;
+        }
+
+        var total = Math.Round(v.Amount * v.GSTRate / 100, 2, MidpointRounding.AwayFromZero);
+
+        if (v.IsInterState)
+        {
+            v.CGSTAmount = v.SGSTAmount = 0;
+            v.IGSTAmount = total;
+        }
+        else
+        {
+            var cgst = Math.Round(total / 2, 2, MidpointRounding.AwayFromZero);
+            v.CGSTAmount = cgst;
+            v.SGSTAmount = total - cgst;
+            v.IGSTAmount = 0;
+        }
+
+        v.TotalGSTAmount = total;
+
+        // CRITICAL RCM LOGIC:
+        // In RCM, the vendor is NOT paid GST (Aryaman deposits it to Govt via cash ledger).
+        // Therefore, vendor payable (TotalAmount) is only the base Amount.
+        // In Forward Charge, vendor payable is Amount + GST.
+        if (
+            string.Equals(
+                v.GstLiabilityType,
+                "Reverse Charge (RCM)",
+                StringComparison.OrdinalIgnoreCase
+            )
+        )
+        {
+            v.TotalAmount = v.Amount;
+        }
+        else
+        {
+            v.TotalAmount = Math.Round(v.Amount + total, 2, MidpointRounding.AwayFromZero);
+        }
+    }
 }

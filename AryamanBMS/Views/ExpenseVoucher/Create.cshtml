@@ -24,121 +24,92 @@
 }
 
 <div class="module-header">
-
     <div>
         <h1 class="module-title">@title.ToUpper()</h1>
         <p class="module-subtitle">
             @(isEmployeeOnly
-                        ? "Enter and submit your business expense claim."
-                        : "Record expense details, GST and vendor invoice information.")
+                ? "Enter and submit your business expense claim."
+                : "Record expense details, GST, and vendor invoice information.")
         </p>
     </div>
 
     <div class="module-header-actions">
-        <a asp-action="Index"
-           asp-route-mine="@(Context.Request.Query["mine"] == "true" ? "true" : null)"
+        <a asp-action="Index" asp-route-mine="@(Context.Request.Query["mine"] == "true" ? "true" : null)"
            class="btn-app btn-secondary-app">
             <i class="bi bi-arrow-left"></i>
             Back
         </a>
     </div>
-
 </div>
 
 <form asp-action="@(isCreate ? "Create" : "Edit")"
-      asp-route-mine="@(Context.Request.Query["mine"] == "true" ? "true" : null)"
-      method="post"
-      id="expenseForm">
+      asp-route-mine="@(Context.Request.Query["mine"] == "true" ? "true" : null)" method="post" id="expenseForm">
 
-<div class="app-card form-card">
+    @Html.AntiForgeryToken()
 
-    <div class="card-header">
-        <div>
+    @Html.AntiForgeryToken()
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div asp-validation-summary="All" class="app-alert-danger mb-3"></div>
+    }
+
+    @if (Model.ExpenseVoucherId != 0)
+    {
+        <input type="hidden" asp-for="ExpenseVoucherId" />
+        <div class="app-alert-info mb-3">
+            <strong>@(isEmployeeOnly ? "Claim Number:" : "Voucher Number:")</strong> @Model.VoucherNumber
+            <br />
+            <strong>Status:</strong> @Model.Status
+        </div>
+    }
+
+    <!-- CARD 1: Basic Voucher / Claim Information -->
+    <div class="app-card form-card">
+        <div class="card-header">
+            <div>
                 <h2 class="card-title">
-                    @(isEmployeeOnly
-                                        ? "Claim Information"
-                                        : "Voucher Information")
+                    @(isEmployeeOnly ? "Claim Information" : "Voucher Information")
                 </h2>
                 <p class="card-subtitle">
                     @(isEmployeeOnly
-                                        ? "Enter the expense date, category and business purpose."
-                                        : "Enter basic voucher and category details.")
+                        ? "Enter the expense date, category and business purpose."
+                        : "Enter basic voucher and category details.")
                 </p>
-        </div>
-    </div>
-
-    <div class="card-body">
-        
-            @Html.AntiForgeryToken()
-
-            <div asp-validation-summary="All"
-                 class="app-alert-danger">
             </div>
-            @if (Model.ExpenseVoucherId != 0)
-            {
-                <input type="hidden" asp-for="ExpenseVoucherId" />
-                <div class="app-alert-info">
-                <strong>
-                    @(isEmployeeOnly
-                                        ? "Claim Number:"
-                                        : "Voucher Number:")
-            </strong>
-            @Model.VoucherNumber
-            <br />
-                    <strong>Status:</strong> @Model.Status
-                </div>
-            }
+        </div>
 
+        <div class="card-body">
             <div class="form-grid-2">
-
                 <div class="form-group">
-                    <label asp-for="VoucherDate" class="form-label">
-                        Voucher Date
-                    </label>
-
-                    <input type="date"
-                           asp-for="VoucherDate"
-                           class="app-input" />
-
-                    <span asp-validation-for="VoucherDate"
-                          class="validation-message"></span>
+                    <label asp-for="VoucherDate" class="form-label">Voucher Date</label>
+                    <input type="date" asp-for="VoucherDate" class="app-input" />
+                    <span asp-validation-for="VoucherDate" class="validation-message"></span>
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="FinancialYear" class="form-label">
-                        Financial Year
-                    </label>
-
-                    <input asp-for="FinancialYear"
-                           class="app-input"
-                           readonly />
-
-                    <span asp-validation-for="FinancialYear"
-                          class="validation-message"></span>
+                    <label asp-for="FinancialYear" class="form-label">Financial Year</label>
+                    <input asp-for="FinancialYear" class="app-input" readonly />
+                    <span asp-validation-for="FinancialYear" class="validation-message"></span>
                 </div>
-
             </div>
 
             <div class="form-group">
-                    <label asp-for="ExpenseCategoryId" class="form-label">Expense Category <span class="validation-message">*</span></label>
-                <select asp-for="ExpenseCategoryId"
-                        class="app-select"
-                        id="expenseCategorySelect"
-                        required>
+                <label asp-for="ExpenseCategoryId" class="form-label">
+                    Expense Category <span class="validation-message">*</span>
+                </label>
+                <select asp-for="ExpenseCategoryId" class="app-select" id="expenseCategorySelect" required>
                     <option value="">Select Category</option>
-
                     @foreach (var category in ViewBag.Categories)
                     {
-                        <option value="@category.ExpenseCategoryId"
-                                data-gst="@category.DefaultGSTRate"
-                                data-itc="@category.ITCEligible.ToString().ToLower()"
-                                data-type="@category.ExpenseType">
+                        <option value="@category.ExpenseCategoryId" data-gst="@category.DefaultGSTRate"
+                                data-itc="@category.ITCEligible.ToString().ToLower()" data-type="@category.ExpenseType">
                             @category.CategoryName
                         </option>
                     }
                 </select>
-                    <span asp-validation-for="ExpenseCategoryId" class="validation-message"></span>
-                </div>
+                <span asp-validation-for="ExpenseCategoryId" class="validation-message"></span>
+            </div>
 
             <div class="form-grid-2">
                 <div class="form-group">
@@ -151,6 +122,7 @@
                     </select>
                     <span asp-validation-for="ExpenseClassification" class="validation-message"></span>
                 </div>
+
                 <div class="form-group">
                     <label asp-for="BusinessPurpose" class="form-label">Business Purpose</label>
                     <input asp-for="BusinessPurpose" class="app-input" maxlength="500" />
@@ -169,6 +141,7 @@
                         }
                     </select>
                 </div>
+
                 <div class="form-group">
                     <label asp-for="DepartmentId" class="form-label">Department</label>
                     <select asp-for="DepartmentId" class="app-select">
@@ -182,142 +155,28 @@
             </div>
 
             <div class="form-group">
-                    <label asp-for="Description" class="form-label">Description</label>
+                <label asp-for="Description" class="form-label">Description</label>
+                <textarea asp-for="Description" class="app-input" rows="3"
+                          placeholder="Enter expense description"></textarea>
                 <span asp-validation-for="Description" class="validation-message"></span>
-                    <textarea asp-for="Description" class="app-input" rows="3" 
-                              placeholder="Enter expense description"></textarea>
-                </div>
-
-                
-    </div>
-</div>
-
-<div class="app-card form-card">
-
-    <div class="card-header">
-        <div>
-            <h2 class="card-title">Amount Details</h2>
-            <p class="card-subtitle">
-                Enter taxable amount and GST rate.
-            </p>
+            </div>
         </div>
     </div>
 
-    <div class="card-body">
-
-        <div class="form-grid-2">
-
-            <div class="form-group">
-                <label asp-for="Amount" class="form-label">
-                    Amount Before GST
-                </label>
-
-                <input type="number"
-                       asp-for="Amount"
-                       class="app-input"
-                       placeholder="0.00"
-                       min="0"
-                       step="0.01" />
-
-                <span asp-validation-for="Amount"
-                      class="validation-message"></span>
-            </div>
-
-            <div class="form-group">
-                <label asp-for="GSTRate" class="form-label">
-                    GST Rate %
-                </label>
-
-                <input type="number"
-                       asp-for="GSTRate"
-                           id="gstRateInput"
-                       class="app-input"
-                       placeholder="0"
-                       min="0"
-                       max="100"
-                       step="0.01" />
-
-                <span asp-validation-for="GSTRate"
-                      class="validation-message"></span>
-            </div>
-
-        </div>
-
-        <div class="app-alert-info">
-
-            <div class="form-grid-4">
-
-                    <div class="form-group">
-                        <div class="form-check">
-
-                            <input asp-for="IsInterState"
-                                   class="form-check-input" />
-
-                            <label asp-for="IsInterState"
-                                   class="form-check-label">
-                                Interstate Expense
-                            </label>
-
-                        </div>
-
-                        <small class="form-text">
-                            Select this when the supplier state differs from the company state.
-                        </small>
-                    </div>
-
-                <div class="form-group">
-                    <label class="form-label">CGST</label>
-                    <strong>₹ <span id="cgstAmount">@Model.CGSTAmount.ToString("N2")</span></strong>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">SGST</label>
-                    <strong>₹ <span id="sgstAmount">@Model.SGSTAmount.ToString("N2")</span></strong>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Total GST</label>
-                    <strong>₹ <span id="totalGst">@Model.TotalGSTAmount.ToString("N2")</span></strong>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Total Amount</label>
-                    <strong>₹ <span id="totalAmount">@Model.TotalAmount.ToString("N2")</span></strong>
-                </div>
-
-            </div>
-
-        </div>
-
-            <div class="form-check">
-                <input asp-for="ITCEligible"
-                       id="itcEligibleInput"
-                       class="form-check-input" />
-
-                <label asp-for="ITCEligible"
-                       class="form-check-label">
-                    Input Tax Credit Eligible
-                </label>
-            </div>
-
-        </div>
-    </div>
-
+    <!-- CARD 2: Vendor / Payee & Tax Liability (MOVED BEFORE AMOUNT DETAILS) -->
     <div class="app-card form-card">
-
         <div class="card-header">
             <div>
-                <h2 class="card-title">Vendor Information</h2>
+                <h2 class="card-title">Vendor & Party Details</h2>
                 <p class="card-subtitle">
-                    Enter vendor bill and GST details.
+                    Select payee type, GST liability provision, and invoice information.
                 </p>
             </div>
         </div>
 
         <div class="card-body">
-
+            <!-- Row 1: Party Type & GST Liability Type -->
             <div class="form-grid-2">
-
                 <div class="form-group">
                     <label asp-for="ExpensePartyType" class="form-label">Expense Party Type</label>
                     <select asp-for="ExpensePartyType" class="app-select" id="expensePartyType">
@@ -331,192 +190,243 @@
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="VendorId" class="form-label">Vendor</label>
+                    <label asp-for="GstLiabilityType" class="form-label">GST Liability Type</label>
+                    <select asp-for="GstLiabilityType" class="app-select" id="gstLiabilityType">
+                        <option value="Forward Charge">Forward Charge (Supplier Charges GST)</option>
+                        <option value="Reverse Charge (RCM)">Reverse Charge (RCM - Recipient Pays GST)</option>
+                        <option value="No GST">No GST (Exempt / Nil Rated / Non-GST)</option>
+                    </select>
+                    <span asp-validation-for="GstLiabilityType" class="validation-message"></span>
+                </div>
+            </div>
 
+            <!-- Contextual guidance banner for RCM & Reimbursement -->
+            <div id="rcmNoticeBanner" class="app-alert-info mb-3" style="display:none;">
+                <i class="bi bi-info-circle"></i>
+                <strong>Reverse Charge (RCM):</strong> The vendor will be paid only the base amount. GST will be
+                deposited directly to the Government by the company and claimed as ITC subject to rules.
+            </div>
+
+            <div id="reimbursementNoticeBanner" class="app-alert-info mb-3" style="display:none;">
+                <i class="bi bi-receipt"></i>
+                <strong>Claiming GST on Reimbursement:</strong> Select <em>Forward Charge</em> only if the original tax
+                invoice was issued in the company's legal name and GSTIN.
+            </div>
+
+            <!-- Vendor Select (Registered Vendor only) -->
+            <div class="form-grid-2" id="registeredVendorRow">
+                <div class="form-group" id="vendorSelectGroup">
+                    <label asp-for="VendorId" class="form-label">Select Registered Vendor</label>
                     <select asp-for="VendorId" class="app-select" id="vendorSelect">
                         <option value="">Select Vendor</option>
                         @foreach (var vendor in ViewBag.Vendors)
                         {
-                            <option value="@vendor.VendorId"
-                                    data-name="@vendor.VendorName"
-                                    data-gstin="@vendor.GSTIN"
+                            <option value="@vendor.VendorId" data-name="@vendor.VendorName" data-gstin="@vendor.GSTIN"
                                     data-statecode="@vendor.StateCode">
                                 @vendor.VendorName
                             </option>
                         }
                     </select>
-
-                    <span asp-validation-for="VendorId"
-                          class="validation-message"></span>
+                    <span asp-validation-for="VendorId" class="validation-message"></span>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group" id="vendorGstinGroup">
                     <label asp-for="VendorGSTIN" class="form-label">Vendor GSTIN</label>
-
-                    <input asp-for="VendorGSTIN"
-                           class="app-input"
-                           placeholder="15-digit GSTIN"
+                    <input asp-for="VendorGSTIN" class="app-input" id="vendorGstinInput" placeholder="15-digit GSTIN"
                            maxlength="20" />
-
-                    <span asp-validation-for="VendorGSTIN"
-                          class="validation-message"></span>
+                    <span asp-validation-for="VendorGSTIN" class="validation-message"></span>
                 </div>
-
             </div>
 
+            <!-- Payee Name -->
             <div class="form-group" id="vendorNameGroup">
-                <label asp-for="VendorName" class="form-label">Vendor / Payee Name</label>
-                <input asp-for="VendorName"
-                       id="vendorNameInput"
-                       class="app-input"
-                       maxlength="50"
-                       placeholder="Enter vendor/payee name" />
+                <label asp-for="VendorName" class="form-label" id="vendorNameLabel">Vendor / Payee Name</label>
+                <input asp-for="VendorName" id="vendorNameInput" class="app-input" maxlength="50"
+                       placeholder="Enter vendor or payee name" />
                 <span asp-validation-for="VendorName" class="validation-message"></span>
             </div>
 
+            <!-- Invoice Details -->
             <div class="form-grid-2">
                 <div class="form-group">
-                    <label asp-for="InvoiceNumber" class="form-label">Vendor Invoice Number</label>
+                    <label asp-for="InvoiceNumber" class="form-label" id="invoiceNumberLabel">Invoice / Bill Reference
+                        Number</label>
+                        <input asp-for="InvoiceNumber" class="app-input" placeholder="e.g. INV-1049 or Receipt Ref"
+                               maxlength="20" />
+                        <span asp-validation-for="InvoiceNumber" class="validation-message"></span>
+                    </div>
 
-                    <input asp-for="InvoiceNumber"
-                           class="app-input"
-                           placeholder="Reference invoice number"
-                           maxlength="20" />
-
-                    <span asp-validation-for="InvoiceNumber"
-                          class="validation-message"></span>
+                    <div class="form-group">
+                        <label asp-for="VendorInvoiceDate" class="form-label">Invoice / Bill Date</label>
+                        <input type="date" asp-for="VendorInvoiceDate" class="app-input" />
+                        <span asp-validation-for="VendorInvoiceDate" class="validation-message"></span>
+                    </div>
                 </div>
+
+                <!-- State Codes (Hidden when No GST) -->
+                <div class="form-grid-3" id="gstStateFields">
+                    <div class="form-group">
+                        <label asp-for="CompanyStateCode" class="form-label">Company State</label>
+                        <select asp-for="CompanyStateCode" class="app-select" id="companyStateDropdown">
+                            <option value="">Select State</option>
+                            @foreach (var state in ViewBag.States)
+                            {
+                                <option value="@state.StateCode">@state.StateName (@state.StateCode)</option>
+                            }
+                        </select>
+                        <span asp-validation-for="CompanyStateCode" class="validation-message"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="VendorStateCode" class="form-label">Vendor State</label>
+                        <select asp-for="VendorStateCode" class="app-select" id="vendorStateCodeInput">
+                            <option value="">Select State</option>
+                            @foreach (var state in ViewBag.States)
+                            {
+                                <option value="@state.StateCode">@state.StateName (@state.StateCode)</option>
+                            }
+                        </select>
+                        <span asp-validation-for="VendorStateCode" class="validation-message"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="PlaceOfSupplyStateCode" class="form-label">Place of Supply</label>
+                        <select asp-for="PlaceOfSupplyStateCode" class="app-select" id="placeOfSupplyStateDropdown">
+                            <option value="">Select State</option>
+                            @foreach (var state in ViewBag.States)
+                            {
+                                <option value="@state.StateCode">@state.StateName (@state.StateCode)</option>
+                            }
+                        </select>
+                        <span asp-validation-for="PlaceOfSupplyStateCode" class="validation-message"></span>
+                    </div>
+                </div>
+
+                <!-- Remarks -->
                 <div class="form-group">
-                    <label asp-for="VendorInvoiceDate" class="form-label">Vendor Invoice Date</label>
-                    <input type="date" asp-for="VendorInvoiceDate" class="app-input" />
-                    <span asp-validation-for="VendorInvoiceDate" class="validation-message"></span>
+                    <label asp-for="Remarks" class="form-label">Remarks</label>
+                    <textarea asp-for="Remarks" class="app-input" rows="2"
+                              placeholder="Additional remarks or notes"></textarea>
+                    <span asp-validation-for="Remarks" class="validation-message"></span>
                 </div>
             </div>
-
-            <div class="form-grid-3">
-
-                <div class="form-group">
-                    <label asp-for="CompanyStateCode"
-                           class="form-label">
-                        Company State
-                    </label>
-
-                    <select asp-for="CompanyStateCode"
-                            class="app-select"
-                            id="companyStateDropdown">
-
-                        <option value="">Select State</option>
-
-                        @foreach (var state in ViewBag.States)
-                        {
-                            <option value="@state.StateCode">
-                                @state.StateName (@state.StateCode)
-                            </option>
-                        }
-
-                    </select>
-
-                    <span asp-validation-for="CompanyStateCode"
-                          class="validation-message"></span>
-                </div>
-
-                <div class="form-group">
-                    <label asp-for="VendorStateCode"
-                           class="form-label">
-                        Vendor State
-                    </label>
-
-                    <select asp-for="VendorStateCode"
-                            class="app-select"
-                            id="vendorStateCodeInput">
-
-                        <option value="">Select State</option>
-
-                        @foreach (var state in ViewBag.States)
-                        {
-                            <option value="@state.StateCode">
-                                @state.StateName (@state.StateCode)
-                            </option>
-                        }
-
-                    </select>
-
-                    <span asp-validation-for="VendorStateCode"
-                          class="validation-message"></span>
-                </div>
-
-                <div class="form-group">
-                    <label asp-for="PlaceOfSupplyStateCode"
-                           class="form-label">
-                        Place of Supply
-                    </label>
-
-                    <select asp-for="PlaceOfSupplyStateCode"
-                            class="app-select"
-                            id="placeOfSupplyStateDropdown">
-
-                        <option value="">Select State</option>
-
-                        @foreach (var state in ViewBag.States)
-                        {
-                            <option value="@state.StateCode">
-                                @state.StateName (@state.StateCode)
-                            </option>
-                        }
-
-                    </select>
-
-                    <span asp-validation-for="PlaceOfSupplyStateCode"
-                          class="validation-message"></span>
-                </div>
-
-            </div>
-
-            <div class="form-group">
-                <label asp-for="Remarks" class="form-label">Remarks</label>
-
-                <textarea asp-for="Remarks"
-                          class="app-input"
-                          rows="3"
-                          placeholder="Additional remarks or notes"></textarea>
-
-                <span asp-validation-for="Remarks"
-                      class="validation-message"></span>
-            </div>
-
         </div>
-    </div>
 
-    <div class="app-card">
-        <div class="card-body form-actions">
+        <!-- CARD 3: Amount Details (ADAPTS DYNAMICALLY TO GST LIABILITY TYPE) -->
+        <div class="app-card form-card">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title">Amount Details</h2>
+                    <p class="card-subtitle" id="amountCardSubtitle">
+                        Enter transaction amount and GST breakdown.
+                    </p>
+                </div>
+            </div>
 
-            <button type="submit"
-                    class="btn-app btn-primary-app">
-                <i class="bi bi-check-circle"></i>
+            <div class="card-body">
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label asp-for="Amount" class="form-label" id="amountInputLabel">
+                            Amount Before GST
+                        </label>
+                        <input type="number" asp-for="Amount" class="app-input" placeholder="0.00" min="0" step="0.01" />
+                        <span asp-validation-for="Amount" class="validation-message"></span>
+                    </div>
 
-                @(isEmployeeOnly
-                                ? isCreate
-                                ? "Save Expense Claim"
-                                : "Update Expense Claim"
-                                : isCreate
-                                ? "Save Voucher"
-                                : "Update Voucher")
-            </button>
+                    <!-- GST Rate Input (Hidden when No GST) -->
+                    <div class="form-group" id="gstRateGroup">
+                        <label asp-for="GSTRate" class="form-label">GST Rate %</label>
+                        <input type="number" asp-for="GSTRate" id="gstRateInput" class="app-input" placeholder="0" min="0"
+                               max="100" step="0.01" />
+                        <span asp-validation-for="GSTRate" class="validation-message"></span>
+                    </div>
+                </div>
 
-            <a asp-action="Index"
-   asp-route-mine="@(Context.Request.Query["mine"] == "true" ? "true" : null)"
-   class="btn-app btn-secondary-app">
-                Cancel
-            </a>
+                <!-- GST Calculation & Breakdown Box (Hidden when No GST) -->
+                <div id="gstFieldsContainer">
+                    <div class="app-alert-info">
+                        <div class="form-grid-4">
+                            <div class="form-group">
+                                <div class="form-check">
+                                    <input asp-for="IsInterState" id="isInterStateInput" class="form-check-input" />
+                                    <label asp-for="IsInterState" class="form-check-label">
+                                        Interstate Expense (IGST)
+                                    </label>
+                                </div>
+                                <small class="form-text">Check if vendor state differs from company state.</small>
+                            </div>
 
-        </div>
-    </div>
+                            <div class="form-group" id="cgstGroup">
+                                <label class="form-label">CGST</label>
+                                <strong>₹ <span id="cgstAmount">@Model.CGSTAmount.ToString("N2")</span></strong>
+                            </div>
 
-</form>
+                            <div class="form-group" id="sgstGroup">
+                                <label class="form-label">SGST</label>
+                                <strong>₹ <span id="sgstAmount">@Model.SGSTAmount.ToString("N2")</span></strong>
+                            </div>
 
-@section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
-    <script src="~/js/expense-voucher-form.js" asp-append-version="true"></script>
-}
+                            <div class="form-group" id="igstGroup" style="display:none;">
+                                <label class="form-label">IGST</label>
+                                <strong>₹ <span id="igstAmount">@Model.IGSTAmount.ToString("N2")</span></strong>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Total GST</label>
+                                <strong>₹ <span id="totalGst">@Model.TotalGSTAmount.ToString("N2")</span></strong>
+                            </div>
+                        </div>
+
+                        <hr class="my-2" />
+
+                        <!-- Total Payable Breakdown -->
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div>
+                                <span class="text-muted d-block" id="payableSummaryLabel">Total Payable to Vendor:</span>
+                                <strong class="fs-5 text-primary">₹ <span
+                                    id="totalAmount">@Model.TotalAmount.ToString("N2")</span></strong>
+                                </div>
+
+                                <div id="rcmSummaryBox" style="display:none;">
+                                    <span class="text-muted d-block">RCM Liability to Govt (Cash):</span>
+                                    <strong class="fs-5 text-warning">₹ <span id="rcmGstAmount">0.00</span></strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ITC Eligible Checkbox -->
+                        <div class="form-check mt-3" id="itcGroup">
+                            <input asp-for="ITCEligible" id="itcEligibleInput" class="form-check-input" />
+                            <label asp-for="ITCEligible" class="form-check-label">
+                                Input Tax Credit (ITC) Eligible
+                            </label>
+                            <small class="d-block text-muted">Eligible for input tax offset against company output GST.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="app-card">
+                <div class="card-body form-actions">
+                    <button type="submit" class="btn-app btn-primary-app">
+                        <i class="bi bi-check-circle"></i>
+                        @(isEmployeeOnly
+                            ? isCreate ? "Save Expense Claim" : "Update Expense Claim"
+                            : isCreate ? "Save Voucher" : "Update Voucher")
+                    </button>
+
+                    <a asp-action="Index" asp-route-mine="@(Context.Request.Query["mine"] == "true" ? "true" : null)"
+                       class="btn-app btn-secondary-app">
+                        Cancel
+                    </a>
+                </div>
+            </div>
+        </form>
+
+        @section Scripts {
+            @{
+                await Html.RenderPartialAsync("_ValidationScriptsPartial");
+            }
+            <script src="~/js/expense-voucher-form.js" asp-append-version="true"></script>
+        }

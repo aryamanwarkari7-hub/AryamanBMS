@@ -1,14 +1,24 @@
-﻿@model AryamanBMS.Models.EmployeeModel
+﻿@model AryamanBMS.ViewModels.EmployeeDetailsViewModel
 
 @{
+    var employee = Model.Employee;
     ViewData["Title"] = "My Profile";
+
+    string employeeStatusClass = employee.IsActive ? "badge-success" : "badge-danger";
+    string employeeStatusText = employee.IsActive ? "Active" : "Inactive";
+
+    string FullAddress(params string?[] parts)
+    {
+        var value = string.Join(", ", parts.Where(x => !string.IsNullOrWhiteSpace(x)));
+        return string.IsNullOrWhiteSpace(value) ? "-" : value;
+    }
 }
 
 <div class="module-header">
     <div>
-        <h1 class="module-title">@Model.FullName</h1>
+        <h1 class="module-title">@employee.FullName</h1>
         <p class="module-subtitle">
-            Employee information and employment details
+            Employee profile, employment information and documents
         </p>
     </div>
 
@@ -21,187 +31,564 @@
 </div>
 
 <div class="detail-page">
-    <!-- Top Summary Grid -->
+
     <div class="detail-summary-grid">
         <div class="detail-summary-item">
             <div class="detail-summary-label">Employee Code</div>
-            <div class="detail-summary-value">@Model.EmployeeCode</div>
+            <div class="detail-summary-value">@employee.EmployeeCode</div>
         </div>
 
         <div class="detail-summary-item">
             <div class="detail-summary-label">Department</div>
-            <div class="detail-summary-value">@(Model.Department?.DepartmentName ?? "-")</div>
+            <div class="detail-summary-value">
+                @(employee.Department?.DepartmentName ?? "-")
+            </div>
         </div>
 
         <div class="detail-summary-item">
             <div class="detail-summary-label">Designation</div>
-            <div class="detail-summary-value">@(Model.Designation?.DesignationName ?? "-")</div>
+            <div class="detail-summary-value">
+                @(employee.Designation?.DesignationName ?? "-")
+            </div>
         </div>
 
         <div class="detail-summary-item">
             <div class="detail-summary-label">Status</div>
             <div class="detail-summary-value">
-                @if (Model.IsActive)
-                {
-                    <span class="badge-success">Active</span>
-                }
-                else
-                {
-                    <span class="badge-danger">Inactive</span>
-                }
+                <span class="@employeeStatusClass">@employeeStatusText</span>
             </div>
         </div>
     </div>
 
-    <!-- 2-Column Balanced Cards -->
-    <div class="detail-grid-2">
-        <!-- Basic Information -->
+    <div class="detail-grid-2 detail-grid-balanced">
+
         <div class="app-card">
             <div class="card-header">
-                <h5 class="card-title">
-                    <i class="bi bi-person text-primary"></i> Basic Information
-                </h5>
+                <h5 class="card-title">Basic Information</h5>
             </div>
 
             <div class="card-body">
-                <div class="profile-stack">
-                    <div class="profile-info-row">
-                        <span><i class="bi bi-person"></i> Full Name</span>
-                        <strong>@Model.FullName</strong>
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Employee Name</span>
+                        <strong class="detail-info-value">@employee.FullName</strong>
                     </div>
 
-                    <div class="profile-info-row">
-                        <span><i class="bi bi-gender-ambiguous"></i> Gender</span>
-                        <strong>@(Model.Gender ?? "-")</strong>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Gender</span>
+                        <strong class="detail-info-value">@(employee.Gender ?? "-")</strong>
                     </div>
 
-                    <div class="profile-info-row">
-                        <span><i class="bi bi-calendar-event"></i> Date of Birth</span>
-                        <strong>@(Model.DateOfBirth?.ToString("dd-MMM-yyyy") ?? "-")</strong>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Date Of Birth</span>
+                        <strong class="detail-info-value">
+                            @(employee.DateOfBirth?.ToString("dd-MMM-yyyy") ?? "-")
+                        </strong>
                     </div>
 
-                    <div class="profile-info-row">
-                        <span><i class="bi bi-calendar-check"></i> Joining Date</span>
-                        <strong>@Model.JoiningDate.ToString("dd-MMM-yyyy")</strong>
-                    </div>
-
-                    <div class="profile-info-row">
-                        <span><i class="bi bi-briefcase"></i> Employment Type</span>
-                        <span class="badge-neutral">@(Model.EmploymentType ?? "-")</span>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">System User</span>
+                        <strong class="detail-info-value">
+                            @(employee.ApplicationUser?.UserName ?? "-")
+                        </strong>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Contact Information -->
         <div class="app-card">
             <div class="card-header">
-                <h5 class="card-title">
-                    <i class="bi bi-telephone text-primary"></i> Contact Information
-                </h5>
+                <h5 class="card-title">Employment Information</h5>
             </div>
 
             <div class="card-body">
-                <div class="profile-stack">
-                    <div class="profile-info-row">
-                        <span><i class="bi bi-phone"></i> Mobile Number</span>
-                        <strong>@Model.MobileNumber</strong>
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Department</span>
+                        <strong class="detail-info-value">
+                            @(employee.Department?.DepartmentName ?? "-")
+                        </strong>
                     </div>
 
-                    <div class="profile-info-row">
-                        <span><i class="bi bi-envelope"></i> Official Email</span>
-                        <strong>@(Model.OfficialEmail ?? "-")</strong>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Designation</span>
+                        <strong class="detail-info-value">
+                            @(employee.Designation?.DesignationName ?? "-")
+                        </strong>
                     </div>
 
-                    <div class="profile-info-row">
-                        <span><i class="bi bi-envelope-open"></i> Personal Email</span>
-                        <strong>@(Model.PersonalEmail ?? "-")</strong>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Joining Date</span>
+                        <strong class="detail-info-value">
+                            @employee.JoiningDate.ToString("dd-MMM-yyyy")
+                        </strong>
                     </div>
 
-                    <div class="profile-info-row">
-                        <span><i class="bi bi-person-heart"></i> Emergency Contact</span>
-                        <strong>@(Model.EmergencyContact ?? "-")</strong>
-                    </div>
-
-                    <div class="profile-info-row">
-                        <span><i class="bi bi-telephone-forward"></i> Emergency Phone</span>
-                        <strong>@(Model.EmergencyPhone ?? "-")</strong>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Employment Type</span>
+                        <strong class="detail-info-value">
+                            @(employee.EmploymentType ?? "-")
+                        </strong>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Address Information -->
         <div class="app-card">
             <div class="card-header">
-                <h5 class="card-title">
-                    <i class="bi bi-geo-alt text-primary"></i> Address Information
-                </h5>
+                <h5 class="card-title">Contact Information</h5>
             </div>
 
             <div class="card-body">
-                <div class="profile-stack">
-                    <div class="profile-info-row">
-                        <span><i class="bi bi-house"></i> Permanent Address</span>
-                        <strong>@(Model.PermanentAddress ?? "-")</strong>
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Mobile Number</span>
+                        <strong class="detail-info-value">
+                            @(employee.MobileNumber ?? "-")
+                        </strong>
                     </div>
 
-                    <div class="profile-info-row">
-                        <span><i class="bi bi-buildings"></i> City</span>
-                        <strong>@(Model.City ?? "-")</strong>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Personal Email</span>
+                        <strong class="detail-info-value">
+                            @(employee.PersonalEmail ?? "-")
+                        </strong>
                     </div>
 
-                    <div class="profile-info-row">
-                        <span><i class="bi bi-map"></i> State</span>
-                        <strong>@(Model.State ?? "-")</strong>
-                    </div>
-
-                    <div class="profile-info-row">
-                        <span><i class="bi bi-pin-map"></i> Pin Code</span>
-                        <strong>@(Model.PinCode ?? "-")</strong>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Official Email</span>
+                        <strong class="detail-info-value">
+                            @(employee.OfficialEmail ?? "-")
+                        </strong>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Statutory Information -->
         <div class="app-card">
             <div class="card-header">
-                <h5 class="card-title">
-                    <i class="bi bi-shield-lock text-primary"></i> Statutory & Identity
-                </h5>
+                <h5 class="card-title">Emergency Contact</h5>
             </div>
 
             <div class="card-body">
-                <div class="profile-stack">
-                    <div class="profile-info-row">
-                        <span><i class="bi bi-card-text"></i> Aadhaar Number</span>
-                        <strong>@(Model.AadhaarNo ?? "-")</strong>
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Contact Name</span>
+                        <strong class="detail-info-value">
+                            @(employee.EmergencyContact ?? "-")
+                        </strong>
                     </div>
 
-                    <div class="profile-info-row">
-                        <span><i class="bi bi-credit-card-2-front"></i> PAN Number</span>
-                        <strong>@(Model.PanNo ?? "-")</strong>
-                    </div>
-
-                    <div class="profile-info-row">
-                        <span><i class="bi bi-file-earmark-person"></i> UAN Number</span>
-                        <strong>@(Model.UanNo ?? "-")</strong>
-                    </div>
-
-                    <div class="profile-info-row">
-                        <span><i class="bi bi-check-circle"></i> Profile Status</span>
-                        @if (Model.IsActive)
-                        {
-                            <span class="badge-success">Active</span>
-                        }
-                        else
-                        {
-                            <span class="badge-danger">Inactive</span>
-                        }
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Contact Number</span>
+                        <strong class="detail-info-value">
+                            @(employee.EmergencyPhone ?? "-")
+                        </strong>
                     </div>
                 </div>
             </div>
+        </div>
+
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Address Information</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Permanent Address</span>
+                        <strong class="detail-info-value">
+                            @FullAddress(employee.PermanentAddress, employee.City, employee.State, employee.PinCode)
+                        </strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Local Address</span>
+                        <strong class="detail-info-value">
+                            @FullAddress(employee.LocalAddress, employee.LocalCity, employee.LocalState,
+                            employee.LocalPinCode)
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="app-card">
+            <div class="card-header">
+                <h5 class="card-title">Statutory Information</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="detail-info-list">
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Aadhaar Number</span>
+                        <strong class="detail-info-value">@(employee.AadhaarNo ?? "-")</strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">PAN Number</span>
+                        <strong class="detail-info-value">@(employee.PanNo ?? "-")</strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">UAN Number</span>
+                        <strong class="detail-info-value">@(employee.UanNo ?? "-")</strong>
+                    </div>
+
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">ESIC Number</span>
+                        <strong class="detail-info-value">@(employee.EsicNo ?? "-")</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Statutory Documents -->
+    <div class="app-card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Statutory Documents</h5>
+        </div>
+
+        <div class="card-body">
+            @if (!Model.StatutoryDocuments.Any())
+            {
+                <div class="empty-state">No statutory documents uploaded.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="app-table">
+                        <thead>
+                            <tr>
+                                <th>Document</th>
+                                <th>File</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var group in Model.StatutoryDocuments.GroupBy(x => x.DocumentType))
+                            {
+                                <tr>
+                                    <td>@group.Key</td>
+                                    <td>
+                                        <div class="d-flex flex-column gap-2">
+                                            @foreach (var document in group)
+                                            {
+                                                <div>@document.OriginalFileName</div>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="d-flex flex-column align-items-center gap-2">
+                                            @foreach (var document in group)
+                                            {
+                                                <div class="d-flex align-items-center gap-1">
+                                                    <a asp-action="DownloadDocument" asp-route-id="@document.Id"
+                                                       class="btn-app btn-primary-app btn-icon"
+                                                       title="Download @document.OriginalFileName">
+                                                        <i class="bi bi-download"></i>
+                                                    </a>
+                                                </div>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
         </div>
     </div>
+
+    <!-- Joining Documents -->
+    <div class="app-card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Joining Documents</h5>
+        </div>
+
+        <div class="card-body">
+            @if (!Model.JoiningDocuments.Any())
+            {
+                <div class="empty-state">No joining documents uploaded.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="app-table">
+                        <thead>
+                            <tr>
+                                <th>Document</th>
+                                <th>File</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var group in Model.JoiningDocuments.GroupBy(x => x.DocumentType))
+                            {
+                                <tr>
+                                    <td>@group.Key</td>
+                                    <td>
+                                        <div class="d-flex flex-column gap-2">
+                                            @foreach (var document in group)
+                                            {
+                                                <div>@document.OriginalFileName</div>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="d-flex flex-column align-items-center gap-2">
+                                            @foreach (var document in group)
+                                            {
+                                                <div class="d-flex align-items-center gap-1">
+                                                    <a asp-action="DownloadDocument" asp-route-id="@document.Id"
+                                                       class="btn-app btn-primary-app btn-icon"
+                                                       title="Download @document.OriginalFileName">
+                                                        <i class="bi bi-download"></i>
+                                                    </a>
+                                                </div>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Previous Employment -->
+    <div class="app-card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Previous Employment</h5>
+        </div>
+
+        <div class="card-body">
+            @if (!Model.PreviousEmployments.Any())
+            {
+                <div class="empty-state">No previous employment records found.</div>
+            }
+            else
+            {
+                @for (int i = 0; i < Model.PreviousEmployments.Count; i++)
+                {
+                    var employment = Model.PreviousEmployments[i];
+
+                    @if (i > 0)
+                    {
+                        <hr class="my-4" />
+                    }
+
+                    <div class="detail-info-list">
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Company Name</span>
+                            <strong class="detail-info-value">@employment.CompanyName</strong>
+                        </div>
+
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Designation</span>
+                            <strong class="detail-info-value">@(employment.Designation ?? "-")</strong>
+                        </div>
+
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Department</span>
+                            <strong class="detail-info-value">@(employment.Department ?? "-")</strong>
+                        </div>
+
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Employment Type</span>
+                            <strong class="detail-info-value">@(employment.EmploymentType ?? "-")</strong>
+                        </div>
+
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Period</span>
+                            <strong class="detail-info-value">
+                                @employment.StartDate.ToString("dd-MMM-yyyy") to @employment.EndDate.ToString("dd-MMM-yyyy")
+                            </strong>
+                        </div>
+
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Last Salary</span>
+                            <strong class="detail-info-value">
+                                @(employment.LastSalary.HasValue ? $"₹{employment.LastSalary.Value:N2}" : "-")
+                            </strong>
+                        </div>
+
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Reason For Leaving</span>
+                            <strong class="detail-info-value">@(employment.ReasonForLeaving ?? "-")</strong>
+                        </div>
+
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">HR Contact</span>
+                            <strong class="detail-info-value">
+                                @FullAddress(employment.HRContactName, employment.HRContactEmail, employment.HRContactNumber)
+                            </strong>
+                        </div>
+
+                        @if (employment.Documents.Any())
+                        {
+                            <div class="detail-info-row">
+                                <span class="detail-info-label">Documents</span>
+                                <div class="detail-info-value w-100">
+                                    <div class="table-responsive">
+                                        <table class="app-table mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Document</th>
+                                                    <th>File</th>
+                                                    <th class="text-center">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var doc in employment.Documents)
+                                                {
+                                                    <tr>
+                                                        <td>@doc.DocumentType</td>
+                                                        <td>@doc.OriginalFileName</td>
+                                                        <td class="text-center">
+                                                            <div class="d-flex align-items-center justify-content-center gap-1">
+                                                                <a asp-action="DownloadDocument" asp-route-id="@doc.Id"
+                                                                   class="btn-app btn-primary-app btn-icon"
+                                                                   title="Download @doc.OriginalFileName">
+                                                                    <i class="bi bi-download"></i>
+                                                                </a>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <!-- Academic Information -->
+    <div class="app-card academic-details-card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Academic Information</h5>
+        </div>
+
+        <div class="card-body">
+            @if (!Model.Academics.Any())
+            {
+                <div class="empty-state">No academic records found.</div>
+            }
+            else
+            {
+                var academicRecords = Model.Academics.OrderByDescending(x => x.PassingYear).ToList();
+
+                <div class="academic-desktop-view">
+                    <div class="table-responsive">
+                        <table class="app-table">
+                            <thead>
+                                <tr>
+                                    <th>Qualification</th>
+                                    <th>Course</th>
+                                    <th>Institute</th>
+                                    <th>University</th>
+                                    <th>Year</th>
+                                    <th>Result</th>
+                                    <th>Highest</th>
+                                    <th>File</th>
+                                    <th class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var academic in academicRecords)
+                                {
+                                    <tr>
+                                        <td><strong>@academic.QualificationLevel</strong></td>
+                                        <td>
+                                            @(academic.CourseName ?? "-")
+                                            @if (!string.IsNullOrWhiteSpace(academic.Specialization))
+                                            {
+                                                <br /><small class="text-muted">@academic.Specialization</small>
+                                            }
+                                        </td>
+                                        <td>@(academic.InstituteName ?? "-")</td>
+                                        <td>@(academic.BoardOrUniversity ?? "-")</td>
+                                        <td>@(academic.PassingYear?.ToString() ?? "-")</td>
+                                        <td>
+                                            @if (academic.ResultType == "Grade")
+                                            {
+                                                @(academic.Grade ?? "-")
+                                            }
+                                            else if (academic.Score.HasValue)
+                                            {
+                                                @academic.Score
+                                                <span>@academic.ResultType</span>
+                                            }
+                                            else
+                                            {
+                                                <span>-</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (academic.IsHighestQualification)
+                                            {
+                                                <span class="badge-success">Yes</span>
+                                            }
+                                            else
+                                            {
+                                                <span>-</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (academic.Documents.Any())
+                                            {
+                                                <div class="d-flex flex-column gap-1">
+                                                    @foreach (var document in academic.Documents)
+                                                    {
+                                                        <div>@document.OriginalFileName</div>
+                                                    }
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        </td>
+                                        <td class="text-center">
+                                            @if (academic.Documents.Any())
+                                            {
+                                                <div class="d-flex flex-column align-items-center gap-1">
+                                                    @foreach (var document in academic.Documents)
+                                                    {
+                                                        <div class="d-flex align-items-center justify-content-center gap-1">
+                                                            <a asp-action="DownloadDocument" asp-route-id="@document.Id"
+                                                               class="btn-app btn-primary-app btn-icon"
+                                                               title="Download @document.OriginalFileName">
+                                                                <i class="bi bi-download"></i>
+                                                            </a>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <span>-</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
 </div>

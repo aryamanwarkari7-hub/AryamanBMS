@@ -2173,7 +2173,43 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction("Index", "Attendance");
             }
 
-            return View(employee);
+            var academics = await _employeeAcademicRepository
+                .Academics.AsNoTracking()
+                .Include(x => x.Documents)
+                .Where(x => x.EmployeeId == employee.Id)
+                .OrderByDescending(x => x.PassingYear)
+                .ToListAsync();
+
+            var fixedDocuments = await _employeeDocumentRepository
+                .Documents.AsNoTracking()
+                .Where(x =>
+                    x.EmployeeId == employee.Id
+                    && x.EmployeeAcademicId == null
+                    && x.EmployeePreviousEmploymentId == null
+                )
+                .ToListAsync();
+
+            var previousEmployments = await _employeePreviousEmploymentRepository
+                .PreviousEmployments.AsNoTracking()
+                .Include(x => x.Documents)
+                .Where(x => x.EmployeeId == employee.Id)
+                .OrderByDescending(x => x.EndDate)
+                .ToListAsync();
+
+            var model = new EmployeeDetailsViewModel
+            {
+                Employee = employee,
+                Academics = academics,
+                StatutoryDocuments = fixedDocuments
+                    .Where(x => x.DocumentCategory == "Statutory")
+                    .ToList(),
+                JoiningDocuments = fixedDocuments
+                    .Where(x => x.DocumentCategory == "Joining")
+                    .ToList(),
+                PreviousEmployments = previousEmployments,
+            };
+
+            return View(model);
         }
 
         [HttpGet]
