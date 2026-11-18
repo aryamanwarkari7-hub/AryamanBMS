@@ -1,3 +1,4 @@
+using AryamanBMS.Business.Interfaces;
 using AryamanBMS.Data;
 using AryamanBMS.Extensions;
 using AryamanBMS.Models;
@@ -11,8 +12,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
-using AryamanBMS.Business.Interfaces;
 
 namespace AryamanBMS.Controllers
 {
@@ -38,16 +37,17 @@ namespace AryamanBMS.Controllers
         private const int FinancialYearStartDay = 1;
 
         public AttendanceController(
-    IAttendanceRepository attendanceRepository,
-    IEmployeeRepository employeeRepository,
-    ILeaveApplicationRepository leaveApplicationRepository,
-    IOffDayWorkRequestRepository offDayWorkRequestRepository,
-    UserManager<ApplicationUserModel> userManager,
-    ISalaryAttendanceSummaryService salaryAttendanceSummaryService,
-    ApplicationDbContext context,
-    IConfiguration configuration,
-    INotificationService notificationService,
-    IWorkingDayService workingDayService)
+            IAttendanceRepository attendanceRepository,
+            IEmployeeRepository employeeRepository,
+            ILeaveApplicationRepository leaveApplicationRepository,
+            IOffDayWorkRequestRepository offDayWorkRequestRepository,
+            UserManager<ApplicationUserModel> userManager,
+            ISalaryAttendanceSummaryService salaryAttendanceSummaryService,
+            ApplicationDbContext context,
+            IConfiguration configuration,
+            INotificationService notificationService,
+            IWorkingDayService workingDayService
+        )
         {
             _attendanceRepository = attendanceRepository;
             _employeeRepository = employeeRepository;
@@ -70,37 +70,32 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var employee = await _employeeRepository.Employees
-                .FirstOrDefaultAsync(e =>
-                    e.ApplicationUserId == user.Id);
+            var employee = await _employeeRepository.Employees.FirstOrDefaultAsync(e =>
+                e.ApplicationUserId == user.Id
+            );
 
             if (employee == null)
             {
-                if (User.IsInRole("Admin") ||
-                    User.IsInRole("HR"))
+                if (User.IsInRole("Admin") || User.IsInRole("HR"))
                 {
                     return View();
                 }
 
-                TempData["Error"] =
-                    "No employee record mapped to this user.";
+                TempData["Error"] = "No employee record mapped to this user.";
 
                 return View();
             }
 
-            var todayAttendance =
-                await _attendanceRepository.Attendances
-                .Include(a => a.Employee)
+            var todayAttendance = await _attendanceRepository
+                .Attendances.Include(a => a.Employee)
                 .FirstOrDefaultAsync(a =>
-                    a.EmployeeId == employee.Id &&
-                    a.AttendanceDate.Date == DateTime.Today);
+                    a.EmployeeId == employee.Id && a.AttendanceDate.Date == DateTime.Today
+                );
 
             ViewBag.Employee = employee;
             ViewBag.TodayAttendance = todayAttendance;
             ViewBag.TodayCalendarStatus =
-                todayAttendance == null
-                    ? await GetCalendarStatusAsync(DateTime.Today)
-                    : null;
+                todayAttendance == null ? await GetCalendarStatusAsync(DateTime.Today) : null;
 
             return View(todayAttendance);
         }
@@ -115,36 +110,32 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var employee = await _employeeRepository.Employees
-                .FirstOrDefaultAsync(e =>
-                    e.ApplicationUserId == user.Id);
+            var employee = await _employeeRepository.Employees.FirstOrDefaultAsync(e =>
+                e.ApplicationUserId == user.Id
+            );
 
             if (employee == null)
             {
-                TempData["Error"] =
-                    "No employee record mapped to this user.";
+                TempData["Error"] = "No employee record mapped to this user.";
 
                 return RedirectToAction(nameof(Index));
             }
 
             int selectedMonth =
-                month.HasValue &&
-                month.Value >= 1 &&
-                month.Value <= 12
+                month.HasValue && month.Value >= 1 && month.Value <= 12
                     ? month.Value
                     : DateTime.Today.Month;
 
-            int selectedYear =
-                year ?? DateTime.Today.Year;
+            int selectedYear = year ?? DateTime.Today.Year;
 
-            var attendanceRecords =
-                await _attendanceRepository.Attendances
-                    .Where(a =>
-                        a.EmployeeId == employee.Id &&
-                        a.AttendanceDate.Month == selectedMonth &&
-                        a.AttendanceDate.Year == selectedYear)
-                    .OrderBy(a => a.AttendanceDate)
-                    .ToListAsync();
+            var attendanceRecords = await _attendanceRepository
+                .Attendances.Where(a =>
+                    a.EmployeeId == employee.Id
+                    && a.AttendanceDate.Month == selectedMonth
+                    && a.AttendanceDate.Year == selectedYear
+                )
+                .OrderBy(a => a.AttendanceDate)
+                .ToListAsync();
 
             int totalDays = DateTime.DaysInMonth(selectedYear, selectedMonth);
             var monthStart = new DateTime(selectedYear, selectedMonth, 1);
@@ -152,40 +143,38 @@ namespace AryamanBMS.Controllers
             var today = DateTime.Today;
 
             DateTime eligibleStart =
-                employee.JoiningDate.Date > monthStart
-                    ? employee.JoiningDate.Date
-                    : monthStart;
+                employee.JoiningDate.Date > monthStart ? employee.JoiningDate.Date : monthStart;
 
             DateTime eligibleEnd =
-                employee.LastWorkingDate.HasValue &&
-                employee.LastWorkingDate.Value.Date < monthEnd
+                employee.LastWorkingDate.HasValue && employee.LastWorkingDate.Value.Date < monthEnd
                     ? employee.LastWorkingDate.Value.Date
                     : monthEnd;
 
             DateTime attendanceCountEnd = eligibleEnd;
 
-            if (selectedYear == today.Year &&
-                selectedMonth == today.Month &&
-                today < attendanceCountEnd)
+            if (
+                selectedYear == today.Year
+                && selectedMonth == today.Month
+                && today < attendanceCountEnd
+            )
             {
                 attendanceCountEnd = today;
             }
 
-            var markedDates = attendanceRecords
-                .Select(a => a.AttendanceDate.Date)
-                .ToHashSet();
+            var markedDates = attendanceRecords.Select(a => a.AttendanceDate.Date).ToHashSet();
 
-            var visibleAttendanceRecords =
-                attendanceRecords.ToList();
+            var visibleAttendanceRecords = attendanceRecords.ToList();
 
             int expectedAttendanceDays = 0;
             int missingDays = 0;
 
             if (eligibleStart <= eligibleEnd)
             {
-                for (var date = eligibleStart.Date;
-                     date <= eligibleEnd.Date;
-                     date = date.AddDays(1))
+                for (
+                    var date = eligibleStart.Date;
+                    date <= eligibleEnd.Date;
+                    date = date.AddDays(1)
+                )
                 {
                     if (await _workingDayService.IsWorkingDayAsync(date))
                     {
@@ -199,31 +188,32 @@ namespace AryamanBMS.Controllers
                         if (!markedDates.Contains(date))
                         {
                             missingDays++;
-                            visibleAttendanceRecords.Add(new AttendanceModel
-                            {
-                                EmployeeId = employee.Id,
-                                AttendanceDate = date,
-                                Status = "M",
-                                AttendanceValue = 0m,
-                                Remarks = "Missing attendance"
-                            });
+                            visibleAttendanceRecords.Add(
+                                new AttendanceModel
+                                {
+                                    EmployeeId = employee.Id,
+                                    AttendanceDate = date,
+                                    Status = "M",
+                                    AttendanceValue = 0m,
+                                    Remarks = "Missing attendance",
+                                }
+                            );
                         }
                     }
                     else if (!markedDates.Contains(date))
                     {
-                        var dayStatus =
-                            await _workingDayService.GetDayStatusAsync(date);
+                        var dayStatus = await _workingDayService.GetDayStatusAsync(date);
 
-                        visibleAttendanceRecords.Add(new AttendanceModel
-                        {
-                            EmployeeId = employee.Id,
-                            AttendanceDate = date,
-                            Status = dayStatus == "Holiday" ? "H" : "WO",
-                            AttendanceValue = 0m,
-                            Remarks = dayStatus == "Holiday"
-                                ? "Holiday"
-                                : "Weekly off"
-                        });
+                        visibleAttendanceRecords.Add(
+                            new AttendanceModel
+                            {
+                                EmployeeId = employee.Id,
+                                AttendanceDate = date,
+                                Status = dayStatus == "Holiday" ? "H" : "WO",
+                                AttendanceValue = 0m,
+                                Remarks = dayStatus == "Holiday" ? "Holiday" : "Weekly off",
+                            }
+                        );
                     }
                 }
             }
@@ -234,29 +224,23 @@ namespace AryamanBMS.Controllers
             ViewBag.ExpectedAttendanceDays = expectedAttendanceDays;
             ViewBag.MissingDays = missingDays;
 
-            DateTime balanceReferenceDate =
-               monthEnd.Date;
+            DateTime balanceReferenceDate = monthEnd.Date;
 
-            ViewBag.PaidLeaveBalance =
-                await GetPaidLeaveBalanceAsOfAsync(
-                    employee,
-                    balanceReferenceDate);
+            ViewBag.PaidLeaveBalance = await GetPaidLeaveBalanceAsOfAsync(
+                employee,
+                balanceReferenceDate
+            );
 
             return View(
-                visibleAttendanceRecords
-                    .OrderBy(x => x.AttendanceDate)
-                    .ThenBy(x => x.Id)
-                    .ToList());
+                visibleAttendanceRecords.OrderBy(x => x.AttendanceDate).ThenBy(x => x.Id).ToList()
+            );
         }
 
         [Authorize(Roles = "Admin,HR")]
-        public IActionResult Create(
-    int? employeeId,
-    DateTime? attendanceDate,
-    string? status)
+        public IActionResult Create(int? employeeId, DateTime? attendanceDate, string? status)
         {
-            ViewBag.Employees = _employeeRepository.Employees
-                .Where(e => e.IsActive)
+            ViewBag.Employees = _employeeRepository
+                .Employees.Where(e => e.IsActive)
                 .OrderBy(e => e.FirstName)
                 .ToList();
 
@@ -264,13 +248,11 @@ namespace AryamanBMS.Controllers
             {
                 EmployeeId = employeeId ?? 0,
                 AttendanceDate = attendanceDate?.Date ?? DateTime.Today,
-                Status = string.IsNullOrWhiteSpace(status)
-                    ? "P"
-                    : status.Trim(),
+                Status = string.IsNullOrWhiteSpace(status) ? "P" : status.Trim(),
                 AttendanceValue = 1m,
 
                 IsOffDayWork = false,
-                OffDayType = null
+                OffDayType = null,
             };
 
             return View(model);
@@ -281,33 +263,32 @@ namespace AryamanBMS.Controllers
         [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Create(AttendanceModel model)
         {
-            model.AttendanceValue =
-                NormalizeAttendanceValue(model.AttendanceValue);
+            model.AttendanceValue = NormalizeAttendanceValue(model.AttendanceValue);
 
-            bool alreadyExists =
-                await _attendanceRepository.Attendances
-                .AnyAsync(a =>
-                    a.EmployeeId == model.EmployeeId &&
-                    a.AttendanceDate.Date ==
-                    model.AttendanceDate.Date);
+            bool alreadyExists = await _attendanceRepository.Attendances.AnyAsync(a =>
+                a.EmployeeId == model.EmployeeId
+                && a.AttendanceDate.Date == model.AttendanceDate.Date
+            );
 
-            bool approvedLeaveExists =
-                await HasApprovedLeaveOnDateAsync(
-                    model.EmployeeId,
-                    model.AttendanceDate.Date);
+            bool approvedLeaveExists = await HasApprovedLeaveOnDateAsync(
+                model.EmployeeId,
+                model.AttendanceDate.Date
+            );
 
             if (approvedLeaveExists && model.Status != "L")
             {
                 ModelState.AddModelError(
                     "",
-                    "Approved leave exists for this date. Only Leave attendance is allowed.");
+                    "Approved leave exists for this date. Only Leave attendance is allowed."
+                );
             }
 
             if (alreadyExists)
             {
                 ModelState.AddModelError(
                     "",
-                    "Attendance already exists for selected employee and date.");
+                    "Attendance already exists for selected employee and date."
+                );
             }
 
             /*
@@ -315,51 +296,52 @@ namespace AryamanBMS.Controllers
              */
             if (model.IsOffDayWork)
             {
-                if (model.OffDayType != "H" &&
-                    model.OffDayType != "WO")
+                if (model.OffDayType != "H" && model.OffDayType != "WO")
                 {
-                    ModelState.AddModelError(
-                        "OffDayType",
-                        "Select Holiday or Weekly Off.");
+                    ModelState.AddModelError("OffDayType", "Select Holiday or Weekly Off.");
                 }
 
-                var dayStatus =
-    await _workingDayService.GetDayStatusAsync(
-        model.AttendanceDate.Date);
+                var dayStatus = await _workingDayService.GetDayStatusAsync(
+                    model.AttendanceDate.Date
+                );
 
-                bool isHoliday =
-                    string.Equals(
-                        dayStatus,
-                        "Holiday",
-                        StringComparison.OrdinalIgnoreCase);
+                bool isHoliday = string.Equals(
+                    dayStatus,
+                    "Holiday",
+                    StringComparison.OrdinalIgnoreCase
+                );
 
-                bool isWeeklyOff =
-                    string.Equals(
-                        dayStatus,
-                        "WeeklyOff",
-                        StringComparison.OrdinalIgnoreCase);
+                bool isWeeklyOff = string.Equals(
+                    dayStatus,
+                    "WeeklyOff",
+                    StringComparison.OrdinalIgnoreCase
+                );
 
                 if (!isHoliday && !isWeeklyOff)
                 {
                     ModelState.AddModelError(
                         "OffDayType",
-                        "The selected date is not a Holiday or Weekly Off.");
+                        "The selected date is not a Holiday or Weekly Off."
+                    );
                 }
                 else
                 {
-                    string expectedOffDayType =
-                        isHoliday ? "H" : "WO";
+                    string expectedOffDayType = isHoliday ? "H" : "WO";
 
-                    if (!string.Equals(
+                    if (
+                        !string.Equals(
                             model.OffDayType,
                             expectedOffDayType,
-                            StringComparison.OrdinalIgnoreCase))
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                    )
                     {
                         ModelState.AddModelError(
                             "OffDayType",
                             isHoliday
                                 ? "The selected date is a Holiday. Select Holiday as the Off-Day Type."
-                                : "The selected date is a Weekly Off. Select Weekly Off as the Off-Day Type.");
+                                : "The selected date is a Weekly Off. Select Weekly Off as the Off-Day Type."
+                        );
                     }
                 }
 
@@ -367,23 +349,28 @@ namespace AryamanBMS.Controllers
                 {
                     ModelState.AddModelError(
                         "CheckInTime",
-                        "Check-in time is required for off-day work.");
+                        "Check-in time is required for off-day work."
+                    );
                 }
 
                 if (!model.CheckOutTime.HasValue)
                 {
                     ModelState.AddModelError(
                         "CheckOutTime",
-                        "Check-out time is required for off-day work.");
+                        "Check-out time is required for off-day work."
+                    );
                 }
 
-                if (model.CheckInTime.HasValue &&
-                    model.CheckOutTime.HasValue &&
-                    model.CheckOutTime <= model.CheckInTime)
+                if (
+                    model.CheckInTime.HasValue
+                    && model.CheckOutTime.HasValue
+                    && model.CheckOutTime <= model.CheckInTime
+                )
                 {
                     ModelState.AddModelError(
                         "CheckOutTime",
-                        "Check-out time must be later than check-in time.");
+                        "Check-out time must be later than check-in time."
+                    );
                 }
 
                 model.Status = "P";
@@ -409,18 +396,18 @@ namespace AryamanBMS.Controllers
                     model.Status,
                     model.AttendanceValue,
                     "Attendance Marked",
-                    "ManualAttendanceCreated");
+                    "ManualAttendanceCreated"
+                );
 
-                TempData["Success"] =
-                    model.IsOffDayWork
-                        ? "Off-day work attendance registered successfully."
-                        : "Attendance created successfully.";
+                TempData["Success"] = model.IsOffDayWork
+                    ? "Off-day work attendance registered successfully."
+                    : "Attendance created successfully.";
 
                 return RedirectToAction(nameof(Register));
             }
 
-            ViewBag.Employees = _employeeRepository.Employees
-                .Where(e => e.IsActive)
+            ViewBag.Employees = _employeeRepository
+                .Employees.Where(e => e.IsActive)
                 .OrderBy(e => e.FirstName)
                 .ToList();
 
@@ -450,8 +437,9 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var employee = await _employeeRepository.Employees
-                .FirstOrDefaultAsync(e => e.ApplicationUserId == user.Id);
+            var employee = await _employeeRepository.Employees.FirstOrDefaultAsync(e =>
+                e.ApplicationUserId == user.Id
+            );
 
             if (employee == null)
             {
@@ -461,19 +449,17 @@ namespace AryamanBMS.Controllers
 
             var calendarStatus = await GetCalendarStatusAsync(DateTime.Today);
 
-            bool isOffDay =
-              calendarStatus == "H" ||
-              calendarStatus == "WO";
+            bool isOffDay = calendarStatus == "H" || calendarStatus == "WO";
 
             if (isOffDay)
             {
-                var approvedOffDayRequest =
-                    await _offDayWorkRequestRepository.Requests
-                        .AsNoTracking()
-                        .AnyAsync(x =>
-                            x.EmployeeId == employee.Id &&
-                            x.WorkDate.Date == DateTime.Today &&
-                            x.Status == "Approved");
+                var approvedOffDayRequest = await _offDayWorkRequestRepository
+                    .Requests.AsNoTracking()
+                    .AnyAsync(x =>
+                        x.EmployeeId == employee.Id
+                        && x.WorkDate.Date == DateTime.Today
+                        && x.Status == "Approved"
+                    );
 
                 if (!approvedOffDayRequest)
                 {
@@ -486,8 +472,9 @@ namespace AryamanBMS.Controllers
                 }
             }
 
-            var approvedLeaveToday =
-                await _leaveApplicationRepository.HasApprovedLeaveTodayAsync(employee.Id);
+            var approvedLeaveToday = await _leaveApplicationRepository.HasApprovedLeaveTodayAsync(
+                employee.Id
+            );
 
             if (approvedLeaveToday)
             {
@@ -495,10 +482,9 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var todayAttendance = await _attendanceRepository.Attendances
-              .FirstOrDefaultAsync(a =>
-              a.EmployeeId == employee.Id &&
-              a.AttendanceDate.Date == DateTime.Today);
+            var todayAttendance = await _attendanceRepository.Attendances.FirstOrDefaultAsync(a =>
+                a.EmployeeId == employee.Id && a.AttendanceDate.Date == DateTime.Today
+            );
 
             if (todayAttendance != null && todayAttendance.Status != "P")
             {
@@ -544,7 +530,7 @@ namespace AryamanBMS.Controllers
                 LocationType = locationType,
                 IsOffDayWork = isOffDay,
                 OffDayType = isOffDay ? calendarStatus : null,
-                CreatedOn = DateTime.Now
+                CreatedOn = DateTime.Now,
             };
 
             await _attendanceRepository.AddAsync(attendance);
@@ -565,8 +551,9 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var employee = await _employeeRepository.Employees
-                .FirstOrDefaultAsync(e => e.ApplicationUserId == user.Id);
+            var employee = await _employeeRepository.Employees.FirstOrDefaultAsync(e =>
+                e.ApplicationUserId == user.Id
+            );
 
             if (employee == null)
             {
@@ -580,13 +567,13 @@ namespace AryamanBMS.Controllers
 
             if (isOffDay)
             {
-                var approvedOffDayRequest =
-                    await _offDayWorkRequestRepository.Requests
-                        .AsNoTracking()
-                        .AnyAsync(x =>
-                            x.EmployeeId == employee.Id &&
-                            x.WorkDate.Date == DateTime.Today &&
-                            x.Status == "Approved");
+                var approvedOffDayRequest = await _offDayWorkRequestRepository
+                    .Requests.AsNoTracking()
+                    .AnyAsync(x =>
+                        x.EmployeeId == employee.Id
+                        && x.WorkDate.Date == DateTime.Today
+                        && x.Status == "Approved"
+                    );
 
                 if (!approvedOffDayRequest)
                 {
@@ -599,8 +586,9 @@ namespace AryamanBMS.Controllers
                 }
             }
 
-            var approvedLeaveToday =
-                await _leaveApplicationRepository.HasApprovedLeaveTodayAsync(employee.Id);
+            var approvedLeaveToday = await _leaveApplicationRepository.HasApprovedLeaveTodayAsync(
+                employee.Id
+            );
 
             if (approvedLeaveToday)
             {
@@ -608,10 +596,9 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var attendance = await _attendanceRepository.Attendances
-                .FirstOrDefaultAsync(a =>
-                    a.EmployeeId == employee.Id &&
-                    a.AttendanceDate.Date == DateTime.Today);
+            var attendance = await _attendanceRepository.Attendances.FirstOrDefaultAsync(a =>
+                a.EmployeeId == employee.Id && a.AttendanceDate.Date == DateTime.Today
+            );
 
             if (attendance == null)
             {
@@ -665,8 +652,9 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var employee = await _employeeRepository.Employees
-                .FirstOrDefaultAsync(e => e.ApplicationUserId == user.Id);
+            var employee = await _employeeRepository.Employees.FirstOrDefaultAsync(e =>
+                e.ApplicationUserId == user.Id
+            );
 
             if (employee == null)
             {
@@ -674,10 +662,9 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var attendance = await _attendanceRepository.Attendances
-                .FirstOrDefaultAsync(a =>
-                    a.EmployeeId == employee.Id &&
-                    a.AttendanceDate.Date == DateTime.Today);
+            var attendance = await _attendanceRepository.Attendances.FirstOrDefaultAsync(a =>
+                a.EmployeeId == employee.Id && a.AttendanceDate.Date == DateTime.Today
+            );
 
             if (attendance?.CheckInTime == null || attendance.Status == "L")
             {
@@ -685,8 +672,7 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            string entry =
-                $"[{DateTime.Now:dd-MMM-yyyy hh:mm tt}] {remark}";
+            string entry = $"[{DateTime.Now:dd-MMM-yyyy hh:mm tt}] {remark}";
 
             attendance.Remarks = string.IsNullOrWhiteSpace(attendance.Remarks)
                 ? entry
@@ -702,8 +688,9 @@ namespace AryamanBMS.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RequestLateCheckoutCorrection(
-    TimeSpan? requestedCheckOutTime,
-    string? lateCheckoutReason)
+            TimeSpan? requestedCheckOutTime,
+            string? lateCheckoutReason
+        )
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
@@ -711,8 +698,9 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var employee = await _employeeRepository.Employees
-                .FirstOrDefaultAsync(e => e.ApplicationUserId == user.Id);
+            var employee = await _employeeRepository.Employees.FirstOrDefaultAsync(e =>
+                e.ApplicationUserId == user.Id
+            );
 
             if (employee == null)
             {
@@ -740,10 +728,9 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var attendance = await _attendanceRepository.Attendances
-                .FirstOrDefaultAsync(a =>
-                    a.EmployeeId == employee.Id &&
-                    a.AttendanceDate.Date == DateTime.Today);
+            var attendance = await _attendanceRepository.Attendances.FirstOrDefaultAsync(a =>
+                a.EmployeeId == employee.Id && a.AttendanceDate.Date == DateTime.Today
+            );
 
             if (attendance == null || attendance.CheckOutTime == null)
             {
@@ -751,11 +738,9 @@ namespace AryamanBMS.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var requestedTime = attendance.AttendanceDate.Date
-                .Add(requestedCheckOutTime.Value);
+            var requestedTime = attendance.AttendanceDate.Date.Add(requestedCheckOutTime.Value);
 
-            if (attendance.CheckInTime.HasValue &&
-                requestedTime <= attendance.CheckInTime.Value)
+            if (attendance.CheckInTime.HasValue && requestedTime <= attendance.CheckInTime.Value)
             {
                 TempData["Error"] = "Requested checkout time must be after your check-in time.";
                 return RedirectToAction(nameof(Index));
@@ -763,7 +748,8 @@ namespace AryamanBMS.Controllers
 
             if (requestedTime > attendance.CheckOutTime.Value)
             {
-                TempData["Error"] = "Requested checkout time cannot be later than the recorded checkout time.";
+                TempData["Error"] =
+                    "Requested checkout time cannot be later than the recorded checkout time.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -783,21 +769,21 @@ namespace AryamanBMS.Controllers
 
             await _attendanceRepository.SaveAsync();
 
-            TempData["Success"] =
-                "Checkout correction request submitted. Admin/HR will review it.";
+            TempData["Success"] = "Checkout correction request submitted. Admin/HR will review it.";
 
             return RedirectToAction(nameof(Index));
         }
 
         [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> Register(
-    string? searchText,
-    DateTime? fromDate,
-    DateTime? toDate,
-    string? statusFilter,
-    string sortBy = "AttendanceDate",
-    string sortOrder = "desc",
-    int page = 1)
+            string? searchText,
+            DateTime? fromDate,
+            DateTime? toDate,
+            string? statusFilter,
+            string sortBy = "AttendanceDate",
+            string sortOrder = "desc",
+            int page = 1
+        )
         {
             const int pageSize = 10;
             var today = DateTime.Today;
@@ -807,27 +793,24 @@ namespace AryamanBMS.Controllers
                 "Employee" => "Employee",
                 "Status" => "Status",
                 "AttendanceValue" => "AttendanceValue",
-                _ => "AttendanceDate"
+                _ => "AttendanceDate",
             };
             sortOrder = string.Equals(sortOrder, "asc", StringComparison.OrdinalIgnoreCase)
                 ? "asc"
                 : "desc";
             statusFilter = NormalizeAttendanceStatusFilter(statusFilter);
 
-            var effectiveFromDate =
-                fromDate?.Date ??
-                new DateTime(today.Year, today.Month, 1);
+            var effectiveFromDate = fromDate?.Date ?? new DateTime(today.Year, today.Month, 1);
 
-            var effectiveToDate =
-                toDate?.Date ?? today.Date;
+            var effectiveToDate = toDate?.Date ?? today.Date;
 
             if (effectiveToDate < effectiveFromDate)
             {
                 effectiveToDate = effectiveFromDate;
             }
 
-            var employeeQuery = _employeeRepository.Employees
-                .AsNoTracking()
+            var employeeQuery = _employeeRepository
+                .Employees.AsNoTracking()
                 .Where(e => e.IsActive)
                 .AsQueryable();
 
@@ -837,21 +820,13 @@ namespace AryamanBMS.Controllers
 
                 employeeQuery = employeeQuery.Where(e =>
                     (
-                        (e.EmployeeCode != null &&
-                         e.EmployeeCode.Contains(searchText)) ||
-
-                        (e.FirstName != null &&
-                           e.FirstName.Contains(searchText)) ||
-
-                        (e.LastName != null &&
-                           e.LastName.Contains(searchText)) ||
-
-                        (e.MobileNumber != null &&
-                         e.MobileNumber.Contains(searchText)) ||
-
-                        (e.OfficialEmail != null &&
-                         e.OfficialEmail.Contains(searchText))
-                    ));
+                        (e.EmployeeCode != null && e.EmployeeCode.Contains(searchText))
+                        || (e.FirstName != null && e.FirstName.Contains(searchText))
+                        || (e.LastName != null && e.LastName.Contains(searchText))
+                        || (e.MobileNumber != null && e.MobileNumber.Contains(searchText))
+                        || (e.OfficialEmail != null && e.OfficialEmail.Contains(searchText))
+                    )
+                );
             }
 
             var employees = await employeeQuery
@@ -859,17 +834,16 @@ namespace AryamanBMS.Controllers
                 .ThenBy(e => e.LastName)
                 .ToListAsync();
 
-            var employeeIds = employees
-                .Select(e => e.Id)
-                .ToHashSet();
+            var employeeIds = employees.Select(e => e.Id).ToHashSet();
 
-            var attendanceRecords = await _attendanceRepository.Attendances
-                .AsNoTracking()
+            var attendanceRecords = await _attendanceRepository
+                .Attendances.AsNoTracking()
                 .Include(a => a.Employee)
                 .Where(a =>
-                    employeeIds.Contains(a.EmployeeId) &&
-                    a.AttendanceDate.Date >= effectiveFromDate.Date &&
-                    a.AttendanceDate.Date <= effectiveToDate.Date)
+                    employeeIds.Contains(a.EmployeeId)
+                    && a.AttendanceDate.Date >= effectiveFromDate.Date
+                    && a.AttendanceDate.Date <= effectiveToDate.Date
+                )
                 .ToListAsync();
 
             var displayRecords = await BuildDisplayAttendanceRecordsAsync(
@@ -877,13 +851,12 @@ namespace AryamanBMS.Controllers
                 attendanceRecords,
                 effectiveFromDate,
                 effectiveToDate,
-                today);
+                today
+            );
 
             if (statusFilter != null)
             {
-                displayRecords = displayRecords
-                    .Where(a => a.Status == statusFilter)
-                    .ToList();
+                displayRecords = displayRecords.Where(a => a.Status == statusFilter).ToList();
             }
 
             var sortedRecords = sortBy switch
@@ -930,7 +903,7 @@ namespace AryamanBMS.Controllers
                         .OrderByDescending(a => a.AttendanceDate)
                         .ThenBy(a => a.Employee?.FirstName)
                         .ThenBy(a => a.Employee?.LastName)
-                        .ThenByDescending(a => a.Id)
+                        .ThenByDescending(a => a.Id),
             };
 
             var routeValues = new Dictionary<string, string>();
@@ -942,14 +915,12 @@ namespace AryamanBMS.Controllers
 
             if (fromDate.HasValue)
             {
-                routeValues["fromDate"] =
-                    fromDate.Value.ToString("yyyy-MM-dd");
+                routeValues["fromDate"] = fromDate.Value.ToString("yyyy-MM-dd");
             }
 
             if (toDate.HasValue)
             {
-                routeValues["toDate"] =
-                    toDate.Value.ToString("yyyy-MM-dd");
+                routeValues["toDate"] = toDate.Value.ToString("yyyy-MM-dd");
             }
 
             if (statusFilter != null)
@@ -963,9 +934,7 @@ namespace AryamanBMS.Controllers
             page = page < 1 ? 1 : page;
 
             int totalRecords = displayRecords.Count;
-            int totalPages = pageSize > 0
-                ? (int)Math.Ceiling(totalRecords / (double)pageSize)
-                : 0;
+            int totalPages = pageSize > 0 ? (int)Math.Ceiling(totalRecords / (double)pageSize) : 0;
 
             if (totalPages > 0 && page > totalPages)
             {
@@ -974,17 +943,14 @@ namespace AryamanBMS.Controllers
 
             var model = new PagedListViewModel<AttendanceModel>
             {
-                Items = sortedRecords
-                    .Skip((page - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToList(),
+                Items = sortedRecords.Skip((page - 1) * pageSize).Take(pageSize).ToList(),
                 Pagination = new PaginationViewModel
                 {
                     CurrentPage = page,
                     PageSize = pageSize,
                     TotalRecords = totalRecords,
-                    RouteValues = routeValues
-                }
+                    RouteValues = routeValues,
+                },
             };
 
             model.Pagination.ControllerName = "Attendance";
@@ -1003,8 +969,7 @@ namespace AryamanBMS.Controllers
         [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Edit(int id)
         {
-            var attendance =
-                await _attendanceRepository.GetByIdAsync(id);
+            var attendance = await _attendanceRepository.GetByIdAsync(id);
 
             if (attendance == null)
             {
@@ -1018,18 +983,17 @@ namespace AryamanBMS.Controllers
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Edit(
-    AttendanceModel model,
-    string? lateCheckoutDecision,
-    string? lateCheckoutResolutionNote)
+            AttendanceModel model,
+            string? lateCheckoutDecision,
+            string? lateCheckoutResolutionNote
+        )
         {
             if (!ModelState.IsValid)
             {
                 return View(model);
             }
 
-            var attendance =
-                await _attendanceRepository
-                    .GetByIdAsync(model.Id);
+            var attendance = await _attendanceRepository.GetByIdAsync(model.Id);
 
             if (attendance == null)
             {
@@ -1037,63 +1001,64 @@ namespace AryamanBMS.Controllers
             }
 
             // Validate check-in / check-out sequence.
-            if (model.CheckInTime.HasValue &&
-                model.CheckOutTime.HasValue &&
-                model.CheckOutTime.Value < model.CheckInTime.Value)
+            if (
+                model.CheckInTime.HasValue
+                && model.CheckOutTime.HasValue
+                && model.CheckOutTime.Value < model.CheckInTime.Value
+            )
             {
                 ModelState.AddModelError(
                     "CheckOutTime",
-                    "Check Out Time cannot be earlier than Check In Time.");
+                    "Check Out Time cannot be earlier than Check In Time."
+                );
 
                 return View(model);
             }
 
-            bool duplicateExists =
-                await _attendanceRepository.Attendances
-                    .AnyAsync(a =>
-                        a.EmployeeId == attendance.EmployeeId &&
-                        a.AttendanceDate.Date ==
-                            model.AttendanceDate.Date &&
-                        a.Id != model.Id);
+            bool duplicateExists = await _attendanceRepository.Attendances.AnyAsync(a =>
+                a.EmployeeId == attendance.EmployeeId
+                && a.AttendanceDate.Date == model.AttendanceDate.Date
+                && a.Id != model.Id
+            );
 
             if (duplicateExists)
             {
                 ModelState.AddModelError(
                     "",
-                    "Attendance already exists for this employee and date.");
+                    "Attendance already exists for this employee and date."
+                );
 
                 return View(model);
             }
 
-            if (!string.IsNullOrWhiteSpace(lateCheckoutDecision) &&
-                lateCheckoutDecision != "Pending" &&
-                lateCheckoutDecision != "Approved" &&
-                lateCheckoutDecision != "Rejected")
+            if (
+                !string.IsNullOrWhiteSpace(lateCheckoutDecision)
+                && lateCheckoutDecision != "Pending"
+                && lateCheckoutDecision != "Approved"
+                && lateCheckoutDecision != "Rejected"
+            )
             {
-                ModelState.AddModelError(
-                    "",
-                    "Invalid checkout correction decision.");
+                ModelState.AddModelError("", "Invalid checkout correction decision.");
 
                 return View(model);
             }
 
-            if (attendance.LateCheckoutRequestStatus == "Pending" &&
-                (lateCheckoutDecision == "Approved" ||
-                 lateCheckoutDecision == "Rejected"))
+            if (
+                attendance.LateCheckoutRequestStatus == "Pending"
+                && (lateCheckoutDecision == "Approved" || lateCheckoutDecision == "Rejected")
+            )
             {
                 var currentUser = await _userManager.GetUserAsync(User);
 
                 attendance.LateCheckoutRequestStatus = lateCheckoutDecision;
                 attendance.LateCheckoutResolvedOn = DateTime.Now;
                 attendance.LateCheckoutResolvedByUserId = currentUser?.Id;
-                attendance.LateCheckoutResolutionNote =
-                    lateCheckoutResolutionNote?.Trim();
+                attendance.LateCheckoutResolutionNote = lateCheckoutResolutionNote?.Trim();
             }
 
             attendance.AttendanceDate = model.AttendanceDate;
             attendance.Status = model.Status;
-            attendance.AttendanceValue =
-                NormalizeAttendanceValue(model.AttendanceValue);
+            attendance.AttendanceValue = NormalizeAttendanceValue(model.AttendanceValue);
             attendance.CheckInTime = model.CheckInTime;
             attendance.CheckOutTime = model.CheckOutTime;
             attendance.Remarks = model.Remarks;
@@ -1107,13 +1072,15 @@ namespace AryamanBMS.Controllers
                 attendance.Status,
                 attendance.AttendanceValue,
                 "Attendance Updated",
-                "ManualAttendanceUpdated");
+                "ManualAttendanceUpdated"
+            );
 
-            TempData["Success"] = attendance.LateCheckoutRequestStatus == "Approved"
-                ? "Attendance updated and checkout correction approved."
+            TempData["Success"] =
+                attendance.LateCheckoutRequestStatus == "Approved"
+                    ? "Attendance updated and checkout correction approved."
                 : attendance.LateCheckoutRequestStatus == "Rejected"
                     ? "Attendance updated and checkout correction rejected."
-                    : "Attendance updated successfully.";
+                : "Attendance updated successfully.";
 
             return RedirectToAction(nameof(Register));
         }
@@ -1121,11 +1088,9 @@ namespace AryamanBMS.Controllers
         [Authorize(Roles = "Admin,HR,Master")]
         public async Task<IActionResult> Details(int id)
         {
-            var attendance =
-                await _attendanceRepository.Attendances
-                .Include(a => a.Employee)
-                .FirstOrDefaultAsync(a =>
-                    a.Id == id);
+            var attendance = await _attendanceRepository
+                .Attendances.Include(a => a.Employee)
+                .FirstOrDefaultAsync(a => a.Id == id);
 
             if (attendance == null)
             {
@@ -1138,11 +1103,9 @@ namespace AryamanBMS.Controllers
         [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> Delete(int id)
         {
-            var attendance =
-                await _attendanceRepository.Attendances
-                .Include(a => a.Employee)
-                .FirstOrDefaultAsync(a =>
-                    a.Id == id);
+            var attendance = await _attendanceRepository
+                .Attendances.Include(a => a.Employee)
+                .FirstOrDefaultAsync(a => a.Id == id);
 
             if (attendance == null)
             {
@@ -1155,31 +1118,23 @@ namespace AryamanBMS.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,HR,Master")]
-        public async Task<IActionResult> DeleteConfirmed(
-            int id)
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var attendance =
-                await _attendanceRepository
-                .GetByIdAsync(id);
+            var attendance = await _attendanceRepository.GetByIdAsync(id);
 
             if (attendance != null)
             {
                 int employeeId = attendance.EmployeeId;
                 DateTime attendanceDate = attendance.AttendanceDate;
 
-                await _attendanceRepository
-                    .DeleteAsync(attendance);
+                await _attendanceRepository.DeleteAsync(attendance);
 
-                await _attendanceRepository
-                    .SaveAsync();
+                await _attendanceRepository.SaveAsync();
 
-                await NotifyAttendanceDeletedAsync(
-                    employeeId,
-                    attendanceDate);
+                await NotifyAttendanceDeletedAsync(employeeId, attendanceDate);
             }
 
-            TempData["Success"] =
-                "Attendance deleted successfully.";
+            TempData["Success"] = "Attendance deleted successfully.";
 
             return RedirectToAction(nameof(Register));
         }
@@ -1196,34 +1151,33 @@ namespace AryamanBMS.Controllers
 
             DateTime? selectedDate = null;
 
-            if (day.HasValue &&
-                day.Value >= 1 &&
-                day.Value <= totalDays)
+            if (day.HasValue && day.Value >= 1 && day.Value <= totalDays)
             {
                 selectedDate = new DateTime(selectedYear, selectedMonth, day.Value);
             }
 
-            var employees = _employeeRepository.Employees
-                .Where(e => e.IsActive)
+            var employees = _employeeRepository
+                .Employees.Where(e => e.IsActive)
                 .OrderBy(e => e.FirstName)
                 .ThenBy(e => e.LastName)
                 .ToList();
 
-            var attendanceRecords = _attendanceRepository.Attendances
-                .Include(a => a.Employee)
+            var attendanceRecords = _attendanceRepository
+                .Attendances.Include(a => a.Employee)
                 .Where(a =>
-                    a.AttendanceDate.Month == selectedMonth &&
-                    a.AttendanceDate.Year == selectedYear)
+                    a.AttendanceDate.Month == selectedMonth && a.AttendanceDate.Year == selectedYear
+                )
                 .ToList();
 
             var attendanceByEmployeeDate = attendanceRecords
                 .GroupBy(a => (a.EmployeeId, Date: a.AttendanceDate.Date))
                 .ToDictionary(
                     g => g.Key,
-                    g => g
-                        .OrderByDescending(a => a.CheckInTime.HasValue)
-                        .ThenByDescending(a => a.Id)
-                        .First());
+                    g =>
+                        g.OrderByDescending(a => a.CheckInTime.HasValue)
+                            .ThenByDescending(a => a.Id)
+                            .First()
+                );
 
             var displayAttendanceRecords = new List<AttendanceModel>();
 
@@ -1233,7 +1187,12 @@ namespace AryamanBMS.Controllers
                 {
                     var date = new DateTime(selectedYear, selectedMonth, calendarDay);
 
-                    if (attendanceByEmployeeDate.TryGetValue((employee.Id, date.Date), out var record))
+                    if (
+                        attendanceByEmployeeDate.TryGetValue(
+                            (employee.Id, date.Date),
+                            out var record
+                        )
+                    )
                     {
                         displayAttendanceRecords.Add(record);
                         continue;
@@ -1250,7 +1209,7 @@ namespace AryamanBMS.Controllers
                         "Holiday" => "H",
                         "WeeklyOff" => "WO",
                         "Working" => "M",
-                        _ => null
+                        _ => null,
                     };
 
                     if (status == null)
@@ -1258,30 +1217,31 @@ namespace AryamanBMS.Controllers
                         continue;
                     }
 
-                    displayAttendanceRecords.Add(new AttendanceModel
-                    {
-                        EmployeeId = employee.Id,
-                        Employee = employee,
-                        AttendanceDate = date,
-                        Status = status,
-                        AttendanceValue = 0,
-                        Remarks = status switch
+                    displayAttendanceRecords.Add(
+                        new AttendanceModel
                         {
-                            "H" => "Holiday",
-                            "WO" => "Weekly off",
-                            _ => "Missing attendance"
+                            EmployeeId = employee.Id,
+                            Employee = employee,
+                            AttendanceDate = date,
+                            Status = status,
+                            AttendanceValue = 0,
+                            Remarks = status switch
+                            {
+                                "H" => "Holiday",
+                                "WO" => "Weekly off",
+                                _ => "Missing attendance",
+                            },
                         }
-                    });
+                    );
                 }
             }
 
             var monthStart = new DateTime(selectedYear, selectedMonth, 1);
             var monthEnd = new DateTime(selectedYear, selectedMonth, totalDays);
-            var defaultSummaryDate = monthStart > today
-                ? monthStart
-                : monthEnd > today
-                    ? today
-                    : monthEnd;
+            var defaultSummaryDate =
+                monthStart > today ? monthStart
+                : monthEnd > today ? today
+                : monthEnd;
 
             DateTime summaryDate = selectedDate ?? defaultSummaryDate;
 
@@ -1301,7 +1261,7 @@ namespace AryamanBMS.Controllers
                 Year = selectedYear,
                 TotalDays = totalDays,
                 SummaryDate = summaryDate,
-                TotalActiveEmployees = employees.Count
+                TotalActiveEmployees = employees.Count,
             };
 
             foreach (var employee in employees)
@@ -1310,14 +1270,14 @@ namespace AryamanBMS.Controllers
                 {
                     EmployeeId = employee.Id,
                     EmployeeCode = employee.EmployeeCode ?? string.Empty,
-                    EmployeeName = employee.FullName
+                    EmployeeName = employee.FullName,
                 };
 
                 for (int calendarDay = 1; calendarDay <= totalDays; calendarDay++)
                 {
                     var record = displayAttendanceRecords.FirstOrDefault(a =>
-                        a.EmployeeId == employee.Id &&
-                        a.AttendanceDate.Day == calendarDay);
+                        a.EmployeeId == employee.Id && a.AttendanceDate.Day == calendarDay
+                    );
 
                     string status = record?.Status ?? "";
 
@@ -1365,32 +1325,97 @@ namespace AryamanBMS.Controllers
             vm.NotMarkedToday = missingEmployeeIds.Count;
 
             vm.MissingCheckoutCount = summaryRecords.Count(a =>
-                a.CheckInTime.HasValue &&
-                !a.CheckOutTime.HasValue);
+                a.CheckInTime.HasValue && !a.CheckOutTime.HasValue
+            );
 
-            vm.AttendancePercentage = employees.Count > 0
-                ? Math.Round((decimal)vm.PresentToday / employees.Count * 100, 2)
-                : 0;
+            vm.AttendancePercentage =
+                employees.Count > 0
+                    ? Math.Round((decimal)vm.PresentToday / employees.Count * 100, 2)
+                    : 0;
 
-            vm.StatusBuckets = BuildAttendanceBuckets(new List<AttendanceDashboardBucket>
-    {
-        new() { Label = "Present", Count = vm.PresentToday, CssClass = "bucket-success" },
-        new() { Label = "Absent", Count = vm.AbsentToday, CssClass = "bucket-danger" },
-        new() { Label = "Leave", Count = vm.OnLeaveToday, CssClass = "bucket-warning" },
-        new() { Label = "On Duty", Count = vm.OnDutyToday, CssClass = "bucket-info" },
-        new() { Label = "Missing", Count = vm.NotMarkedToday, CssClass = "bucket-danger" }
-    });
+            vm.StatusBuckets = BuildAttendanceBuckets(
+                new List<AttendanceDashboardBucket>
+                {
+                    new()
+                    {
+                        Label = "Present",
+                        Count = vm.PresentToday,
+                        CssClass = "bucket-success",
+                    },
+                    new()
+                    {
+                        Label = "Absent",
+                        Count = vm.AbsentToday,
+                        CssClass = "bucket-danger",
+                    },
+                    new()
+                    {
+                        Label = "Leave",
+                        Count = vm.OnLeaveToday,
+                        CssClass = "bucket-warning",
+                    },
+                    new()
+                    {
+                        Label = "On Duty",
+                        Count = vm.OnDutyToday,
+                        CssClass = "bucket-info",
+                    },
+                    new()
+                    {
+                        Label = "Missing",
+                        Count = vm.NotMarkedToday,
+                        CssClass = "bucket-danger",
+                    },
+                }
+            );
 
-            vm.MonthlyStatusBuckets = BuildAttendanceBuckets(new List<AttendanceDashboardBucket>
-    {
-        new() { Label = "Present", Count = vm.Employees.Sum(x => x.PresentCount), CssClass = "bucket-success" },
-        new() { Label = "Absent", Count = vm.Employees.Sum(x => x.AbsentCount), CssClass = "bucket-danger" },
-        new() { Label = "Missing", Count = vm.Employees.Sum(x => x.MissingCount), CssClass = "bucket-danger" },
-        new() { Label = "Leave", Count = vm.Employees.Sum(x => x.LeaveCount), CssClass = "bucket-warning" },
-        new() { Label = "Holiday", Count = vm.Employees.Sum(x => x.HolidayCount), CssClass = "bucket-info" },
-        new() { Label = "Week Off", Count = vm.Employees.Sum(x => x.WeekOffCount), CssClass = "bucket-neutral" },
-        new() { Label = "On Duty", Count = vm.Employees.Sum(x => x.OnDutyCount), CssClass = "bucket-info" }
-    });
+            vm.MonthlyStatusBuckets = BuildAttendanceBuckets(
+                new List<AttendanceDashboardBucket>
+                {
+                    new()
+                    {
+                        Label = "Present",
+                        Count = vm.Employees.Sum(x => x.PresentCount),
+                        CssClass = "bucket-success",
+                    },
+                    new()
+                    {
+                        Label = "Absent",
+                        Count = vm.Employees.Sum(x => x.AbsentCount),
+                        CssClass = "bucket-danger",
+                    },
+                    new()
+                    {
+                        Label = "Missing",
+                        Count = vm.Employees.Sum(x => x.MissingCount),
+                        CssClass = "bucket-danger",
+                    },
+                    new()
+                    {
+                        Label = "Leave",
+                        Count = vm.Employees.Sum(x => x.LeaveCount),
+                        CssClass = "bucket-warning",
+                    },
+                    new()
+                    {
+                        Label = "Holiday",
+                        Count = vm.Employees.Sum(x => x.HolidayCount),
+                        CssClass = "bucket-info",
+                    },
+                    new()
+                    {
+                        Label = "Week Off",
+                        Count = vm.Employees.Sum(x => x.WeekOffCount),
+                        CssClass = "bucket-neutral",
+                    },
+                    new()
+                    {
+                        Label = "On Duty",
+                        Count = vm.Employees.Sum(x => x.OnDutyCount),
+                        CssClass = "bucket-info",
+                    },
+                }
+            );
 
             for (int calendarDay = 1; calendarDay <= totalDays; calendarDay++)
             {
@@ -1400,27 +1425,33 @@ namespace AryamanBMS.Controllers
 
                 int dayPresent = dayRecords.Count(a => a.Status == "P");
 
-                vm.DayTrends.Add(new AttendanceDashboardDayTrend
-                {
-                    Day = calendarDay,
-                    PresentCount = dayPresent,
-                    LeaveCount = dayRecords.Count(a => a.Status == "L"),
-                    AbsentCount = dayRecords.Count(a => a.Status == "A"),
-                    NotMarkedCount = dayRecords.Count(a => a.Status == "M"),
-                    PresentPercent = employees.Count > 0
-                        ? Math.Round((decimal)dayPresent / employees.Count * 100, 2)
-                        : 0
-                });
+                vm.DayTrends.Add(
+                    new AttendanceDashboardDayTrend
+                    {
+                        Day = calendarDay,
+                        PresentCount = dayPresent,
+                        LeaveCount = dayRecords.Count(a => a.Status == "L"),
+                        AbsentCount = dayRecords.Count(a => a.Status == "A"),
+                        NotMarkedCount = dayRecords.Count(a => a.Status == "M"),
+                        PresentPercent =
+                            employees.Count > 0
+                                ? Math.Round((decimal)dayPresent / employees.Count * 100, 2)
+                                : 0,
+                    }
+                );
             }
 
             vm.NotMarkedEmployees = summaryRecords
                 .Where(a => a.Status == "M" && a.Employee != null)
                 .OrderBy(a => a.Employee!.FirstName)
                 .Take(8)
-                .Select(a => ToAttendanceDashboardListItem(
-                    a.Employee!,
-                    "Missing",
-                    summaryDate.ToString("dd-MMM-yyyy")))
+                .Select(a =>
+                    ToAttendanceDashboardListItem(
+                        a.Employee!,
+                        "Missing",
+                        summaryDate.ToString("dd-MMM-yyyy")
+                    )
+                )
                 .ToList();
 
             vm.OnLeaveEmployees = summaryRecords
@@ -1434,10 +1465,13 @@ namespace AryamanBMS.Controllers
                 .Where(a => a.CheckInTime.HasValue && !a.CheckOutTime.HasValue)
                 .OrderBy(a => a.Employee!.FirstName)
                 .Take(8)
-                .Select(a => ToAttendanceDashboardListItem(
-                    a.Employee!,
-                    "Missing checkout",
-                    a.CheckInTime?.ToString("hh:mm tt")))
+                .Select(a =>
+                    ToAttendanceDashboardListItem(
+                        a.Employee!,
+                        "Missing checkout",
+                        a.CheckInTime?.ToString("hh:mm tt")
+                    )
+                )
                 .ToList();
 
             ViewBag.SelectedDay = day;
@@ -1457,15 +1491,15 @@ namespace AryamanBMS.Controllers
         }
 
         private static List<AttendanceDashboardBucket> BuildAttendanceBuckets(
-    List<AttendanceDashboardBucket> buckets)
+            List<AttendanceDashboardBucket> buckets
+        )
         {
             int total = buckets.Sum(x => x.Count);
 
             foreach (var bucket in buckets)
             {
-                bucket.Percent = total == 0
-                    ? 0
-                    : Math.Round((decimal)bucket.Count / total * 100, 2);
+                bucket.Percent =
+                    total == 0 ? 0 : Math.Round((decimal)bucket.Count / total * 100, 2);
             }
 
             return buckets;
@@ -1474,7 +1508,8 @@ namespace AryamanBMS.Controllers
         private static bool IsEligibleDashboardAttendanceDate(
             EmployeeModel employee,
             DateTime date,
-            DateTime today)
+            DateTime today
+        )
         {
             if (date.Date > today.Date)
             {
@@ -1486,8 +1521,10 @@ namespace AryamanBMS.Controllers
                 return false;
             }
 
-            if (employee.LastWorkingDate.HasValue &&
-                employee.LastWorkingDate.Value.Date < date.Date)
+            if (
+                employee.LastWorkingDate.HasValue
+                && employee.LastWorkingDate.Value.Date < date.Date
+            )
             {
                 return false;
             }
@@ -1500,16 +1537,18 @@ namespace AryamanBMS.Controllers
             IReadOnlyCollection<AttendanceModel> attendanceRecords,
             DateTime fromDate,
             DateTime toDate,
-            DateTime today)
+            DateTime today
+        )
         {
             var attendanceByEmployeeDate = attendanceRecords
                 .GroupBy(a => (a.EmployeeId, Date: a.AttendanceDate.Date))
                 .ToDictionary(
                     g => g.Key,
-                    g => g
-                        .OrderByDescending(a => a.CheckInTime.HasValue)
-                        .ThenByDescending(a => a.Id)
-                        .First());
+                    g =>
+                        g.OrderByDescending(a => a.CheckInTime.HasValue)
+                            .ThenByDescending(a => a.Id)
+                            .First()
+                );
 
             var displayRecords = new List<AttendanceModel>();
 
@@ -1521,16 +1560,19 @@ namespace AryamanBMS.Controllers
                         : fromDate.Date;
 
                 var employeeEnd =
-                    employee.LastWorkingDate.HasValue &&
-                    employee.LastWorkingDate.Value.Date < toDate.Date
+                    employee.LastWorkingDate.HasValue
+                    && employee.LastWorkingDate.Value.Date < toDate.Date
                         ? employee.LastWorkingDate.Value.Date
                         : toDate.Date;
 
-                for (var date = employeeStart;
-                     date <= employeeEnd;
-                     date = date.AddDays(1))
+                for (var date = employeeStart; date <= employeeEnd; date = date.AddDays(1))
                 {
-                    if (attendanceByEmployeeDate.TryGetValue((employee.Id, date.Date), out var record))
+                    if (
+                        attendanceByEmployeeDate.TryGetValue(
+                            (employee.Id, date.Date),
+                            out var record
+                        )
+                    )
                     {
                         displayRecords.Add(record);
                         continue;
@@ -1547,7 +1589,7 @@ namespace AryamanBMS.Controllers
                         "Holiday" => "H",
                         "WeeklyOff" => "WO",
                         "Working" => "M",
-                        _ => null
+                        _ => null,
                     };
 
                     if (status == null)
@@ -1555,20 +1597,22 @@ namespace AryamanBMS.Controllers
                         continue;
                     }
 
-                    displayRecords.Add(new AttendanceModel
-                    {
-                        EmployeeId = employee.Id,
-                        Employee = employee,
-                        AttendanceDate = date,
-                        Status = status,
-                        AttendanceValue = 0m,
-                        Remarks = status switch
+                    displayRecords.Add(
+                        new AttendanceModel
                         {
-                            "H" => "Holiday",
-                            "WO" => "Weekly off",
-                            _ => "Missing attendance"
+                            EmployeeId = employee.Id,
+                            Employee = employee,
+                            AttendanceDate = date,
+                            Status = status,
+                            AttendanceValue = 0m,
+                            Remarks = status switch
+                            {
+                                "H" => "Holiday",
+                                "WO" => "Weekly off",
+                                _ => "Missing attendance",
+                            },
                         }
-                    });
+                    );
                 }
             }
 
@@ -1578,7 +1622,8 @@ namespace AryamanBMS.Controllers
         private static AttendanceDashboardListItem ToAttendanceDashboardListItem(
             EmployeeModel employee,
             string badge,
-            string? meta)
+            string? meta
+        )
         {
             return new AttendanceDashboardListItem
             {
@@ -1586,7 +1631,7 @@ namespace AryamanBMS.Controllers
                 EmployeeName = employee.FullName,
                 EmployeeCode = employee.EmployeeCode ?? string.Empty,
                 Badge = badge,
-                Meta = meta
+                Meta = meta,
             };
         }
 
@@ -1601,7 +1646,7 @@ namespace AryamanBMS.Controllers
                 "H" or "Holiday" => "Holiday",
                 "WO" or "WeekOff" or "Weekly Off" => "Week Off",
                 "OD" or "On Duty" => "On Duty",
-                _ => string.IsNullOrWhiteSpace(status) ? "-" : status
+                _ => string.IsNullOrWhiteSpace(status) ? "-" : status,
             };
         }
 
@@ -1610,7 +1655,7 @@ namespace AryamanBMS.Controllers
             return statusFilter switch
             {
                 "P" or "A" or "M" or "L" or "H" or "WO" or "OD" => statusFilter,
-                _ => null
+                _ => null,
             };
         }
 
@@ -1622,38 +1667,32 @@ namespace AryamanBMS.Controllers
             {
                 "Holiday" => "H",
                 "WeeklyOff" => "WO",
-                _ => null
+                _ => null,
             };
         }
 
-        private async Task<bool> HasApprovedLeaveOnDateAsync(
-            int employeeId,
-            DateTime date)
+        private async Task<bool> HasApprovedLeaveOnDateAsync(int employeeId, DateTime date)
         {
-            var leaveApplications =
-                await _leaveApplicationRepository.LeaveApplications
-                    .Include(x => x.LeaveDays)
-                    .Where(l =>
-                        l.EmployeeId == employeeId &&
-                        l.Status == "Approved" &&
-                        l.FromDate.Date <= date.Date &&
-                        l.ToDate.Date >= date.Date)
-                    .ToListAsync();
+            var leaveApplications = await _leaveApplicationRepository
+                .LeaveApplications.Include(x => x.LeaveDays)
+                .Where(l =>
+                    l.EmployeeId == employeeId
+                    && l.Status == "Approved"
+                    && l.FromDate.Date <= date.Date
+                    && l.ToDate.Date >= date.Date
+                )
+                .ToListAsync();
 
             return leaveApplications.Any(l =>
                 l.LeaveDays.Any()
-                    ? l.LeaveDays.Any(d =>
-                        d.LeaveDate.Date == date.Date &&
-                        d.Status != "Cancelled")
-                    : l.FromDate.Date <= date.Date &&
-                      l.ToDate.Date >= date.Date);
+                    ? l.LeaveDays.Any(d => d.LeaveDate.Date == date.Date && d.Status != "Cancelled")
+                    : l.FromDate.Date <= date.Date && l.ToDate.Date >= date.Date
+            );
         }
 
         private static decimal NormalizeAttendanceValue(decimal value)
         {
-            return value == 0.5m
-                ? 0.5m
-                : 1m;
+            return value == 0.5m ? 0.5m : 1m;
         }
 
         private async Task NotifyAttendanceChangedAsync(
@@ -1662,10 +1701,11 @@ namespace AryamanBMS.Controllers
             string status,
             decimal attendanceValue,
             string title,
-            string notificationType)
+            string notificationType
+        )
         {
-            var employee = await _employeeRepository.Employees
-                .AsNoTracking()
+            var employee = await _employeeRepository
+                .Employees.AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == employeeId);
 
             if (string.IsNullOrWhiteSpace(employee?.ApplicationUserId))
@@ -1680,15 +1720,14 @@ namespace AryamanBMS.Controllers
                 notificationType,
                 "Attendance",
                 employeeId,
-                "/Attendance/MyMonthly");
+                "/Attendance/MyMonthly"
+            );
         }
 
-        private async Task NotifyAttendanceDeletedAsync(
-            int employeeId,
-            DateTime attendanceDate)
+        private async Task NotifyAttendanceDeletedAsync(int employeeId, DateTime attendanceDate)
         {
-            var employee = await _employeeRepository.Employees
-                .AsNoTracking()
+            var employee = await _employeeRepository
+                .Employees.AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == employeeId);
 
             if (string.IsNullOrWhiteSpace(employee?.ApplicationUserId))
@@ -1703,32 +1742,31 @@ namespace AryamanBMS.Controllers
                 "ManualAttendanceDeleted",
                 "Attendance",
                 employeeId,
-                "/Attendance/MyMonthly");
+                "/Attendance/MyMonthly"
+            );
         }
 
         [Authorize(Roles = "Admin,HR")]
         public async Task<IActionResult> ExportExcel(
-               string? searchText,
-               DateTime? fromDate,
-               DateTime? toDate,
-               string? statusFilter)
+            string? searchText,
+            DateTime? fromDate,
+            DateTime? toDate,
+            string? statusFilter
+        )
         {
             statusFilter = NormalizeAttendanceStatusFilter(statusFilter);
             var today = DateTime.Today;
-            var effectiveFromDate =
-                fromDate?.Date ??
-                new DateTime(today.Year, today.Month, 1);
+            var effectiveFromDate = fromDate?.Date ?? new DateTime(today.Year, today.Month, 1);
 
-            var effectiveToDate =
-                toDate?.Date ?? today.Date;
+            var effectiveToDate = toDate?.Date ?? today.Date;
 
             if (effectiveToDate < effectiveFromDate)
             {
                 effectiveToDate = effectiveFromDate;
             }
 
-            var employeeQuery = _employeeRepository.Employees
-                .AsNoTracking()
+            var employeeQuery = _employeeRepository
+                .Employees.AsNoTracking()
                 .Include(e => e.Department)
                 .Include(e => e.Designation)
                 .Where(e => e.IsActive)
@@ -1740,13 +1778,11 @@ namespace AryamanBMS.Controllers
 
                 employeeQuery = employeeQuery.Where(e =>
                     (
-                        (e.EmployeeCode != null &&
-                         e.EmployeeCode.Contains(searchText)) ||
-                        (e.FirstName != null &&
-                         e.FirstName.Contains(searchText)) ||
-                        (e.LastName != null &&
-                         e.LastName.Contains(searchText))
-                    ));
+                        (e.EmployeeCode != null && e.EmployeeCode.Contains(searchText))
+                        || (e.FirstName != null && e.FirstName.Contains(searchText))
+                        || (e.LastName != null && e.LastName.Contains(searchText))
+                    )
+                );
             }
 
             var employees = await employeeQuery
@@ -1754,26 +1790,27 @@ namespace AryamanBMS.Controllers
                 .ThenBy(e => e.LastName)
                 .ToListAsync();
 
-            var employeeIds = employees
-                .Select(e => e.Id)
-                .ToHashSet();
+            var employeeIds = employees.Select(e => e.Id).ToHashSet();
 
-            var attendanceRecords = await _attendanceRepository.Attendances
-                .AsNoTracking()
+            var attendanceRecords = await _attendanceRepository
+                .Attendances.AsNoTracking()
                 .Include(a => a.Employee)
                 .Where(a =>
-                    employeeIds.Contains(a.EmployeeId) &&
-                    a.AttendanceDate.Date >= effectiveFromDate.Date &&
-                    a.AttendanceDate.Date <= effectiveToDate.Date)
+                    employeeIds.Contains(a.EmployeeId)
+                    && a.AttendanceDate.Date >= effectiveFromDate.Date
+                    && a.AttendanceDate.Date <= effectiveToDate.Date
+                )
                 .ToListAsync();
 
-            var attendanceList =
-                (await BuildDisplayAttendanceRecordsAsync(
+            var attendanceList = (
+                await BuildDisplayAttendanceRecordsAsync(
                     employees,
                     attendanceRecords,
                     effectiveFromDate,
                     effectiveToDate,
-                    today))
+                    today
+                )
+            )
                 .Where(a => statusFilter == null || a.Status == statusFilter)
                 .OrderByDescending(a => a.AttendanceDate)
                 .ThenBy(a => a.Employee?.FirstName)
@@ -1782,8 +1819,7 @@ namespace AryamanBMS.Controllers
 
             using var workbook = new XLWorkbook();
 
-            var worksheet =
-                workbook.Worksheets.Add("Attendance");
+            var worksheet = workbook.Worksheets.Add("Attendance");
 
             worksheet.Cell(1, 1).Value = "Employee Code";
             worksheet.Cell(1, 2).Value = "Employee Name";
@@ -1798,46 +1834,36 @@ namespace AryamanBMS.Controllers
             var headerRange = worksheet.Range("A1:I1");
 
             headerRange.Style.Font.Bold = true;
-            headerRange.Style.Alignment.Horizontal =
-                XLAlignmentHorizontalValues.Center;
+            headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
             int row = 2;
 
             foreach (var attendance in attendanceList)
             {
-                worksheet.Cell(row, 1).Value =
-                    attendance.Employee?.EmployeeCode;
+                worksheet.Cell(row, 1).Value = attendance.Employee?.EmployeeCode;
 
                 worksheet.Cell(row, 2).Value =
                     $"{attendance.Employee?.FirstName} {attendance.Employee?.LastName}";
 
-                worksheet.Cell(row, 3).Value =
-                    attendance.Employee?.Department?.DepartmentName;
+                worksheet.Cell(row, 3).Value = attendance.Employee?.Department?.DepartmentName;
 
-                worksheet.Cell(row, 4).Value =
-                    attendance.Employee?.Designation?.DesignationName;
+                worksheet.Cell(row, 4).Value = attendance.Employee?.Designation?.DesignationName;
 
-                worksheet.Cell(row, 5).Value =
-                    attendance.AttendanceDate;
+                worksheet.Cell(row, 5).Value = attendance.AttendanceDate;
 
-                worksheet.Cell(row, 6).Value =
-                    GetAttendanceStatusText(attendance.Status);
+                worksheet.Cell(row, 6).Value = GetAttendanceStatusText(attendance.Status);
 
-                worksheet.Cell(row, 7).Value =
-                    attendance.AttendanceValue;
+                worksheet.Cell(row, 7).Value = attendance.AttendanceValue;
 
-                worksheet.Cell(row, 8).Value =
-                    attendance.Remarks;
+                worksheet.Cell(row, 8).Value = attendance.Remarks;
 
                 if (attendance.Id > 0)
                 {
-                    worksheet.Cell(row, 9).Value =
-                        attendance.CreatedOn;
+                    worksheet.Cell(row, 9).Value = attendance.CreatedOn;
                 }
                 else
                 {
-                    worksheet.Cell(row, 9).Value =
-                        string.Empty;
+                    worksheet.Cell(row, 9).Value = string.Empty;
                 }
 
                 row++;
@@ -1848,78 +1874,74 @@ namespace AryamanBMS.Controllers
 
             worksheet.Column(9).Style.DateFormat.Format = "dd-MMM-yyyy HH:mm";
 
-            using var stream =
-                new MemoryStream();
+            using var stream = new MemoryStream();
 
             workbook.SaveAs(stream);
 
             return File(
                 stream.ToArray(),
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                $"Attendance_{DateTime.Now:yyyyMMdd}.xlsx");
+                $"Attendance_{DateTime.Now:yyyyMMdd}.xlsx"
+            );
         }
 
         private async Task<decimal> GetPaidLeaveBalanceAsOfAsync(
             EmployeeModel employee,
-            DateTime referenceDate)
+            DateTime referenceDate
+        )
         {
             DateTime fyStart = GetFinancialYearStart(referenceDate);
             DateTime fyEnd = fyStart.AddYears(1).AddDays(-1);
 
-            decimal earnedThisFy =
-                GetPaidLeaveEntitlementAsOf(
-                    employee.JoiningDate,
-                    fyStart,
-                    referenceDate);
+            decimal earnedThisFy = GetPaidLeaveEntitlementAsOf(
+                employee.JoiningDate,
+                fyStart,
+                fyEnd
+            );
 
             decimal carryForwardDays =
                 employee.JoiningDate.Date <= fyStart.Date
-                    ? await _context.LeaveBalances
-                        .AsNoTracking()
+                    ? await _context
+                        .LeaveBalances.AsNoTracking()
                         .Include(x => x.LeaveType)
                         .Where(x =>
-                            x.EmployeeId == employee.Id &&
-                            x.LeaveYear == fyStart.Year &&
-                            x.LeaveType.IsPaidLeave &&
-                            x.LeaveType.LeaveCode != "COMP" &&
-                            x.LeaveType.LeaveCode != "BDL")
-                        .SumAsync(x => (decimal?)x.CarryForwardDays) ?? 0m
+                            x.EmployeeId == employee.Id
+                            && x.LeaveYear == fyStart.Year
+                            && x.LeaveType.IsPaidLeave
+                            && x.LeaveType.LeaveCode != "COMP"
+                            && x.LeaveType.LeaveCode != "BDL"
+                        )
+                        .SumAsync(x => (decimal?)x.CarryForwardDays)
+                        ?? 0m
                     : 0m;
 
-            var paidLeaveApplications =
-                await _leaveApplicationRepository.LeaveApplications
-                    .AsNoTracking()
-                    .Include(x => x.LeaveType)
-                    .Where(x =>
-                        x.EmployeeId == employee.Id &&
-                        x.FromDate.Date >= fyStart.Date &&
-                        x.FromDate.Date <= fyEnd.Date &&
-                        x.FromDate.Date <= referenceDate.Date &&
-                        (
-                            x.LeaveType == null ||
-                            x.LeaveType.LeaveCode == null ||
-                            (
-                                x.LeaveType.LeaveCode != "COMP" &&
-                                x.LeaveType.LeaveCode != "BDL"
-                            )
-                        ))
-                    .ToListAsync();
+            var paidLeaveApplications = await _leaveApplicationRepository
+                .LeaveApplications.AsNoTracking()
+                .Include(x => x.LeaveType)
+                .Where(x =>
+                    x.EmployeeId == employee.Id
+                    && x.FromDate.Date >= fyStart.Date
+                    && x.FromDate.Date <= fyEnd.Date
+                    && x.FromDate.Date <= referenceDate.Date
+                    && (
+                        x.LeaveType == null
+                        || x.LeaveType.LeaveCode == null
+                        || (x.LeaveType.LeaveCode != "COMP" && x.LeaveType.LeaveCode != "BDL")
+                    )
+                )
+                .ToListAsync();
 
-            decimal paidUsed =
-                paidLeaveApplications
-                    .Where(x => x.Status == "Approved")
-                    .Sum(x => x.PaidDays);
+            decimal paidUsed = paidLeaveApplications
+                .Where(x => x.Status == "Approved")
+                .Sum(x => x.PaidDays);
 
-            decimal balanceBeforePending =
-                Math.Max(0, carryForwardDays + earnedThisFy - paidUsed);
+            decimal balanceBeforePending = Math.Max(0, carryForwardDays + earnedThisFy - paidUsed);
 
-            decimal pendingRequestedDays =
-                paidLeaveApplications
-                    .Where(x => x.Status == "Pending")
-                    .Sum(x => x.NumberOfDays);
+            decimal pendingRequestedDays = paidLeaveApplications
+                .Where(x => x.Status == "Pending")
+                .Sum(x => x.NumberOfDays);
 
-            decimal pendingReserved =
-                Math.Min(pendingRequestedDays, balanceBeforePending);
+            decimal pendingReserved = Math.Min(pendingRequestedDays, balanceBeforePending);
 
             return Math.Max(0, balanceBeforePending - pendingReserved);
         }
@@ -1927,28 +1949,26 @@ namespace AryamanBMS.Controllers
         private static DateTime GetFinancialYearStart(DateTime referenceDate)
         {
             return referenceDate.Month >= FinancialYearStartMonth
-                ? new DateTime(
-                    referenceDate.Year,
-                    FinancialYearStartMonth,
-                    FinancialYearStartDay)
+                ? new DateTime(referenceDate.Year, FinancialYearStartMonth, FinancialYearStartDay)
                 : new DateTime(
                     referenceDate.Year - 1,
                     FinancialYearStartMonth,
-                    FinancialYearStartDay);
+                    FinancialYearStartDay
+                );
         }
 
         private static decimal GetPaidLeaveEntitlementAsOf(
             DateTime joiningDate,
             DateTime fyStart,
-            DateTime referenceDate)
+            DateTime referenceDate
+        )
         {
             DateTime entitlementStart =
                 joiningDate.Date > fyStart.Date
                     ? new DateTime(joiningDate.Year, joiningDate.Month, 1)
                     : fyStart.Date;
 
-            DateTime referenceMonthStart =
-                new DateTime(referenceDate.Year, referenceDate.Month, 1);
+            DateTime referenceMonthStart = new DateTime(referenceDate.Year, referenceDate.Month, 1);
 
             if (entitlementStart > referenceMonthStart)
             {
@@ -1957,18 +1977,17 @@ namespace AryamanBMS.Controllers
 
             decimal entitlement = 0m;
 
-            for (var monthStart = entitlementStart;
-                 monthStart <= referenceMonthStart;
-                 monthStart = monthStart.AddMonths(1))
+            for (
+                var monthStart = entitlementStart;
+                monthStart <= referenceMonthStart;
+                monthStart = monthStart.AddMonths(1)
+            )
             {
                 decimal credit = MonthlyPaidLeaveAccrual;
 
-                if (joiningDate.Year == monthStart.Year &&
-                    joiningDate.Month == monthStart.Month)
+                if (joiningDate.Year == monthStart.Year && joiningDate.Month == monthStart.Month)
                 {
-                    credit = joiningDate.Day > 15
-                        ? 1m
-                        : MonthlyPaidLeaveAccrual;
+                    credit = joiningDate.Day > 15 ? 1m : MonthlyPaidLeaveAccrual;
                 }
 
                 entitlement += credit;
@@ -1981,20 +2000,16 @@ namespace AryamanBMS.Controllers
         public async Task<IActionResult> Summary(int? month, int? year)
         {
             int selectedMonth =
-                month.HasValue &&
-                month.Value >= 1 &&
-                month.Value <= 12
+                month.HasValue && month.Value >= 1 && month.Value <= 12
                     ? month.Value
                     : DateTime.Today.Month;
 
-            int selectedYear =
-                year ?? DateTime.Today.Year;
+            int selectedYear = year ?? DateTime.Today.Year;
 
-            var summary =
-                await _salaryAttendanceSummaryService
-                    .GetMonthlySummaryAsync(
-                        selectedMonth,
-                        selectedYear);
+            var summary = await _salaryAttendanceSummaryService.GetMonthlySummaryAsync(
+                selectedMonth,
+                selectedYear
+            );
 
             ViewBag.Month = selectedMonth;
             ViewBag.Year = selectedYear;

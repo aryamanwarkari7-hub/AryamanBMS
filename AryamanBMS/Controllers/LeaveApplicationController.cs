@@ -1900,7 +1900,11 @@ namespace AryamanBMS.Controllers
 
             await _leaveBalanceRepository.SaveAsync();
 
-            TempData["Success"] = "Paid leave carry forward updated.";
+            // Automatically re-evaluate all approved leaves for this employee in this FY
+            await RecalculateEmployeePaidLeavesAsync(employeeId, year);
+
+            TempData["Success"] =
+                $"Paid leave carry forward updated and historical leaves recalculated for {employee.FullName} ({employee.EmployeeCode}).";
 
             return RedirectToAction(nameof(PaidLeaveBalanceRegister), new { year });
         }
@@ -2959,6 +2963,151 @@ namespace AryamanBMS.Controllers
             }
 
             await _leaveApplicationDayRepository.SaveAsync();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,HR")]
+        public async Task<IActionResult> RecalculateAllPaidLeaveBalances(int year)
+        {
+            var employees = await _employeeRepository
+                .Employees.Where(e => e.IsActive && e.IsEligibleForPaidLeave)
+                .Select(e => e.Id)
+                .ToListAsync();
+
+            foreach (var empId in employees)
+            {
+                await RecalculateEmployeePaidLeavesAsync(empId, year);
+            }
+
+            TempData["Success"] =
+                $"Successfully recalculated paid leave allocations for all active employees for FY {year}-{year + 1}.";
+            return RedirectToAction(nameof(PaidLeaveBalanceRegister), new { year });
+        }
+
+        /// <summary>
+        /// Re-evaluates all approved regular leaves in chronological order against the employee's total pool
+        /// (Carry Forward + Annual Entitlement) so historical leaves automatically absorb updated balances.
+        /// </summary>
+        private async Task RecalculateEmployeePaidLeavesAsync(int employeeId, int financialYear)
+        {
+            var employee = await _employeeRepository.Employees.FirstOrDefaultAsync(e =>
+                e.Id == employeeId
+            );
+            if (employee == null || !employee.IsEligibleForPaidLeave)
+                return;
+
+            DateTime fyStart = new DateTime(
+                financialYear,
+                FinancialYearStartMonth,
+                FinancialYearStartDay
+            );
+            DateTime fyEnd = fyStart.AddYears(1).AddDays(-1);
+
+            // 1. Total available pool
+            decimal carryForward = await GetPaidLeaveCarryForwardDaysAsync(
+                employeeId,
+                financialYear
+            );
+            decimal proratedEntitlement = GetProratedPaidLeaveEntitlement(
+                employee.JoiningDate,
+                fyStart
+            );
+            decimal availablePool = carryForward + proratedEntitlement;
+
+            // 2. Fetch all approved regular leaves ordered chronologically
+            var approvedLeaves = await _leaveApplicationRepository
+                .LeaveApplications.Include(l => l.LeaveType)
+                .Where(l =>
+                    l.EmployeeId == employeeId
+                    && l.Status == "Approved"
+                    && l.FromDate.Date >= fyStart.Date
+                    && l.FromDate.Date <= fyEnd.Date
+                    && (
+                        l.LeaveType == null
+                        || l.LeaveType.LeaveCode == null
+                        || (l.LeaveType.LeaveCode != "COMP" && l.LeaveType.LeaveCode != "BDL")
+                    )
+                )
+                .OrderBy(l => l.FromDate)
+                .ToListAsync();
+
+            // 3. Watermark re-allocation
+            foreach (var leave in approvedLeaves)
+            {
+                decimal requested = leave.NumberOfDays;
+                decimal paid = Math.Min(requested, Math.Max(0, availablePool));
+                decimal unpaid = Math.Max(0, requested - paid);
+
+                leave.PaidDays = paid;
+                leave.UnpaidDays = unpaid;
+                availablePool -= paid;
+
+                await _leaveApplicationRepository.UpdateAsync(leave);
+                await RebuildLeaveApplicationDaysAsync(leave);
+            }
+
+            await _leaveApplicationRepository.SaveAsync();
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Admin,HR,Master")]
+        public async Task<IActionResult> GetPaidLeaveUsageBreakdown(int employeeId, int year)
+        {
+            var employee = await _employeeRepository
+                .Employees.AsNoTracking()
+                .FirstOrDefaultAsync(e => e.Id == employeeId);
+
+            if (employee == null)
+            {
+                return Json(new { success = false, message = "Employee not found." });
+            }
+
+            DateTime fyStart = new DateTime(year, FinancialYearStartMonth, FinancialYearStartDay);
+            DateTime fyEnd = fyStart.AddYears(1).AddDays(-1);
+
+            var approvedLeaves = await _leaveApplicationRepository
+                .LeaveApplications.AsNoTracking()
+                .Include(l => l.LeaveType)
+                .Where(l =>
+                    l.EmployeeId == employeeId
+                    && l.Status == "Approved"
+                    && l.FromDate.Date >= fyStart.Date
+                    && l.FromDate.Date <= fyEnd.Date
+                    && (
+                        l.LeaveType == null
+                        || l.LeaveType.LeaveCode == null
+                        || (l.LeaveType.LeaveCode != "COMP" && l.LeaveType.LeaveCode != "BDL")
+                    )
+                )
+                .OrderBy(l => l.FromDate)
+                .Select(l => new
+                {
+                    id = l.Id,
+                    applicationNumber = l.ApplicationNumber,
+                    leaveType = l.LeaveType != null ? l.LeaveType.LeaveName : "Regular Leave",
+                    fromDate = l.FromDate.ToString("dd-MMM-yyyy"),
+                    toDate = l.ToDate.ToString("dd-MMM-yyyy"),
+                    numberOfDays = l.NumberOfDays,
+                    paidDays = l.PaidDays,
+                    unpaidDays = l.UnpaidDays,
+                    approvedOn = l.ApprovedOn.HasValue
+                        ? l.ApprovedOn.Value.ToString("dd-MMM-yyyy")
+                        : "-",
+                })
+                .ToListAsync();
+
+            return Json(
+                new
+                {
+                    success = true,
+                    employeeName = employee.FullName,
+                    employeeCode = employee.EmployeeCode,
+                    totalPaidUsed = approvedLeaves.Sum(x => x.paidDays),
+                    totalUnpaid = approvedLeaves.Sum(x => x.unpaidDays),
+                    leaves = approvedLeaves,
+                }
+            );
         }
 
         #endregion Actions

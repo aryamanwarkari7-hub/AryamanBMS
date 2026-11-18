@@ -69,17 +69,14 @@ namespace AryamanBMS.Controllers
 
                 if (user != null)
                 {
-                    if (
-                        string.IsNullOrWhiteSpace(user.ActivityStatus)
-                        || user.ActivityStatus == "Offline"
-                    )
+                    var employee = await _employeeRepository
+                        .Employees.AsNoTracking()
+                        .FirstOrDefaultAsync(e => e.ApplicationUserId == user.Id);
+
+                    if (!user.IsActive || (employee != null && !employee.IsActive))
                     {
-                        await SetActivityStatusAsync(
-                            user,
-                            "Available",
-                            message: null,
-                            isManual: false
-                        );
+                        await _signInManager.SignOutAsync();
+                        return View();
                     }
 
                     return await RedirectByRoleAsync(user);
@@ -119,6 +116,7 @@ namespace AryamanBMS.Controllers
                 return View(model);
             }
 
+            // 1. Check User Account Active Status
             if (!user.IsActive)
             {
                 await RecordLoginHistorySafeAsync(
@@ -126,14 +124,44 @@ namespace AryamanBMS.Controllers
                     eventType: "InactiveAccount",
                     isSuccessful: false,
                     userId: user.Id,
-                    failureReason: "Login attempted using an inactive account."
+                    failureReason: "Login attempted using an inactive user account."
                 );
 
                 ModelState.AddModelError(
                     "",
                     "Your account is inactive. Please contact the administrator."
                 );
+                return View(model);
+            }
 
+            // 2. Check Linked Employee Profile Active Status
+            var employee = await _employeeRepository
+                .Employees.AsNoTracking()
+                .FirstOrDefaultAsync(e => e.ApplicationUserId == user.Id);
+
+            if (
+                employee != null
+                && (
+                    !employee.IsActive
+                    || (
+                        employee.LastWorkingDate.HasValue
+                        && employee.LastWorkingDate.Value.Date < DateTime.Today
+                    )
+                )
+            )
+            {
+                await RecordLoginHistorySafeAsync(
+                    attemptedUserName: attemptedUserName,
+                    eventType: "InactiveEmployee",
+                    isSuccessful: false,
+                    userId: user.Id,
+                    failureReason: "Login attempted by a deactivated or relieved employee."
+                );
+
+                ModelState.AddModelError(
+                    "",
+                    "Your employee profile has been deactivated. Please contact HR or the administrator."
+                );
                 return View(model);
             }
 

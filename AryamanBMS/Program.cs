@@ -165,7 +165,6 @@ builder.Services.Configure<SecurityStampValidatorOptions>(options =>
 // AUTHORIZATION POLICIES
 builder.Services.AddAuthorization();
 
-
 // =============================
 // DATA ACCESS REPOSITORIES
 // =============================
@@ -197,7 +196,7 @@ builder.Services.AddScoped<ICompOffCreditRepository, CompOffCreditRepository>();
 
 builder.Services.AddScoped<ICompOffUsageRepository, CompOffUsageRepository>();
 
-builder.Services.AddScoped<IOffDayWorkRequestRepository,OffDayWorkRequestRepository>();
+builder.Services.AddScoped<IOffDayWorkRequestRepository, OffDayWorkRequestRepository>();
 
 builder.Services.AddScoped<IWorkingDayRepository, WorkingDayRepository>();
 
@@ -214,7 +213,7 @@ builder.Services.AddScoped<IProjectTaskRepository, ProjectTaskRepository>();
 builder.Services.AddScoped<IProjectFlowRepository, ProjectFlowRepository>();
 builder.Services.AddScoped<IProjectTaskProgressRepository, ProjectTaskProgressRepository>();
 builder.Services.AddScoped<IProjectTimelineRepository, ProjectTimelineRepository>();
-builder.Services.AddScoped<IProjectCommunicationRepository,ProjectCommunicationRepository>();
+builder.Services.AddScoped<IProjectCommunicationRepository, ProjectCommunicationRepository>();
 
 // Meeting repositories
 builder.Services.AddScoped<IProjectMeetingRepository, ProjectMeetingRepository>();
@@ -226,13 +225,13 @@ builder.Services.AddScoped<IProjectRiskRepository, ProjectRiskRepository>();
 builder.Services.AddScoped<ILoginHistoryRepository, LoginHistoryRepository>();
 
 // Password Change History
-builder.Services.AddScoped<IPasswordChangeLogRepository,PasswordChangeLogRepository>();
+builder.Services.AddScoped<IPasswordChangeLogRepository, PasswordChangeLogRepository>();
 
 // Notification repositories
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 
 //Calendar repositories
-builder.Services.AddScoped<ICalendarManualEventRepository,CalendarManualEventRepository>();
+builder.Services.AddScoped<ICalendarManualEventRepository, CalendarManualEventRepository>();
 
 // Holiday repositories
 builder.Services.AddScoped<IHolidayRepository, HolidayRepository>();
@@ -279,14 +278,14 @@ builder.Services.AddScoped<IGstReturnRepository, GstReturnRepository>();
 builder.Services.AddScoped<IGstChallanRepository, GstChallanRepository>();
 builder.Services.AddScoped<IGstItcRepository, GstItcRepository>();
 builder.Services.AddScoped<IGstDocumentRepository, GstDocumentRepository>();
-builder.Services.AddScoped<IGstLutDocumentRepository,GstLutDocumentRepository>();
+builder.Services.AddScoped<IGstLutDocumentRepository, GstLutDocumentRepository>();
 builder.Services.AddScoped<IFinancialAuditDocumentRepository, FinancialAuditDocumentRepository>();
 builder.Services.AddScoped<IOfficeAssetRepository, OfficeAssetRepository>();
 builder.Services.AddScoped<IPfRepository, PfRepository>();
 builder.Services.AddScoped<IEsicRepository, EsicRepository>();
 builder.Services.AddScoped<IPtRepository, PtRepository>();
 builder.Services.AddScoped<INoticeRepository, NoticeRepository>();
-builder.Services.AddScoped<IProposalTemplateRepository,ProposalTemplateRepository>();
+builder.Services.AddScoped<IProposalTemplateRepository, ProposalTemplateRepository>();
 
 // Daily Work Report repository and service
 builder.Services.AddScoped<IDailyWorkReportRepository, DailyWorkReportRepository>();
@@ -323,13 +322,13 @@ builder.Services.AddScoped<IGstCalculationService, GstCalculationService>();
 builder.Services.AddScoped<IGstDashboardService, GstDashboardService>();
 
 // Proposal document service
-builder.Services.AddScoped< IProposalDocumentService,ProposalDocumentService>();
+builder.Services.AddScoped<IProposalDocumentService, ProposalDocumentService>();
 
 // Invoice document service
-builder.Services.AddScoped<IInvoiceDocumentService,InvoiceDocumentService>();
+builder.Services.AddScoped<IInvoiceDocumentService, InvoiceDocumentService>();
 
 // Notification service
-builder.Services.AddScoped<INotificationService,NotificationService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 // Calendar service
 builder.Services.AddScoped<ICalendarService, CalendarService>();
@@ -338,7 +337,7 @@ builder.Services.AddScoped<ICalendarService, CalendarService>();
 builder.Services.AddScoped<IHolidayExcelImportService, HolidayExcelImportService>();
 
 // Working-day and Saturday Switcher service
-builder.Services.AddScoped<IWorkingDayService,WorkingDayService>();
+builder.Services.AddScoped<IWorkingDayService, WorkingDayService>();
 
 // Background reminder services
 builder.Services.AddHostedService<TaskReminderBackgroundService>();
@@ -346,10 +345,10 @@ builder.Services.AddHostedService<InvoiceReminderBackgroundService>();
 builder.Services.AddHostedService<HrNotificationReminderBackgroundService>();
 
 // Login history service
-builder.Services.AddScoped<ILoginHistoryService,LoginHistoryService>();
+builder.Services.AddScoped<ILoginHistoryService, LoginHistoryService>();
 
 // Password Change servic
-builder.Services.AddScoped<IPasswordChangeLogService,PasswordChangeLogService>();
+builder.Services.AddScoped<IPasswordChangeLogService, PasswordChangeLogService>();
 
 // PDF DOCUMENT GENERATION
 QuestPDF.Settings.License = LicenseType.Evaluation;
@@ -369,7 +368,6 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Home/Error");
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
-
 }
 
 app.UseStatusCodePagesWithReExecute(
@@ -395,7 +393,6 @@ app.MapControllerRoute(
 
 app.MapHub<NotificationHub>("/notificationHub");
 
-
 // =============================
 // DATABASE ROLE AND ADMIN SEEDING
 // =============================
@@ -406,4 +403,3 @@ using (var scope = app.Services.CreateScope())
     await DbInitializer.SeedRolesAndAdminAsync(services);
 }
 app.Run();
-

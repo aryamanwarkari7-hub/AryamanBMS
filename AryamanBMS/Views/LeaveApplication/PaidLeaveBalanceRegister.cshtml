@@ -64,6 +64,10 @@
                     <i class="bi bi-arrow-counterclockwise"></i>
                     Reset
                 </a>
+
+                
+
+
             </div>
 
             <div class="form-group">
@@ -85,6 +89,8 @@
                 </select>
             </div>
         </form>
+
+        
     </div>
 </div>
 
@@ -94,6 +100,15 @@
             <h5 class="card-title">FY @selectedYear-@(selectedYear + 1)</h5>
             <p class="card-subtitle">Regular paid leave: 18 days annually | Birthday Leave: 1 paid day separately</p>
         </div>
+
+        <form asp-action="RecalculateAllPaidLeaveBalances" method="post" class="d-inline">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="year" value="@ViewBag.SelectedYear" />
+            <button type="submit" class="btn-app btn-primary-app"
+                    onclick="return confirm('Recalculate leave allocations for all employees for this financial year?');">
+                <i class="bi bi-arrow-repeat"></i> Recalculate All Balances
+            </button>
+        </form>
     </div>
 
     <div class="card-body">
@@ -152,7 +167,20 @@
                                         </form>
                                     }
                                 </td>
-                                <td>@item.PaidUsed.ToString("0.##")</td>
+                                <td>
+                                    @if (item.PaidUsed > 0)
+                                    {
+                                        <button type="button" class="btn btn-sm btn-link text-decoration-none fw-bold p-0"
+                                                onclick="openUsageBreakdown(@item.EmployeeId, @selectedYear)"
+                                                title="Click to view breakdown of which leaves used these days">
+                                            @item.PaidUsed.ToString("0.##") <i class="bi bi-info-circle text-primary"></i>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span>0</span>
+                                    }
+                                </td>
                                 <td>@item.PendingPaidLeaveReserved.ToString("0.##")</td>
                                 <td>
                                     <strong>@item.PaidBalance.ToString("0.##")</strong>
@@ -183,3 +211,136 @@
         <partial name="_Pagination" model="pagination" />
     </div>
 </div>
+
+<!-- Paid Leave Usage Breakdown Modal -->
+<div class="modal fade" id="paidLeaveUsageModal" tabindex="-1" aria-labelledby="paidLeaveUsageModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content app-card border-0 shadow-lg">
+            <div class="modal-header border-bottom py-3 px-4">
+                <div>
+                    <h5 class="modal-title fw-bold" id="paidLeaveUsageModalLabel">
+                        <i class="bi bi-journal-text text-primary me-2"></i>Paid Leave Usage Breakdown
+                    </h5>
+                    <p class="text-muted small mb-0" id="usageModalSubtitle">Loading employee details...</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="usageModalLoading" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="text-muted small mt-2">Loading leave records...</p>
+                </div>
+                <div id="usageModalEmpty" class="text-center py-4 d-none">
+                    <p class="text-muted">No paid leave days used in this financial year.</p>
+                </div>
+                <div id="usageModalTableWrapper" class="table-responsive d-none">
+                    <table class="table app-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>App #</th>
+                                <th>Leave Type</th>
+                                <th>Dates</th>
+                                <th class="text-end">Total Days</th>
+                                <th class="text-end">Paid Used</th>
+                                <th class="text-end">Unpaid</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usageModalTableBody">
+                            <!-- Populated dynamically via AJAX -->
+                        </tbody>
+                        <tfoot class="table-light fw-bold">
+                            <tr>
+                                <td colspan="3" class="text-end">Total:</td>
+                                <td class="text-end" id="usageModalTotalRequested">0</td>
+                                <td class="text-end text-primary" id="usageModalTotalPaid">0</td>
+                                <td class="text-end text-danger" id="usageModalTotalUnpaid">0</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer border-top bg-light py-2 px-4">
+                <button type="button" class="btn-app btn-secondary-app" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openUsageBreakdown(employeeId, year) {
+            const modal = new bootstrap.Modal(document.getElementById('paidLeaveUsageModal'));
+            const loading = document.getElementById('usageModalLoading');
+            const empty = document.getElementById('usageModalEmpty');
+            const tableWrapper = document.getElementById('usageModalTableWrapper');
+            const tbody = document.getElementById('usageModalTableBody');
+            const subtitle = document.getElementById('usageModalSubtitle');
+
+            loading.classList.remove('d-none');
+            empty.classList.add('d-none');
+            tableWrapper.classList.add('d-none');
+            tbody.innerHTML = '';
+            subtitle.textContent = 'Loading...';
+
+            modal.show();
+
+            fetch(`/LeaveApplication/GetPaidLeaveUsageBreakdown?employeeId=${employeeId}&year=${year}`)
+                .then(res => res.json())
+                .then(data => {
+                    loading.classList.add('d-none');
+
+                    if (!data.success || !data.leaves || data.leaves.length === 0) {
+                        empty.classList.remove('d-none');
+                        subtitle.textContent = `${data.employeeName || 'Employee'} (${data.employeeCode || ''}) - FY ${year}-${year + 1}`;
+                        return;
+                    }
+
+                    subtitle.textContent = `${data.employeeName} (${data.employeeCode}) - FY ${year}-${year + 1} | Total Paid Used: ${data.totalPaidUsed} Day(s)`;
+
+                    let rows = '';
+                    let totalRequested = 0;
+                    let totalPaid = 0;
+                    let totalUnpaid = 0;
+
+                    data.leaves.forEach(item => {
+                        totalRequested += item.numberOfDays;
+                        totalPaid += item.paidDays;
+                        totalUnpaid += item.unpaidDays;
+
+                        rows += `
+                            <tr>
+                                <td class="fw-bold">${item.applicationNumber}</td>
+                                <td>${item.leaveType}</td>
+                                <td><small>${item.fromDate} to ${item.toDate}</small></td>
+                                <td class="text-end">${item.numberOfDays}</td>
+                                <td class="text-end fw-bold text-primary">${item.paidDays}</td>
+                                <td class="text-end ${item.unpaidDays > 0 ? 'text-danger fw-bold' : 'text-muted'}">${item.unpaidDays}</td>
+                                <td class="text-center">
+                                    <a href="/LeaveApplication/Details/${item.id}" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2" title="View Application Details">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                        `;
+                    });
+
+                    tbody.innerHTML = rows;
+                    document.getElementById('usageModalTotalRequested').textContent = totalRequested.toFixed(2).replace(/\.00$/, '');
+                    document.getElementById('usageModalTotalPaid').textContent = totalPaid.toFixed(2).replace(/\.00$/, '');
+                    document.getElementById('usageModalTotalUnpaid').textContent = totalUnpaid.toFixed(2).replace(/\.00$/, '');
+
+                    tableWrapper.classList.remove('d-none');
+                })
+                .catch(err => {
+                    loading.classList.add('d-none');
+                    empty.classList.remove('d-none');
+                    empty.innerHTML = `<p class="text-danger">Failed to load breakdown. Please try again.</p>`;
+                });
+        }
+    </script>
+}

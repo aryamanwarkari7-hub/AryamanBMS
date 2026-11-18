@@ -699,6 +699,17 @@ currentController == "LeaveApplication" ||
                                         <span>Summary</span>
 
                                     </a>
+
+                                    @* ==========================================
+                                    DAILY WORK REPORT
+                                ========================================== *@
+                                   
+                                    <a asp-controller="DailyWorkReport" asp-action="Index"
+                                       class="submenu-item nested-item @(currentController == "DailyWorkReport" && Context.Request.Query["mine"] != "true" ? "active-menu" : "")">
+                                        <i class="bi bi-journal-check"></i>
+                                        <span>Daily Logs</span>
+                                    </a>
+                                    
                                 }
 
                             </div>
@@ -834,6 +845,10 @@ currentController == "LeaveApplication" ||
 
                         @if (isAdminHrOrMaster)
                         {
+
+                           
+
+                                    
                             @* ==========================================
                              HOLIDAYS
                          ========================================== *@
@@ -1032,11 +1047,7 @@ currentController == "LeaveApplication" ||
                                             <span>Task Updates</span>
                                         </a>
 
-                                        <a asp-controller="DailyWorkReport" asp-action="Index"
-                                           class="submenu-item nested-item @(currentController == "DailyWorkReport" && Context.Request.Query["mine"] != "true" ? "active-menu" : "")">
-                                            <i class="bi bi-journal-check"></i>
-                                            <span>Daily Work Reports</span>
-                                        </a>
+                                        
                                     }
 
                                     @* ==========================================
